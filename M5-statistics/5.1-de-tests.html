@@ -1,123 +1,718 @@
 <!DOCTYPE html>
-<html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>5.1 DE Tests — scRNA-seq Advanced Math</title><link rel="stylesheet" href="../styles.css">
-<script>MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] } };</script>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>5.1 DE tests：Wilcoxon / MAST / pseudobulk — Deep Interactive</title>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
-</head><body>
+<style>
+  :root {
+    --bg: #fafaf7; --fg: #1a1a1a; --muted: #666;
+    --accent: #c0392b; --accent2: #2c5aa0;
+    --green: #27795a; --purple: #8e44ad; --yellow: #f0c419;
+    --amber: #b45309;
+    --card: #ffffff; --border: #e0e0d8; --code: #f4f1ea;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Helvetica Neue", "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif; background: var(--bg); color: var(--fg); line-height: 1.75; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 40px 28px 120px; }
+  header.cover { margin: 20px 0 60px; padding: 52px 40px;
+    background: linear-gradient(135deg, #451a03 0%, #b45309 55%, #fbbf24 100%);
+    color: #fff; border-radius: 16px; box-shadow: 0 14px 40px rgba(69,26,3,0.18); }
+  header.cover h1 { margin: 0 0 14px; font-size: 36px; }
+  header.cover .sub { font-size: 17px; opacity: 0.92; line-height: 1.65; }
+  header.cover .badge { display: inline-block; background: rgba(255,255,255,0.18);
+    padding: 4px 12px; border-radius: 20px; font-size: 13px; margin-bottom: 16px; }
+  h2 { margin-top: 70px; padding-bottom: 8px; border-bottom: 3px solid var(--amber);
+    font-size: 26px; display: flex; align-items: baseline; gap: 12px; }
+  h2 .num { color: var(--amber); font-weight: 800; font-size: 20px; }
+  h3 { margin-top: 36px; font-size: 19px; color: var(--accent2); }
+  h4 { margin-top: 22px; font-size: 16px; color: var(--accent); }
+  p { margin: 14px 0; }
+  .lead { font-size: 17px; color: #2a2a2a; }
+  .callout { background: #fff8e6; border-left: 4px solid var(--yellow); padding: 14px 18px; border-radius: 6px; margin: 22px 0; }
+  .callout.idea { background: #eaf4ff; border-left-color: var(--accent2); }
+  .callout.warn { background: #fdecec; border-left-color: var(--accent); }
+  .callout.bio  { background: #effaf3; border-left-color: var(--green); }
+  .callout.prog { background: #fef3c7; border-left-color: var(--amber); }
+  .card { background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px 26px; margin: 26px 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+  .card h3 { margin-top: 0; }
+  .controls { display: flex; flex-wrap: wrap; gap: 14px 22px;
+    align-items: center; margin: 14px 0; padding: 12px 16px;
+    background: #f4f1ea; border-radius: 8px; font-size: 14px; }
+  .controls label { display: flex; align-items: center; gap: 8px; }
+  button { background: var(--amber); color: #fff; border: 0;
+    padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 14px;
+    font-family: inherit; }
+  button:hover { background: #78350f; }
+  button.ghost { background: #fff; color: var(--amber); border: 1px solid var(--amber); }
+  input[type="range"] { width: 180px; vertical-align: middle; }
+  svg.canvas { background: #fcfcfa; border: 1px solid var(--border); border-radius: 8px; display: block; }
+  svg.canvas .axis { stroke: #bbb; stroke-width: 1; }
+  svg.canvas .grid { stroke: #ececea; stroke-width: 0.5; }
+  svg.canvas text.lbl { font-size: 12px; fill: #333; }
+  .stat-row { display: flex; flex-wrap: wrap; gap: 22px; margin: 14px 0; font-size: 14px; }
+  .stat-row .item { display: flex; flex-direction: column; }
+  .stat-row .item .lbl { color: var(--muted); font-size: 12px; }
+  .stat-row .item .val { font-family: "JetBrains Mono", monospace; font-size: 18px; }
+  details { margin: 16px 0; }
+  details summary { cursor: pointer; font-weight: 600; color: var(--accent2); padding: 6px 0; }
+  .toc { background: #fff; border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 28px; margin: 30px 0; }
+  .toc h4 { margin: 0 0 10px; color: var(--amber); }
+  .toc ol { margin: 6px 0; padding-left: 24px; line-height: 1.9; }
+  .toc a { color: var(--accent2); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .toc .new { background: var(--amber); color: #fff; font-size: 11px;
+    padding: 1px 8px; border-radius: 10px; margin-left: 6px; }
+  code.inline { background: var(--code); padding: 2px 6px; border-radius: 4px;
+    font-size: 13px; font-family: "JetBrains Mono", "Consolas", monospace; }
+  pre.code { background: #1e1e1e; color: #dcdcdc;
+    padding: 14px 18px; border-radius: 8px; overflow-x: auto; font-size: 13px;
+    font-family: "JetBrains Mono", "Consolas", monospace; line-height: 1.55; }
+  pre.code .k { color: #569cd6; }
+  pre.code .s { color: #ce9178; }
+  pre.code .c { color: #6a9955; }
+  pre.code .n { color: #b5cea8; }
+  table.compare { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.compare th, table.compare td { border: 1px solid var(--border); padding: 8px 12px; }
+  table.compare th { background: #f4f1ea; text-align: left; }
+  .math-block { background: #fff; border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 18px; margin: 18px 0; }
+  .math-block.boxed { border: 2px solid var(--amber); background: #fef3c7; }
+  .formula-caption { font-size: 12.5px; color: var(--muted); text-align: center; margin-top: 6px; }
+  .footer { text-align: center; color: var(--muted); margin-top: 80px; font-size: 13px; }
+  .top-nav { background: #451a03; color: #fff; padding: 14px 28px;
+    position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(69,26,3,0.25); }
+  .top-nav-inner { max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; gap: 28px; }
+  .top-nav-brand { color: #fff; text-decoration: none;
+    font-weight: 700; font-size: 17px;
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .top-nav-brand .badge-math { background: #b45309; color: #fff;
+    padding: 3px 9px; border-radius: 4px; font-size: 11px; }
+  .top-nav-links { list-style: none; margin: 0; padding: 0;
+    display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+  .top-nav-links a { color: #fde68a; text-decoration: none;
+    padding: 6px 11px; border-radius: 6px; font-size: 13px; font-weight: 500;
+    transition: 0.2s; }
+  .top-nav-links a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .top-nav-links a.active { background: #b45309; color: #fff; }
+  .top-nav-links li.dropdown { position: relative; }
+  .top-nav-links li.dropdown > a::after { content: ' ▾';
+    font-size: 10px; opacity: 0.7; margin-left: 3px;
+    display: inline-block; transition: transform 0.2s; }
+  .top-nav-links li.dropdown:hover > a::after,
+  .top-nav-links li.dropdown.open > a::after { transform: rotate(180deg); }
+  .top-nav-links .dropdown-menu { display: none; position: absolute; top: 100%; left: 0;
+    background: #5b2c0c; border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px; padding: 6px 0; min-width: 230px;
+    list-style: none; z-index: 200;
+    box-shadow: 0 8px 28px rgba(69,26,3,0.5); margin: 6px 0 0; }
+  .top-nav-links li.dropdown:hover > .dropdown-menu,
+  .top-nav-links li.dropdown.open > .dropdown-menu { display: block; }
+  .top-nav-links .dropdown-menu li { display: block; }
+  .top-nav-links .dropdown-menu li a { display: block; padding: 9px 18px;
+    border-radius: 0; font-size: 13px; white-space: nowrap; color: #fde68a; }
+  .top-nav-links .dropdown-menu li a:hover { background: rgba(180,83,9,0.3); color: #fff; }
+  .top-nav-links .dropdown-menu li a.active-sub { background: #b45309; color: #fff; font-weight: 700; }
+  .top-nav-links .dropdown-menu .sub-label { font-size: 10px; color: #fbbf24;
+    letter-spacing: 1px; padding: 4px 18px 2px; text-transform: uppercase; }
+  .lang-switch { display: flex; gap: 4px;
+    background: rgba(255,255,255,0.08); padding: 4px; border-radius: 6px; flex-shrink: 0; }
+  .lang-switch button { background: transparent; border: 0; color: #fde68a;
+    font-size: 12px; font-weight: 700; padding: 5px 10px;
+    border-radius: 4px; cursor: pointer; font-family: inherit; }
+  .lang-switch button.active { background: #b45309; color: #fff; }
+  .nav-pages { display: flex; gap: 8px; margin: 24px 0; padding: 14px;
+    background: #5b2c0c; border-radius: 10px; align-items: center; flex-wrap: wrap; }
+  .nav-pages a { color: #fde68a; text-decoration: none;
+    padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600;
+    transition: 0.2s; }
+  .nav-pages a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .nav-pages .label { color: #fbbf24; font-size: 11px;
+    letter-spacing: 1px; font-weight: 700; margin-right: 8px; }
+  [data-lang="en"] { display: none; }
+  body.lang-en [data-lang="zh"] { display: none; }
+  body.lang-en [data-lang="en"] { display: initial; }
+  body.lang-en h1[data-lang="en"], body.lang-en h2[data-lang="en"],
+  body.lang-en h3[data-lang="en"], body.lang-en h4[data-lang="en"],
+  body.lang-en p[data-lang="en"], body.lang-en div[data-lang="en"],
+  body.lang-en ol[data-lang="en"], body.lang-en ul[data-lang="en"] { display: block; }
+  body.lang-en li[data-lang="en"] { display: list-item; }
+  body.lang-en span[data-lang="en"] { display: inline; }
+  body.lang-en tspan[data-lang="en"] { display: inline; }
+</style>
+</head>
+<body>
+
 <nav class="top-nav"><div class="top-nav-inner">
-  <a href="../index.html" class="top-nav-brand"><span>🧬</span><span data-lang="zh">scRNA-seq 進階數學</span><span data-lang="en">scRNA-seq Advanced Math</span><span class="badge-math">MATH</span></a>
-  <ul class="top-nav-links"><li><a href="../index.html#M1">M1</a></li><li><a href="../index.html#M2">M2</a></li><li><a href="../index.html#M3">M3</a></li><li><a href="../index.html#M4">M4</a></li><li><a href="../index.html#M5" class="active">M5</a></li><li><a href="../index.html#M6">M6</a></li><li><a href="../index.html" data-lang="zh">🏠 回首頁</a><span data-lang="en">🏠 Home</span></li></ul>
-  <div class="lang-switch"><button data-lang-btn="zh" class="active">中文</button><button data-lang-btn="en">EN</button></div>
-</div></nav>
-<header class="page-hero"><div class="page-hero-inner">
-  <div class="page-badge">M5.1 · STATISTICAL INFERENCE</div>
-  <h1 data-lang="zh">DE 檢定：Wilcoxon · MAST · DESeq2</h1><h1 data-lang="en">DE Tests</h1>
-  <p class="subtitle" data-lang="zh">三大主流方法的數學差異。為什麼 Wilcoxon 是 Seurat 預設？MAST 的 hurdle model 怎麼處理零？</p>
-  <p class="subtitle" data-lang="en">The math of three mainstream methods. Why Wilcoxon is Seurat default. How MAST's hurdle handles zeros.</p>
-</div></header>
-
-<main class="content-wrap">
-
-<section class="section">
-  <span class="section-label intuition">直覺 / Intuition</span>
-  <div data-lang="zh"><p>分群之後最常問：「<b>哪些基因在 cluster A 跟 cluster B 之間有差異？</b>」這是 DE 分析的核心問題。三大方法有不同假設與適用情境。</p></div>
-  <div data-lang="en"><p>After clustering: <b>which genes differ between cluster A and B?</b> Three mainstream tests with different assumptions.</p></div>
-</section>
-
-<section class="section">
-  <span class="section-label math">核心數學 / Math</span>
-  <h3>① Wilcoxon rank-sum test <span data-lang="zh">（Seurat 預設）</span></h3>
-  <p data-lang="zh">完全<b>無分布假設</b>。把兩組所有表現量混合排序，然後比較兩組的「排名總和」。</p>
-  <p data-lang="en">Fully <b>distribution-free</b>. Merge and rank all expressions, compare rank sums.</p>
-  <div class="math-block">
-  $$U = R_1 - \frac{n_1(n_1+1)}{2}, \quad Z = \frac{U - n_1 n_2 / 2}{\sqrt{n_1 n_2 (n_1 + n_2 + 1)/12}}$$
-  </div>
-  <p data-lang="zh"><b>優點</b>：穩健、快、不需擔心分布。<br><b>缺點</b>：忽略「強度」資訊，只看排名；計數中大量零讓排名平手很多。</p>
-  <p data-lang="en"><b>Pros</b>: robust, fast, distribution-free. <b>Cons</b>: ignores magnitude; many ties from zeros.</p>
-
-  <h3>② MAST <span data-lang="zh">的 hurdle 模型</span></h3>
-  <p data-lang="zh">scRNA-seq 計數有兩個成分：「是否表達」(0/非 0)、「表達多少」(正值)。MAST 用兩個模型分別建模：</p>
-  <p data-lang="en">scRNA-seq counts have two components: expressed (0 vs nonzero) and magnitude. MAST fits two models:</p>
-  <div class="math-block">
-  $$\underbrace{P(X_{ij} > 0) = \text{logit}^{-1}(\alpha_0 + \alpha_1 \cdot g_j + \alpha_2 \cdot \text{CDR}_j)}_{\text{discrete: expressed or not}}$$
-  $$\underbrace{X_{ij} \mid X_{ij} > 0 \sim \mathcal{N}(\beta_0 + \beta_1 g_j + \beta_2 \text{CDR}_j, \sigma^2)}_{\text{continuous: how much}}$$
-  <div class="formula-caption" data-lang="zh">CDR = cellular detection rate（細胞檢測率），用來控制 cell-level 變異</div>
-  <div class="formula-caption" data-lang="en">CDR = cellular detection rate (controls cell-level variation)</div>
-  </div>
-  <p data-lang="zh">兩個 likelihood 相乘做聯合檢定。<b>優點</b>：明確區分「該不該表達」與「表達多少」、能加 covariate。</p>
-  <p data-lang="en">Joint LRT on combined likelihood. <b>Pros</b>: separates "expressed?" from "how much"; supports covariates.</p>
-
-  <h3>③ DESeq2 <span data-lang="zh">負二項 GLM</span></h3>
-  <div class="math-block">
-  $$x_{ij} \sim \text{NB}(\mu_{ij}, \theta_j), \quad \log(\mu_{ij}) = \log(s_i) + \beta_0^{(j)} + \beta_1^{(j)} \cdot g_i$$
-  <div class="formula-caption" data-lang="zh">$s_i$ = size factor；$\beta_1^{(j)}$ = log fold change；$\theta_j$ 用 empirical Bayes 估計</div>
-  <div class="formula-caption" data-lang="en">$s_i$ = size factor; $\beta_1^{(j)}$ = log fold change; $\theta_j$ via empirical Bayes</div>
-  </div>
-  <p data-lang="zh">用 Wald test 檢驗 $H_0: \beta_1^{(j)} = 0$。<b>適合 pseudo-bulk 分析</b>（先把同 cluster 細胞加總），不直接用在 single-cell。</p>
-  <p data-lang="en">Wald test on $H_0: \beta_1^{(j)} = 0$. <b>Best for pseudo-bulk</b> (sum cells per cluster), not raw single-cell.</p>
-
-  <div class="callout callout-warn">
-    <strong data-lang="zh">⚠️ Pseudo-bulk 是現代共識</strong>
-    <strong data-lang="en">⚠️ Pseudo-bulk is the modern consensus</strong>
-    <p data-lang="zh">Squair et al. 2021、Murphy &amp; Skene 2022 都顯示：<b>單獨用 single-cell DE 會嚴重高估 p-value 顯著性</b>，因為它把同一個體內的細胞當作獨立樣本。建議：先做<b>pseudo-bulk</b>（個體層級加總），再用 DESeq2 / edgeR / limma。</p>
-    <p data-lang="en">Squair et al. (2021), Murphy &amp; Skene (2022): <b>cell-level DE inflates significance</b> by treating cells from one individual as independent. Modern advice: <b>pseudo-bulk</b> first (sum per donor), then DESeq2/edgeR/limma.</p>
-  </div>
-</section>
-
-<section class="section">
-  <span class="section-label">比較 / Comparison</span>
-  <table class="compare-table">
-    <tr><th></th><th>Wilcoxon</th><th>MAST</th><th>DESeq2 (bulk)</th></tr>
-    <tr><td data-lang="zh">分布假設</td><td data-lang="en">Assumption</td><td class="good">無</td><td class="meh">高斯 + 邏輯</td><td class="meh">NB</td></tr>
-    <tr><td>Covariates</td><td>Covariates</td><td class="bad">不可</td><td class="good">可</td><td class="good">可</td></tr>
-    <tr><td data-lang="zh">速度</td><td data-lang="en">Speed</td><td class="good">最快</td><td class="meh">中</td><td class="meh">中</td></tr>
-    <tr><td data-lang="zh">適用</td><td data-lang="en">Suitable for</td><td>初步篩選</td><td>單細胞層級，有 covariates</td><td>pseudo-bulk 層級</td></tr>
-  </table>
-</section>
-
-<section class="section">
-  <span class="section-label code">程式碼 / Code</span>
-  <div class="code-tabs"><div class="code-tab-btns"><button class="code-tab-btn active" onclick="switchTab(this,'py12')">Python</button><button class="code-tab-btn" onclick="switchTab(this,'r12')">R</button></div>
-    <div class="code-tab-content active" id="py12"><pre>sc.tl.rank_genes_groups(adata, <span class="str">"leiden"</span>, method=<span class="str">"wilcoxon"</span>)
-sc.pl.rank_genes_groups(adata)
-
-<span class="comment"># Pseudo-bulk + DESeq2 流程</span>
-<span class="keyword">import</span> decoupler <span class="keyword">as</span> dc
-pb = dc.get_pseudobulk(adata, sample_col=<span class="str">"donor"</span>, groups_col=<span class="str">"leiden"</span>)
-</pre></div>
-    <div class="code-tab-content" id="r12"><pre><span class="comment"># Wilcoxon (Seurat 預設)</span>
-markers &lt;- <span class="func">FindAllMarkers</span>(pbmc, test.use = <span class="str">"wilcox"</span>)
-
-<span class="comment"># MAST</span>
-markers &lt;- <span class="func">FindAllMarkers</span>(pbmc, test.use = <span class="str">"MAST"</span>,
-                          latent.vars = <span class="str">"nCount_RNA"</span>)
-
-<span class="comment"># Pseudo-bulk + DESeq2</span>
-<span class="keyword">library</span>(DESeq2)
-agg &lt;- <span class="func">AggregateExpression</span>(pbmc, group.by = <span class="func">c</span>(<span class="str">"donor"</span>, <span class="str">"seurat_clusters"</span>))
-dds &lt;- <span class="func">DESeqDataSetFromMatrix</span>(agg$RNA, colData, ~ cluster + donor)
-res &lt;- <span class="func">DESeq</span>(dds)
-</pre></div>
-  </div>
-</section>
-
-<section class="section">
-  <span class="section-label">參考 / References</span>
-  <ul class="refs-list">
-    <li><div class="ref-title">Finak, G. et al. (2015). MAST.</div><div class="ref-meta">Genome Biology 16. <a href="https://doi.org/10.1186/s13059-015-0844-5">10.1186/s13059-015-0844-5</a></div></li>
-    <li><div class="ref-title">Love, M.I., Huber, W., Anders, S. (2014). DESeq2.</div><div class="ref-meta">Genome Biology 15. <a href="https://doi.org/10.1186/s13059-014-0550-8">10.1186/s13059-014-0550-8</a></div></li>
-    <li><div class="ref-title">Squair, J.W. et al. (2021). Confronting false discoveries in single-cell DE.</div><div class="ref-meta">Nat Commun 12. <a href="https://doi.org/10.1038/s41467-021-25960-2">10.1038/s41467-021-25960-2</a></div></li>
-    <li><div class="ref-title">Murphy, A.E. &amp; Skene, N.G. (2022). pseudo-bulk benchmark.</div><div class="ref-meta">Nat Methods 19. <a href="https://doi.org/10.1038/s41592-022-01615-y">10.1038/s41592-022-01615-y</a></div></li>
+  <a href="../index.html" class="top-nav-brand">
+    <span>🧬</span>
+    <span data-lang="zh">scRNA-seq 進階數學</span>
+    <span data-lang="en">scRNA-seq Advanced Math</span>
+    <span class="badge-math">MATH</span>
+  </a>
+  <ul class="top-nav-links">
+    <li class="dropdown"><a href="../index.html#M1">M1</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">基礎 / FOUNDATIONS</li>
+        <li><a href="../M1-foundations/1.1-sparse-matrix.html">1.1 稀疏矩陣</a></li>
+        <li><a href="../M1-foundations/1.2-count-distributions.html">1.2 計數分布</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M2">M2</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">前處理 / PREPROCESSING</li>
+        <li><a href="../M2-preprocessing/2.1-qc-statistics.html">2.1 QC 統計</a></li>
+        <li><a href="../M2-preprocessing/2.2-normalization.html">2.2 Normalization</a></li>
+        <li><a href="../M2-preprocessing/2.3-hvg-selection.html">2.3 HVG 選擇</a></li>
+        <li><a href="../M2-preprocessing/2.4-scaling.html">2.4 Scaling</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M3">M3</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">降維 / DIM. REDUCTION</li>
+        <li><a href="../M3-dimreduction/3.1-pca.html">3.1 PCA</a></li>
+        <li><a href="../M3-dimreduction/3.2-tsne.html">3.2 t-SNE</a></li>
+        <li><a href="../M3-dimreduction/3.3-umap.html">3.3 UMAP</a></li>
+        <li><a href="../M3-dimreduction/3.4-diffusion-map.html">3.4 Diffusion Maps</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M4">M4</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">圖與聚類 / GRAPH &amp; CLUSTERING</li>
+        <li><a href="../M4-graph-clustering/4.1-knn-graph.html">4.1 KNN Graph + HNSW</a></li>
+        <li><a href="../M4-graph-clustering/4.2-louvain-leiden.html">4.2 Louvain &amp; Leiden</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M5" class="active">M5</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">統計推論 / STATS</li>
+        <li><a href="5.1-de-tests.html" class="active-sub">5.1 DE 檢定 ⭐ (本頁)</a></li>
+        <li><a href="5.2-multiple-testing.html">5.2 多重檢定 / FDR</a></li>
+        <li><a href="5.3-classifier.html">5.3 細胞分類器</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M6">M6</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">進階 / ADVANCED</li>
+        <li><a href="../M6-advanced/6.1-integration.html">6.1 Integration</a></li>
+        <li><a href="../M6-advanced/6.2-pseudotime.html">6.2 Pseudotime</a></li>
+        <li><a href="../M6-advanced/6.3-cellchat.html">6.3 CellChat</a></li>
+      </ul></li>
+    <li><a href="../index.html"><span data-lang="zh">🏠 回首頁</span><span data-lang="en">🏠 Home</span></a></li>
   </ul>
-</section>
+  <div class="lang-switch">
+    <button data-lang-btn="zh" class="active">中文</button>
+    <button data-lang-btn="en">EN</button>
+  </div>
+</div></nav>
 
-<div class="cross-links">
-  <a href="../M4-graph-clustering/4.2-louvain-leiden.html" class="cross-link"><div class="cross-label" data-lang="zh">← 聚類</div><div class="cross-label" data-lang="en">← CLUSTERING</div><div class="cross-title"><span class="cross-id">M4.2</span> Leiden</div></a>
-  <a href="5.2-multiple-testing.html" class="cross-link"><div class="cross-label" data-lang="zh">下一篇 →</div><div class="cross-label" data-lang="en">NEXT →</div><div class="cross-title"><span class="cross-id">M5.2</span> FDR</div></a>
+<div class="wrap">
+
+<div class="nav-pages">
+  <span class="label" data-lang="zh">本頁章節</span><span class="label" data-lang="en">CHAPTERS</span>
+  <a href="#s0"><span data-lang="zh">§0 故事</span><span data-lang="en">§0 Story</span></a>
+  <a href="#s1"><span data-lang="zh">§1 t-test vs rank-sum</span><span data-lang="en">§1 t-test vs rank-sum</span></a>
+  <a href="#s2"><span data-lang="zh">§2 互動 Wilcoxon</span><span data-lang="en">§2 Wilcoxon interactive</span></a>
+  <a href="#s3"><span data-lang="zh">§3 為何不用 t-test</span><span data-lang="en">§3 Why not t-test</span></a>
+  <a href="#s4"><span data-lang="zh">§4 MAST</span><span data-lang="en">§4 MAST</span></a>
+  <a href="#s5"><span data-lang="zh">§5 pseudobulk</span><span data-lang="en">§5 pseudobulk</span></a>
+  <a href="#s6"><span data-lang="zh">§6 effect size</span><span data-lang="en">§6 effect size</span></a>
+  <a href="#s7"><span data-lang="zh">§7 volcano</span><span data-lang="en">§7 volcano</span></a>
+  <a href="#s8"><span data-lang="zh">§8 限制</span><span data-lang="en">§8 Limits</span></a>
 </div>
 
-</main>
-<footer class="site-footer"><p>© Charlene</p></footer>
+<header class="cover">
+  <div class="badge"><span data-lang="zh">深入互動版 · 從直覺到數學</span><span data-lang="en">Deep Interactive · From Intuition to Math</span></div>
+  <h1 data-lang="zh">DE tests：找出 cluster 之間的 marker genes</h1>
+  <h1 data-lang="en">DE tests: finding marker genes between clusters</h1>
+  <div class="sub" data-lang="zh">
+    Leiden 把你的 10,000 個細胞分成 10 群。下一步：每群的「<b>marker genes</b>」是什麼？
+    哪些基因在某群表現顯著高（→ 給你細胞型態註解的線索）？這就是 <b>DE (Differential Expression) test</b>。<br><br>
+    本節從最簡單的 t-test 開始，理解為什麼<b>scRNA 不該用 t-test</b>（離散、零膨脹、非高斯）、
+    為什麼 scanpy 預設 Wilcoxon rank-sum、MAST 的雙部分模型怎麼處理零、
+    以及為什麼<b>pseudobulk + DESeq2</b>在 multi-sample 是金標準。
+    最後用互動 volcano plot 看 effect size 跟 p-value 怎麼一起決定 marker。
+  </div>
+  <div class="sub" data-lang="en">
+    Leiden split your 10k cells into 10 clusters. Next: what are each cluster's <b>marker genes</b>?
+    Which genes are significantly higher in some clusters (→ cell-type annotation clues)? This is <b>DE testing</b>.<br><br>
+    We start from t-test, see why <b>scRNA shouldn't use t-test</b> (discrete, zero-inflated, non-Gaussian),
+    why Scanpy defaults to Wilcoxon, MAST's two-part model for zeros,
+    and why <b>pseudobulk + DESeq2</b> is gold-standard for multi-sample data.
+    Interactive volcano plot to see how effect size and p-value jointly determine markers.
+  </div>
+</header>
+
+<div class="toc">
+  <h4 data-lang="zh">目錄</h4>
+  <h4 data-lang="en">Table of Contents</h4>
+  <ol start="0">
+    <li><a href="#s0"><span data-lang="zh">故事：cluster A 的 marker 是什麼?</span><span data-lang="en">Story: cluster A's markers?</span></a><span class="new" data-lang="zh">新增</span><span class="new" data-lang="en">NEW</span></li>
+    <li><a href="#s1"><span data-lang="zh">t-test 與 Wilcoxon rank-sum 的直覺</span><span data-lang="en">t-test vs Wilcoxon intuition</span></a></li>
+    <li><a href="#s2"><span data-lang="zh">互動：手算 Wilcoxon rank-sum</span><span data-lang="en">Interactive: compute Wilcoxon by hand</span></a></li>
+    <li><a href="#s3"><span data-lang="zh">為什麼 scRNA 不該用 t-test</span><span data-lang="en">Why scRNA shouldn't use t-test</span></a></li>
+    <li><a href="#s4"><span data-lang="zh">MAST 的雙部分模型</span><span data-lang="en">MAST's two-part model</span></a><span class="new" data-lang="zh">核心</span><span class="new" data-lang="en">CORE</span></li>
+    <li><a href="#s5"><span data-lang="zh">Pseudobulk + DESeq2：金標準</span><span data-lang="en">Pseudobulk + DESeq2: gold standard</span></a></li>
+    <li><a href="#s6"><span data-lang="zh">Effect size (log2FC) vs p-value</span><span data-lang="en">Effect size vs p-value</span></a></li>
+    <li><a href="#s7"><span data-lang="zh">互動 volcano plot</span><span data-lang="en">Interactive volcano plot</span></a></li>
+    <li><a href="#s8"><span data-lang="zh">限制與下一步</span><span data-lang="en">Limits & next</span></a></li>
+  </ol>
+</div>
+
+<h2 id="s0"><span class="num">§0</span> <span data-lang="zh">故事：cluster A 的 marker 是什麼?</span><span data-lang="en">Story: cluster A's markers?</span></h2>
+
+<p class="lead" data-lang="zh">
+  Leiden 跑完，<code class="inline">adata.obs["leiden"]</code> 多了 10 個 cluster 標籤。但這只是「0, 1, 2, ...」的數字——
+  你還不知道哪個是 T 細胞、哪個是 B 細胞。要解這個，你需要找出<b>每群相對其他群顯著高表現的 gene</b>，
+  從 marker gene 反推細胞型態（例如 CD3D 高 → T 細胞）。
+</p>
+<p class="lead" data-lang="en">
+  After Leiden, <code class="inline">adata.obs["leiden"]</code> has 10 cluster labels — but only "0, 1, 2, ..."
+  You don't yet know which is T cell, B cell, etc. Find <b>marker genes significantly upregulated in each cluster</b>
+  (e.g., high CD3D → T cell).
+</p>
+
+<div class="card">
+  <h3 data-lang="zh">§0-1 簡化情境</h3>
+  <h3 data-lang="en">§0-1 Simplified setup</h3>
+  <p data-lang="zh">cluster 0 有 200 個細胞、其餘 800 個。CD3D 在 cluster 0 vs 其他是否顯著高？</p>
+  <p data-lang="en">Cluster 0 has 200 cells, rest 800. Is CD3D significantly higher in cluster 0?</p>
+  <svg class="canvas" id="s0svg" viewBox="0 0 800 280" width="100%"></svg>
+  <div class="stat-row">
+    <div class="item"><span class="lbl">cluster 0 mean</span><span class="lbl">cluster 0 mean</span><span class="val" style="color:#27795a">5.2</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">其他 mean</span><span class="lbl" data-lang="en">others mean</span><span class="val">0.8</span></div>
+    <div class="item"><span class="lbl">log2FC</span><span class="lbl">log2FC</span><span class="val" style="color:#b45309">2.7</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">cluster 0 中 0 比例</span><span class="lbl" data-lang="en">% zeros in cluster 0</span><span class="val">15%</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">其他中 0 比例</span><span class="lbl" data-lang="en">% zeros in others</span><span class="val">68%</span></div>
+  </div>
+  <div class="callout idea">
+    <strong data-lang="zh">兩個訊號</strong><strong data-lang="en">Two signals</strong>:
+    <span data-lang="zh">(1) 表現量平均差 (log2FC=2.7)、(2) 偵測比例差（cluster 0 有 85% 細胞偵測到 CD3D、其他只 32%）。好的 DE test 兩個都要考慮。</span>
+    <span data-lang="en">(1) mean diff (log2FC=2.7), (2) detection rate diff (cluster 0: 85% detect; others: 32%). Good DE test uses both.</span>
+  </div>
+</div>
+
+<h2 id="s1"><span class="num">§1</span> <span data-lang="zh">t-test 與 Wilcoxon rank-sum 的直覺</span><span data-lang="en">t-test vs Wilcoxon intuition</span></h2>
+
+<h3 data-lang="zh">1.1 t-test：比較兩群平均</h3>
+<h3 data-lang="en">1.1 t-test: compare two means</h3>
+
+<div class="math-block">
+  $$t = \frac{\bar{x}_A - \bar{x}_B}{\sqrt{s_A^2/n_A + s_B^2/n_B}}$$
+  <div class="formula-caption" data-lang="zh">分子 = 平均差、分母 = 估計的差異標準誤</div>
+  <div class="formula-caption" data-lang="en">numerator = mean diff, denominator = estimated SE of diff</div>
+</div>
+
+<p data-lang="zh"><b>假設</b>：兩群資料皆近似常態分布。在 H₀（無差異）下，$t$ 服從 t-分布。</p>
+<p data-lang="en"><b>Assumption</b>: both groups approximately normal. Under H₀, $t$ follows t-distribution.</p>
+
+<h3 data-lang="zh">1.2 Wilcoxon rank-sum：比較「排名」而非「數值」</h3>
+<h3 data-lang="en">1.2 Wilcoxon rank-sum: ranks, not values</h3>
+
+<ol>
+  <li><span data-lang="zh">把 A、B 兩群所有資料<b>合在一起排序</b></span><span data-lang="en">Pool A, B and <b>rank all together</b></span></li>
+  <li><span data-lang="zh">算 A 群 rank sum：</span><span data-lang="en">A's rank sum: </span>$R_A = \sum_{i \in A} \text{rank}(x_i)$</li>
+  <li><span data-lang="zh">H₀ 下 $R_A \approx \frac{n_A (n_A+n_B+1)}{2}$</span><span data-lang="en">Under H₀, $R_A \approx \frac{n_A (n_A+n_B+1)}{2}$</span></li>
+  <li><span data-lang="zh">$R_A$ 偏離過大 → 拒絕 H₀</span><span data-lang="en">Large deviation → reject H₀</span></li>
+</ol>
+
+<div class="callout idea">
+  <strong data-lang="zh">關鍵差別</strong><strong data-lang="en">Key difference</strong>:
+  <span data-lang="zh">t-test 用「<b>值</b>」（受極端值與分布形狀影響）；Wilcoxon 用「<b>排名</b>」（對分布形狀 robust）。scRNA counts 是離散、右偏、零膨脹，Wilcoxon 比 t-test 自然得多。</span>
+  <span data-lang="en">t-test uses <b>values</b> (sensitive to outliers and shape); Wilcoxon uses <b>ranks</b> (shape-robust). scRNA counts are discrete, skewed, zero-inflated — Wilcoxon fits better.</span>
+</div>
+
+<h2 id="s2"><span class="num">§2</span> <span data-lang="zh">互動：手算 Wilcoxon rank-sum</span><span data-lang="en">Interactive: compute Wilcoxon by hand</span></h2>
+
+<div class="card">
+  <p data-lang="zh">7 個 A 細胞 vs 7 個 B 細胞的 CD3D 表現量。按「下一步」逐步看：合併 → 排序 → 算 rank sum → U → p-value。</p>
+  <p data-lang="en">7 A cells vs 7 B cells CD3D values. Click "Next" to walk through: pool → rank → rank sum → U → p-value.</p>
+  <div class="controls">
+    <button id="s2next"><span data-lang="zh">下一步</span><span data-lang="en">Next step</span></button>
+    <button id="s2reset" class="ghost"><span data-lang="zh">重置</span><span data-lang="en">Reset</span></button>
+    <span id="s2stepLbl"><span data-lang="zh">步驟</span><span data-lang="en">Step</span>: <b id="s2stepN">0</b> / 5</span>
+  </div>
+  <svg class="canvas" id="s2svg" viewBox="0 0 800 280" width="100%"></svg>
+  <div id="s2desc" style="font-size:14px; padding:14px; background:#fef3c7; border-radius:6px; margin-top:14px; min-height:60px">
+    <span data-lang="zh">點「下一步」開始</span>
+    <span data-lang="en">Click "Next" to begin</span>
+  </div>
+</div>
+
+<h2 id="s3"><span class="num">§3</span> <span data-lang="zh">為什麼 scRNA 不該用 t-test</span><span data-lang="en">Why scRNA shouldn't use t-test</span></h2>
+
+<table class="compare">
+  <tr><th data-lang="zh">問題</th><th data-lang="en">Problem</th>
+      <th data-lang="zh">t-test 出錯方式</th><th data-lang="en">How t-test fails</th></tr>
+  <tr><td data-lang="zh">離散且右偏</td><td data-lang="en">Discrete, right-skewed</td>
+      <td data-lang="zh">t-分布假設破壞 → 假 p-value</td>
+      <td data-lang="en">t-distribution assumption violated → spurious p</td></tr>
+  <tr><td data-lang="zh">大量 0（dropout）</td><td data-lang="en">Many zeros (dropout)</td>
+      <td data-lang="zh">σ 被 0 拉低、t 變大 → 假陽性</td>
+      <td data-lang="en">σ deflated by 0s, t inflated → false positives</td></tr>
+  <tr><td data-lang="zh">細胞數巨大 (10k+)</td><td data-lang="en">Many cells (10k+)</td>
+      <td data-lang="zh">大樣本讓任何微小差都顯著 → 不再有用</td>
+      <td data-lang="en">huge n makes any tiny effect significant → uninformative</td></tr>
+  <tr><td data-lang="zh">每細胞獨立性假設</td><td data-lang="en">Independence assumption</td>
+      <td data-lang="zh">同 sample 細胞高度相關 → t-test 過樂觀</td>
+      <td data-lang="en">cells within sample correlated → t-test over-optimistic</td></tr>
+</table>
+
+<div class="callout warn">
+  <strong data-lang="zh">實證</strong><strong data-lang="en">Empirical</strong>:
+  <span data-lang="zh">Soneson & Robinson (2018) 在 36 個 scRNA datasets benchmark 14 個 DE 方法，t-test 假陽性率高達 ~20%（遠高於 5% 預期）。Wilcoxon 跟 MAST 好得多。</span>
+  <span data-lang="en">Soneson & Robinson (2018) benchmarked 14 DE methods on 36 scRNA datasets. t-test had ~20% false positives (well above 5%). Wilcoxon and MAST performed far better.</span>
+</div>
+
+<h2 id="s4"><span class="num">§4</span> <span data-lang="zh">MAST 的雙部分模型</span><span data-lang="en">MAST's two-part model</span></h2>
+
+<p data-lang="zh">MAST（Finak et al. 2015）專門針對 scRNA 設計，把每個 gene 的表現量看成<b>兩個過程</b>：</p>
+<p data-lang="en">MAST (Finak et al. 2015) is purpose-built for scRNA. It treats each gene's expression as <b>two processes</b>:</p>
+
+<div class="math-block boxed">
+  $$\begin{aligned}
+    Z_{ij} &\sim \text{Bernoulli}(\pi_{ij}) \quad &\text{(detected: 0 or 1)} \\
+    Y_{ij} | Z_{ij} = 1 &\sim \text{Normal}(\mu_{ij}, \sigma^2) \quad &\text{(conditional log-expression)}
+  \end{aligned}$$
+  <div class="formula-caption" data-lang="zh">$Z$ 模型「偵測到沒」、$Y$ 模型「偵測到時表現量」</div>
+  <div class="formula-caption" data-lang="en">$Z$ models "detected or not", $Y$ models "expression given detected"</div>
+</div>
+
+<p data-lang="zh">每部分各做一個 GLM，最後用 likelihood ratio test 合併得單一 p-value。</p>
+<p data-lang="en">Each part fits a GLM; combined via likelihood ratio test → single p-value.</p>
+
+<h3 data-lang="zh">4.1 雙部分為何重要</h3>
+<h3 data-lang="en">4.1 Why two parts matter</h3>
+<p data-lang="zh">CD3D 在 A 跟 B 的差異可能來自：</p>
+<p data-lang="en">CD3D's difference between A and B may come from:</p>
+<ul>
+  <li data-lang="zh"><b>偵測比例</b>不同（A: 90%、B: 30%）→ Z 部分顯著</li>
+  <li data-lang="en"><b>Detection rate</b> differs (A: 90%, B: 30%) → Z significant</li>
+  <li data-lang="zh"><b>偵測到的表現量</b>不同（A: log mean 4.5、B: 2.0）→ Y 部分顯著</li>
+  <li data-lang="en"><b>Conditional expression</b> differs (A: 4.5, B: 2.0) → Y significant</li>
+</ul>
+<p data-lang="zh">兩個都顯著 → 強 marker。只一個顯著 → 弱 marker。t-test 混在一起反而看不清。</p>
+<p data-lang="en">Both significant → strong marker. Only one → weak marker. t-test merges them, losing resolution.</p>
+
+<h2 id="s5"><span class="num">§5</span> <span data-lang="zh">Pseudobulk + DESeq2：金標準</span><span data-lang="en">Pseudobulk + DESeq2: gold standard</span></h2>
+
+<p data-lang="zh">
+  以上都假設「每細胞是獨立樣本」。但實際上每樣本（病人/老鼠）內細胞高度相關。
+  Squair et al. (2021) 證明：直接在細胞層做 DE 會<b>放大樣本偏誤</b>。正確做法是 <b>pseudobulk</b>。
+</p>
+<p data-lang="en">
+  All above assume "cells are independent". But cells within one sample are highly correlated.
+  Squair et al. (2021) showed: cell-level DE <b>amplifies sample bias</b>. Correct: <b>pseudobulk</b>.
+</p>
+
+<h3 data-lang="zh">5.1 Pseudobulk 三步驟</h3>
+<h3 data-lang="en">5.1 Pseudobulk in 3 steps</h3>
+
+<ol>
+  <li><span data-lang="zh">每 (cluster, sample) 把所有 count 加起來，得「假 bulk」樣本</span>
+      <span data-lang="en">Sum counts across cells per (cluster, sample) → pseudo-bulk</span></li>
+  <li><span data-lang="zh">在 pseudobulks 跑 DESeq2 / edgeR / limma-voom（已驗證的 bulk RNA-seq 方法）</span>
+      <span data-lang="en">Run DESeq2 / edgeR / limma-voom on pseudobulks (validated bulk methods)</span></li>
+  <li><span data-lang="zh">獲得每 gene 的 log2FC + p-value + FDR</span>
+      <span data-lang="en">Get log2FC + p-value + FDR per gene</span></li>
+</ol>
+
+<pre class="code"><span class="k">from</span> pydeseq2.dds <span class="k">import</span> DeseqDataSet
+<span class="k">from</span> pydeseq2.ds <span class="k">import</span> DeseqStats
+
+<span class="c"># aggregate cells -> pseudobulks per (sample, cluster)</span>
+pb = sc.get.aggregate(adata, by=[<span class="s">"sample"</span>, <span class="s">"leiden"</span>], func=<span class="s">"sum"</span>)
+
+dds = DeseqDataSet(counts=pb.X, metadata=pb.obs, design_factors=<span class="s">"cluster"</span>)
+dds.deseq2()
+res = DeseqStats(dds, contrast=[<span class="s">"cluster"</span>, <span class="s">"0"</span>, <span class="s">"rest"</span>])
+res.summary()</pre>
+
+<div class="callout bio">
+  <strong data-lang="zh">何時用 pseudobulk?</strong>
+  <strong data-lang="en">When to use pseudobulk?</strong>
+  <span data-lang="zh"><b>有 multiple samples</b>（如疾病 vs 健康各 5 人）一定要 pseudobulk。<b>單一樣本內</b>找 cluster marker → Wilcoxon / MAST 即可。</span>
+  <span data-lang="en"><b>Multiple samples</b> (e.g., 5 disease vs 5 control): pseudobulk required. <b>Within single sample</b> for cluster markers: Wilcoxon / MAST suffices.</span>
+</div>
+
+<h2 id="s6"><span class="num">§6</span> <span data-lang="zh">Effect size (log2FC) vs p-value</span><span data-lang="en">Effect size vs p-value</span></h2>
+
+<p data-lang="zh">DE 報告永遠要看<b>兩個</b>數字：</p>
+<p data-lang="en">DE always needs <b>two</b> numbers:</p>
+
+<table class="compare">
+  <tr><th></th><th>log2FC <span data-lang="zh">（效應大小）</span><span data-lang="en">(effect size)</span></th>
+      <th>log2FC <span data-lang="zh">（效應大小）</span><span data-lang="en">(effect size)</span></th>
+      <th>p-value <span data-lang="zh">（顯著）</span><span data-lang="en">(significance)</span></th>
+      <th>p-value <span data-lang="zh">（顯著）</span><span data-lang="en">(significance)</span></th></tr>
+  <tr><td data-lang="zh">問題</td><td data-lang="en">Asks</td>
+      <td data-lang="zh">差有多大？</td><td data-lang="en">How big?</td>
+      <td data-lang="zh">差是否「真實」（非隨機）？</td><td data-lang="en">Is diff "real" (non-random)?</td></tr>
+  <tr><td data-lang="zh">公式</td><td data-lang="en">Formula</td>
+      <td>$\log_2 \frac{\bar{x}_A}{\bar{x}_B}$</td>
+      <td>$\log_2 \frac{\bar{x}_A}{\bar{x}_B}$</td>
+      <td data-lang="zh">由 test 算出</td><td data-lang="en">from test</td></tr>
+  <tr><td data-lang="zh">門檻</td><td data-lang="en">Threshold</td>
+      <td>$|\log_2 FC| &gt; 0.5 \sim 1$</td><td>$|\log_2 FC| &gt; 0.5 \sim 1$</td>
+      <td>FDR &lt; 0.05</td><td>FDR &lt; 0.05</td></tr>
+</table>
+
+<div class="callout warn">
+  <strong data-lang="zh">兩件事都要看</strong><strong data-lang="en">Both matter</strong>:
+  <span data-lang="zh">大樣本下，<b>p &lt; 0.001 但 log2FC = 0.1</b> 的 gene 算 marker 嗎？不算。<b>p ≈ 0.001 但 log2FC = 5</b> 才有生物意義。</span>
+  <span data-lang="en">With huge n, <b>p &lt; 0.001 but log2FC = 0.1</b> is statistically significant but biologically trivial. <b>p ≈ 0.001 with log2FC = 5</b> is the meaningful signal.</span>
+</div>
+
+<h2 id="s7"><span class="num">§7</span> <span data-lang="zh">互動 volcano plot</span><span data-lang="en">Interactive volcano plot</span></h2>
+
+<div class="card">
+  <p data-lang="zh">200 個 gene 的 volcano plot（x = log2FC, y = -log10 p）。拉門檻看哪些被當 marker：</p>
+  <p data-lang="en">200 genes' volcano plot (x = log2FC, y = -log10 p). Drag thresholds to highlight markers:</p>
+  <div class="controls">
+    <label>|log2FC| &gt; <input type="range" id="s7fc" min="0" max="4" value="1" step="0.1"><span id="s7fcVal">1.0</span></label>
+    <label>-log10 p &gt; <input type="range" id="s7p" min="0" max="6" value="2" step="0.1"><span id="s7pVal">2.0</span></label>
+  </div>
+  <svg class="canvas" id="s7svg" viewBox="0 0 800 480" width="100%"></svg>
+  <div class="stat-row">
+    <div class="item" style="color:#c0392b"><span class="lbl" data-lang="zh">↑ 上調 marker</span><span class="lbl" data-lang="en">↑ upregulated</span><span class="val" id="s7up">—</span></div>
+    <div class="item" style="color:#2c5aa0"><span class="lbl" data-lang="zh">↓ 下調 marker</span><span class="lbl" data-lang="en">↓ downregulated</span><span class="val" id="s7down">—</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">不顯著</span><span class="lbl" data-lang="en">not significant</span><span class="val" id="s7ns">—</span></div>
+  </div>
+</div>
+
+<h2 id="s8"><span class="num">§8</span> <span data-lang="zh">限制與下一步</span><span data-lang="en">Limits & next</span></h2>
+
+<h3 data-lang="zh">8.1 方法選擇</h3>
+<h3 data-lang="en">8.1 Method choice</h3>
+
+<table class="compare">
+  <tr><th data-lang="zh">情境</th><th data-lang="en">Scenario</th>
+      <th data-lang="zh">推薦</th><th data-lang="en">Recommended</th></tr>
+  <tr><td data-lang="zh">單樣本找 cluster marker（快）</td><td data-lang="en">Single sample, cluster markers</td>
+      <td><b>Wilcoxon</b> (scanpy default)</td><td><b>Wilcoxon</b> (scanpy default)</td></tr>
+  <tr><td data-lang="zh">想分開「偵測率 vs 表現量」</td><td data-lang="en">Separate "detection vs expression"</td>
+      <td>MAST</td><td>MAST</td></tr>
+  <tr style="background:#fef3c7;"><td data-lang="zh">多樣本（疾病 vs 健康）</td><td data-lang="en">Multi-sample</td>
+      <td><b>Pseudobulk + DESeq2</b></td><td><b>Pseudobulk + DESeq2</b></td></tr>
+  <tr><td data-lang="zh">超大資料 (&gt; 100k cells)</td><td data-lang="en">Very large data</td>
+      <td>Wilcoxon (or limma-voom)</td><td>Wilcoxon (or limma-voom)</td></tr>
+</table>
+
+<h3 data-lang="zh">8.2 限制</h3>
+<h3 data-lang="en">8.2 Limitations</h3>
+<table class="compare">
+  <tr><th data-lang="zh">限制</th><th data-lang="en">Limitation</th>
+      <th data-lang="zh">後果</th><th data-lang="en">Consequence</th>
+      <th data-lang="zh">緩解</th><th data-lang="en">Mitigation</th></tr>
+  <tr><td data-lang="zh">細胞當獨立樣本</td><td data-lang="en">cells as independent</td>
+      <td data-lang="zh">假陽性、被個別 patient 主導</td>
+      <td data-lang="en">false positives, dominated by individual patients</td>
+      <td>pseudobulk</td><td>pseudobulk</td></tr>
+  <tr><td data-lang="zh">未考慮 batch / cell cycle</td><td data-lang="en">no batch / cell cycle adj</td>
+      <td data-lang="zh">技術變異當生物</td><td data-lang="en">tech noise as biology</td>
+      <td data-lang="zh">加 covariate</td><td data-lang="en">add covariates</td></tr>
+  <tr><td data-lang="zh">marker → cell type 仍靠領域知識</td>
+      <td data-lang="en">annotation needs domain knowledge</td>
+      <td data-lang="zh">top genes 不會自動命名</td>
+      <td data-lang="en">top genes don't auto-name</td>
+      <td data-lang="zh">用 5.3 classifier</td>
+      <td data-lang="en">use 5.3 classifier</td></tr>
+</table>
+
+<div class="callout prog">
+  <strong data-lang="zh">下一步</strong><strong data-lang="en">Next</strong>:
+  <span data-lang="zh">→ <a href="5.2-multiple-testing.html"><b>5.2 多重檢定 / FDR</b></a> 控制假陽性 → <a href="5.3-classifier.html"><b>5.3 細胞分類器</b></a> 從 marker 自動 annotate。</span>
+  <span data-lang="en">→ <a href="5.2-multiple-testing.html"><b>5.2 Multiple testing / FDR</b></a> → <a href="5.3-classifier.html"><b>5.3 Classifier</b></a>.</span>
+</div>
+
+<p class="footer">
+  <span data-lang="zh">© scRNA-seq Advanced Math · M5.1 DE tests Deep Interactive</span>
+  <span data-lang="en">© scRNA-seq Advanced Math · M5.1 DE tests Deep Interactive</span>
+</p>
+
+</div>
+
 <script src="../i18n.js"></script>
-<script>function switchTab(b,id){const p=b.closest(".code-tabs");p.querySelectorAll(".code-tab-btn").forEach(x=>x.classList.remove("active"));p.querySelectorAll(".code-tab-content").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(id).classList.add("active");}</script>
-</body></html>
+<script>
+// ===== §0 distribution =====
+(function() {
+  let seed = 13;
+  const rnd = () => { seed = (seed*9301+49297)%233280; return seed/233280; };
+  function nb(mu) { let k = 0, p = 1, L = Math.exp(-mu); while (p > L) { k++; p *= rnd(); } return k-1; }
+  const c0 = [], rest = [];
+  for (let i = 0; i < 200; i++) c0.push(rnd() < 0.15 ? 0 : Math.floor(nb(5) + 1));
+  for (let i = 0; i < 800; i++) rest.push(rnd() < 0.68 ? 0 : Math.floor(nb(2)));
+  const maxV = 15;
+  const bins0 = Array(maxV+1).fill(0), binsR = Array(maxV+1).fill(0);
+  c0.forEach(v => bins0[Math.min(v, maxV)]++);
+  rest.forEach(v => binsR[Math.min(v, maxV)]++);
+  const max0 = Math.max(...bins0)/c0.length, maxR = Math.max(...binsR)/rest.length;
+  const mxFr = Math.max(max0, maxR);
+  const X = k => 70 + k/maxV * 700;
+  let s = '';
+  s += `<line class="axis" x1="70" y1="220" x2="770" y2="220"/>`;
+  s += `<line class="axis" x1="70" y1="20" x2="70" y2="220"/>`;
+  bins0.forEach((c, k) => {
+    const bw = 700/(maxV+1) - 3;
+    const bh = (c/c0.length)/mxFr * 180;
+    s += `<rect x="${X(k)}" y="${220-bh}" width="${bw/2}" height="${bh}" fill="#27795a" opacity="0.85"/>`;
+  });
+  binsR.forEach((c, k) => {
+    const bw = 700/(maxV+1) - 3;
+    const bh = (c/rest.length)/mxFr * 180;
+    s += `<rect x="${X(k) + bw/2 + 1}" y="${220-bh}" width="${bw/2}" height="${bh}" fill="#888" opacity="0.85"/>`;
+  });
+  for (let k = 0; k <= maxV; k += 3) s += `<text class="lbl" x="${X(k)}" y="240" text-anchor="middle">${k}</text>`;
+  s += `<text class="lbl" x="400" y="262" text-anchor="middle" font-weight="700">CD3D count</text>`;
+  s += `<g transform="translate(580, 30)"><rect x="0" y="0" width="170" height="50" fill="#fff" stroke="#ddd"/>`;
+  s += `<rect x="10" y="10" width="14" height="14" fill="#27795a"/><text class="lbl" x="30" y="22">cluster 0 (n=200)</text>`;
+  s += `<rect x="10" y="30" width="14" height="14" fill="#888"/><text class="lbl" x="30" y="42">others (n=800)</text></g>`;
+  document.getElementById('s0svg').innerHTML = s;
+})();
+
+// ===== §2 Wilcoxon stepper =====
+(function() {
+  const A = [3, 8, 12, 15, 2, 10, 7];
+  const B = [4, 1, 6, 2, 5, 0, 3];
+  let step = 0;
+  function nextStep() { step = Math.min(step+1, 5); render(); }
+  function reset() { step = 0; render(); }
+  function render() {
+    document.getElementById('s2stepN').textContent = step;
+    const pooled = [...A.map(v=>({v, g:'A'})), ...B.map(v=>({v, g:'B'}))];
+    pooled.sort((a,b)=>a.v-b.v);
+    const ranks = [];
+    let i = 0;
+    while (i < pooled.length) {
+      let j = i;
+      while (j < pooled.length && pooled[j].v === pooled[i].v) j++;
+      const avgRank = (i + j + 1) / 2;
+      for (let k = i; k < j; k++) ranks.push(avgRank);
+      i = j;
+    }
+    let RA = 0;
+    pooled.forEach((p, k) => { if (p.g === 'A') RA += ranks[k]; });
+    const U = RA - (A.length*(A.length+1))/2;
+    let s = '';
+    if (step === 0) {
+      A.forEach((v, i) => {
+        s += `<rect x="${50 + i*90}" y="40" width="70" height="40" fill="#effaf3" stroke="#27795a"/>`;
+        s += `<text x="${85 + i*90}" y="68" text-anchor="middle" font-weight="700" fill="#27795a" font-size="16">${v}</text>`;
+      });
+      s += `<text x="20" y="65" font-weight="700" fill="#27795a" font-size="13">A:</text>`;
+      B.forEach((v, i) => {
+        s += `<rect x="${50 + i*90}" y="100" width="70" height="40" fill="#f4f1ea" stroke="#888"/>`;
+        s += `<text x="${85 + i*90}" y="128" text-anchor="middle" font-weight="700" fill="#666" font-size="16">${v}</text>`;
+      });
+      s += `<text x="20" y="125" font-weight="700" fill="#888" font-size="13">B:</text>`;
+    } else {
+      pooled.forEach((p, k) => {
+        const col = p.g === 'A' ? '#27795a' : '#888';
+        const bg = p.g === 'A' ? '#effaf3' : '#f4f1ea';
+        s += `<rect x="${30 + k*55}" y="80" width="50" height="50" fill="${bg}" stroke="${col}" stroke-width="${p.g==='A'?2:1}"/>`;
+        s += `<text x="${55 + k*55}" y="100" text-anchor="middle" fill="${col}" font-weight="700" font-size="14">${p.v}</text>`;
+        if (step >= 1) s += `<text x="${55 + k*55}" y="118" text-anchor="middle" fill="${col}" font-size="11">r=${ranks[k]}</text>`;
+      });
+      s += `<text x="20" y="60" font-weight="700" font-size="13">Pooled, sorted, ranked:</text>`;
+    }
+    document.getElementById('s2svg').innerHTML = s;
+    const lang = document.body.classList.contains('lang-en') ? 'en' : 'zh';
+    let desc = '';
+    if (step === 0) desc = lang==='en'
+      ? "We have cluster A (7 cells, green) and B (7 cells, gray). Goal: test if A and B differ."
+      : "我們有 cluster A（7 個細胞，綠）和 B（7 個細胞，灰）。目標：檢驗 A 跟 B 是否不同。";
+    if (step === 1) desc = lang==='en'
+      ? "Step 1: Pool A and B, sort ascending, assign ranks. Ties get averaged rank."
+      : "步驟 1：合併 A、B、升序排序、給每筆一個 rank。重複值取平均 rank。";
+    if (step === 2) desc = lang==='en'
+      ? `Step 2: Sum the ranks of A's cells. R_A = ${RA}.`
+      : `步驟 2：把 A 群的 rank 加起來。R_A = ${RA}。`;
+    if (step === 3) desc = lang==='en'
+      ? `Step 3: U = R_A − n_A(n_A+1)/2 = ${RA} − ${(A.length*(A.length+1))/2} = ${U}.`
+      : `步驟 3：U = R_A − n_A(n_A+1)/2 = ${RA} − ${(A.length*(A.length+1))/2} = ${U}。`;
+    if (step === 4) {
+      const meanU = A.length*B.length/2, sdU = Math.sqrt(A.length*B.length*(A.length+B.length+1)/12);
+      const z = (U - meanU) / sdU;
+      desc = lang==='en'
+        ? `Step 4: Under H₀, U has mean=${meanU}, sd≈${sdU.toFixed(2)}. Standardize: z = (${U}−${meanU})/${sdU.toFixed(2)} = ${z.toFixed(2)}.`
+        : `步驟 4：H₀ 下 U 的 mean=${meanU}, sd≈${sdU.toFixed(2)}。標準化：z = (${U}−${meanU})/${sdU.toFixed(2)} = ${z.toFixed(2)}。`;
+    }
+    if (step === 5) {
+      const meanU = A.length*B.length/2, sdU = Math.sqrt(A.length*B.length*(A.length+B.length+1)/12);
+      const z = (U - meanU) / sdU;
+      // approx p two-sided
+      const p = 2 * (1 - 0.5*(1 + erf(Math.abs(z)/Math.sqrt(2))));
+      desc = lang==='en'
+        ? `Step 5: z = ${z.toFixed(2)} → p ≈ ${p.toFixed(4)} (two-sided). ${p < 0.05 ? "Reject H₀: A and B differ. ✓" : "Don't reject H₀."}`
+        : `步驟 5：z = ${z.toFixed(2)} → p ≈ ${p.toFixed(4)} (雙尾)。${p < 0.05 ? "拒絕 H₀：A 跟 B 顯著不同 ✓" : "不拒絕 H₀。"}`;
+    }
+    document.getElementById('s2desc').innerHTML = desc;
+  }
+  function erf(x) {
+    // Abramowitz-Stegun approximation
+    const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741;
+    const a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+    const sign = x < 0 ? -1 : 1;
+    x = Math.abs(x);
+    const t = 1.0 / (1.0 + p*x);
+    const y = 1.0 - ((((a5*t + a4)*t + a3)*t + a2)*t + a1)*t * Math.exp(-x*x);
+    return sign * y;
+  }
+  document.getElementById('s2next').addEventListener('click', nextStep);
+  document.getElementById('s2reset').addEventListener('click', reset);
+  render();
+})();
+
+// ===== §7 volcano =====
+(function() {
+  let seed = 91;
+  const rnd = () => { seed = (seed*9301+49297)%233280; return seed/233280; };
+  function nrnd(m,s){const u1=rnd(),u2=rnd();return m+s*Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);}
+  const genes = [];
+  for (let i = 0; i < 170; i++) genes.push({lfc: nrnd(0, 0.4), negLogP: Math.max(0, Math.abs(nrnd(0, 0.8))), m: false});
+  for (let i = 0; i < 20; i++) genes.push({lfc: nrnd(2.5, 0.7), negLogP: nrnd(4, 1), m: true});
+  for (let i = 0; i < 10; i++) genes.push({lfc: nrnd(-2, 0.6), negLogP: nrnd(3.5, 1), m: true});
+  function draw() {
+    const fc = +document.getElementById('s7fc').value;
+    const p = +document.getElementById('s7p').value;
+    document.getElementById('s7fcVal').textContent = fc.toFixed(1);
+    document.getElementById('s7pVal').textContent = p.toFixed(1);
+    let up=0, down=0, ns=0;
+    const xMin = -5, xMax = 5, yMax = 8;
+    const X = v => 70 + (v-xMin)/(xMax-xMin) * 700;
+    const Y = v => 440 - v/yMax * 400;
+    let s = '';
+    s += `<line class="axis" x1="70" y1="440" x2="770" y2="440"/>`;
+    s += `<line class="axis" x1="70" y1="30" x2="70" y2="440"/>`;
+    s += `<line x1="${X(fc)}" y1="30" x2="${X(fc)}" y2="440" stroke="#c0392b" stroke-dasharray="5,3"/>`;
+    s += `<line x1="${X(-fc)}" y1="30" x2="${X(-fc)}" y2="440" stroke="#2c5aa0" stroke-dasharray="5,3"/>`;
+    s += `<line x1="70" y1="${Y(p)}" x2="770" y2="${Y(p)}" stroke="#666" stroke-dasharray="5,3"/>`;
+    genes.forEach(g => {
+      let fill;
+      if (g.lfc > fc && g.negLogP > p) { fill = '#c0392b'; up++; }
+      else if (g.lfc < -fc && g.negLogP > p) { fill = '#2c5aa0'; down++; }
+      else { fill = '#888'; ns++; }
+      s += `<circle cx="${X(g.lfc)}" cy="${Y(g.negLogP)}" r="3" fill="${fill}" opacity="0.7"/>`;
+    });
+    for (let v = xMin; v <= xMax; v++) s += `<text class="lbl" x="${X(v)}" y="458" text-anchor="middle">${v}</text>`;
+    for (let v = 0; v <= yMax; v += 2) s += `<text class="lbl" x="62" y="${Y(v)+4}" text-anchor="end">${v}</text>`;
+    s += `<text class="lbl" x="400" y="475" text-anchor="middle" font-weight="700">log2FC</text>`;
+    s += `<text class="lbl" x="25" y="240" text-anchor="middle" font-weight="700" transform="rotate(-90 25 240)">-log10 p</text>`;
+    document.getElementById('s7svg').innerHTML = s;
+    document.getElementById('s7up').textContent = up;
+    document.getElementById('s7down').textContent = down;
+    document.getElementById('s7ns').textContent = ns;
+  }
+  document.getElementById('s7fc').addEventListener('input', draw);
+  document.getElementById('s7p').addEventListener('input', draw);
+  draw();
+})();
+</script>
+</body>
+</html>

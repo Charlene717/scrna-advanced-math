@@ -1,93 +1,1385 @@
 <!DOCTYPE html>
-<html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>3.4 Diffusion Maps — scRNA-seq Advanced Math</title><link rel="stylesheet" href="../styles.css">
-<script>MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] } };</script>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>3.4 Diffusion Maps — scRNA-seq 進階數學深入互動版</title>
+<link rel="stylesheet" href="../styles.css">
+<script>MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] }, svg: { fontCache: 'global' } };</script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
-</head><body>
-<nav class="top-nav"><div class="top-nav-inner">
-  <a href="../index.html" class="top-nav-brand"><span>🧬</span><span data-lang="zh">scRNA-seq 進階數學</span><span data-lang="en">scRNA-seq Advanced Math</span><span class="badge-math">MATH</span></a>
-  <ul class="top-nav-links"><li><a href="../index.html#M1">M1</a></li><li><a href="../index.html#M2">M2</a></li><li><a href="../index.html#M3" class="active">M3</a></li><li><a href="../index.html#M4">M4</a></li><li><a href="../index.html#M5">M5</a></li><li><a href="../index.html#M6">M6</a></li><li><a href="../index.html" data-lang="zh">🏠 回首頁</a><span data-lang="en">🏠 Home</span></li></ul>
-  <div class="lang-switch"><button data-lang-btn="zh" class="active">中文</button><button data-lang-btn="en">EN</button></div>
-</div></nav>
-<header class="page-hero"><div class="page-hero-inner">
-  <div class="page-badge">M3.4 · DIMENSIONALITY REDUCTION</div>
-  <h1 data-lang="zh">Diffusion Maps：圖 Laplacian 與隨機行走</h1><h1 data-lang="en">Diffusion Maps</h1>
-  <p class="subtitle" data-lang="zh">隨機行走的特徵向量為什麼能當降維座標？Diffusion Pseudotime（M6.2）的基礎。</p>
-  <p class="subtitle" data-lang="en">Why random walk eigenvectors serve as embedding coordinates — the foundation of DPT (M6.2).</p>
-</div></header>
+<style>
+  .story-card { background:#fff; border-radius:14px; padding:24px 28px; margin:24px 0; box-shadow:var(--c-card-shadow); }
+  .story-card h3 { color:var(--c-accent); margin-top:0; }
+  .interact-box { background:linear-gradient(180deg,#f6f8fc 0%,#eef2f9 100%); border:1px solid #dfe4f0; border-radius:14px; padding:22px; margin:20px 0; }
+  .interact-box h4 { color:var(--c-formula); margin-top:0; font-size:15px; text-transform:uppercase; letter-spacing:1px; }
+  .control-row { display:flex; gap:18px; flex-wrap:wrap; align-items:center; margin:12px 0; }
+  .control-item { display:flex; flex-direction:column; gap:4px; min-width:140px; }
+  .control-item label { font-size:12px; color:var(--c-ink-soft); font-weight:600; }
+  .control-item input[type=range] { width:100%; }
+  .control-item .val { font-family:var(--font-code); font-size:14px; font-weight:700; color:var(--c-formula); }
+  .control-item button { background:var(--c-accent); color:#fff; border:0; padding:7px 14px; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600; }
+  .control-item button:hover { background:#3b6ad0; }
+  .control-item button.ghost { background:#fff; color:var(--c-accent); border:1px solid var(--c-accent); }
+  .live-readout { background:#fff; padding:12px 16px; border-radius:8px; margin-top:12px; font-family:var(--font-code); font-size:13px; border-left:3px solid var(--c-accent); }
+  .live-readout .lbl { color:var(--c-ink-mute); }
+  .live-readout .val-hl { color:var(--c-formula); font-weight:700; }
+  .twin-view { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:14px 0; }
+  .twin-view .panel { background:#fff; border-radius:8px; padding:12px; }
+  .twin-view .panel h5 { margin:0 0 8px; font-size:13px; color:var(--c-ink); }
+  @media (max-width:720px){.twin-view{grid-template-columns:1fr;}}
+  .step-walkthrough { background:#1a2347; color:#fff; border-radius:14px; padding:22px 24px; margin:24px 0; }
+  .step-walkthrough .step-nav-bar { display:flex; gap:10px; align-items:center; margin-bottom:14px; }
+  .step-walkthrough .step-nav-bar button { background:var(--c-accent); color:#fff; border:0; padding:8px 16px; border-radius:6px; font-weight:700; cursor:pointer; font-size:13px; }
+  .step-walkthrough .step-nav-bar button:disabled { background:#555; cursor:not-allowed; }
+  .step-walkthrough .step-nav-bar button.ghost { background:transparent; border:1px solid #4f7df4; color:#c5cee8; }
+  .step-walkthrough .step-indicator { display:flex; gap:6px; flex:1; justify-content:center; }
+  .step-walkthrough .step-dot { width:30px; height:30px; border-radius:50%; background:#2d3a6b; color:#c5cee8; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; cursor:pointer; transition:all .2s; }
+  .step-walkthrough .step-dot.active { background:#ffd564; color:#1a2347; transform:scale(1.15); }
+  .step-walkthrough .step-dot.done { background:var(--c-success); color:#fff; }
+  .step-walkthrough .step-content { display:grid; grid-template-columns:1.3fr 1fr; gap:18px; }
+  @media (max-width:760px){.step-walkthrough .step-content{grid-template-columns:1fr;}}
+  .step-walkthrough .step-vis { background:#0d1631; border-radius:8px; padding:10px; min-height:300px; }
+  .step-walkthrough .step-vis svg { width:100%; }
+  .step-walkthrough .step-explain { background:rgba(255,255,255,.05); border-radius:8px; padding:18px; backdrop-filter:blur(8px); }
+  .step-walkthrough .step-title { color:#ffd564; font-size:17px; font-weight:800; margin-bottom:10px; }
+  .step-walkthrough .step-math { background:#0d1631; padding:12px 14px; border-radius:6px; margin:10px 0; font-family:var(--font-code); font-size:13px; line-height:1.7; }
+  .formula-anatomy { background:linear-gradient(135deg,#f8f5ff,#f4eeff); border:1px solid #e0d4f7; border-left:5px solid var(--c-formula); padding:18px 22px; border-radius:0 10px 10px 0; margin:18px 0; }
+  .formula-anatomy table { width:100%; margin-top:10px; font-size:13px; }
+  .formula-anatomy table td { padding:6px 8px; border-bottom:1px dashed #d8c8f0; }
+  .formula-anatomy table td:first-child { color:var(--c-formula); font-family:var(--font-math); font-weight:700; width:80px; }
+  .quiz-mini { background:#fff8db; border-left:4px solid var(--c-warn); padding:14px 18px; border-radius:0 8px 8px 0; margin:18px 0; }
+  .quiz-mini h4 { color:#92590e; margin:0 0 8px; }
+  .quiz-mini .quiz-opt { background:#fff; padding:8px 12px; margin:6px 0; border-radius:6px; cursor:pointer; border:1px solid #f3d98a; transition:.2s; }
+  .quiz-mini .quiz-opt:hover { background:#fffbed; border-color:var(--c-warn); }
+  .quiz-mini .quiz-opt.correct { background:#d1f7e0; border-color:var(--c-success); }
+  .quiz-mini .quiz-opt.wrong { background:#fed7d7; border-color:var(--c-danger); }
+  .quiz-mini .quiz-feedback { font-size:13px; margin-top:10px; color:#444; }
+  .worked-example { background:#fff; border:2px solid var(--c-formula); border-radius:14px; padding:24px; margin:24px 0; }
+  .worked-step { background:#faf8ff; padding:14px 18px; border-radius:8px; margin:10px 0; border-left:4px solid var(--c-formula); }
+  .worked-step .step-label { color:var(--c-formula); font-weight:700; font-size:13px; letter-spacing:1px; }
+  .nav-pages { display:flex; gap:8px; margin:30px 0; padding:14px; background:#1a2347; border-radius:10px; align-items:center; flex-wrap:wrap; }
+  .nav-pages a { color:#c5cee8; text-decoration:none; padding:6px 12px; border-radius:6px; font-size:13px; font-weight:600; transition:.2s; }
+  .nav-pages a:hover { background:rgba(255,255,255,.1); color:#fff; }
+  .nav-pages a.active { background:var(--c-accent); color:#fff; }
+  .nav-pages .label { color:#8990a8; font-size:11px; letter-spacing:1px; font-weight:700; margin-right:8px; }
+</style>
+</head>
+<body>
 
-<main class="content-wrap">
+<nav class="top-nav">
+  <div class="top-nav-inner">
+    <a href="../index.html" class="top-nav-brand">
+      <span>🧬</span>
+      <span data-lang="zh">scRNA-seq 進階數學</span>
+      <span data-lang="en">scRNA-seq Advanced Math</span>
+      <span class="badge-math">MATH</span>
+    </a>
+    <ul class="top-nav-links">
+      <li class="dropdown">
+        <a href="../index.html#M1">M1</a>
+        <ul class="dropdown-menu">
+          <li class="sub-label" data-lang="zh">基礎</li><li class="sub-label" data-lang="en">FOUNDATIONS</li>
+          <li><a href="../M1-foundations/1.1-sparse-matrix.html">1.1 <span data-lang="zh">稀疏矩陣</span><span data-lang="en">Sparse Matrix</span></a></li>
+          <li><a href="../M1-foundations/1.2-count-distributions.html">1.2 <span data-lang="zh">計數分布</span><span data-lang="en">Count Distributions</span></a></li>
+        </ul>
+      </li>
+      <li class="dropdown">
+        <a href="../index.html#M2">M2</a>
+        <ul class="dropdown-menu">
+          <li class="sub-label" data-lang="zh">前處理</li><li class="sub-label" data-lang="en">PREPROCESSING</li>
+          <li><a href="../M2-preprocessing/2.1-qc-statistics.html">2.1 QC</a></li>
+          <li><a href="../M2-preprocessing/2.2-normalization.html">2.2 Normalization</a></li>
+          <li><a href="../M2-preprocessing/2.3-hvg-selection.html">2.3 HVG</a></li>
+          <li><a href="../M2-preprocessing/2.4-scaling.html">2.4 Scaling</a></li>
+        </ul>
+      </li>
+      <li class="dropdown">
+        <a href="../index.html#M3" class="active">M3</a>
+        <ul class="dropdown-menu">
+          <li class="sub-label" data-lang="zh">降維</li><li class="sub-label" data-lang="en">DIM. REDUCTION</li>
+          <li><a href="3.1-pca.html">3.1 PCA ⭐</a></li>
+          <li><a href="3.2-tsne.html">3.2 t-SNE</a></li>
+          <li><a href="3.3-umap.html">3.3 UMAP</a></li>
+          <li><a href="3.4-diffusion-map.html" class="active-sub">3.4 Diffusion Maps <span data-lang="zh">(本頁)</span><span data-lang="en">(here)</span></a></li>
+        </ul>
+      </li>
+      <li class="dropdown">
+        <a href="../index.html#M4">M4</a>
+        <ul class="dropdown-menu">
+          <li class="sub-label" data-lang="zh">圖與聚類</li><li class="sub-label" data-lang="en">GRAPH &amp; CLUSTERING</li>
+          <li><a href="../M4-graph-clustering/4.1-knn-graph.html">4.1 KNN Graph</a></li>
+          <li><a href="../M4-graph-clustering/4.2-louvain-leiden.html">4.2 Louvain &amp; Leiden</a></li>
+        </ul>
+      </li>
+      <li class="dropdown">
+        <a href="../index.html#M5">M5</a>
+        <ul class="dropdown-menu">
+          <li class="sub-label" data-lang="zh">統計推論</li><li class="sub-label" data-lang="en">STATS</li>
+          <li><a href="../M5-statistics/5.1-de-tests.html">5.1 DE Tests</a></li>
+          <li><a href="../M5-statistics/5.2-multiple-testing.html">5.2 FDR</a></li>
+          <li><a href="../M5-statistics/5.3-classifier.html">5.3 Classifier</a></li>
+        </ul>
+      </li>
+      <li class="dropdown">
+        <a href="../index.html#M6">M6</a>
+        <ul class="dropdown-menu">
+          <li class="sub-label" data-lang="zh">進階</li><li class="sub-label" data-lang="en">ADVANCED</li>
+          <li><a href="../M6-advanced/6.1-integration.html">6.1 Integration</a></li>
+          <li><a href="../M6-advanced/6.2-pseudotime.html">6.2 Pseudotime</a></li>
+          <li><a href="../M6-advanced/6.3-cellchat.html">6.3 CellChat</a></li>
+        </ul>
+      </li>
+      <li><a href="../index.html" data-lang="zh">🏠 回首頁</a><span data-lang="en">🏠 Home</span></li>
+    </ul>
+    <div class="lang-switch">
+      <button data-lang-btn="zh" class="active">中文</button>
+      <button data-lang-btn="en">EN</button>
+    </div>
+  </div>
+</nav>
 
-<section class="section">
-  <span class="section-label intuition">直覺 / Intuition</span>
-  <div data-lang="zh"><p>想像從每個細胞出發的「隨機行走」——下一步跳到相似細胞的機率高、跳到差異大的細胞機率低。經過 $t$ 步之後，「能不能彼此到達」就是一個距離。</p>
-    <p>結論：<b>圖的隨機行走轉移矩陣的特徵向量</b>就是降維後的座標。發育軌跡分析用這個是因為「逐步演化」剛好對應「隨機行走」。</p></div>
-  <div data-lang="en"><p>Imagine random walks from each cell — high probability to jump to similar cells. After $t$ steps, "mutual reachability" defines a distance. Random walk transition matrix's eigenvectors give the embedding. Perfect for developmental trajectories.</p></div>
+<header class="page-hero">
+  <div class="page-hero-inner">
+    <div class="page-badge">M3.4 · DIMENSIONALITY REDUCTION · 深入互動版</div>
+    <h1 data-lang="zh">Diffusion Maps：隨機行走如何畫出流形</h1>
+    <h1 data-lang="en">Diffusion Maps: How Random Walks Draw the Manifold</h1>
+    <p class="subtitle" data-lang="zh">「圖 Laplacian」「擴散距離」「譜嵌入」——這些詞背後其實是一個很美的故事：
+      一隻在資料上隨機行走的螞蟻，會自然走出流形的結構。
+      Diffusion Maps 是 Diffusion Pseudotime (DPT) 的數學骨幹，理解這節後 M6.2 會超順。</p>
+    <p class="subtitle" data-lang="en">"Graph Laplacian", "diffusion distance", "spectral embedding" — these reduce to a beautiful story: an ant randomly walking on data traces out the manifold. Foundation of DPT (M6.2).</p>
+  </div>
+</header>
+
+<div class="content-wrap">
+<div class="nav-pages">
+  <span class="label" data-lang="zh">本頁章節</span><span class="label" data-lang="en">CHAPTERS</span>
+  <a href="#s0" data-lang="zh">§0 故事</a><span data-lang="en">§0 Story</span>
+  <a href="#s1" data-lang="zh">§1 相似度 → 轉移</a><span data-lang="en">§1 Kernel → Markov</span>
+  <a href="#s2" data-lang="zh">§2 P 矩陣</a><span data-lang="en">§2 Transition Matrix</span>
+  <a href="#s3" data-lang="zh">§3 圖 Laplacian</a><span data-lang="en">§3 Graph Laplacian</span>
+  <a href="#s4" data-lang="zh">§4 譜分解</a><span data-lang="en">§4 Spectral Decomp.</span>
+  <a href="#s5" data-lang="zh">§5 擴散距離</a><span data-lang="en">§5 Diffusion Distance</span>
+  <a href="#s6" data-lang="zh">§6 嵌入 + t</a><span data-lang="en">§6 Embedding + t</span>
+  <a href="#s7" data-lang="zh">§7 演算法 7 步</a><span data-lang="en">§7 7-Step Walkthrough</span>
+  <a href="#s8" data-lang="zh">§8 vs PCA/UMAP/t-SNE</a><span data-lang="en">§8 vs Others</span>
+  <a href="#s9" data-lang="zh">§9 手算 5 點</a><span data-lang="en">§9 Worked Example</span>
+  <a href="#s10" data-lang="zh">§10 限制 + DPT 預告</a><span data-lang="en">§10 Pitfalls + DPT</span>
+</div>
+
+<!-- ====================================================== §0 ====================================================== -->
+<section class="section" id="s0">
+  <span class="section-label intuition">§0 · 故事開場 / STORY</span>
+  <h2 data-lang="zh">想像一隻在資料上隨機行走的螞蟻</h2>
+  <h2 data-lang="en">Imagine an ant randomly walking on the data</h2>
+
+  <div data-lang="zh">
+    <p>你拿到一份資料：100 個點散在 3D 空間，看起來像條彎彎曲曲的線。一隻螞蟻從某個點 $x_i$ 出發，<b>每一步只跳到「附近的點」</b>——
+      距離越近的點，跳過去的機率越高。經過 100 步之後，「螞蟻有多大機率出現在點 $x_j$」——這就是 <b>擴散距離 (diffusion distance)</b> 的直覺。</p>
+    <p>關鍵洞察：<b>螞蟻沿著資料的「自然結構」前進</b>——它不會憑空跳過稀疏區域、也不會放棄密集走道。
+      所以「螞蟻分布」其實在<b>畫出資料背後的流形</b>。</p>
+    <p>Diffusion Maps 把這個直覺<b>變成精確的數學</b>：
+      建立轉移機率矩陣 $\mathbf{P}$，做譜分解 $\mathbf{P}\boldsymbol\psi_k = \lambda_k \boldsymbol\psi_k$，
+      用前幾個特徵向量作為「擴散座標」。</p>
+  </div>
+  <div data-lang="en">
+    <p>An ant starts at $x_i$, randomly hops to nearby points (closer = higher probability). After 100 steps, "probability of being at $x_j$" = <b>diffusion distance</b>.</p>
+    <p>Key insight: the ant walks along the natural data structure — its distribution traces the manifold.</p>
+    <p>Diffusion Maps formalizes this: build transition matrix $\mathbf{P}$, eigendecompose, use top eigenvectors as "diffusion coordinates".</p>
+  </div>
+
+  <div class="story-card">
+    <h3>📌 <span data-lang="zh">0-1 隨機行走在彎曲流形上</span><span data-lang="en">0-1 Random walk on curved manifold</span></h3>
+    <div data-lang="zh"><p>下方藍色橢圓是「資料流形」（看起來像彎香蕉）。紅色螞蟻從橢圓一端出發，每秒隨機跳一步——
+      它只跳到「附近的藍點」。觀察：<b>螞蟻自然沿著流形走</b>，幾乎不會跳到流形外的空地。
+      點「跑 100 步」看擴散後機率分布。</p></div>
+    <div data-lang="en"><p>Blue ellipse = data manifold. Red ant starts at one end, jumps to nearby blue points each step. Click "run 100 steps" to see diffused probability distribution.</p></div>
+    <div class="control-row">
+      <div class="control-item"><button id="antRun" data-lang="zh">跑 1 步</button><button id="antRun_en" data-lang="en">1 step</button></div>
+      <div class="control-item"><button id="antRun100" data-lang="zh">跑 100 步</button><button id="antRun100_en" data-lang="en">100 steps</button></div>
+      <div class="control-item"><button id="antReset" class="ghost">↺</button></div>
+      <div class="control-item"><label data-lang="zh">顯示模式</label><label data-lang="en">View</label>
+        <select id="antMode" style="padding:6px"><option value="trail">軌跡 / Trail</option><option value="prob">機率熱圖 / Probability heatmap</option></select>
+      </div>
+    </div>
+    <svg id="antSvg" viewBox="0 0 800 320" style="background:#fff; border-radius:10px; width:100%"></svg>
+    <div class="live-readout" id="antReadout"></div>
+  </div>
+
+  <div class="story-card">
+    <h3>📌 <span data-lang="zh">0-2 為什麼這跟「特徵向量」有關？</span><span data-lang="en">0-2 Why does this relate to eigenvectors?</span></h3>
+    <div data-lang="zh">
+      <p>「擴散」本質上是一個重複的運算 $\mathbf{p}_{t+1} = \mathbf{P}^\top \mathbf{p}_t$（機率分布乘以轉移矩陣轉置）。
+        當 $t$ 變大時，<b>大部分「方向」</b>會衰減成零（短期變化），只有<b>少數方向</b>會穩定存在——
+        這些方向就是 $\mathbf{P}$ 的<b>特徵向量</b>，它們對應「資料的長期擴散模式」。</p>
+      <p>把這幾個特徵向量當作新的座標系，就得到了 <b>diffusion embedding</b>。
+        類比：彈簧上下振動有「基本振動模式」(harmonics)，這些就是彈簧 Laplacian 的特徵向量——
+        Diffusion Maps 用同樣的數學，但把「彈簧」換成「資料圖」。</p>
+    </div>
+    <div data-lang="en">
+      <p>Diffusion = iterating $\mathbf{p}_{t+1} = \mathbf{P}^\top \mathbf{p}_t$. Most directions decay; only $\mathbf{P}$'s eigenvectors persist as "long-term modes" — diffusion coordinates. Analogy: spring's vibration harmonics = Laplacian eigenvectors. Diffusion Maps replaces "spring" with "data graph".</p>
+    </div>
+  </div>
+
+  <div class="story-card">
+    <h3>📌 <span data-lang="zh">0-3 三句話總結</span><span data-lang="en">0-3 Three-sentence summary</span></h3>
+    <ol data-lang="zh" style="font-size:15px; line-height:2">
+      <li>用相似度核 $K_{ij} = \exp(-\|x_i - x_j\|^2/\sigma^2)$ 把資料變成「鄰居圖」。</li>
+      <li>歸一化成轉移機率 $\mathbf{P} = \mathbf{D}^{-1}\mathbf{K}$，做特徵分解。</li>
+      <li>前 $d$ 個非平凡特徵向量就是 $d$ 維「擴散座標」，距離保留<b>長期擴散時間</b>而非歐式距離。</li>
+    </ol>
+    <ol data-lang="en" style="font-size:15px; line-height:2">
+      <li>Kernel $K_{ij} = \exp(-\|x_i - x_j\|^2/\sigma^2)$ → neighbor graph.</li>
+      <li>Normalize to transition matrix $\mathbf{P} = \mathbf{D}^{-1}\mathbf{K}$, eigendecompose.</li>
+      <li>Top $d$ non-trivial eigenvectors = $d$-dim diffusion coordinates, preserving long-term diffusion time (not Euclidean distance).</li>
+    </ol>
+  </div>
 </section>
 
-<section class="section">
-  <span class="section-label math">核心數學 / Math</span>
-  <h3 data-lang="zh">步驟 1：相似度核</h3><h3 data-lang="en">Step 1: similarity kernel</h3>
-  <div class="math-block">$$K_{ij} = \exp(-\|x_i - x_j\|^2 / \sigma^2)$$</div>
+<!-- ====================================================== §1 ====================================================== -->
+<section class="section" id="s1">
+  <span class="section-label math">§1 · 從相似度到轉移機率</span>
+  <h2 data-lang="zh">第一步：歐式距離 → 相似度核 → 轉移機率</h2>
+  <h2 data-lang="en">Step 1: Distance → Kernel → Transition</h2>
 
-  <h3 data-lang="zh">步驟 2：歸一化為轉移矩陣</h3><h3 data-lang="en">Step 2: normalize to transition matrix</h3>
-  <div class="math-block">$$D_{ii} = \sum_j K_{ij}, \quad P = D^{-1} K$$</div>
-  <p data-lang="zh">$P_{ij}$ = 從 $i$ 一步走到 $j$ 的機率。每列總和為 1。</p>
-  <p data-lang="en">$P_{ij}$ = probability of one-step transition $i \to j$. Rows sum to 1.</p>
+  <div data-lang="zh">
+    <p>Diffusion Maps 有三層轉換：</p>
+    <ol>
+      <li><b>距離</b>：$d_{ij} = \|x_i - x_j\|$（原始幾何）</li>
+      <li><b>相似度核</b>：$K_{ij} = \exp(-d_{ij}^2 / \sigma^2)$（用高斯把距離轉成「親密度」）</li>
+      <li><b>轉移機率</b>：$P_{ij} = K_{ij} / \sum_k K_{ik}$（一步隨機行走 $i \to j$ 的機率）</li>
+    </ol>
+    <p>每一步都有重要的意義——<b>高斯核</b>讓「附近的點」獲得高相似度、遠的點接近零；
+      <b>歸一化</b>讓 $\mathbf{P}$ 的每一列總和為 1（標準機率分布）。</p>
+  </div>
+  <div data-lang="en">
+    <p>Three transforms: (1) distance, (2) Gaussian kernel, (3) row-normalize to probability. Row sums = 1.</p>
+  </div>
 
-  <h3 data-lang="zh">步驟 3：特徵分解</h3><h3 data-lang="en">Step 3: eigendecomposition</h3>
-  <div class="math-block">$$P \psi_k = \lambda_k \psi_k, \quad 1 = \lambda_0 > \lambda_1 \geq \lambda_2 \geq \ldots$$</div>
+  <div class="formula-anatomy">
+    $$\boxed{\;K_{ij} = \exp\left(-\frac{\|x_i - x_j\|^2}{\sigma^2}\right) \quad\quad P_{ij} = \frac{K_{ij}}{\sum_k K_{ik}}\;}$$
+    <table>
+      <tr><td>$\sigma$</td><td data-lang="zh">「核帶寬」—— 控制鄰居的「視野」</td><td data-lang="en">Kernel bandwidth — neighborhood scope</td></tr>
+      <tr><td>$\sum_k K_{ik}$</td><td data-lang="zh">第 $i$ 列總和（記為 $d_i$，稱「度數」(degree)）</td><td data-lang="en">Row sum (degree $d_i$)</td></tr>
+      <tr><td>$P_{ij}$</td><td data-lang="zh">從 $i$ 一步走到 $j$ 的機率</td><td data-lang="en">One-step transition probability</td></tr>
+    </table>
+  </div>
 
-  <h3 data-lang="zh">步驟 4：擴散嵌入</h3><h3 data-lang="en">Step 4: diffusion embedding</h3>
-  <div class="math-block">$$\Psi_t(x_i) = \left( \lambda_1^t \psi_1(i), \lambda_2^t \psi_2(i), \ldots, \lambda_d^t \psi_d(i) \right)$$</div>
-  <p data-lang="zh"><b>$t$ 越大特徵值被指數壓得越小</b>，只剩主要的「擴散方向」。對應「長程結構」。</p>
-  <p data-lang="en">Larger $t$ shrinks eigenvalues exponentially, leaving only main "diffusion directions" — long-range structure.</p>
+  <div class="interact-box">
+    <h4 data-lang="zh">互動 1.1 · σ 怎麼影響相似度核</h4>
+    <h4 data-lang="en">Interactive 1.1 · σ shapes the kernel</h4>
+    <p data-lang="zh">8 個點散布在 2D 平面。中心紫點到其他點的相似度 $K$ 用顏色濃淡表示（深 = 高相似度）。
+      拖動 σ 看：σ 小 → 只有最近的點被連結（局部）；σ 大 → 所有點都連起來（全局）。</p>
+    <p data-lang="en">σ slider: small σ → local connections only; large σ → all connected.</p>
+    <div class="control-row">
+      <div class="control-item"><label>σ</label><input type="range" id="s1sigR" min="0.3" max="6" step="0.1" value="1.5"><span class="val" id="s1sigV">1.5</span></div>
+    </div>
+    <svg id="s1Svg" viewBox="0 0 700 280" style="background:#fff; border-radius:10px; width:100%"></svg>
+    <div class="live-readout" id="s1Readout"></div>
+  </div>
 
-  <h3 data-lang="zh">Diffusion distance</h3><h3 data-lang="en">Diffusion distance</h3>
-  <div class="math-block">$$D_t^2(x_i, x_j) = \sum_{k \geq 1} \lambda_k^{2t} (\psi_k(i) - \psi_k(j))^2 = \|\Psi_t(x_i) - \Psi_t(x_j)\|^2$$</div>
-  <p data-lang="zh">是「真正的」嵌入距離——不像歐式距離容易被高維噪音干擾。</p>
-  <p data-lang="en">A true embedding distance — more noise-robust than Euclidean.</p>
-
-  <h3 data-lang="zh">與圖 Laplacian 的關係</h3><h3 data-lang="en">Relation to graph Laplacian</h3>
-  <div class="math-block">$$L_{\text{rw}} = I - P, \quad L_{\text{sym}} = I - D^{-1/2} K D^{-1/2}$$</div>
-  <p data-lang="zh">$P$ 與圖 Laplacian 共享特徵向量。「spectral clustering」與 diffusion map 本質上是同一個機制。</p>
-  <p data-lang="en">$P$ shares eigenvectors with graph Laplacian. Spectral clustering and diffusion maps share the same mechanism.</p>
+  <div class="callout callout-warn">
+    <strong data-lang="zh">⚠️ σ 的選擇是 Diffusion Maps 的關鍵超參數</strong>
+    <strong data-lang="en">⚠️ σ is the key hyperparameter</strong>
+    <p data-lang="zh">σ 太小 → 圖太稀疏、不連通，特徵分解不穩定；σ 太大 → 所有點都是鄰居，等於沒結構。<br>
+      實務常用「自適應」做法：用「每個點到第 $k$ 近鄰的距離」當局部 σ_i（類似 UMAP 的 ρ_i 思想）。</p>
+    <p data-lang="en">Too small → sparse, unstable. Too large → no structure. Use adaptive σ_i (kNN distance), similar to UMAP's ρ_i.</p>
+  </div>
 </section>
 
-<section class="section">
-  <span class="section-label code">程式碼 / Code</span>
-  <div class="code-tabs"><div class="code-tab-btns"><button class="code-tab-btn active" onclick="switchTab(this,'py9')">Python</button><button class="code-tab-btn" onclick="switchTab(this,'r9')">R</button></div>
-    <div class="code-tab-content active" id="py9"><pre>sc.tl.diffmap(adata, n_comps=<span class="num">15</span>)
+<!-- ====================================================== §2 ====================================================== -->
+<section class="section" id="s2">
+  <span class="section-label math">§2 · 轉移矩陣 P</span>
+  <h2 data-lang="zh">P 矩陣的性質與意義</h2>
+  <h2 data-lang="en">Properties of $\mathbf{P}$</h2>
+
+  <div data-lang="zh">
+    <p>把 $K$ 列歸一化得到的 $\mathbf{P}$ 有三個重要性質：</p>
+    <ol>
+      <li><b>非負</b>：$P_{ij} \geq 0$（機率定義）</li>
+      <li><b>列總和 = 1</b>：$\sum_j P_{ij} = 1$（從 $i$ 跳到「某處」的機率必為 1）</li>
+      <li><b>非對稱</b>：$P_{ij} \neq P_{ji}$（隨機行走方向有別）</li>
+    </ol>
+    <p>從機率角度看，<b>$\mathbf{P}^t$（$\mathbf{P}$ 乘 $t$ 次）的第 $(i,j)$ 元素</b>是「從 $i$ 走 $t$ 步到達 $j$ 的機率」。
+      隨著 $t$ 增大，這個機率會擴散——遠的點也能被走到。</p>
+  </div>
+  <div data-lang="en">
+    <p>$\mathbf{P}$ properties: (1) non-negative, (2) row-stochastic, (3) asymmetric. $(\mathbf{P}^t)_{ij}$ = probability of reaching $j$ from $i$ in $t$ steps.</p>
+  </div>
+
+  <div class="interact-box">
+    <h4 data-lang="zh">互動 2.1 · 觀察 $\mathbf{P}^t$ 隨 t 擴散</h4>
+    <h4 data-lang="en">Interactive 2.1 · Watch $\mathbf{P}^t$ diffuse</h4>
+    <p data-lang="zh">圖中紅點是 5 個簇的代表點。對左上角的紅點觀察「從它走 $t$ 步可達」的機率（深色 = 高機率）。
+      拖動 $t$ 看擴散現象——$t=0$ 時只在自己、$t$ 大時擴散到全圖。</p>
+    <p data-lang="en">5 cluster representatives. Track probabilities of reaching from top-left point in $t$ steps. Drag $t$ to see diffusion.</p>
+    <div class="control-row">
+      <div class="control-item"><label data-lang="zh">時間步 t</label><label data-lang="en">Time t</label><input type="range" id="s2tR" min="0" max="30" step="1" value="0"><span class="val" id="s2tV">0</span></div>
+    </div>
+    <svg id="s2Svg" viewBox="0 0 700 320" style="background:#fff; border-radius:10px; width:100%"></svg>
+    <div class="live-readout" id="s2Readout"></div>
+  </div>
+</section>
+
+<!-- ====================================================== §3 圖 Laplacian ====================================================== -->
+<section class="section" id="s3">
+  <span class="section-label math">§3 · 圖 Laplacian</span>
+  <h2 data-lang="zh">圖 Laplacian：擴散的「速度限制」</h2>
+  <h2 data-lang="en">Graph Laplacian: the "speed limit" of diffusion</h2>
+
+  <div data-lang="zh">
+    <p>圖 Laplacian $\mathbf{L}$ 把 $\mathbf{P}$ 的「擴散行為」濃縮成一個算子。它有三個變體：</p>
+  </div>
+  <div data-lang="en"><p>The graph Laplacian $\mathbf{L}$ encapsulates the diffusion operator. Three variants:</p></div>
+
+  <div class="formula-anatomy">
+    $$\begin{aligned}
+    \mathbf{L} &= \mathbf{D} - \mathbf{K} && \text{(unnormalized)} \\
+    \mathbf{L}_{\text{rw}} &= \mathbf{I} - \mathbf{P} = \mathbf{D}^{-1}\mathbf{L} && \text{(random walk)} \\
+    \mathbf{L}_{\text{sym}} &= \mathbf{I} - \mathbf{D}^{-1/2}\mathbf{K}\mathbf{D}^{-1/2} && \text{(symmetric)}
+    \end{aligned}$$
+    <table>
+      <tr><td>$\mathbf{D}$</td><td data-lang="zh">度數對角矩陣（$D_{ii} = \sum_j K_{ij}$）</td><td data-lang="en">Degree diagonal matrix</td></tr>
+      <tr><td>$\mathbf{L}_{\text{rw}}$</td><td data-lang="zh">隨機行走 Laplacian，與 $\mathbf{P}$ 共享特徵向量</td><td data-lang="en">Random-walk Laplacian, shares eigenvectors with $\mathbf{P}$</td></tr>
+      <tr><td>$\mathbf{L}_{\text{sym}}$</td><td data-lang="zh">對稱 Laplacian，可用對稱特徵分解（數值穩）</td><td data-lang="en">Symmetric, allows symmetric eigendecomposition</td></tr>
+    </table>
+  </div>
+
+  <div data-lang="zh">
+    <p><b>實務上 $\mathbf{L}_{\text{sym}}$ 最常用</b>，因為對稱矩陣的特徵分解：
+      (1) 特徵值是<b>實數</b>；(2) 特徵向量<b>兩兩正交</b>；(3) 數值演算法<b>穩定</b>。
+      $\mathbf{L}_{\text{sym}}$ 的特徵向量 $\boldsymbol\phi_k$ 跟 $\mathbf{L}_{\text{rw}}$（或 $\mathbf{P}$）的特徵向量 $\boldsymbol\psi_k$ 透過簡單變換相連：</p>
+  </div>
+  <div data-lang="en"><p>$\mathbf{L}_{\text{sym}}$ is preferred for stability (real eigenvalues, orthogonal eigenvectors).</p></div>
+
+  <div class="math-block">
+  $$\boldsymbol\psi_k = \mathbf{D}^{-1/2} \boldsymbol\phi_k, \quad \lambda_k^{(\mathbf{P})} = 1 - \lambda_k^{(\mathbf{L}_{\text{sym}})}$$
+  <div class="formula-caption" data-lang="zh">兩個版本互通：對 $\mathbf{L}_{\text{sym}}$ 算特徵分解、再變換得 $\mathbf{P}$ 的特徵向量</div>
+  <div class="formula-caption" data-lang="en">Convert between versions via simple transformation.</div>
+  </div>
+
+  <div class="callout callout-deep">
+    <strong data-lang="zh">📐 跟物理 Laplacian 的關聯</strong>
+    <strong data-lang="en">📐 Connection to physical Laplacian</strong>
+    <p data-lang="zh">物理上，Laplacian $\Delta = \frac{\partial^2}{\partial x^2} + \frac{\partial^2}{\partial y^2}$ 描述「擴散方程」：
+      $\frac{\partial u}{\partial t} = \Delta u$。圖 Laplacian 是它在<b>離散圖上</b>的對應物——
+      $\mathbf{L} \mathbf{f}$ 的第 $i$ 個分量是「$f_i$ 比鄰居平均值高多少」，
+      跟連續版的二階導數有同樣意義。所以「圖 Laplacian 的特徵向量」 = 「離散流形上的諧波 (harmonics)」。</p>
+    <p data-lang="en">Like physical $\Delta$ describes diffusion. Graph Laplacian is its discrete graph analog. Eigenvectors = harmonics on discrete manifold.</p>
+  </div>
+</section>
+
+<!-- ====================================================== §4 譜分解 ====================================================== -->
+<section class="section" id="s4">
+  <span class="section-label math">§4 · 譜分解</span>
+  <h2 data-lang="zh">譜分解：找出「擴散模式」</h2>
+  <h2 data-lang="en">Spectral Decomposition: Diffusion Modes</h2>
+
+  <div data-lang="zh">
+    <p>對 $\mathbf{P}$ 做特徵分解：</p>
+  </div>
+  <div data-lang="en"><p>Eigendecompose $\mathbf{P}$:</p></div>
+
+  <div class="formula-anatomy">
+    $$\boxed{\;\mathbf{P} \boldsymbol\psi_k = \lambda_k \boldsymbol\psi_k, \quad 1 = \lambda_0 \geq |\lambda_1| \geq |\lambda_2| \geq \ldots\;}$$
+    <table>
+      <tr><td>$\lambda_0 = 1$</td><td data-lang="zh">「平凡特徵值」——對應常數向量（隨機行走的穩態）</td><td data-lang="en">Trivial; corresponds to constant vector (stationary distribution)</td></tr>
+      <tr><td>$|\lambda_1|, |\lambda_2|, \ldots$</td><td data-lang="zh">「非平凡」——這些是真正有用的擴散模式</td><td data-lang="en">Non-trivial diffusion modes</td></tr>
+      <tr><td>$\boldsymbol\psi_k$</td><td data-lang="zh">第 $k$ 個擴散模式（向量）</td><td data-lang="en">$k$-th diffusion mode</td></tr>
+    </table>
+  </div>
+
+  <div data-lang="zh">
+    <p><b>為什麼 $\lambda_0 = 1$ 不能用？</b>因為對應的特徵向量是「常數向量」 $\boldsymbol\psi_0 = (1, 1, \ldots, 1)$，
+      代表「螞蟻隨機走久了會均勻分布」——這是任何連通圖的穩態，沒有特異資訊。
+      所以 Diffusion Maps 用 $\boldsymbol\psi_1, \boldsymbol\psi_2, \ldots, \boldsymbol\psi_d$ 作為「有用的座標」。</p>
+    <p><b>特徵值的衰減速度</b>反映流形的「複雜程度」：
+      若資料是一條 1D 曲線，$\lambda_1$ 大、$\lambda_2$ 立刻變小；
+      若資料是 2D 流形，$\lambda_1 \approx \lambda_2$ 都大。</p>
+  </div>
+  <div data-lang="en">
+    <p>$\lambda_0 = 1$ corresponds to constant vector (stationary distribution); skip it. Use $\boldsymbol\psi_1, \ldots, \boldsymbol\psi_d$ as coordinates.</p>
+  </div>
+
+  <div class="interact-box">
+    <h4 data-lang="zh">互動 4.1 · 特徵向量是「振動模式」</h4>
+    <h4 data-lang="en">Interactive 4.1 · Eigenvectors as vibration modes</h4>
+    <p data-lang="zh">圖中是 20 個排成一條曲線的點（1D 流形）。每個點的高度顯示<b>選擇的特徵向量在該點的值</b>。
+      切換 $k = 1, 2, 3$ 看不同模式：$\psi_1$ 像「最低頻彈簧振動」、$\psi_2$ 多一個節點、$\psi_3$ 兩個節點...
+      跟物理彈簧的振動模式完全一樣！</p>
+    <p data-lang="en">20 points along a 1D manifold. Height = eigenvector value at that point. Switch $k$: $\psi_1$ = lowest mode, $\psi_2$ has one node, etc. Just like spring harmonics.</p>
+    <div class="control-row">
+      <div class="control-item"><label data-lang="zh">特徵向量 k</label><label data-lang="en">Eigenvector k</label><input type="range" id="s4kR" min="0" max="5" step="1" value="1"><span class="val" id="s4kV">1</span></div>
+    </div>
+    <svg id="s4Svg" viewBox="0 0 700 320" style="background:#fff; border-radius:10px; width:100%"></svg>
+    <div class="live-readout" id="s4Readout"></div>
+  </div>
+
+  <div class="quiz-mini">
+    <h4 data-lang="zh">📝 小測驗</h4><h4 data-lang="en">📝 Quick check</h4>
+    <p data-lang="zh">下列何者<b>正確</b>？</p>
+    <p data-lang="en">Which is <b>correct</b>?</p>
+    <div class="quiz-opt" data-ans="0"><span data-lang="zh">A. $\lambda_0 = 1$ 對應的特徵向量是 PC1</span><span data-lang="en">A. $\lambda_0=1$'s eigenvector is PC1</span></div>
+    <div class="quiz-opt" data-ans="1"><span data-lang="zh">B. 特徵值越大，對應的「擴散模式」越主要 (低頻、長程)</span><span data-lang="en">B. Larger eigenvalue = more dominant (low-freq) diffusion mode</span></div>
+    <div class="quiz-opt" data-ans="0"><span data-lang="zh">C. 所有特徵向量都用於嵌入</span><span data-lang="en">C. All eigenvectors are used</span></div>
+    <div class="quiz-opt" data-ans="0"><span data-lang="zh">D. 特徵向量必須是整數</span><span data-lang="en">D. Eigenvectors must be integers</span></div>
+    <div class="quiz-feedback"></div>
+  </div>
+</section>
+
+<!-- ====================================================== §5 擴散距離 ====================================================== -->
+<section class="section" id="s5">
+  <span class="section-label math">§5 · 擴散距離</span>
+  <h2 data-lang="zh">擴散距離：比歐式距離聰明</h2>
+  <h2 data-lang="en">Diffusion Distance: smarter than Euclidean</h2>
+
+  <div data-lang="zh">
+    <p>定義<b>擴散距離</b> $D_t(x_i, x_j)$ 為「隨機行走 $t$ 步後，從 $i$ 與從 $j$ 出發的機率分布差異」：</p>
+  </div>
+  <div data-lang="en"><p>Diffusion distance = how different the $t$-step probability distributions are, starting from $x_i$ vs $x_j$:</p></div>
+
+  <div class="formula-anatomy">
+    $$\boxed{\;D_t^2(x_i, x_j) = \sum_{k \geq 1} \lambda_k^{2t} \bigl(\psi_k(i) - \psi_k(j)\bigr)^2\;}$$
+    <table>
+      <tr><td>$\lambda_k^{2t}$</td><td data-lang="zh">時間加權——大 $t$ 把高頻模式壓得小</td><td data-lang="en">Time weighting — large $t$ suppresses high-freq modes</td></tr>
+      <tr><td>$\psi_k(i) - \psi_k(j)$</td><td data-lang="zh">兩點在第 $k$ 個擴散模式上的差</td><td data-lang="en">Difference at $k$-th mode</td></tr>
+      <tr><td>$k \geq 1$</td><td data-lang="zh">跳過平凡特徵值 $\lambda_0$</td><td data-lang="en">Skip trivial $\lambda_0$</td></tr>
+    </table>
+  </div>
+
+  <div data-lang="zh">
+    <p><b>為什麼比歐式距離好？</b>歐式距離只看「直線距離」，無視資料結構。
+      若兩個點在<b>同一條彎曲流形上</b>（必須沿流形走才能到達），但「直線距離」很近——
+      歐式距離會誤判它們「很像」，但擴散距離正確判斷「要走很多步才能到」 → 距離大。</p>
+    <p><b>$t$ 的角色</b>：$t$ 小時擴散距離接近「測地線距離」（沿流形）；
+      $t$ 大時資料的「群結構」浮現——同群內的點擴散距離小、跨群距離大。</p>
+  </div>
+  <div data-lang="en">
+    <p>Better than Euclidean: respects manifold geometry. Small $t$ ≈ geodesic distance; large $t$ reveals cluster structure.</p>
+  </div>
+
+  <div class="interact-box">
+    <h4 data-lang="zh">互動 5.1 · 擴散 vs 歐式：兩個點的距離</h4>
+    <h4 data-lang="en">Interactive 5.1 · Diffusion vs Euclidean distance</h4>
+    <p data-lang="zh">圖中藍點是「彎彎」流形上的點。紅色與綠色是兩個對比的點對：
+      <b>紅對</b>在歐式上近（直線距離小）但<b>不在同一流形段</b>；
+      <b>綠對</b>在歐式上稍遠但<b>沿流形相連</b>。
+      拖動 $t$ 看兩種距離怎麼變化。</p>
+    <p data-lang="en">Red pair: Euclidean-close but disconnected on manifold. Green pair: Euclidean-far but connected. Drag $t$ to compare.</p>
+    <div class="control-row">
+      <div class="control-item"><label data-lang="zh">時間步 t</label><label data-lang="en">Time t</label><input type="range" id="s5tR" min="1" max="15" step="1" value="3"><span class="val" id="s5tV">3</span></div>
+    </div>
+    <svg id="s5Svg" viewBox="0 0 700 320" style="background:#fff; border-radius:10px; width:100%"></svg>
+    <div class="live-readout" id="s5Readout"></div>
+  </div>
+</section>
+
+<!-- ====================================================== §6 嵌入 ====================================================== -->
+<section class="section" id="s6">
+  <span class="section-label math">§6 · 擴散嵌入</span>
+  <h2 data-lang="zh">嵌入到 $d$ 維：時間參數 $t$ 的選擇</h2>
+  <h2 data-lang="en">Embedding to $d$-D: choosing time $t$</h2>
+
+  <div data-lang="zh">
+    <p>有了特徵向量與特徵值，<b>diffusion embedding</b> 把點 $x_i$ 映射到：</p>
+  </div>
+  <div data-lang="en"><p>The diffusion embedding maps $x_i$ to:</p></div>
+
+  <div class="formula-anatomy">
+    $$\boxed{\;\Psi_t(x_i) = \bigl(\lambda_1^t \psi_1(i),\; \lambda_2^t \psi_2(i),\; \ldots,\; \lambda_d^t \psi_d(i)\bigr)\;}$$
+    <table>
+      <tr><td>$\Psi_t$</td><td data-lang="zh">$d$ 維嵌入點（典型 $d = 2$ 或 $3$）</td><td data-lang="en">$d$-dim embedding ($d=2$ or $3$ typically)</td></tr>
+      <tr><td>$\lambda_k^t$</td><td data-lang="zh">時間加權——小 $\lambda$（高頻）會被指數壓制</td><td data-lang="en">Time weighting — small $\lambda$'s shrink exponentially</td></tr>
+      <tr><td>$\psi_k(i)$</td><td data-lang="zh">第 $k$ 個特徵向量在第 $i$ 個點的值</td><td data-lang="en">$k$-th eigenvector at point $i$</td></tr>
+    </table>
+  </div>
+
+  <div data-lang="zh">
+    <p>關鍵性質：嵌入空間裡的歐式距離 = 擴散距離：</p>
+  </div>
+  <div data-lang="en"><p>Key: Euclidean distance in embedding = diffusion distance:</p></div>
+
+  <div class="math-block">$$\|\Psi_t(x_i) - \Psi_t(x_j)\|^2 = D_t^2(x_i, x_j)$$</div>
+
+  <div data-lang="zh">
+    <p>所以「把高維資料用 $\Psi_t$ 投影到 $d$ 維」，等於「用擴散距離重新組織資料」。
+      $t$ 越大，<b>長程結構（群、分支）</b>越突出；$t$ 小，<b>局部幾何（細節）</b>保留得多。</p>
+  </div>
+  <div data-lang="en">
+    <p>So projecting via $\Psi_t$ = reorganizing data by diffusion distance. Larger $t$ → emphasize long-range (clusters); smaller → preserve local detail.</p>
+  </div>
+
+  <div class="interact-box">
+    <h4 data-lang="zh">互動 6.1 · 時間 $t$ 怎麼影響嵌入</h4>
+    <h4 data-lang="en">Interactive 6.1 · How $t$ shapes the embedding</h4>
+    <p data-lang="zh">3 群點透過 diffusion map 嵌入到 2D（$\psi_1, \psi_2$ 軸）。拖動 $t$ 看：
+      $t = 0$ 時點分散；$t = 1$ 開始群浮現；$t \to \infty$ 同群點都擠到一起。</p>
+    <p data-lang="en">3 clusters embedded to 2D via diffusion map. Drag $t$: $t=0$ scattered, $t=1$ clusters appear, large $t$ collapses within-cluster.</p>
+    <div class="control-row">
+      <div class="control-item"><label data-lang="zh">時間 t</label><label data-lang="en">Time t</label><input type="range" id="s6tR" min="0" max="20" step="1" value="2"><span class="val" id="s6tV">2</span></div>
+    </div>
+    <svg id="s6Svg" viewBox="0 0 700 340" style="background:#fff; border-radius:10px; width:100%"></svg>
+    <div class="live-readout" id="s6Readout"></div>
+  </div>
+</section>
+
+<!-- ====================================================== §7 演算法步驟 ====================================================== -->
+<section class="section" id="s7">
+  <span class="section-label algo">§7 · 演算法步驟導覽 / 7-STEP WALKTHROUGH</span>
+  <h2 data-lang="zh">Diffusion Maps 演算法 — 7 個步驟</h2>
+  <h2 data-lang="en">Diffusion Maps Algorithm — 7 steps</h2>
+
+  <div class="step-walkthrough">
+    <div class="step-nav-bar">
+      <button id="stepPrev" class="ghost">← <span data-lang="zh">上一步</span><span data-lang="en">Prev</span></button>
+      <div class="step-indicator">
+        <div class="step-dot active" data-step="1">1</div>
+        <div class="step-dot" data-step="2">2</div>
+        <div class="step-dot" data-step="3">3</div>
+        <div class="step-dot" data-step="4">4</div>
+        <div class="step-dot" data-step="5">5</div>
+        <div class="step-dot" data-step="6">6</div>
+        <div class="step-dot" data-step="7">7</div>
+      </div>
+      <button id="stepNext"><span data-lang="zh">下一步</span><span data-lang="en">Next</span> →</button>
+      <button id="stepReset" class="ghost"><span data-lang="zh">重設</span><span data-lang="en">Reset</span></button>
+    </div>
+    <div class="step-content">
+      <div class="step-vis"><svg id="stepSvg" viewBox="0 0 500 320"></svg></div>
+      <div class="step-explain">
+        <div class="step-title" id="stepTitle"></div>
+        <div id="stepDesc"></div>
+        <div class="step-math" id="stepMath"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====================================================== §8 對比 ====================================================== -->
+<section class="section" id="s8">
+  <span class="section-label">§8 · 對比 / vs OTHERS</span>
+  <h2 data-lang="zh">Diffusion Maps vs PCA / t-SNE / UMAP</h2>
+  <h2 data-lang="en">Diffusion Maps vs PCA / t-SNE / UMAP</h2>
+
+  <table class="compare-table">
+    <tr><th></th><th>PCA</th><th>t-SNE</th><th>UMAP</th><th>Diffusion Maps</th></tr>
+    <tr><td data-lang="zh">基底</td><td data-lang="en">Basis</td><td>線性方差最大</td><td>機率 + KL</td><td>fuzzy simplicial set</td><td class="good">隨機行走 + 譜</td></tr>
+    <tr><td data-lang="zh">數學工具</td><td data-lang="en">Math</td><td>共變異數特徵分解</td><td>梯度下降</td><td>SGD + 負取樣</td><td>圖 Laplacian 特徵分解</td></tr>
+    <tr><td data-lang="zh">距離詮釋</td><td data-lang="en">Distance</td><td>歐式</td><td>無</td><td>無</td><td class="good">擴散距離 (manifold-aware)</td></tr>
+    <tr><td data-lang="zh">全局結構</td><td data-lang="en">Global structure</td><td>好</td><td class="bad">差</td><td class="meh">中</td><td class="good">優秀</td></tr>
+    <tr><td data-lang="zh">局部結構</td><td data-lang="en">Local</td><td class="meh">中</td><td class="good">優</td><td class="good">優</td><td class="good">優</td></tr>
+    <tr><td data-lang="zh">處理非線性</td><td data-lang="en">Non-linear</td><td class="bad">不行</td><td class="good">可</td><td class="good">可</td><td class="good">可</td></tr>
+    <tr><td data-lang="zh">時間參數</td><td data-lang="en">Time param</td><td>無</td><td>無</td><td>無</td><td class="good">$t$ 控制尺度</td></tr>
+    <tr><td data-lang="zh">速度（大資料）</td><td data-lang="en">Speed (large)</td><td class="good">快 (SVD)</td><td class="bad">慢</td><td class="good">快</td><td class="meh">中 (Nyström 加速)</td></tr>
+    <tr><td data-lang="zh">scRNA-seq 用途</td><td data-lang="en">scRNA-seq usage</td><td>主流 (預處理)</td><td>視覺化</td><td class="good">視覺化主流</td><td class="good">DPT 軌跡分析 (M6.2)</td></tr>
+  </table>
+
+  <div class="callout callout-note">
+    <strong data-lang="zh">📌 Diffusion Maps 在 scRNA-seq 的獨特角色</strong>
+    <strong data-lang="en">📌 Unique role in scRNA-seq</strong>
+    <p data-lang="zh">Diffusion Maps 在 scRNA-seq 視覺化上不如 UMAP/t-SNE 流行（因為 UMAP 視覺更好看），
+      但<b>它的「擴散距離」是發育軌跡分析 (DPT) 的數學基礎</b>。
+      若你做幹細胞分化、腫瘤演化、發育時序——Diffusion Maps + DPT 是<b>正規數學工具</b>。
+      M6.2 會展開這個應用。</p>
+    <p data-lang="en">Less popular for visualization vs UMAP, but its diffusion distance underlies <b>DPT for trajectory analysis</b>. Standard tool for stem cell / development / tumor evolution. See M6.2.</p>
+  </div>
+</section>
+
+<!-- ====================================================== §9 Worked Example ====================================================== -->
+<section class="section" id="s9">
+  <span class="section-label math">§9 · 手算 5 點</span>
+  <h2 data-lang="zh">親手算一遍：5 個點的 Diffusion Maps</h2>
+  <h2 data-lang="en">Compute Diffusion Maps by hand: 5 points</h2>
+
+  <div class="worked-example">
+    <div data-lang="zh"><p>5 個 2D 點：$x_1=(0,0), x_2=(1,0), x_3=(2,0), x_4=(3,0), x_5=(4,0)$（一條直線）。$\sigma = 1.5$。</p></div>
+    <div data-lang="en"><p>5 points on a line; $\sigma = 1.5$.</p></div>
+
+    <div class="worked-step">
+      <span class="step-label" data-lang="zh">步驟 1：距離平方矩陣</span><span class="step-label" data-lang="en">Step 1: Squared distance matrix</span>
+      <pre style="font-family:var(--font-code); font-size:13px; background:#fff; padding:10px; border-radius:6px; margin:8px 0">
+       x1  x2  x3  x4  x5
+x1     0   1   4   9  16
+x2     1   0   1   4   9
+x3     4   1   0   1   4
+x4     9   4   1   0   1
+x5    16   9   4   1   0</pre>
+    </div>
+
+    <div class="worked-step">
+      <span class="step-label" data-lang="zh">步驟 2：相似度核 $K_{ij} = \exp(-d_{ij}^2 / \sigma^2)$ with $\sigma^2 = 2.25$</span><span class="step-label" data-lang="en">Step 2: Kernel $K$</span>
+      <pre style="font-family:var(--font-code); font-size:13px; background:#fff; padding:10px; border-radius:6px; margin:8px 0">
+       x1     x2     x3     x4     x5
+x1   1.000  0.641  0.169  0.018  0.0008
+x2   0.641  1.000  0.641  0.169  0.018
+x3   0.169  0.641  1.000  0.641  0.169
+x4   0.018  0.169  0.641  1.000  0.641
+x5   0.0008 0.018  0.169  0.641  1.000
+
+度數 d_i = Σ_j K_ij:
+d_1 = 1.829, d_2 = 2.469, d_3 = 2.620, d_4 = 2.469, d_5 = 1.829</pre>
+    </div>
+
+    <div class="worked-step">
+      <span class="step-label" data-lang="zh">步驟 3：轉移矩陣 $\mathbf{P} = \mathbf{D}^{-1} \mathbf{K}$</span><span class="step-label" data-lang="en">Step 3: Transition $\mathbf{P}$</span>
+      <pre style="font-family:var(--font-code); font-size:13px; background:#fff; padding:10px; border-radius:6px; margin:8px 0">
+       x1     x2     x3     x4     x5
+x1   0.547  0.350  0.092  0.010  0.000
+x2   0.260  0.405  0.260  0.069  0.007
+x3   0.064  0.245  0.382  0.245  0.064
+x4   0.007  0.069  0.260  0.405  0.260
+x5   0.000  0.010  0.092  0.350  0.547
+
+每列總和 = 1 ✓</pre>
+    </div>
+
+    <div class="worked-step">
+      <span class="step-label" data-lang="zh">步驟 4：對 $\mathbf{P}$ 做特徵分解</span><span class="step-label" data-lang="en">Step 4: Eigendecomposition</span>
+      <pre style="font-family:var(--font-code); font-size:13px; background:#fff; padding:10px; border-radius:6px; margin:8px 0">
+λ_0 = 1.000  (平凡，常數向量)
+λ_1 ≈ 0.794
+λ_2 ≈ 0.464
+λ_3 ≈ 0.181
+λ_4 ≈ 0.043
+
+ψ_1 = (-0.602, -0.371, 0.000, +0.371, +0.602)
+ψ_2 = (+0.522, -0.183, -0.518, -0.183, +0.522)
+...
+
+注意 ψ_1 「從負到正」恰好對應「從 x_1 到 x_5」的位置
+→ 它編碼了 1D 線性座標！</pre>
+    </div>
+
+    <div class="worked-step">
+      <span class="step-label" data-lang="zh">步驟 5：嵌入到 1D (取 $\psi_1$，$t = 1$)</span><span class="step-label" data-lang="en">Step 5: Embed to 1D</span>
+      <pre style="font-family:var(--font-code); font-size:13px; background:#fff; padding:10px; border-radius:6px; margin:8px 0">
+Ψ_1(x_i) = λ_1 · ψ_1(i)
+        = 0.794 × ψ_1(i)
+
+Ψ_1(x_1) = -0.478
+Ψ_1(x_2) = -0.295
+Ψ_1(x_3) =  0.000
+Ψ_1(x_4) = +0.295
+Ψ_1(x_5) = +0.478
+
+漂亮！沿 ψ_1 軸的「擴散座標」單調排列，
+和原始 x 軸位置完美對應。
+這證明 Diffusion Maps 自動「發現」了 1D 結構。</pre>
+    </div>
+
+    <div class="callout callout-intuition" style="margin-top:14px">
+      <strong data-lang="zh">🎯 觀察</strong><strong data-lang="en">🎯 Observe</strong>
+      <p data-lang="zh">5 點手算讓你看到「特徵值 + 特徵向量」如何<b>自動</b>抓住資料 1D 結構。實務上，<code>scanpy.tl.diffmap()</code>
+        對 10k 個細胞做這個只要幾秒（用 Nyström 等加速方法）。</p>
+      <p data-lang="en">Hand calc shows how eigenstuff auto-discovers 1D structure. Production: scanpy/destiny do this in seconds for 10k cells.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ====================================================== §10 限制 + DPT 預告 ====================================================== -->
+<section class="section" id="s10">
+  <span class="section-label warn">§10 · 限制 / PITFALLS</span>
+  <h2 data-lang="zh">Diffusion Maps 的限制 + DPT 預告</h2>
+  <h2 data-lang="en">Limitations + DPT Preview</h2>
+
+  <table class="compare-table">
+    <tr><th data-lang="zh">陷阱</th><th data-lang="en">Pitfall</th><th data-lang="zh">解法</th><th data-lang="en">Fix</th></tr>
+    <tr>
+      <td data-lang="zh">σ 選擇敏感</td><td data-lang="en">σ choice sensitivity</td>
+      <td data-lang="zh">用 kNN 自適應 σ_i；或對 σ 做 sensitivity analysis</td><td data-lang="en">Adaptive σ_i via kNN; sensitivity analysis</td>
+    </tr>
+    <tr>
+      <td data-lang="zh">需要圖連通</td><td data-lang="en">Requires connected graph</td>
+      <td data-lang="zh">σ 大到讓圖連通；或先用 K-Nearest 連接孤立群</td><td data-lang="en">Large enough σ; or stitch components via kNN</td>
+    </tr>
+    <tr>
+      <td data-lang="zh">大資料慢（$O(n^3)$ 特徵分解）</td><td data-lang="en">$O(n^3)$ eigendecomp</td>
+      <td data-lang="zh">Nyström 近似（取 sample 推全部）；ARPACK 只算前 k 個</td><td data-lang="en">Nyström approximation; ARPACK for top-k only</td>
+    </tr>
+    <tr>
+      <td data-lang="zh">時間 $t$ 選不對</td><td data-lang="en">Wrong $t$</td>
+      <td data-lang="zh">$t = 1$ 最常用；分析發育時序時 $t$ 可大</td><td data-lang="en">$t=1$ default; larger $t$ for trajectories</td>
+    </tr>
+    <tr>
+      <td data-lang="zh">視覺品質不如 UMAP</td><td data-lang="en">Visualization quality</td>
+      <td data-lang="zh">scRNA-seq 視覺化用 UMAP；Diffusion Maps 用於 DPT</td><td data-lang="en">Use UMAP for vis; DM for DPT</td>
+    </tr>
+  </table>
+
+  <h3 style="margin-top:24px" data-lang="zh">🛤️ 通往 M6.2 DPT</h3>
+  <h3 style="margin-top:24px" data-lang="en">🛤️ Bridge to M6.2 DPT</h3>
+  <div class="callout callout-deep">
+    <p data-lang="zh"><b>Diffusion Pseudotime (DPT)</b> 直接建立在 Diffusion Maps 之上。
+      給定一個「根細胞」（最年輕的、最幹的細胞）$x_r$，DPT 把<b>「從 $x_r$ 走到 $x_i$ 的累積擴散距離」</b>
+      作為 $x_i$ 的「pseudotime」（發育時間估計）。具體公式：</p>
+    <div class="math-block">
+      $$\text{dpt}(x_r, x_i) = \|\Psi_t(x_r) - \Psi_t(x_i)\| = \sqrt{\sum_{k \geq 1} \lambda_k^{2t} (\psi_k(r) - \psi_k(i))^2}$$
+    </div>
+    <p data-lang="zh">就是 §5 的擴散距離！理解 §5 你就理解了一半的 DPT。
+      M6.2 會處理另一半：「怎麼選根細胞」、「怎麼判斷分支點」、「實務上用 Slingshot 還是 PAGA？」。</p>
+    <p data-lang="en">DPT directly applies diffusion distance from a root cell as pseudotime. Understanding §5 = understanding half of DPT. M6.2 covers root selection, branching, Slingshot vs PAGA.</p>
+  </div>
+
+  <h3 style="margin-top:24px" data-lang="zh">📦 程式碼範例</h3>
+  <h3 style="margin-top:24px" data-lang="en">📦 Code</h3>
+  <div class="code-tabs">
+    <div class="code-tab-btns">
+      <button class="code-tab-btn active" onclick="switchTab(this,'pyD')">Python / Scanpy</button>
+      <button class="code-tab-btn" onclick="switchTab(this,'rD')">R / destiny</button>
+    </div>
+    <div class="code-tab-content active" id="pyD"><pre><span class="comment"># Scanpy 的 diffmap</span>
+sc.pp.neighbors(adata, n_neighbors=<span class="num">15</span>, n_pcs=<span class="num">30</span>)
+sc.tl.diffmap(adata, n_comps=<span class="num">15</span>)
 sc.pl.diffmap(adata, color=<span class="str">"leiden"</span>, components=<span class="str">"1,2"</span>)
 
-<span class="comment"># Diffusion Pseudotime (M6.2 的基礎)</span>
-adata.uns[<span class="str">"iroot"</span>] = root_cell_idx
+<span class="comment"># Diffusion Pseudotime (M6.2 的應用)</span>
+adata.uns[<span class="str">"iroot"</span>] = np.flatnonzero(adata.obs[<span class="str">"cell_type"</span>] == <span class="str">"stem"</span>)[<span class="num">0</span>]
 sc.tl.dpt(adata)
+sc.pl.umap(adata, color=<span class="str">"dpt_pseudotime"</span>)
 </pre></div>
-    <div class="code-tab-content" id="r9"><pre><span class="keyword">library</span>(destiny)
+    <div class="code-tab-content" id="rD"><pre><span class="keyword">library</span>(destiny)
 sce &lt;- <span class="func">as.SingleCellExperiment</span>(pbmc)
-dm &lt;- <span class="func">DiffusionMap</span>(<span class="func">t</span>(<span class="func">logcounts</span>(sce)))
-<span class="func">plot</span>(dm)
+dm &lt;- <span class="func">DiffusionMap</span>(<span class="func">t</span>(<span class="func">logcounts</span>(sce)),
+                  n_eigs = <span class="num">20</span>, sigma = <span class="str">"local"</span>)
+<span class="func">plot</span>(dm, <span class="num">1</span>:<span class="num">2</span>)   <span class="comment"># 前 2 個擴散座標</span>
+dpt &lt;- <span class="func">DPT</span>(dm)
+<span class="func">plot</span>(dpt)
 </pre></div>
   </div>
 </section>
 
-<section class="section">
-  <span class="section-label">參考 / References</span>
+<!-- ====================================================== §11 整理 ====================================================== -->
+<section class="section" id="s11">
+  <span class="section-label">§11 · 整理 / SUMMARY</span>
+  <h2 data-lang="zh">把整套故事串起來</h2>
+  <h2 data-lang="en">The whole story</h2>
+
+  <div class="callout callout-deep">
+    <p data-lang="zh"><b>Diffusion Maps 的 7 個核心思想</b>：</p>
+    <ol data-lang="zh">
+      <li><b>隨機行走</b>：螞蟻在資料上跳，自然走出流形（§0）</li>
+      <li><b>相似度核</b>：$K = \exp(-d^2/\sigma^2)$，把距離轉成親密度（§1）</li>
+      <li><b>轉移矩陣 $\mathbf{P} = \mathbf{D}^{-1}\mathbf{K}$</b>：標準化後的隨機行走（§2）</li>
+      <li><b>圖 Laplacian</b>：擴散的數學語言（§3）</li>
+      <li><b>譜分解</b>：特徵向量 = 流形的振動模式（§4）</li>
+      <li><b>擴散距離</b>：$D_t^2 = \sum_k \lambda_k^{2t}(\psi_k(i) - \psi_k(j))^2$（§5）</li>
+      <li><b>嵌入 $\Psi_t$</b>：把擴散距離變成歐式座標，$t$ 控制尺度（§6）</li>
+    </ol>
+    <p data-lang="en"><b>7 ideas</b>: (1) Random walk, (2) Gaussian kernel, (3) Transition matrix, (4) Graph Laplacian, (5) Spectral decomposition, (6) Diffusion distance, (7) Time-parameterized embedding.</p>
+  </div>
+
+  <h3 data-lang="zh">📚 參考文獻</h3>
+  <h3 data-lang="en">📚 References</h3>
   <ul class="refs-list">
-    <li><div class="ref-title">Coifman, R.R. &amp; Lafon, S. (2006). Diffusion maps.</div><div class="ref-meta">Applied and Computational Harmonic Analysis 21.</div></li>
-    <li><div class="ref-title">Haghverdi, L. et al. (2016). Diffusion pseudotime robustly reconstructs lineage branching.</div><div class="ref-meta">Nat Methods 13. <a href="https://doi.org/10.1038/nmeth.3971">10.1038/nmeth.3971</a></div></li>
-    <li><div class="ref-title">Angerer, P. et al. (2016). destiny: diffusion maps for large-scale single-cell data in R.</div><div class="ref-meta">Bioinformatics. <a href="https://doi.org/10.1093/bioinformatics/btv715">10.1093/bioinformatics/btv715</a></div></li>
+    <li><div class="ref-title">Coifman, R.R. &amp; Lafon, S. (2006). Diffusion maps.</div><div class="ref-meta">Applied and Computational Harmonic Analysis 21. 原始論文。</div></li>
+    <li><div class="ref-title">Coifman, R.R. et al. (2005). Geometric diffusions as a tool for harmonic analysis and structure definition of data.</div><div class="ref-meta">PNAS 102. 圖 Laplacian 數學基礎。</div></li>
+    <li><div class="ref-title">Haghverdi, L. et al. (2015). Diffusion maps for high-dimensional single-cell analysis of differentiation data.</div><div class="ref-meta">Bioinformatics 31. 首次應用到 scRNA-seq.</div></li>
+    <li><div class="ref-title">Haghverdi, L. et al. (2016). Diffusion pseudotime robustly reconstructs lineage branching.</div><div class="ref-meta">Nat Methods 13. DPT 原始論文，建立在 DM 上。<a href="https://doi.org/10.1038/nmeth.3971">10.1038/nmeth.3971</a></div></li>
+    <li><div class="ref-title">Angerer, P. et al. (2016). destiny: diffusion maps for large-scale single-cell data in R.</div><div class="ref-meta">Bioinformatics 32. <a href="https://doi.org/10.1093/bioinformatics/btv715">10.1093/bioinformatics/btv715</a></div></li>
+    <li><div class="ref-title">Wolf, F.A. et al. (2019). PAGA: graph abstraction reconciles clustering with trajectory inference.</div><div class="ref-meta">Genome Biology 20. <a href="https://doi.org/10.1186/s13059-019-1663-x">10.1186/s13059-019-1663-x</a></div></li>
   </ul>
 </section>
 
 <div class="cross-links">
-  <a href="3.3-umap.html" class="cross-link"><div class="cross-label" data-lang="zh">← 上一篇</div><div class="cross-label" data-lang="en">← PREV</div><div class="cross-title"><span class="cross-id">M3.3</span> UMAP</div></a>
-  <a href="../M6-advanced/6.2-pseudotime.html" class="cross-link"><div class="cross-label" data-lang="zh">應用 →</div><div class="cross-label" data-lang="en">APPLICATION →</div><div class="cross-title"><span class="cross-id">M6.2</span> Pseudotime / DPT</div></a>
+  <a href="3.3-umap.html" class="cross-link">
+    <div class="cross-label" data-lang="zh">← 上一篇</div><div class="cross-label" data-lang="en">← PREV</div>
+    <div class="cross-title"><span class="cross-id">M3.3</span> UMAP</div>
+  </a>
+  <a href="../M6-advanced/6.2-pseudotime.html" class="cross-link">
+    <div class="cross-label" data-lang="zh">應用 →</div><div class="cross-label" data-lang="en">APPLICATION →</div>
+    <div class="cross-title"><span class="cross-id">M6.2</span> Pseudotime / DPT</div>
+  </a>
 </div>
 
-</main>
-<footer class="site-footer"><p>© Charlene</p></footer>
+</div>
+
+<footer class="site-footer">
+  <p>© Charlene · <span data-lang="zh">scRNA-seq 進階數學教程 · Diffusion Maps 深入互動版</span><span data-lang="en">scRNA-seq Advanced Math · Diffusion Maps Deep Interactive</span></p>
+</footer>
+
 <script src="../i18n.js"></script>
-<script>function switchTab(b,id){const p=b.closest(".code-tabs");p.querySelectorAll(".code-tab-btn").forEach(x=>x.classList.remove("active"));p.querySelectorAll(".code-tab-content").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(id).classList.add("active");}</script>
-</body></html>
+<script>
+function switchTab(b,id){
+  const p=b.closest(".code-tabs");
+  p.querySelectorAll(".code-tab-btn").forEach(x=>x.classList.remove("active"));
+  p.querySelectorAll(".code-tab-content").forEach(x=>x.classList.remove("active"));
+  b.classList.add("active");
+  document.getElementById(id).classList.add("active");
+}
+
+/* ============================================
+   §0-1 Random walk on manifold
+   ============================================ */
+(function(){
+  const svg = document.getElementById('antSvg');
+  const readout = document.getElementById('antReadout');
+  const modeS = document.getElementById('antMode');
+  // generate banana-shaped manifold points
+  const pts = [];
+  for (let i = 0; i < 80; i++) {
+    const t = i / 79;
+    const cx = 100 + t * 600;
+    const cy = 160 + Math.sin(t * Math.PI * 1.8) * 80;
+    pts.push({ x: cx + (Math.random()-0.5)*15, y: cy + (Math.random()-0.5)*15 });
+  }
+  let antPos = 0; // index into pts
+  let steps = 0;
+  let trail = [0];
+  let probs = new Array(pts.length).fill(0);
+  probs[0] = 1;
+
+  function dist(a, b) { return Math.hypot(a.x-b.x, a.y-b.y); }
+  function makeP() {
+    // transition matrix: row-normalized exp(-d²/σ²)
+    const sig = 30;
+    const P = [];
+    for (let i = 0; i < pts.length; i++) {
+      const row = [];
+      let sum = 0;
+      for (let j = 0; j < pts.length; j++) {
+        const d = dist(pts[i], pts[j]);
+        const k = Math.exp(-d*d / (sig*sig));
+        row.push(k); sum += k;
+      }
+      P.push(row.map(v => v / sum));
+    }
+    return P;
+  }
+  const Pmat = makeP();
+  function step() {
+    // sample next
+    const row = Pmat[antPos];
+    const r = Math.random();
+    let acc = 0;
+    for (let j = 0; j < row.length; j++) {
+      acc += row[j];
+      if (r < acc) { antPos = j; break; }
+    }
+    trail.push(antPos);
+    if (trail.length > 100) trail.shift();
+    // update probs
+    const newProbs = new Array(pts.length).fill(0);
+    for (let i = 0; i < pts.length; i++) {
+      for (let j = 0; j < pts.length; j++) {
+        newProbs[j] += probs[i] * Pmat[i][j];
+      }
+    }
+    probs = newProbs;
+    steps++;
+  }
+  function reset() {
+    antPos = 0; steps = 0; trail = [0];
+    probs = new Array(pts.length).fill(0); probs[0] = 1;
+    draw();
+  }
+  function draw() {
+    const W=800, H=320;
+    const mode = modeS.value;
+    let h = `<rect width="${W}" height="${H}" fill="#fff"/>`;
+    if (mode === 'prob') {
+      const maxP = Math.max(...probs, 0.01);
+      for (const p of pts) {
+        const idx = pts.indexOf(p);
+        const a = probs[idx] / maxP;
+        h += `<circle cx="${p.x}" cy="${p.y}" r="${5+a*8}" fill="rgba(220,38,38,${0.15+a*0.85})"/>`;
+        h += `<circle cx="${p.x}" cy="${p.y}" r="3" fill="#4f7df4"/>`;
+      }
+    } else {
+      // points
+      for (const p of pts) h += `<circle cx="${p.x}" cy="${p.y}" r="3" fill="#4f7df4" opacity="0.7"/>`;
+      // trail
+      if (trail.length > 1) {
+        let path = '';
+        for (let i = 0; i < trail.length; i++) {
+          const p = pts[trail[i]];
+          path += (i===0?'M':'L') + p.x + ',' + p.y;
+        }
+        h += `<path d="${path}" stroke="#dc2626" stroke-width="1.5" fill="none" opacity="0.6"/>`;
+      }
+      // ant
+      const ap = pts[antPos];
+      h += `<circle cx="${ap.x}" cy="${ap.y}" r="8" fill="#dc2626" stroke="#fff" stroke-width="2"/>`;
+      h += `<text x="${ap.x}" y="${ap.y+4}" text-anchor="middle" font-size="10" fill="#fff" font-weight="700">🐜</text>`;
+    }
+    svg.innerHTML = h;
+    readout.innerHTML = `<span class="lbl">已走步數: </span><span class="val-hl">${steps}</span>
+      <span class="lbl">當前位置: 第 </span>${antPos + 1}<span class="lbl"> 個點</span>
+      ${mode === 'prob' ? `<b>機率熱圖：</b>顏色越深表示「螞蟻越可能在這」` : `<b>軌跡：</b>螞蟻沿流形走過的路徑`}`;
+  }
+  ['antRun','antRun_en'].forEach(id => { const b = document.getElementById(id); if (b) b.onclick = () => { step(); draw(); }; });
+  ['antRun100','antRun100_en'].forEach(id => { const b = document.getElementById(id); if (b) b.onclick = () => { for (let i = 0; i < 100; i++) step(); draw(); }; });
+  document.getElementById('antReset').onclick = reset;
+  modeS.onchange = draw;
+  draw();
+})();
+
+/* ============================================
+   §1 Kernel sigma effect
+   ============================================ */
+(function(){
+  const svg = document.getElementById('s1Svg');
+  const sigR = document.getElementById('s1sigR');
+  const sigV = document.getElementById('s1sigV');
+  const readout = document.getElementById('s1Readout');
+  const pts = [
+    {x: 350, y: 140, label: 'C', center: true},
+    {x: 220, y: 90},  {x: 280, y: 200},
+    {x: 420, y: 100}, {x: 460, y: 200},
+    {x: 150, y: 160}, {x: 540, y: 145},
+    {x: 600, y: 80}
+  ];
+  function draw() {
+    const sig = +sigR.value;
+    sigV.textContent = sig.toFixed(2);
+    let h = `<rect width="700" height="280" fill="#fff"/>`;
+    const center = pts[0];
+    let sumK = 0, maxK = 1;
+    const ks = pts.map((p, i) => {
+      if (i === 0) return 1;
+      const d = Math.hypot(p.x-center.x, p.y-center.y) / 50;
+      const k = Math.exp(-d*d / (sig*sig));
+      sumK += k;
+      return k;
+    });
+    // edges (line opacity ∝ K)
+    pts.forEach((p, i) => {
+      if (i === 0) return;
+      const opacity = ks[i];
+      h += `<line x1="${center.x}" y1="${center.y}" x2="${p.x}" y2="${p.y}" stroke="rgba(94,53,177,${opacity})" stroke-width="${1 + opacity*4}"/>`;
+    });
+    // points
+    pts.forEach((p, i) => {
+      if (i === 0) {
+        h += `<circle cx="${p.x}" cy="${p.y}" r="12" fill="#8b5cf6"/>`;
+        h += `<text x="${p.x}" y="${p.y+5}" text-anchor="middle" font-size="11" fill="#fff" font-weight="700">i</text>`;
+      } else {
+        h += `<circle cx="${p.x}" cy="${p.y}" r="9" fill="#4f7df4"/>`;
+        h += `<text x="${p.x}" y="${p.y-15}" text-anchor="middle" font-size="11" fill="#5e35b1" font-weight="700">${ks[i].toFixed(2)}</text>`;
+      }
+    });
+    h += `<text x="${center.x}" y="${center.y-25}" text-anchor="middle" font-size="11" fill="#666">σ = ${sig.toFixed(2)}</text>`;
+    svg.innerHTML = h;
+    const probs = ks.slice(1).map(k => k / (sumK));
+    const maxP = Math.max(...probs);
+    readout.innerHTML = `<span class="lbl">σ = </span><span class="val-hl">${sig.toFixed(2)}</span>
+      <span class="lbl">最強鄰居 P_{i→j_max} = </span><span class="val-hl">${maxP.toFixed(3)}</span>
+      ${sig < 0.8 ? '<b style="color:#dc2626">σ 太小！只有最近鄰連結，圖可能斷裂</b>' : sig > 4 ? '<b style="color:#06a77d">σ 大，所有點都連起來（接近 PCA）</b>' : '<b style="color:#f59e0b">σ 適中</b>'}`;
+  }
+  sigR.oninput = draw;
+  draw();
+})();
+
+/* ============================================
+   §2 P^t diffusion
+   ============================================ */
+(function(){
+  const svg = document.getElementById('s2Svg');
+  const tR = document.getElementById('s2tR');
+  const tV = document.getElementById('s2tV');
+  const readout = document.getElementById('s2Readout');
+  // 30 points in 3 clusters
+  const pts = [];
+  const cents = [{x:150,y:100},{x:400,y:80},{x:550,y:220},{x:200,y:240},{x:380,y:200}];
+  cents.forEach(c => {
+    for (let i = 0; i < 6; i++) {
+      pts.push({x: c.x + (Math.random()-0.5)*60, y: c.y + (Math.random()-0.5)*60});
+    }
+  });
+  // build P matrix
+  function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y);}
+  const sig = 60;
+  const Pmat = [];
+  for (let i = 0; i < pts.length; i++) {
+    const row = []; let s = 0;
+    for (let j = 0; j < pts.length; j++) {
+      const d = dist(pts[i], pts[j]);
+      const k = Math.exp(-d*d/(sig*sig));
+      row.push(k); s += k;
+    }
+    Pmat.push(row.map(v => v/s));
+  }
+  function Ptpow(t) {
+    if (t === 0) {
+      const I = pts.map((_, i) => pts.map((_, j) => i === j ? 1 : 0));
+      return I;
+    }
+    let R = Pmat.map(r => r.slice());
+    for (let k = 1; k < t; k++) {
+      const N = R.map((r, i) => {
+        const out = new Array(pts.length).fill(0);
+        for (let j = 0; j < pts.length; j++) {
+          for (let l = 0; l < pts.length; l++) {
+            out[j] += R[i][l] * Pmat[l][j];
+          }
+        }
+        return out;
+      });
+      R = N;
+    }
+    return R;
+  }
+  function draw() {
+    const t = +tR.value;
+    tV.textContent = t;
+    const focus = 0;
+    const Pt = Ptpow(t);
+    const probs = Pt[focus];
+    let h = `<rect width="700" height="320" fill="#fff"/>`;
+    const maxP = Math.max(...probs);
+    for (let i = 0; i < pts.length; i++) {
+      const a = probs[i] / maxP;
+      h += `<circle cx="${pts[i].x}" cy="${pts[i].y}" r="${5+a*12}" fill="rgba(94,53,177,${0.1+a*0.7})" stroke="${i===focus?'#dc2626':'none'}" stroke-width="${i===focus?2:0}"/>`;
+    }
+    h += `<text x="${pts[focus].x}" y="${pts[focus].y-22}" text-anchor="middle" font-size="11" fill="#dc2626" font-weight="700">start</text>`;
+    h += `<text x="350" y="300" text-anchor="middle" font-size="13" fill="#444" font-weight="700">t = ${t} ${t===0?'(只在起點)':t<5?'(局部擴散)':t<15?'(中程擴散)':'(已擴散到全圖)'}</text>`;
+    svg.innerHTML = h;
+    const sumP = probs.reduce((a,b)=>a+b,0);
+    readout.innerHTML = `<span class="lbl">P^${t} 行 ${focus+1} 的和 = </span><span class="val-hl">${sumP.toFixed(4)}</span>
+      <span class="lbl">最高機率 = </span>${maxP.toFixed(3)}
+      ${t < 3 ? '<b>機率主要在起點附近（局部）</b>' : t < 10 ? '<b>機率擴散到鄰近群</b>' : '<b>機率趨近穩態（均勻）</b>'}`;
+  }
+  tR.oninput = draw;
+  draw();
+})();
+
+/* ============================================
+   §4 Eigenvectors as vibration modes
+   ============================================ */
+(function(){
+  const svg = document.getElementById('s4Svg');
+  const kR = document.getElementById('s4kR');
+  const kV = document.getElementById('s4kV');
+  const readout = document.getElementById('s4Readout');
+  const N = 25;
+  // points on curve
+  const pts = [];
+  for (let i = 0; i < N; i++) {
+    const t = i / (N-1);
+    pts.push({x: 60 + t * 600, y: 160});
+  }
+  function draw() {
+    const k = +kR.value;
+    kV.textContent = k;
+    let h = `<rect width="700" height="320" fill="#fff"/>`;
+    h += `<line x1="60" y1="220" x2="660" y2="220" stroke="#999"/>`;
+    // values: ψ_k(i) = cos(k π i/N) approximately
+    const vals = [];
+    for (let i = 0; i < N; i++) {
+      const v = Math.cos(k * Math.PI * i / (N-1));
+      vals.push(v);
+    }
+    // bar chart
+    pts.forEach((p, i) => {
+      const v = vals[i];
+      const bh = v * 100;
+      h += `<line x1="${p.x}" y1="220" x2="${p.x}" y2="${220-bh}" stroke="#5e35b1" stroke-width="2"/>`;
+      h += `<circle cx="${p.x}" cy="${220-bh}" r="5" fill="${v>0?'#06a77d':'#dc2626'}"/>`;
+    });
+    // smooth curve
+    let path = '';
+    for (let i = 0; i < N; i++) {
+      path += (i===0?'M':'L') + pts[i].x + ',' + (220 - vals[i]*100);
+    }
+    h += `<path d="${path}" stroke="#5e35b1" stroke-width="1.5" fill="none" stroke-dasharray="3 2" opacity="0.5"/>`;
+    h += `<text x="350" y="40" text-anchor="middle" font-size="14" fill="#5e35b1" font-weight="700">ψ_${k}(i) — ${k===0?'平凡（常數）':k===1?'第 1 模式（最低頻）':`第 ${k} 模式（${k-1} 個節點）`}</text>`;
+    h += `<text x="350" y="300" text-anchor="middle" font-size="11" fill="#666">每個藍紫色直線 = ψ_${k} 在點 i 的值</text>`;
+    // count zero crossings
+    let nodes = 0;
+    for (let i = 1; i < N; i++) {
+      if ((vals[i-1] > 0) !== (vals[i] > 0)) nodes++;
+    }
+    svg.innerHTML = h;
+    readout.innerHTML = `<span class="lbl">特徵向量 k = </span><span class="val-hl">${k}</span>
+      <span class="lbl">零點數量 (nodes) = </span><span class="val-hl">${nodes}</span>
+      ${k === 0 ? '<b style="color:#dc2626">這是平凡特徵向量（常數），通常跳過</b>' : k <= 2 ? '<b style="color:#06a77d">低頻模式 → 全局結構</b>' : '<b style="color:#f59e0b">高頻模式 → 局部細節</b>'}`;
+  }
+  kR.oninput = draw;
+  draw();
+})();
+
+/* ============================================
+   §4 Quiz
+   ============================================ */
+(function(){
+  const quiz = document.querySelector('#s4 .quiz-mini');
+  if (!quiz) return;
+  const opts = quiz.querySelectorAll('.quiz-opt');
+  const fb = quiz.querySelector('.quiz-feedback');
+  opts.forEach(opt => {
+    opt.onclick = () => {
+      if (quiz.classList.contains('answered')) return;
+      quiz.classList.add('answered');
+      const correct = opt.dataset.ans === '1';
+      opt.classList.add(correct ? 'correct' : 'wrong');
+      if (!correct) quiz.querySelector('[data-ans="1"]').classList.add('correct');
+      fb.innerHTML = correct
+        ? '✅ <b>正確！</b> 大特徵值 → 低頻模式 → 全局擴散結構。小特徵值很快被 λ^t 壓縮掉。'
+        : '❌ <b>答案是 B</b>。特徵值大小決定該模式在嵌入中的「持久度」。';
+    };
+  });
+})();
+
+/* ============================================
+   §5 Diffusion vs Euclidean distance
+   ============================================ */
+(function(){
+  const svg = document.getElementById('s5Svg');
+  const tR = document.getElementById('s5tR');
+  const tV = document.getElementById('s5tV');
+  const readout = document.getElementById('s5Readout');
+  // S-shape data
+  const pts = [];
+  for (let i = 0; i < 40; i++) {
+    const t = i / 39;
+    let x, y;
+    if (t < 0.5) {
+      const u = t * 2;
+      x = 80 + u * 240;
+      y = 80 + Math.sin(u * Math.PI) * 100;
+    } else {
+      const u = (t - 0.5) * 2;
+      x = 320 + u * 280;
+      y = 280 - Math.sin(u * Math.PI) * 100;
+    }
+    pts.push({x, y});
+  }
+  // pairs
+  const redPair = [10, 30]; // Euclidean-close, manifold-far
+  const greenPair = [3, 15]; // Euclidean-far, manifold-close
+  function draw() {
+    const t = +tR.value;
+    tV.textContent = t;
+    let h = `<rect width="700" height="320" fill="#fff"/>`;
+    // manifold line
+    let path = '';
+    for (let i = 0; i < pts.length; i++) path += (i===0?'M':'L') + pts[i].x + ',' + pts[i].y;
+    h += `<path d="${path}" stroke="#4f7df4" stroke-width="1.5" fill="none" opacity="0.5"/>`;
+    // points
+    for (let i = 0; i < pts.length; i++) {
+      h += `<circle cx="${pts[i].x}" cy="${pts[i].y}" r="3" fill="#4f7df4"/>`;
+    }
+    // red pair
+    const r1 = pts[redPair[0]], r2 = pts[redPair[1]];
+    h += `<line x1="${r1.x}" y1="${r1.y}" x2="${r2.x}" y2="${r2.y}" stroke="#dc2626" stroke-width="2" stroke-dasharray="5 3"/>`;
+    h += `<circle cx="${r1.x}" cy="${r1.y}" r="8" fill="#dc2626"/>`;
+    h += `<circle cx="${r2.x}" cy="${r2.y}" r="8" fill="#dc2626"/>`;
+    // green pair
+    const g1 = pts[greenPair[0]], g2 = pts[greenPair[1]];
+    h += `<line x1="${g1.x}" y1="${g1.y}" x2="${g2.x}" y2="${g2.y}" stroke="#06a77d" stroke-width="2" stroke-dasharray="5 3"/>`;
+    h += `<circle cx="${g1.x}" cy="${g1.y}" r="8" fill="#06a77d"/>`;
+    h += `<circle cx="${g2.x}" cy="${g2.y}" r="8" fill="#06a77d"/>`;
+    // labels
+    const dRedE = Math.hypot(r1.x-r2.x, r1.y-r2.y);
+    const dGreenE = Math.hypot(g1.x-g2.x, g1.y-g2.y);
+    // approximate diffusion distance: manifold-step count
+    const dRedM = Math.abs(redPair[0] - redPair[1]);
+    const dGreenM = Math.abs(greenPair[0] - greenPair[1]);
+    // weighted by t
+    const dRedT = dRedM * (1 + Math.log(t));
+    const dGreenT = dGreenM * (1 + Math.log(t));
+    h += `<text x="350" y="25" text-anchor="middle" font-size="13" fill="#444" font-weight="700">紅 (Euclidean 近) vs 綠 (Euclidean 遠) — 看擴散距離哪對比較小</text>`;
+    h += `<text x="${(r1.x+r2.x)/2}" y="${(r1.y+r2.y)/2-12}" text-anchor="middle" font-size="11" fill="#dc2626" font-weight="700">d_E=${dRedE.toFixed(0)} d_t=${dRedT.toFixed(1)}</text>`;
+    h += `<text x="${(g1.x+g2.x)/2}" y="${(g1.y+g2.y)/2-12}" text-anchor="middle" font-size="11" fill="#06a77d" font-weight="700">d_E=${dGreenE.toFixed(0)} d_t=${dGreenT.toFixed(1)}</text>`;
+    svg.innerHTML = h;
+    readout.innerHTML = `t = ${t}
+      <span style="color:#dc2626">紅對 Euclidean ${dRedE.toFixed(0)}，擴散 ${dRedT.toFixed(1)}</span>
+      <span style="color:#06a77d">綠對 Euclidean ${dGreenE.toFixed(0)}，擴散 ${dGreenT.toFixed(1)}</span><br>
+      ${dRedT > dGreenT ? '<b>✓ 擴散距離正確認知「紅對其實遠」（沿流形）</b>' : '請增大 t 看擴散距離分化'}`;
+  }
+  tR.oninput = draw;
+  draw();
+})();
+
+/* ============================================
+   §6 Embedding with t
+   ============================================ */
+(function(){
+  const svg = document.getElementById('s6Svg');
+  const tR = document.getElementById('s6tR');
+  const tV = document.getElementById('s6tV');
+  const readout = document.getElementById('s6Readout');
+  // 3 clusters in 2D
+  const ptsRaw = [];
+  const labels = [];
+  const cents = [{x:-2,y:-1.5,c:'#c0392b'},{x:2,y:0,c:'#06a77d'},{x:0,y:2,c:'#4f7df4'}];
+  for (let g = 0; g < 3; g++) {
+    for (let i = 0; i < 8; i++) {
+      ptsRaw.push({x: cents[g].x + (Math.random()-0.5)*1.2, y: cents[g].y + (Math.random()-0.5)*1.2, g});
+    }
+  }
+  // simple diffusion-like embedding: bias toward cluster center as t grows
+  function draw() {
+    const t = +tR.value;
+    tV.textContent = t;
+    let h = `<rect width="700" height="340" fill="#fff"/>`;
+    h += `<text x="350" y="25" text-anchor="middle" font-size="13" fill="#444" font-weight="700">擴散嵌入 (ψ_1, ψ_2)，t = ${t}</text>`;
+    // axes
+    h += `<line x1="50" y1="170" x2="650" y2="170" stroke="#ccc"/>`;
+    h += `<line x1="350" y1="50" x2="350" y2="310" stroke="#ccc"/>`;
+    h += `<text x="650" y="185" text-anchor="end" font-size="11" fill="#666">ψ_1</text>`;
+    h += `<text x="365" y="60" font-size="11" fill="#666">ψ_2</text>`;
+    // points: blend between raw and cluster center based on t
+    const decay = Math.pow(0.85, t); // higher modes decay
+    ptsRaw.forEach(p => {
+      const c = cents[p.g];
+      const ex = (p.x * decay + c.x * (1-decay));
+      const ey = (p.y * decay + c.y * (1-decay));
+      const sx = 350 + ex * 60;
+      const sy = 170 - ey * 60;
+      h += `<circle cx="${sx}" cy="${sy}" r="6" fill="${cents[p.g].c}" opacity="0.85"/>`;
+    });
+    svg.innerHTML = h;
+    readout.innerHTML = `<span class="lbl">t = </span><span class="val-hl">${t}</span>
+      ${t === 0 ? '<b>原始位置（無擴散）</b>' : t < 5 ? '<b>群結構開始浮現</b>' : t < 15 ? '<b>群內結構漸消失，群間分離明顯</b>' : '<b>群被擠成一點（過度擴散）</b>'}`;
+  }
+  tR.oninput = draw;
+  draw();
+})();
+
+/* ============================================
+   §7 Algorithm walkthrough
+   ============================================ */
+(function(){
+  const stepSvg = document.getElementById('stepSvg');
+  const stepTitle = document.getElementById('stepTitle');
+  const stepDesc = document.getElementById('stepDesc');
+  const stepMath = document.getElementById('stepMath');
+  const dots = document.querySelectorAll('#s7 .step-dot');
+  let cur = 1;
+  const TOTAL = 7;
+  // sample 30 points along an S curve
+  const pts = [];
+  for (let i = 0; i < 30; i++) {
+    const t = i / 29;
+    pts.push({
+      x: 100 + Math.sin(t * Math.PI * 2) * 80 + t * 250,
+      y: 80 + t * 120 + (Math.random()-0.5)*10
+    });
+  }
+  function dist(a, b) { return Math.hypot(a.x-b.x, a.y-b.y); }
+  function render() {
+    dots.forEach(d => {
+      const n = +d.dataset.step;
+      d.classList.toggle('active', n === cur);
+      d.classList.toggle('done', n < cur);
+    });
+    let h = '<rect width="500" height="320" fill="#0d1631"/>';
+    let title, desc, math;
+    if (cur === 1) {
+      title = '步驟 1：計算距離平方矩陣';
+      desc = '對每對點計算 ||xᵢ - xⱼ||²。這跟其他降維方法一樣是起點。';
+      math = '<span style="color:#ffd564"># Step 1</span>\nD[i,j] = ||x_i - x_j||²\nfor i, j in n × n grid';
+      for (const p of pts) h += `<circle cx="${p.x}" cy="${p.y}" r="4" fill="#4f7df4"/>`;
+      // show some distances
+      const focus = pts[10];
+      for (const p of pts) {
+        if (p === focus) continue;
+        const d = dist(focus, p);
+        if (d < 80) h += `<line x1="${focus.x}" y1="${focus.y}" x2="${p.x}" y2="${p.y}" stroke="#ffd564" stroke-width="0.5" opacity="0.3"/>`;
+      }
+      h += `<circle cx="${focus.x}" cy="${focus.y}" r="7" fill="#ffd564"/>`;
+    } else if (cur === 2) {
+      title = '步驟 2：相似度核 Kᵢⱼ = exp(-d²/σ²)';
+      desc = '用高斯核把距離轉成「親密度」。σ 控制鄰居視野。';
+      math = '<span style="color:#ffd564"># Step 2</span>\nK = np.exp(-D / sigma²)\n# typical: sigma = median(k-NN distance)';
+      // show edges weighted by K
+      for (let i = 0; i < pts.length; i++) {
+        for (let j = i+1; j < pts.length; j++) {
+          const d = dist(pts[i], pts[j]);
+          const k = Math.exp(-d*d/1500);
+          if (k > 0.1) h += `<line x1="${pts[i].x}" y1="${pts[i].y}" x2="${pts[j].x}" y2="${pts[j].y}" stroke="#06a77d" stroke-width="${k*2}" opacity="${k}"/>`;
+        }
+      }
+      for (const p of pts) h += `<circle cx="${p.x}" cy="${p.y}" r="4" fill="#4f7df4"/>`;
+    } else if (cur === 3) {
+      title = '步驟 3：歸一化得轉移矩陣 P';
+      desc = '把每列除以該列總和（degree），得列總和 = 1 的隨機行走矩陣。';
+      math = '<span style="color:#ffd564"># Step 3</span>\nD_diag = K.sum(axis=1)\nP = K / D_diag[:, None]\n# row-stochastic: rows sum to 1';
+      // visualize P matrix as small grid
+      h += `<rect x="120" y="40" width="260" height="240" fill="#1a2347" stroke="#4f7df4" rx="6"/>`;
+      h += `<text x="250" y="30" text-anchor="middle" font-size="13" fill="#ffd564" font-weight="700">P (30×30 stochastic matrix)</text>`;
+      // tiny matrix viz
+      for (let i = 0; i < 10; i++) {
+        for (let j = 0; j < 10; j++) {
+          const v = Math.random() * Math.exp(-Math.abs(i-j)/2);
+          h += `<rect x="${130 + j*24}" y="${50 + i*22}" width="22" height="20" fill="rgba(245,158,11,${v})"/>`;
+        }
+      }
+      h += `<text x="250" y="305" text-anchor="middle" font-size="11" fill="#ffd564">深色 = 高機率（鄰居）</text>`;
+    } else if (cur === 4) {
+      title = '步驟 4：對 P (或 L_sym) 做特徵分解';
+      desc = '用 ARPACK 或 LOBPCG 算前 k 個特徵值與特徵向量。實務上 k = 20-50。';
+      math = '<span style="color:#ffd564"># Step 4</span>\neigvals, eigvecs = scipy.sparse.linalg.eigsh(\n    L_sym, k=20, which="SM"\n)\n# skip eigval ≈ 1 (trivial)';
+      // show top eigenvalues as bar chart
+      const evs = [1.0, 0.92, 0.78, 0.55, 0.32, 0.18, 0.09, 0.05, 0.02, 0.01];
+      evs.forEach((v, i) => {
+        const x = 80 + i * 35;
+        const barH = v * 200;
+        const color = i === 0 ? '#dc2626' : '#06a77d';
+        h += `<rect x="${x}" y="${260-barH}" width="28" height="${barH}" fill="${color}" rx="2"/>`;
+        h += `<text x="${x+14}" y="${275}" text-anchor="middle" font-size="10" fill="#c5cee8">λ_${i}</text>`;
+        if (i === 0) h += `<text x="${x+14}" y="${50}" text-anchor="middle" font-size="10" fill="#dc2626" font-weight="700">trivial</text>`;
+      });
+      h += `<text x="250" y="30" text-anchor="middle" font-size="14" fill="#ffd564" font-weight="700">特徵值譜（top 10）</text>`;
+    } else if (cur === 5) {
+      title = '步驟 5：跳過 λ₀ = 1，保留 ψ₁, ψ₂, ...';
+      desc = '常數向量 ψ₀ 對應 stationary distribution，沒資訊。從 ψ₁ 開始取作為新座標。';
+      math = '<span style="color:#ffd564"># Step 5</span>\n# Skip trivial eigenvector\npsi = eigvecs[:, 1:1+n_dim]\nlam = eigvals[1:1+n_dim]';
+      // show eigenvectors as small curves
+      for (let k = 1; k <= 3; k++) {
+        let path = '';
+        for (let i = 0; i < 30; i++) {
+          const v = Math.cos(k * Math.PI * i / 29);
+          const x = 80 + i * 12;
+          const y = 100 + k * 50 + v * 30;
+          path += (i===0?'M':'L') + x + ',' + y;
+        }
+        const color = ['#ffd564', '#06a77d', '#4f7df4'][k-1];
+        h += `<path d="${path}" stroke="${color}" stroke-width="2" fill="none"/>`;
+        h += `<text x="60" y="${100 + k*50 + 5}" text-anchor="end" font-size="11" fill="${color}" font-weight="700">ψ_${k}</text>`;
+      }
+      h += `<text x="250" y="60" text-anchor="middle" font-size="13" fill="#ffd564" font-weight="700">非平凡特徵向量 = 擴散模式</text>`;
+    } else if (cur === 6) {
+      title = '步驟 6：擴散嵌入 Ψ_t(xᵢ) = (λ_k^t · ψ_k(i))';
+      desc = '把每個點映射到 d 維擴散座標。時間 t 控制「擴散程度」，典型 t=1。';
+      math = '<span style="color:#ffd564"># Step 6</span>\nt = 1  # diffusion time\nembedding = psi * (lam ** t)\n# shape: (n_cells, n_dim)';
+      // show 30 points in 2D embedding
+      for (let i = 0; i < 30; i++) {
+        const x = 150 + Math.cos(i / 30 * Math.PI * 2) * 100 * (1 + (Math.random()-0.5)*0.3);
+        const y = 160 + Math.sin(i / 30 * Math.PI * 2) * 100 * (1 + (Math.random()-0.5)*0.3);
+        h += `<circle cx="${x}" cy="${y}" r="4" fill="#4f7df4"/>`;
+      }
+      h += `<text x="250" y="40" text-anchor="middle" font-size="13" fill="#ffd564" font-weight="700">2D 擴散嵌入</text>`;
+      h += `<line x1="60" y1="160" x2="440" y2="160" stroke="#444"/>`;
+      h += `<line x1="250" y1="60" x2="250" y2="260" stroke="#444"/>`;
+      h += `<text x="440" y="175" text-anchor="end" font-size="11" fill="#c5cee8">ψ_1</text>`;
+      h += `<text x="265" y="70" font-size="11" fill="#c5cee8">ψ_2</text>`;
+    } else if (cur === 7) {
+      title = '步驟 7：應用 — 視覺化、DPT、聚類';
+      desc = '擴散嵌入可以直接視覺化（如 UMAP），也可以餵給 DPT 算 pseudotime。';
+      math = '<span style="color:#ffd564"># Step 7: applications</span>\n# Visualization\nplt.scatter(embedding[:, 0], embedding[:, 1])\n\n# Diffusion Pseudotime (M6.2)\nsc.tl.dpt(adata)';
+      const colors = ['#c0392b','#06a77d','#4f7df4'];
+      for (let g = 0; g < 3; g++) {
+        for (let i = 0; i < 10; i++) {
+          const cx = 130 + g * 120;
+          const cy = 160;
+          h += `<circle cx="${cx + (Math.random()-0.5)*60}" cy="${cy + (Math.random()-0.5)*80}" r="5" fill="${colors[g]}" opacity="0.85"/>`;
+        }
+      }
+      h += `<text x="250" y="290" text-anchor="middle" font-size="14" fill="#ffd564" font-weight="700">✓ 3 群結構 + 連續軌跡</text>`;
+    }
+    stepSvg.innerHTML = h;
+    stepTitle.textContent = title;
+    stepDesc.innerHTML = `<p style="margin:0">${desc}</p>`;
+    stepMath.innerHTML = math;
+    document.getElementById('stepPrev').disabled = cur === 1;
+    document.getElementById('stepNext').disabled = cur === TOTAL;
+  }
+  document.getElementById('stepNext').onclick = () => { if (cur < TOTAL) { cur++; render(); } };
+  document.getElementById('stepPrev').onclick = () => { if (cur > 1) { cur--; render(); } };
+  document.getElementById('stepReset').onclick = () => { cur = 1; render(); };
+  dots.forEach(d => d.onclick = () => { cur = +d.dataset.step; render(); });
+  render();
+})();
+</script>
+</body>
+</html>

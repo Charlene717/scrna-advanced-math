@@ -1,109 +1,716 @@
 <!DOCTYPE html>
-<html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>5.2 Multiple Testing &amp; FDR — scRNA-seq Advanced Math</title><link rel="stylesheet" href="../styles.css">
-<script>MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] } };</script>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>5.2 多重檢定 / FDR：Bonferroni / BH / q-value — Deep Interactive</title>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
-</head><body>
+<style>
+  :root {
+    --bg: #fafaf7; --fg: #1a1a1a; --muted: #666;
+    --accent: #c0392b; --accent2: #2c5aa0;
+    --green: #27795a; --purple: #8e44ad; --yellow: #f0c419;
+    --slate: #475569;
+    --card: #ffffff; --border: #e0e0d8; --code: #f4f1ea;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Helvetica Neue", "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif; background: var(--bg); color: var(--fg); line-height: 1.75; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 40px 28px 120px; }
+  header.cover { margin: 20px 0 60px; padding: 52px 40px;
+    background: linear-gradient(135deg, #0f172a 0%, #475569 55%, #94a3b8 100%);
+    color: #fff; border-radius: 16px; box-shadow: 0 14px 40px rgba(15,23,42,0.18); }
+  header.cover h1 { margin: 0 0 14px; font-size: 36px; }
+  header.cover .sub { font-size: 17px; opacity: 0.92; line-height: 1.65; }
+  header.cover .badge { display: inline-block; background: rgba(255,255,255,0.18);
+    padding: 4px 12px; border-radius: 20px; font-size: 13px; margin-bottom: 16px; }
+  h2 { margin-top: 70px; padding-bottom: 8px; border-bottom: 3px solid var(--slate);
+    font-size: 26px; display: flex; align-items: baseline; gap: 12px; }
+  h2 .num { color: var(--slate); font-weight: 800; font-size: 20px; }
+  h3 { margin-top: 36px; font-size: 19px; color: var(--accent2); }
+  h4 { margin-top: 22px; font-size: 16px; color: var(--accent); }
+  p { margin: 14px 0; }
+  .lead { font-size: 17px; color: #2a2a2a; }
+  .callout { background: #fff8e6; border-left: 4px solid var(--yellow); padding: 14px 18px; border-radius: 6px; margin: 22px 0; }
+  .callout.idea { background: #eaf4ff; border-left-color: var(--accent2); }
+  .callout.warn { background: #fdecec; border-left-color: var(--accent); }
+  .callout.bio  { background: #effaf3; border-left-color: var(--green); }
+  .callout.prog { background: #f1f5f9; border-left-color: var(--slate); }
+  .card { background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px 26px; margin: 26px 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+  .card h3 { margin-top: 0; }
+  .controls { display: flex; flex-wrap: wrap; gap: 14px 22px;
+    align-items: center; margin: 14px 0; padding: 12px 16px;
+    background: #f4f1ea; border-radius: 8px; font-size: 14px; }
+  .controls label { display: flex; align-items: center; gap: 8px; }
+  button { background: var(--slate); color: #fff; border: 0;
+    padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 14px;
+    font-family: inherit; }
+  button:hover { background: #1e293b; }
+  button.ghost { background: #fff; color: var(--slate); border: 1px solid var(--slate); }
+  input[type="range"] { width: 180px; vertical-align: middle; }
+  svg.canvas { background: #fcfcfa; border: 1px solid var(--border); border-radius: 8px; display: block; }
+  svg.canvas .axis { stroke: #bbb; stroke-width: 1; }
+  svg.canvas .grid { stroke: #ececea; stroke-width: 0.5; }
+  svg.canvas text.lbl { font-size: 12px; fill: #333; }
+  .stat-row { display: flex; flex-wrap: wrap; gap: 22px; margin: 14px 0; font-size: 14px; }
+  .stat-row .item { display: flex; flex-direction: column; }
+  .stat-row .item .lbl { color: var(--muted); font-size: 12px; }
+  .stat-row .item .val { font-family: "JetBrains Mono", monospace; font-size: 18px; }
+  details { margin: 16px 0; }
+  details summary { cursor: pointer; font-weight: 600; color: var(--accent2); padding: 6px 0; }
+  .toc { background: #fff; border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 28px; margin: 30px 0; }
+  .toc h4 { margin: 0 0 10px; color: var(--slate); }
+  .toc ol { margin: 6px 0; padding-left: 24px; line-height: 1.9; }
+  .toc a { color: var(--accent2); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .toc .new { background: var(--slate); color: #fff; font-size: 11px;
+    padding: 1px 8px; border-radius: 10px; margin-left: 6px; }
+  code.inline { background: var(--code); padding: 2px 6px; border-radius: 4px;
+    font-size: 13px; font-family: "JetBrains Mono", "Consolas", monospace; }
+  pre.code { background: #1e1e1e; color: #dcdcdc;
+    padding: 14px 18px; border-radius: 8px; overflow-x: auto; font-size: 13px;
+    font-family: "JetBrains Mono", "Consolas", monospace; line-height: 1.55; }
+  pre.code .k { color: #569cd6; }
+  pre.code .s { color: #ce9178; }
+  pre.code .c { color: #6a9955; }
+  pre.code .n { color: #b5cea8; }
+  table.compare { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.compare th, table.compare td { border: 1px solid var(--border); padding: 8px 12px; }
+  table.compare th { background: #f4f1ea; text-align: left; }
+  .math-block { background: #fff; border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 18px; margin: 18px 0; }
+  .math-block.boxed { border: 2px solid var(--slate); background: #f1f5f9; }
+  .formula-caption { font-size: 12.5px; color: var(--muted); text-align: center; margin-top: 6px; }
+  .footer { text-align: center; color: var(--muted); margin-top: 80px; font-size: 13px; }
+  .top-nav { background: #0f172a; color: #fff; padding: 14px 28px;
+    position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(15,23,42,0.25); }
+  .top-nav-inner { max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; gap: 28px; }
+  .top-nav-brand { color: #fff; text-decoration: none;
+    font-weight: 700; font-size: 17px;
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .top-nav-brand .badge-math { background: #64748b; color: #fff;
+    padding: 3px 9px; border-radius: 4px; font-size: 11px; }
+  .top-nav-links { list-style: none; margin: 0; padding: 0;
+    display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+  .top-nav-links a { color: #cbd5e1; text-decoration: none;
+    padding: 6px 11px; border-radius: 6px; font-size: 13px; font-weight: 500;
+    transition: 0.2s; }
+  .top-nav-links a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .top-nav-links a.active { background: #475569; color: #fff; }
+  .top-nav-links li.dropdown { position: relative; }
+  .top-nav-links li.dropdown > a::after { content: ' ▾';
+    font-size: 10px; opacity: 0.7; margin-left: 3px;
+    display: inline-block; transition: transform 0.2s; }
+  .top-nav-links li.dropdown:hover > a::after,
+  .top-nav-links li.dropdown.open > a::after { transform: rotate(180deg); }
+  .top-nav-links .dropdown-menu { display: none; position: absolute; top: 100%; left: 0;
+    background: #1e293b; border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px; padding: 6px 0; min-width: 230px;
+    list-style: none; z-index: 200;
+    box-shadow: 0 8px 28px rgba(15,23,42,0.5); margin: 6px 0 0; }
+  .top-nav-links li.dropdown:hover > .dropdown-menu,
+  .top-nav-links li.dropdown.open > .dropdown-menu { display: block; }
+  .top-nav-links .dropdown-menu li { display: block; }
+  .top-nav-links .dropdown-menu li a { display: block; padding: 9px 18px;
+    border-radius: 0; font-size: 13px; white-space: nowrap; color: #cbd5e1; }
+  .top-nav-links .dropdown-menu li a:hover { background: rgba(71,85,105,0.3); color: #fff; }
+  .top-nav-links .dropdown-menu li a.active-sub { background: #475569; color: #fff; font-weight: 700; }
+  .top-nav-links .dropdown-menu .sub-label { font-size: 10px; color: #94a3b8;
+    letter-spacing: 1px; padding: 4px 18px 2px; text-transform: uppercase; }
+  .lang-switch { display: flex; gap: 4px;
+    background: rgba(255,255,255,0.08); padding: 4px; border-radius: 6px; flex-shrink: 0; }
+  .lang-switch button { background: transparent; border: 0; color: #cbd5e1;
+    font-size: 12px; font-weight: 700; padding: 5px 10px;
+    border-radius: 4px; cursor: pointer; font-family: inherit; }
+  .lang-switch button.active { background: #475569; color: #fff; }
+  .nav-pages { display: flex; gap: 8px; margin: 24px 0; padding: 14px;
+    background: #1e293b; border-radius: 10px; align-items: center; flex-wrap: wrap; }
+  .nav-pages a { color: #cbd5e1; text-decoration: none;
+    padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600;
+    transition: 0.2s; }
+  .nav-pages a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .nav-pages .label { color: #94a3b8; font-size: 11px;
+    letter-spacing: 1px; font-weight: 700; margin-right: 8px; }
+  [data-lang="en"] { display: none; }
+  body.lang-en [data-lang="zh"] { display: none; }
+  body.lang-en [data-lang="en"] { display: initial; }
+  body.lang-en h1[data-lang="en"], body.lang-en h2[data-lang="en"],
+  body.lang-en h3[data-lang="en"], body.lang-en h4[data-lang="en"],
+  body.lang-en p[data-lang="en"], body.lang-en div[data-lang="en"],
+  body.lang-en ol[data-lang="en"], body.lang-en ul[data-lang="en"] { display: block; }
+  body.lang-en li[data-lang="en"] { display: list-item; }
+  body.lang-en span[data-lang="en"] { display: inline; }
+  body.lang-en tspan[data-lang="en"] { display: inline; }
+</style>
+</head>
+<body>
+
 <nav class="top-nav"><div class="top-nav-inner">
-  <a href="../index.html" class="top-nav-brand"><span>🧬</span><span data-lang="zh">scRNA-seq 進階數學</span><span data-lang="en">scRNA-seq Advanced Math</span><span class="badge-math">MATH</span></a>
-  <ul class="top-nav-links"><li><a href="../index.html#M1">M1</a></li><li><a href="../index.html#M2">M2</a></li><li><a href="../index.html#M3">M3</a></li><li><a href="../index.html#M4">M4</a></li><li><a href="../index.html#M5" class="active">M5</a></li><li><a href="../index.html#M6">M6</a></li><li><a href="../index.html" data-lang="zh">🏠 回首頁</a><span data-lang="en">🏠 Home</span></li></ul>
-  <div class="lang-switch"><button data-lang-btn="zh" class="active">中文</button><button data-lang-btn="en">EN</button></div>
-</div></nav>
-<header class="page-hero"><div class="page-hero-inner">
-  <div class="page-badge">M5.2 · STATISTICAL INFERENCE</div>
-  <h1 data-lang="zh">多重檢定校正：FDR</h1><h1 data-lang="en">Multiple Testing &amp; FDR</h1>
-  <p class="subtitle" data-lang="zh">2 萬個基因做 t 檢定為什麼會「滿地都是顯著」？FWER vs FDR、BH 程序的證明。</p>
-  <p class="subtitle" data-lang="en">Why 20k simultaneous tests yield bogus significance. FWER vs FDR. Proof sketch of BH.</p>
-</div></header>
-
-<main class="content-wrap">
-
-<section class="section">
-  <span class="section-label intuition">直覺 / Intuition</span>
-  <div data-lang="zh"><p>對 2 萬個基因每個做 t 檢定，<b>即使沒有真實差異，仍會有 1,000 個 p &lt; 0.05</b>（純粹巧合）。如果不校正，DE 結果幾乎全是假陽性。</p></div>
-  <div data-lang="en"><p>20,000 t-tests yield ~1,000 false positives at α=0.05 even under null. Without correction, DE results are mostly noise.</p></div>
-</section>
-
-<section class="section">
-  <span class="section-label math">核心數學 / Math</span>
-  <h3>FWER (Family-Wise Error Rate)</h3>
-  <div class="math-block">$$\text{FWER} = P(\text{至少一個假陽性 / at least one FP})$$</div>
-  <p data-lang="zh"><b>Bonferroni 校正</b>：要 FWER ≤ α，每個檢定用 $\alpha/m$ 當門檻。</p>
-  <p data-lang="en"><b>Bonferroni</b>: for FWER ≤ α, threshold each test at $\alpha/m$.</p>
-  <div class="math-block">$$\text{Bonferroni: reject } H_i \iff p_i \leq \alpha / m$$</div>
-  <p data-lang="zh"><b>問題</b>：太嚴格。$m=20,000$ 時 Bonferroni 要 $p_i \leq 2.5 \times 10^{-6}$——真的差異也常被砍掉。</p>
-  <p data-lang="en"><b>Issue</b>: too strict. With $m=20,000$, requires $p_i \leq 2.5 \times 10^{-6}$ — kills real signal.</p>
-
-  <h3>FDR (False Discovery Rate)</h3>
-  <div class="math-block">$$\text{FDR} = E\left[\frac{V}{R}\right]$$<div class="formula-caption" data-lang="zh">$V$ = 假陽性數、$R$ = 被宣告陽性數</div><div class="formula-caption" data-lang="en">$V$ = false positives, $R$ = declared positives</div></div>
-  <p data-lang="zh">控制「<b>被宣告為陽性中，假陽性的比例</b>」——不是「有沒有假陽性」。
-  生物學家更在意這個——「我手上這 100 個 DE genes，期望有幾個是真的」。</p>
-  <p data-lang="en">Controls "<b>fraction of declared positives that are false</b>" — not "any false positive at all". Biologically meaningful.</p>
-
-  <h3>Benjamini-Hochberg <span data-lang="zh">程序</span><span data-lang="en">procedure</span></h3>
-  <div class="algo-block">
-<span class="comment"># Step 1: 排序 p-values</span>
-p_(1) ≤ p_(2) ≤ ... ≤ p_(m)
-
-<span class="comment"># Step 2: 找最大的 k 使得</span>
-<span class="keyword">find</span> max k s.t.  p_(k) ≤ k · α / m
-
-<span class="comment"># Step 3: 拒絕前 k 個假設</span>
-<span class="keyword">reject</span> H_(1), ..., H_(k)
-  </div>
-  <p data-lang="zh"><b>BH 的證明（直覺）</b>：在獨立或正相關下，BH 程序保證 $\text{FDR} \leq \alpha$。<br>
-  關鍵想法：把 $p_{(k)}$ 與 $k\alpha/m$ 比較相當於問「前 k 個發現中，預期會有多少是隨機產生的」。</p>
-  <p data-lang="en"><b>BH proof intuition</b>: under independence or PRDS, $\text{FDR} \leq \alpha$. Comparing $p_{(k)}$ vs $k\alpha/m$ asks "among top k discoveries, how many are expected by chance".</p>
-
-  <h3>q-value <span data-lang="zh">的解讀</span><span data-lang="en">interpretation</span></h3>
-  <p data-lang="zh">每個基因的 BH-adjusted p-value 稱 q-value。<b>q = 0.05</b> 意義是：「把此 q 值當門檻，期望中有 5% 的『陽性』其實是假的」。</p>
-  <p data-lang="en">BH-adjusted p-value = q-value. <b>q = 0.05</b> means: "thresholding at this q, expected FDR is 5%".</p>
-
-  <div class="callout callout-note">
-    <strong data-lang="zh">📝 Storey q-value 改進</strong><strong data-lang="en">📝 Storey q-value refinement</strong>
-    <p data-lang="zh">Storey (2002) 引入 $\hat\pi_0$（真實 null 假設的比例估計），把 BH 程序改良為：$q_i = \hat\pi_0 \cdot p_i \cdot m / k_i$。在 scRNA-seq 高比例「無差異基因」情境下更不保守。</p>
-    <p data-lang="en">Storey (2002) introduces $\hat\pi_0$ (proportion of true nulls), refining BH as $q_i = \hat\pi_0 \cdot p_i \cdot m / k_i$. Less conservative when many true nulls exist.</p>
-  </div>
-</section>
-
-<section class="section">
-  <span class="section-label code">程式碼 / Code</span>
-  <div class="code-tabs"><div class="code-tab-btns"><button class="code-tab-btn active" onclick="switchTab(this,'py13')">Python</button><button class="code-tab-btn" onclick="switchTab(this,'r13')">R</button></div>
-    <div class="code-tab-content active" id="py13"><pre><span class="keyword">from</span> statsmodels.stats.multitest <span class="keyword">import</span> multipletests
-reject, pvals_adj, _, _ = multipletests(pvals, alpha=<span class="num">0.05</span>, method=<span class="str">"fdr_bh"</span>)
-
-<span class="comment"># Scanpy 自動加 padj</span>
-sc.tl.rank_genes_groups(adata, <span class="str">"leiden"</span>, method=<span class="str">"wilcoxon"</span>)
-<span class="comment"># adata.uns["rank_genes_groups"]["pvals_adj"]</span>
-</pre></div>
-    <div class="code-tab-content" id="r13"><pre><span class="comment"># Base R</span>
-padj &lt;- <span class="func">p.adjust</span>(pvals, method = <span class="str">"BH"</span>)
-
-<span class="comment"># Storey q-value</span>
-<span class="keyword">library</span>(qvalue)
-qobj &lt;- <span class="func">qvalue</span>(pvals)
-qobj$qvalues
-qobj$pi0       <span class="comment"># 估計的真實 null 比例</span>
-</pre></div>
-  </div>
-</section>
-
-<section class="section">
-  <span class="section-label">參考 / References</span>
-  <ul class="refs-list">
-    <li><div class="ref-title">Benjamini, Y. &amp; Hochberg, Y. (1995). Controlling the FDR.</div><div class="ref-meta">JRSS-B 57.</div></li>
-    <li><div class="ref-title">Storey, J.D. (2002). A direct approach to false discovery rates.</div><div class="ref-meta">JRSS-B 64.</div></li>
-    <li><div class="ref-title">Efron, B. (2010). Large-Scale Inference.</div><div class="ref-meta">Cambridge. 經典參考書。</div></li>
+  <a href="../index.html" class="top-nav-brand">
+    <span>🧬</span>
+    <span data-lang="zh">scRNA-seq 進階數學</span>
+    <span data-lang="en">scRNA-seq Advanced Math</span>
+    <span class="badge-math">MATH</span>
+  </a>
+  <ul class="top-nav-links">
+    <li class="dropdown"><a href="../index.html#M1">M1</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">基礎 / FOUNDATIONS</li>
+        <li><a href="../M1-foundations/1.1-sparse-matrix.html">1.1 稀疏矩陣</a></li>
+        <li><a href="../M1-foundations/1.2-count-distributions.html">1.2 計數分布</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M2">M2</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">前處理 / PREPROCESSING</li>
+        <li><a href="../M2-preprocessing/2.1-qc-statistics.html">2.1 QC 統計</a></li>
+        <li><a href="../M2-preprocessing/2.2-normalization.html">2.2 Normalization</a></li>
+        <li><a href="../M2-preprocessing/2.3-hvg-selection.html">2.3 HVG 選擇</a></li>
+        <li><a href="../M2-preprocessing/2.4-scaling.html">2.4 Scaling</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M3">M3</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">降維 / DIM. REDUCTION</li>
+        <li><a href="../M3-dimreduction/3.1-pca.html">3.1 PCA</a></li>
+        <li><a href="../M3-dimreduction/3.2-tsne.html">3.2 t-SNE</a></li>
+        <li><a href="../M3-dimreduction/3.3-umap.html">3.3 UMAP</a></li>
+        <li><a href="../M3-dimreduction/3.4-diffusion-map.html">3.4 Diffusion Maps</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M4">M4</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">圖與聚類 / GRAPH &amp; CLUSTERING</li>
+        <li><a href="../M4-graph-clustering/4.1-knn-graph.html">4.1 KNN Graph + HNSW</a></li>
+        <li><a href="../M4-graph-clustering/4.2-louvain-leiden.html">4.2 Louvain &amp; Leiden</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M5" class="active">M5</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">統計推論 / STATS</li>
+        <li><a href="5.1-de-tests.html">5.1 DE 檢定</a></li>
+        <li><a href="5.2-multiple-testing.html" class="active-sub">5.2 多重檢定 / FDR ⭐ (本頁)</a></li>
+        <li><a href="5.3-classifier.html">5.3 細胞分類器</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M6">M6</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">進階 / ADVANCED</li>
+        <li><a href="../M6-advanced/6.1-integration.html">6.1 Integration</a></li>
+        <li><a href="../M6-advanced/6.2-pseudotime.html">6.2 Pseudotime</a></li>
+        <li><a href="../M6-advanced/6.3-cellchat.html">6.3 CellChat</a></li>
+      </ul></li>
+    <li><a href="../index.html"><span data-lang="zh">🏠 回首頁</span><span data-lang="en">🏠 Home</span></a></li>
   </ul>
-</section>
+  <div class="lang-switch">
+    <button data-lang-btn="zh" class="active">中文</button>
+    <button data-lang-btn="en">EN</button>
+  </div>
+</div></nav>
 
-<div class="cross-links">
-  <a href="5.1-de-tests.html" class="cross-link"><div class="cross-label" data-lang="zh">← 上一篇</div><div class="cross-label" data-lang="en">← PREV</div><div class="cross-title"><span class="cross-id">M5.1</span> DE Tests</div></a>
-  <a href="5.3-classifier.html" class="cross-link"><div class="cross-label" data-lang="zh">下一篇 →</div><div class="cross-label" data-lang="en">NEXT →</div><div class="cross-title"><span class="cross-id">M5.3</span> Classifier</div></a>
+<div class="wrap">
+
+<div class="nav-pages">
+  <span class="label" data-lang="zh">本頁章節</span><span class="label" data-lang="en">CHAPTERS</span>
+  <a href="#s0"><span data-lang="zh">§0 故事</span><span data-lang="en">§0 Story</span></a>
+  <a href="#s1"><span data-lang="zh">§1 FWER</span><span data-lang="en">§1 FWER</span></a>
+  <a href="#s2"><span data-lang="zh">§2 Bonferroni</span><span data-lang="en">§2 Bonferroni</span></a>
+  <a href="#s3"><span data-lang="zh">§3 p 分布</span><span data-lang="en">§3 p distribution</span></a>
+  <a href="#s4"><span data-lang="zh">§4 BH 演算法</span><span data-lang="en">§4 BH algorithm</span></a>
+  <a href="#s5"><span data-lang="zh">§5 互動 BH</span><span data-lang="en">§5 Interactive BH</span></a>
+  <a href="#s6"><span data-lang="zh">§6 q-value</span><span data-lang="en">§6 q-value</span></a>
+  <a href="#s7"><span data-lang="zh">§7 scRNA 意義</span><span data-lang="en">§7 scRNA meaning</span></a>
+  <a href="#s8"><span data-lang="zh">§8 限制</span><span data-lang="en">§8 Limits</span></a>
 </div>
 
-</main>
-<footer class="site-footer"><p>© Charlene</p></footer>
+<header class="cover">
+  <div class="badge"><span data-lang="zh">深入互動版 · 從直覺到數學</span><span data-lang="en">Deep Interactive · From Intuition to Math</span></div>
+  <h1 data-lang="zh">多重檢定與 FDR：從 Bonferroni 到 BH</h1>
+  <h1 data-lang="en">Multiple Testing & FDR: from Bonferroni to BH</h1>
+  <div class="sub" data-lang="zh">
+    DE 分析一次測 20,000 個 gene 的 p-value。在<b>沒有真實差異</b>的情況下，按 α = 0.05 的標準，
+    你會純粹由隨機<b>得到 1,000 個「顯著」的 gene</b>——全是假陽性。<br><br>
+    這節從這個悖論出發，理解 family-wise error rate (FWER) 跟 false discovery rate (FDR) 的差別，
+    推導 Bonferroni 為何過於保守，介紹 <b>BH (Benjamini-Hochberg)</b> 為何成為現代基因組學的標準，
+    最後談 Storey q-value 跟在 scRNA 怎麼正確報告 marker。
+  </div>
+  <div class="sub" data-lang="en">
+    DE testing runs 20,000 p-values at once. With <b>no true differences</b>, at α = 0.05,
+    you'd get <b>1,000 "significant" genes</b> purely by chance — all false positives.<br><br>
+    Starting from this paradox: family-wise error rate (FWER) vs false discovery rate (FDR),
+    why Bonferroni is too conservative, why <b>BH (Benjamini-Hochberg)</b> became the genomics standard,
+    Storey's q-value, and how to correctly report markers in scRNA.
+  </div>
+</header>
+
+<div class="toc">
+  <h4 data-lang="zh">目錄</h4>
+  <h4 data-lang="en">Table of Contents</h4>
+  <ol start="0">
+    <li><a href="#s0"><span data-lang="zh">故事：1000 個假陽性</span><span data-lang="en">Story: 1000 false positives</span></a><span class="new" data-lang="zh">新增</span><span class="new" data-lang="en">NEW</span></li>
+    <li><a href="#s1"><span data-lang="zh">FWER 與 FDR 的差別</span><span data-lang="en">FWER vs FDR</span></a></li>
+    <li><a href="#s2"><span data-lang="zh">Bonferroni：保證 FWER</span><span data-lang="en">Bonferroni: control FWER</span></a></li>
+    <li><a href="#s3"><span data-lang="zh">互動：p-value 分布的線索</span><span data-lang="en">Interactive: p-value distribution</span></a></li>
+    <li><a href="#s4"><span data-lang="zh">BH 演算法：控制 FDR</span><span data-lang="en">BH: control FDR</span></a><span class="new" data-lang="zh">核心</span><span class="new" data-lang="en">CORE</span></li>
+    <li><a href="#s5"><span data-lang="zh">互動 BH 排序</span><span data-lang="en">Interactive BH ranking</span></a></li>
+    <li><a href="#s6"><span data-lang="zh">Storey q-value</span><span data-lang="en">Storey q-value</span></a></li>
+    <li><a href="#s7"><span data-lang="zh">對 scRNA marker report 的意義</span><span data-lang="en">Meaning for scRNA marker reporting</span></a></li>
+    <li><a href="#s8"><span data-lang="zh">限制與下一步</span><span data-lang="en">Limits & next</span></a></li>
+  </ol>
+</div>
+
+<h2 id="s0"><span class="num">§0</span> <span data-lang="zh">故事：1000 個假陽性</span><span data-lang="en">Story: 1000 false positives</span></h2>
+
+<p class="lead" data-lang="zh">
+  考慮一個極端的情境：你跑 DE 比較 cluster 0 vs cluster 1。
+  但假設這兩群其實是<b>同一個細胞型態</b>（你誤分群了）——所以<b>真實沒有任何差異基因</b>。
+  你還是會得到 20,000 個 p-value。在 α = 0.05 的門檻下，會有多少個 p &lt; 0.05？
+</p>
+<p class="lead" data-lang="en">
+  Extreme scenario: you compare cluster 0 vs cluster 1 with DE.
+  Suppose these are actually <b>the same cell type</b> (misclustering) — so <b>no true DE genes</b>.
+  You still get 20,000 p-values. At α = 0.05, how many are p &lt; 0.05?
+</p>
+
+<div class="math-block boxed">
+  $$E[\text{false positives}] = m \cdot \alpha = 20{,}000 \times 0.05 = 1{,}000$$
+</div>
+
+<p data-lang="zh">期望值就是 <b>1,000 個假陽性</b>。即使所有真實效應 = 0，你的「marker list」還是有 1000 個 gene。完全沒幫助。</p>
+<p data-lang="en"><b>1,000 false positives expected</b>. Even with no real effects, your "marker list" still has 1000 genes — useless.</p>
+
+<div class="callout warn">
+  <strong data-lang="zh">這就是「多重檢定問題」</strong><strong data-lang="en">This is the "multiple testing problem"</strong>:
+  <span data-lang="zh">當你同時測很多 hypothesis 時，「單一檢定」的 α = 0.05 不再對應整個結果的可信度。<b>必須校正</b>。</span>
+  <span data-lang="en">When testing many hypotheses, "single-test" α = 0.05 no longer reflects overall reliability. <b>Correction required</b>.</span>
+</div>
+
+<div class="card">
+  <h3 data-lang="zh">§0-1 拉滑桿看「期望假陽性」</h3>
+  <h3 data-lang="en">§0-1 Drag slider, see expected false positives</h3>
+  <div class="controls">
+    <label>m (<span data-lang="zh">測試數</span><span data-lang="en">tests</span>):
+      <input type="range" id="s0m" min="100" max="50000" value="20000" step="100"><span id="s0mVal">20,000</span>
+    </label>
+    <label>α:
+      <input type="range" id="s0alpha" min="0.001" max="0.1" value="0.05" step="0.001"><span id="s0aVal">0.050</span>
+    </label>
+  </div>
+  <div class="stat-row">
+    <div class="item" style="color:#c0392b"><span class="lbl" data-lang="zh">期望假陽性數</span><span class="lbl" data-lang="en">Expected false positives</span><span class="val" id="s0fp">—</span></div>
+    <div class="item"><span class="lbl">α_Bonferroni</span><span class="lbl">α_Bonferroni</span><span class="val" id="s0bonf">—</span></div>
+  </div>
+</div>
+
+<h2 id="s1"><span class="num">§1</span> <span data-lang="zh">FWER 與 FDR 的差別</span><span data-lang="en">FWER vs FDR</span></h2>
+
+<p data-lang="zh">當你做 $m$ 個檢定時，可以控制兩種「整體錯誤率」：</p>
+<p data-lang="en">With $m$ tests, control either of two "overall error rates":</p>
+
+<table class="compare">
+  <tr><th></th><th>FWER</th><th>FWER</th><th>FDR</th><th>FDR</th></tr>
+  <tr><td data-lang="zh">全名</td><td data-lang="en">Full name</td>
+      <td>Family-Wise Error Rate</td><td>Family-Wise Error Rate</td>
+      <td>False Discovery Rate</td><td>False Discovery Rate</td></tr>
+  <tr><td data-lang="zh">定義</td><td data-lang="en">Definition</td>
+      <td>P(至少一個假陽性)</td><td>P(at least one FP)</td>
+      <td>E[FP / total positives]</td><td>E[FP / total positives]</td></tr>
+  <tr><td data-lang="zh">嚴格度</td><td data-lang="en">Stringency</td>
+      <td data-lang="zh">非常嚴格</td><td data-lang="en">very strict</td>
+      <td data-lang="zh">較寬鬆</td><td data-lang="en">less strict</td></tr>
+  <tr><td data-lang="zh">代表方法</td><td data-lang="en">Method</td>
+      <td>Bonferroni, Holm</td><td>Bonferroni, Holm</td>
+      <td>BH, Storey q-value</td><td>BH, Storey q-value</td></tr>
+  <tr><td data-lang="zh">基因組學用</td><td data-lang="en">Genomics</td>
+      <td data-lang="zh">很少（太嚴）</td><td data-lang="en">rarely (too strict)</td>
+      <td><b data-lang="zh">標準做法</b><b data-lang="en">standard practice</b></td>
+      <td><b data-lang="zh">標準做法</b><b data-lang="en">standard practice</b></td></tr>
+</table>
+
+<h3 data-lang="zh">1.1 直覺差別</h3>
+<h3 data-lang="en">1.1 Intuitive difference</h3>
+
+<div class="callout idea">
+  <strong>FWER</strong>:
+  <span data-lang="zh">「我能接受<b>整個分析</b>有 5% 機率產生<b>任何一個</b>假陽性嗎？」非常嚴格——一份報告若 100% 不犯任何錯。</span>
+  <span data-lang="en">"Can I accept a 5% chance of <b>any single</b> false positive in <b>the entire analysis</b>?" Very strict — like a 100% error-free report.</span>
+</div>
+<div class="callout bio">
+  <strong>FDR</strong>:
+  <span data-lang="zh">「在我宣告為『顯著』的 list 中，最多容忍 5% 是假的。」更實際——基因組學接受「list 中有少數假陽性」，但要控制比例。</span>
+  <span data-lang="en">"Within my 'significant' list, tolerate ≤ 5% being false." More practical — genomics accepts some false positives in the list, but bounds the proportion.</span>
+</div>
+
+<h2 id="s2"><span class="num">§2</span> <span data-lang="zh">Bonferroni：保證 FWER</span><span data-lang="en">Bonferroni: control FWER</span></h2>
+
+<div class="math-block boxed">
+  $$\text{Reject } H_0^{(i)} \iff p_i &lt; \frac{\alpha}{m}$$
+  <div class="formula-caption" data-lang="zh">每個檢定用「α / m」當門檻</div>
+  <div class="formula-caption" data-lang="en">Use "α / m" as threshold per test</div>
+</div>
+
+<h3 data-lang="zh">2.1 推導：Union bound</h3>
+<h3 data-lang="en">2.1 Derivation: union bound</h3>
+
+<div class="math-block">
+  $$P(\text{any FP}) = P\!\left(\bigcup_i \{p_i &lt; \alpha/m\}\right) \le \sum_i P(p_i &lt; \alpha/m) = m \cdot \frac{\alpha}{m} = \alpha$$
+</div>
+
+<p data-lang="zh">所以 Bonferroni 保證 FWER ≤ α。對 20,000 個 gene 取 α = 0.05 → 每基因門檻是 <b>p &lt; 2.5 × 10⁻⁶</b>。</p>
+<p data-lang="en">Bonferroni guarantees FWER ≤ α. For 20,000 genes at α = 0.05 → per-gene threshold is <b>p &lt; 2.5 × 10⁻⁶</b>.</p>
+
+<h3 data-lang="zh">2.2 為什麼太嚴？</h3>
+<h3 data-lang="en">2.2 Why too strict?</h3>
+
+<p data-lang="zh">scRNA 真實 T cell vs B cell 比較，可能 <b>1000 個真實 DE gene</b>。Bonferroni 校正後，
+弱訊號（log2FC ~ 1，p ~ 10⁻³）全部變不顯著，你只剩下「明顯到不用統計就知道」的 50 個強 gene。資訊大量流失。</p>
+<p data-lang="en">For a real T vs B comparison, perhaps 1000 truly DE genes. After Bonferroni, weak signals (log2FC ~ 1, p ~ 10⁻³) all become non-significant; only ~50 "obvious-without-stats" strong genes remain. Massive information loss.</p>
+
+<h2 id="s3"><span class="num">§3</span> <span data-lang="zh">互動：p-value 分布的線索</span><span data-lang="en">Interactive: p-value distribution</span></h2>
+
+<p data-lang="zh">在<b>沒有真實效應</b>下，p-value 服從 Uniform(0, 1)——histogram 應該是平的。
+有真實效應的 gene 會在<b>左側（小 p）堆積一個峰</b>。BH / Storey 就利用這個結構。</p>
+<p data-lang="en">Under <b>no true effects</b>, p-values follow Uniform(0, 1) — flat histogram.
+Truly DE genes pile up on the <b>left (small p)</b>. BH / Storey exploit this structure.</p>
+
+<div class="card">
+  <div class="controls">
+    <label><span data-lang="zh">真實 DE gene 比例 π₁</span><span data-lang="en">True DE proportion π₁</span>:
+      <input type="range" id="s3pi" min="0" max="0.5" value="0.1" step="0.02"><span id="s3piVal">0.10</span>
+    </label>
+    <label><span data-lang="zh">效應強度</span><span data-lang="en">Effect strength</span>:
+      <input type="range" id="s3eff" min="1" max="6" value="3" step="0.5"><span id="s3effVal">3.0</span>
+    </label>
+  </div>
+  <svg class="canvas" id="s3svg" viewBox="0 0 800 320" width="100%"></svg>
+  <div class="callout idea" data-lang="zh">
+    <strong>解讀</strong>：左側那個峰就是真實 DE gene 集中的地方。右側「flat 部分」對應的高度 ≈ π₀ × m / nBin，告訴你「平均每 bin 有多少 null 噪音」。
+  </div>
+  <div class="callout idea" data-lang="en">
+    <strong>Reading it</strong>: Left peak = true DE genes. The "flat right region" height ≈ π₀ × m / nBin tells you "average null noise per bin".
+  </div>
+</div>
+
+<h2 id="s4"><span class="num">§4</span> <span data-lang="zh">BH 演算法：控制 FDR</span><span data-lang="en">BH: control FDR</span></h2>
+
+<p data-lang="zh">Benjamini & Hochberg 1995 的天才設計：用<b>升序排序的 p-value 跟一個遞增門檻比較</b>。</p>
+<p data-lang="en">Benjamini & Hochberg 1995's brilliant design: compare <b>sorted p-values to an increasing threshold</b>.</p>
+
+<h3 data-lang="zh">4.1 演算法</h3>
+<h3 data-lang="en">4.1 Algorithm</h3>
+
+<ol>
+  <li><span data-lang="zh">排序：</span><span data-lang="en">Sort: </span>$p_{(1)} \le p_{(2)} \le \cdots \le p_{(m)}$</li>
+  <li><span data-lang="zh">對每個 $i$，比較 $p_{(i)}$ 跟 $\frac{i}{m} \alpha$：</span>
+      <span data-lang="en">For each $i$, compare $p_{(i)}$ to $\frac{i}{m} \alpha$:</span></li>
+</ol>
+
+<div class="math-block boxed">
+  $$k^* = \max\!\left\{ i : p_{(i)} \le \frac{i}{m} \alpha \right\}$$
+  $$\text{Reject } H_0^{(1)}, H_0^{(2)}, \ldots, H_0^{(k^*)}$$
+</div>
+
+<p data-lang="zh">即「找到滿足 $p_{(i)} \le \frac{i}{m} \alpha$ 的<b>最大</b>排名 $k^*$」，然後拒絕排名 1 到 $k^*$ 的所有檢定。</p>
+<p data-lang="en">"Find the <b>largest</b> rank $k^*$ satisfying $p_{(i)} \le \frac{i}{m} \alpha$", then reject all tests ranked 1 to $k^*$.</p>
+
+<h3 data-lang="zh">4.2 為什麼這樣能控制 FDR？</h3>
+<h3 data-lang="en">4.2 Why does this control FDR?</h3>
+
+<p data-lang="zh">直覺：當<b>所有檢定都是 null</b>時，p-value 是 Uniform，第 $i$ 小的 p-value 期望值 $\approx i/m$。
+所以 BH 的門檻 $i/m \cdot \alpha$ 正是「null 情境下你會看到的 p × α」。
+真實 DE gene 的 p 比 null 小很多，所以會在門檻線下穿越。</p>
+<p data-lang="en">Intuition: under <b>all null</b>, p-values are uniform — the $i$-th smallest has expected value $\approx i/m$.
+So BH's threshold $i/m \cdot \alpha$ is "the p you'd see under null, times α".
+True DE p-values are much smaller, crossing the threshold line.</p>
+
+<details>
+<summary data-lang="zh">▸ Benjamini-Hochberg 1995 證明大意</summary>
+<summary data-lang="en">▸ Sketch of Benjamini-Hochberg 1995 proof</summary>
+<p data-lang="zh">
+  在獨立檢定下，可以證明：BH 程序的期望 FDR = $\pi_0 \cdot \alpha \le \alpha$，其中 $\pi_0$ 是「真正 null」的比例。
+  所以實際 FDR 通常嚴格低於 α（因為 $\pi_0 &lt; 1$）。在 PRDS（positive regression dependent on subset）下也成立。
+</p>
+<p data-lang="en">
+  Under independent tests, one can show: BH's expected FDR = $\pi_0 \cdot \alpha \le \alpha$, where $\pi_0$ is the "true null" proportion.
+  So actual FDR is usually strictly below α (since $\pi_0 &lt; 1$). Also holds under PRDS (positive regression dependent on subset).
+</p>
+</details>
+
+<h2 id="s5"><span class="num">§5</span> <span data-lang="zh">互動 BH 排序</span><span data-lang="en">Interactive BH ranking</span></h2>
+
+<div class="card">
+  <p data-lang="zh">下方 100 個 p-value（升序排序）跟 BH 門檻線 $\frac{i}{m}\alpha$。
+    紅色 = 通過 BH 篩選；灰色 = 不通過。拉 α 看門檻線怎麼變、有幾個被當「顯著」。</p>
+  <p data-lang="en">100 sorted p-values vs BH threshold $\frac{i}{m}\alpha$.
+    Red = passes BH; gray = fails. Drag α to see threshold and count.</p>
+  <div class="controls">
+    <label>α (FDR <span data-lang="zh">目標</span><span data-lang="en">target</span>):
+      <input type="range" id="s5alpha" min="0.01" max="0.2" value="0.05" step="0.01"><span id="s5alphaVal">0.05</span>
+    </label>
+    <button id="s5regen" class="ghost"><span data-lang="zh">重新生成</span><span data-lang="en">Regenerate</span></button>
+  </div>
+  <svg class="canvas" id="s5svg" viewBox="0 0 800 400" width="100%"></svg>
+  <div class="stat-row">
+    <div class="item"><span class="lbl">m</span><span class="lbl">m</span><span class="val">100</span></div>
+    <div class="item" style="color:#c0392b"><span class="lbl">k* (rejected)</span><span class="lbl">k* (rejected)</span><span class="val" id="s5k">—</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">Bonferroni 拒絕數</span><span class="lbl" data-lang="en">Bonferroni rejects</span><span class="val" id="s5bonf">—</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">差距</span><span class="lbl" data-lang="en">Difference</span><span class="val" id="s5diff" style="color:#27795a">—</span></div>
+  </div>
+</div>
+
+<h2 id="s6"><span class="num">§6</span> <span data-lang="zh">Storey q-value</span><span data-lang="en">Storey q-value</span></h2>
+
+<p data-lang="zh">
+  BH 假設 $\pi_0 = 1$（所有檢定都是 null），是<b>保守估計</b>。Storey (2003) 改用<b>實際估計</b> $\pi_0$，獲得更大檢定力。
+</p>
+<p data-lang="en">
+  BH assumes $\pi_0 = 1$ (all tests null) — <b>conservative</b>. Storey (2003) <b>estimates</b> $\pi_0$ for higher power.
+</p>
+
+<h3 data-lang="zh">6.1 怎麼估 π₀?</h3>
+<h3 data-lang="en">6.1 Estimating π₀</h3>
+
+<p data-lang="zh">看 p-value histogram 的<b>右側 flat 部分</b>（例如 p &gt; 0.5）：</p>
+<p data-lang="en">Look at the <b>flat right portion</b> of the p-value histogram (e.g., p &gt; 0.5):</p>
+
+<div class="math-block">
+  $$\hat{\pi}_0(\lambda) = \frac{\#\{p_i &gt; \lambda\}}{m(1-\lambda)}, \quad \lambda \in [0.4, 0.6]$$
+  <div class="formula-caption" data-lang="zh">通常 $\lambda = 0.5$；估計「null gene 占比」</div>
+  <div class="formula-caption" data-lang="en">typically $\lambda = 0.5$; estimates "null proportion"</div>
+</div>
+
+<h3 data-lang="zh">6.2 q-value 定義</h3>
+<h3 data-lang="en">6.2 q-value definition</h3>
+
+<div class="math-block boxed">
+  $$q_i = \min_{t \ge p_i} \, \widehat{\text{FDR}}(t)$$
+  <div class="formula-caption" data-lang="zh">即「如果把這個 p 當門檻，預期 FDR 是多少」</div>
+  <div class="formula-caption" data-lang="en">"if you used this p as threshold, what FDR would you have?"</div>
+</div>
+
+<div class="callout idea">
+  <strong data-lang="zh">解讀</strong><strong data-lang="en">Reading</strong>:
+  <span data-lang="zh">「q = 0.05 的 gene 加入 list 時，整個 list 的預期 FDR 是 5%。」這是<b>每基因獨立的 FDR 解讀</b>。</span>
+  <span data-lang="en">"Adding this q=0.05 gene to the list keeps the list's expected FDR at 5%." <b>Per-gene FDR interpretation</b>.</span>
+</div>
+
+<h2 id="s7"><span class="num">§7</span> <span data-lang="zh">對 scRNA marker report 的意義</span><span data-lang="en">Meaning for scRNA marker reporting</span></h2>
+
+<table class="compare">
+  <tr><th data-lang="zh">情境</th><th data-lang="en">Scenario</th>
+      <th data-lang="zh">推薦校正</th><th data-lang="en">Recommended</th></tr>
+  <tr><td data-lang="zh">scRNA marker discovery（找 cluster marker）</td>
+      <td data-lang="en">scRNA marker discovery</td>
+      <td><b>BH (FDR)</b> (scanpy default)</td><td><b>BH (FDR)</b> (scanpy default)</td></tr>
+  <tr><td data-lang="zh">高敏感性需求（不想漏弱 marker）</td>
+      <td data-lang="en">High sensitivity (don't miss weak markers)</td>
+      <td>Storey q-value</td><td>Storey q-value</td></tr>
+  <tr><td data-lang="zh">臨床決策（必須零誤判）</td>
+      <td data-lang="en">Clinical decision (zero false positives)</td>
+      <td>Bonferroni / Holm</td><td>Bonferroni / Holm</td></tr>
+</table>
+
+<h3 data-lang="zh">7.1 在 scanpy 怎麼用</h3>
+<h3 data-lang="en">7.1 In Scanpy</h3>
+
+<pre class="code">sc.tl.rank_genes_groups(adata, groupby=<span class="s">"leiden"</span>, method=<span class="s">"wilcoxon"</span>)
+<span class="c"># adata.uns["rank_genes_groups"] 已自動含 "pvals_adj" 欄位（BH 校正）</span>
+
+<span class="c"># 看 cluster 0 的 top markers</span>
+result = adata.uns[<span class="s">"rank_genes_groups"</span>]
+groups = result[<span class="s">"names"</span>].dtype.names
+df = pd.DataFrame({g + <span class="s">"_p_adj"</span>: result[<span class="s">"pvals_adj"</span>][g] <span class="k">for</span> g <span class="k">in</span> groups})
+
+<span class="c"># 篩 FDR &lt; 0.05 且 log2FC &gt; 1</span>
+sig = df[(df[<span class="s">"0_p_adj"</span>] &lt; <span class="n">0.05</span>) &amp; ...]</pre>
+
+<h2 id="s8"><span class="num">§8</span> <span data-lang="zh">限制與下一步</span><span data-lang="en">Limits & next</span></h2>
+
+<h3 data-lang="zh">8.1 限制</h3>
+<h3 data-lang="en">8.1 Limitations</h3>
+
+<table class="compare">
+  <tr><th data-lang="zh">限制</th><th data-lang="en">Limitation</th>
+      <th data-lang="zh">後果</th><th data-lang="en">Consequence</th>
+      <th data-lang="zh">緩解</th><th data-lang="en">Mitigation</th></tr>
+  <tr>
+    <td data-lang="zh">BH 假設「弱依賴」</td>
+    <td data-lang="en">BH assumes "weak dependence"</td>
+    <td data-lang="zh">高度相關檢定 FDR 可能爆</td>
+    <td data-lang="en">highly correlated tests can break FDR</td>
+    <td data-lang="zh">用 BY (Benjamini-Yekutieli)</td>
+    <td data-lang="en">use BY (Benjamini-Yekutieli)</td>
+  </tr>
+  <tr>
+    <td data-lang="zh">p-value 本身必須 valid</td>
+    <td data-lang="en">p-values must be valid</td>
+    <td data-lang="zh">DE method 錯 → 校正再準也沒用</td>
+    <td data-lang="en">wrong DE method → correction can't save it</td>
+    <td data-lang="zh">先確認 DE 方法（M5.1）</td>
+    <td data-lang="en">verify DE method (M5.1)</td>
+  </tr>
+  <tr>
+    <td data-lang="zh">FDR &lt; 0.05 不代表「我 95% 確定」</td>
+    <td data-lang="en">FDR &lt; 0.05 ≠ "95% confident"</td>
+    <td data-lang="zh">是「list 中 95% 是真」</td>
+    <td data-lang="en">it's "95% of the list is real"</td>
+    <td data-lang="zh">理解 FDR 的<b>list-level</b> 解讀</td>
+    <td data-lang="en">understand list-level interpretation</td>
+  </tr>
+</table>
+
+<div class="callout prog">
+  <strong data-lang="zh">下一步</strong><strong data-lang="en">Next</strong>:
+  <span data-lang="zh">有了 FDR 校正後的 marker list → <a href="5.3-classifier.html"><b>5.3 細胞分類器</b></a> 把這些 marker 變成自動 annotation。</span>
+  <span data-lang="en">FDR-corrected marker list → <a href="5.3-classifier.html"><b>5.3 Cell classifier</b></a> turns markers into automated annotation.</span>
+</div>
+
+<p class="footer">
+  <span data-lang="zh">© scRNA-seq Advanced Math · M5.2 Multiple Testing Deep Interactive</span>
+  <span data-lang="en">© scRNA-seq Advanced Math · M5.2 Multiple Testing Deep Interactive</span>
+</p>
+
+</div>
+
 <script src="../i18n.js"></script>
-<script>function switchTab(b,id){const p=b.closest(".code-tabs");p.querySelectorAll(".code-tab-btn").forEach(x=>x.classList.remove("active"));p.querySelectorAll(".code-tab-content").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(id).classList.add("active");}</script>
-</body></html>
+<script>
+// ===== §0 expected FP =====
+(function() {
+  function draw() {
+    const m = +document.getElementById('s0m').value;
+    const a = +document.getElementById('s0alpha').value;
+    document.getElementById('s0mVal').textContent = m.toLocaleString();
+    document.getElementById('s0aVal').textContent = a.toFixed(3);
+    document.getElementById('s0fp').textContent = (m*a).toFixed(0);
+    document.getElementById('s0bonf').textContent = (a/m).toExponential(2);
+  }
+  document.getElementById('s0m').addEventListener('input', draw);
+  document.getElementById('s0alpha').addEventListener('input', draw);
+  draw();
+})();
+
+// ===== §3 p distribution =====
+(function() {
+  let seed = 23;
+  const rnd = () => { seed = (seed*9301+49297)%233280; return seed/233280; };
+  function nrnd(m,s){const u1=rnd(),u2=rnd();return m+s*Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);}
+  function draw() {
+    const pi1 = +document.getElementById('s3pi').value;
+    const eff = +document.getElementById('s3eff').value;
+    document.getElementById('s3piVal').textContent = pi1.toFixed(2);
+    document.getElementById('s3effVal').textContent = eff.toFixed(1);
+    seed = 23;
+    const ps = [];
+    const m = 1000;
+    const nDE = Math.round(m * pi1);
+    // null p
+    for (let i = 0; i < m - nDE; i++) ps.push(rnd());
+    // DE p: shifted toward 0 via -log10(p) ~ |N(eff, 1)|
+    for (let i = 0; i < nDE; i++) {
+      const negLog = Math.abs(nrnd(eff, 1));
+      ps.push(Math.max(1e-10, Math.pow(10, -negLog)));
+    }
+    const nBin = 20;
+    const bins = Array(nBin).fill(0);
+    ps.forEach(p => bins[Math.min(nBin-1, Math.floor(p*nBin))]++);
+    const mx = Math.max(...bins);
+    const X = i => 60 + i*700/nBin;
+    const Y = c => 260 - c/mx * 220;
+    let s = '';
+    s += `<line class="axis" x1="60" y1="260" x2="760" y2="260"/>`;
+    s += `<line class="axis" x1="60" y1="20" x2="60" y2="260"/>`;
+    bins.forEach((c, i) => {
+      const bx = X(i), bw = 700/nBin - 2, bh = c/mx * 220;
+      s += `<rect x="${bx}" y="${260-bh}" width="${bw}" height="${bh}" fill="#475569" opacity="0.85"/>`;
+    });
+    // expected null line
+    const nullExpected = (m * (1 - pi1)) / nBin;
+    const yE = Y(nullExpected);
+    s += `<line x1="60" y1="${yE}" x2="760" y2="${yE}" stroke="#c0392b" stroke-dasharray="5,3"/>`;
+    s += `<text class="lbl" x="765" y="${yE+4}" fill="#c0392b">null expected</text>`;
+    // x-axis labels
+    for (let i = 0; i <= nBin; i += 4) s += `<text class="lbl" x="${X(i)}" y="280" text-anchor="middle">${(i/nBin).toFixed(2)}</text>`;
+    s += `<text class="lbl" x="400" y="305" text-anchor="middle" font-weight="700">p-value</text>`;
+    document.getElementById('s3svg').innerHTML = s;
+  }
+  document.getElementById('s3pi').addEventListener('input', draw);
+  document.getElementById('s3eff').addEventListener('input', draw);
+  draw();
+})();
+
+// ===== §5 BH interactive =====
+(function() {
+  let seed = 7;
+  const rnd = () => { seed = (seed*9301+49297)%233280; return seed/233280; };
+  function nrnd(m,s){const u1=rnd(),u2=rnd();return m+s*Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);}
+  let ps;
+  function gen() {
+    seed = Math.floor(Math.random()*9999);
+    ps = [];
+    const m = 100;
+    // 75 null
+    for (let i = 0; i < 75; i++) ps.push(rnd());
+    // 25 DE
+    for (let i = 0; i < 25; i++) {
+      const nl = Math.abs(nrnd(2.5, 0.8));
+      ps.push(Math.max(1e-6, Math.pow(10, -nl)));
+    }
+    ps.sort((a,b)=>a-b);
+  }
+  function draw() {
+    const alpha = +document.getElementById('s5alpha').value;
+    document.getElementById('s5alphaVal').textContent = alpha.toFixed(2);
+    const m = ps.length;
+    // BH: find largest k with p_k <= k/m * alpha
+    let kStar = 0;
+    for (let i = m-1; i >= 0; i--) {
+      if (ps[i] <= (i+1)/m * alpha) { kStar = i+1; break; }
+    }
+    const bonfCutoff = alpha/m;
+    let nBonf = 0;
+    ps.forEach(p => { if (p < bonfCutoff) nBonf++; });
+    document.getElementById('s5k').textContent = kStar;
+    document.getElementById('s5bonf').textContent = nBonf;
+    document.getElementById('s5diff').textContent = '+' + (kStar - nBonf);
+    const W = 800, H = 400;
+    const X = i => 70 + (i)/m * 700;
+    const Y = p => 360 - p * 320; // p in [0, 1] but we clip
+    let s = '';
+    s += `<line class="axis" x1="70" y1="360" x2="770" y2="360"/>`;
+    s += `<line class="axis" x1="70" y1="30" x2="70" y2="360"/>`;
+    // BH threshold line
+    let path = '';
+    for (let i = 1; i <= m; i++) {
+      path += `${i===1?'M':'L'} ${X(i-1)},${Y(i/m * alpha)} `;
+    }
+    s += `<path d="${path}" stroke="#475569" stroke-width="2" fill="none" stroke-dasharray="5,3"/>`;
+    s += `<text class="lbl" x="${X(m)-100}" y="${Y(alpha)-5}" fill="#475569">i/m · α</text>`;
+    // Bonferroni line
+    s += `<line x1="70" y1="${Y(bonfCutoff)}" x2="770" y2="${Y(bonfCutoff)}" stroke="#c0392b" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.6"/>`;
+    s += `<text class="lbl" x="75" y="${Y(bonfCutoff)-3}" fill="#c0392b" font-size="10">Bonferroni α/m</text>`;
+    // points
+    ps.forEach((p, i) => {
+      const passBH = p <= (i+1)/m * alpha;
+      const cy = Math.max(20, Math.min(360, Y(p)));
+      s += `<circle cx="${X(i)}" cy="${cy}" r="3" fill="${passBH?'#c0392b':'#888'}" opacity="0.85"/>`;
+    });
+    // y-axis labels
+    [0, 0.2, 0.4, 0.6, 0.8, 1.0].forEach(v => {
+      s += `<line class="grid" x1="70" y1="${Y(v)}" x2="770" y2="${Y(v)}"/>`;
+      s += `<text class="lbl" x="62" y="${Y(v)+4}" text-anchor="end">${v.toFixed(1)}</text>`;
+    });
+    s += `<text class="lbl" x="400" y="385" text-anchor="middle" font-weight="700">rank i</text>`;
+    s += `<text class="lbl" x="25" y="200" text-anchor="middle" font-weight="700" transform="rotate(-90 25 200)">p-value (sorted)</text>`;
+    document.getElementById('s5svg').innerHTML = s;
+  }
+  document.getElementById('s5alpha').addEventListener('input', draw);
+  document.getElementById('s5regen').addEventListener('click', () => { gen(); draw(); });
+  gen(); draw();
+})();
+</script>
+</body>
+</html>

@@ -3,367 +3,811 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>1.1 計數矩陣與稀疏儲存 — scRNA-seq Advanced Math</title>
-<link rel="stylesheet" href="../styles.css">
-<script>MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] } };</script>
+<title>1.1 稀疏矩陣：COO / CSR / CSC — Deep Interactive</title>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
+<style>
+  :root {
+    --bg: #fafaf7; --fg: #1a1a1a; --muted: #666;
+    --accent: #c0392b; --accent2: #2c5aa0;
+    --green: #27795a; --purple: #8e44ad; --yellow: #f0c419;
+    --blue1: #1e3a8a;
+    --card: #ffffff; --border: #e0e0d8; --code: #f4f1ea;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Helvetica Neue", "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif; background: var(--bg); color: var(--fg); line-height: 1.75; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 40px 28px 120px; }
+  header.cover { margin: 20px 0 60px; padding: 52px 40px;
+    background: linear-gradient(135deg, #0c1e3d 0%, #1e3a8a 55%, #3b82f6 100%);
+    color: #fff; border-radius: 16px; box-shadow: 0 14px 40px rgba(12,30,61,0.18); }
+  header.cover h1 { margin: 0 0 14px; font-size: 36px; }
+  header.cover .sub { font-size: 17px; opacity: 0.92; line-height: 1.65; }
+  header.cover .badge { display: inline-block; background: rgba(255,255,255,0.18);
+    padding: 4px 12px; border-radius: 20px; font-size: 13px; margin-bottom: 16px; }
+  h2 { margin-top: 70px; padding-bottom: 8px; border-bottom: 3px solid var(--blue1);
+    font-size: 26px; display: flex; align-items: baseline; gap: 12px; }
+  h2 .num { color: var(--blue1); font-weight: 800; font-size: 20px; }
+  h3 { margin-top: 36px; font-size: 19px; color: var(--accent2); }
+  h4 { margin-top: 22px; font-size: 16px; color: var(--accent); }
+  p { margin: 14px 0; }
+  .lead { font-size: 17px; color: #2a2a2a; }
+  .callout { background: #fff8e6; border-left: 4px solid var(--yellow); padding: 14px 18px; border-radius: 6px; margin: 22px 0; }
+  .callout.idea { background: #eaf4ff; border-left-color: var(--accent2); }
+  .callout.warn { background: #fdecec; border-left-color: var(--accent); }
+  .callout.bio  { background: #effaf3; border-left-color: var(--green); }
+  .callout.prog { background: #dbeafe; border-left-color: var(--blue1); }
+  .card { background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px 26px; margin: 26px 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+  .card h3 { margin-top: 0; }
+  .controls { display: flex; flex-wrap: wrap; gap: 14px 22px;
+    align-items: center; margin: 14px 0; padding: 12px 16px;
+    background: #f4f1ea; border-radius: 8px; font-size: 14px; }
+  .controls label { display: flex; align-items: center; gap: 8px; }
+  button { background: var(--blue1); color: #fff; border: 0;
+    padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 14px;
+    font-family: inherit; }
+  button:hover { background: #142b6b; }
+  button.ghost { background: #fff; color: var(--blue1); border: 1px solid var(--blue1); }
+  input[type="range"] { width: 180px; vertical-align: middle; }
+  svg.canvas { background: #fcfcfa; border: 1px solid var(--border); border-radius: 8px; display: block; }
+  svg.canvas .axis { stroke: #bbb; stroke-width: 1; }
+  svg.canvas .grid { stroke: #ececea; stroke-width: 0.5; }
+  svg.canvas text.lbl { font-size: 12px; fill: #333; }
+  .stat-row { display: flex; flex-wrap: wrap; gap: 22px; margin: 14px 0; font-size: 14px; }
+  .stat-row .item { display: flex; flex-direction: column; }
+  .stat-row .item .lbl { color: var(--muted); font-size: 12px; }
+  .stat-row .item .val { font-family: "JetBrains Mono", monospace; font-size: 18px; }
+  details { margin: 16px 0; }
+  details summary { cursor: pointer; font-weight: 600; color: var(--accent2); padding: 6px 0; }
+  .toc { background: #fff; border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 28px; margin: 30px 0; }
+  .toc h4 { margin: 0 0 10px; color: var(--blue1); }
+  .toc ol { margin: 6px 0; padding-left: 24px; line-height: 1.9; }
+  .toc a { color: var(--accent2); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .toc .new { background: var(--blue1); color: #fff; font-size: 11px;
+    padding: 1px 8px; border-radius: 10px; margin-left: 6px; }
+  code.inline { background: var(--code); padding: 2px 6px; border-radius: 4px;
+    font-size: 13px; font-family: "JetBrains Mono", "Consolas", monospace; }
+  pre.code { background: #1e1e1e; color: #dcdcdc;
+    padding: 14px 18px; border-radius: 8px; overflow-x: auto; font-size: 13px;
+    font-family: "JetBrains Mono", "Consolas", monospace; line-height: 1.55; }
+  pre.code .k { color: #569cd6; }
+  pre.code .s { color: #ce9178; }
+  pre.code .c { color: #6a9955; }
+  pre.code .n { color: #b5cea8; }
+  table.compare { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.compare th, table.compare td { border: 1px solid var(--border); padding: 8px 12px; }
+  table.compare th { background: #f4f1ea; text-align: left; }
+  .math-block { background: #fff; border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 18px; margin: 18px 0; }
+  .math-block.boxed { border: 2px solid var(--blue1); background: #dbeafe; }
+  .formula-caption { font-size: 12.5px; color: var(--muted); text-align: center; margin-top: 6px; }
+  .footer { text-align: center; color: var(--muted); margin-top: 80px; font-size: 13px; }
+  .matgrid { display: inline-block; background: #fff; padding: 8px; border: 1px solid var(--border); border-radius: 6px; }
+  .matgrid table { border-collapse: collapse; font-family: "JetBrains Mono", monospace; font-size: 13px; }
+  .matgrid td { width: 30px; height: 30px; border: 1px solid #eee; text-align: center; }
+  .matgrid td.zero { color: #ccc; background: #fafafa; }
+  .matgrid td.nonzero { color: #1e3a8a; background: #dbeafe; font-weight: 700; }
+  .matgrid td.highlight { background: #fde68a !important; }
+  .array-show { font-family: "JetBrains Mono", monospace; font-size: 13px; padding: 6px 10px;
+    background: #f4f1ea; border-radius: 4px; display: inline-block; margin: 4px 0; }
+  .top-nav { background: #0c1e3d; color: #fff; padding: 14px 28px;
+    position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(12,30,61,0.25); }
+  .top-nav-inner { max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; gap: 28px; }
+  .top-nav-brand { color: #fff; text-decoration: none;
+    font-weight: 700; font-size: 17px;
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .top-nav-brand .badge-math { background: #3b82f6; color: #fff;
+    padding: 3px 9px; border-radius: 4px; font-size: 11px; }
+  .top-nav-links { list-style: none; margin: 0; padding: 0;
+    display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+  .top-nav-links a { color: #c5d4ee; text-decoration: none;
+    padding: 6px 11px; border-radius: 6px; font-size: 13px; font-weight: 500;
+    transition: 0.2s; }
+  .top-nav-links a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .top-nav-links a.active { background: #3b82f6; color: #fff; }
+  .top-nav-links li.dropdown { position: relative; }
+  .top-nav-links li.dropdown > a::after { content: ' ▾';
+    font-size: 10px; opacity: 0.7; margin-left: 3px;
+    display: inline-block; transition: transform 0.2s; }
+  .top-nav-links li.dropdown:hover > a::after,
+  .top-nav-links li.dropdown.open > a::after { transform: rotate(180deg); }
+  .top-nav-links .dropdown-menu { display: none; position: absolute; top: 100%; left: 0;
+    background: #1e3a5f; border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px; padding: 6px 0; min-width: 230px;
+    list-style: none; z-index: 200;
+    box-shadow: 0 8px 28px rgba(12,30,61,0.5); margin: 6px 0 0; }
+  .top-nav-links li.dropdown:hover > .dropdown-menu,
+  .top-nav-links li.dropdown.open > .dropdown-menu { display: block; }
+  .top-nav-links .dropdown-menu li { display: block; }
+  .top-nav-links .dropdown-menu li a { display: block; padding: 9px 18px;
+    border-radius: 0; font-size: 13px; white-space: nowrap; color: #c5d4ee; }
+  .top-nav-links .dropdown-menu li a:hover { background: rgba(59,130,246,0.2); color: #fff; }
+  .top-nav-links .dropdown-menu li a.active-sub { background: #3b82f6; color: #fff; font-weight: 700; }
+  .top-nav-links .dropdown-menu .sub-label { font-size: 10px; color: #7c8db5;
+    letter-spacing: 1px; padding: 4px 18px 2px; text-transform: uppercase; }
+  .lang-switch { display: flex; gap: 4px;
+    background: rgba(255,255,255,0.08); padding: 4px; border-radius: 6px; flex-shrink: 0; }
+  .lang-switch button { background: transparent; border: 0; color: #c5d4ee;
+    font-size: 12px; font-weight: 700; padding: 5px 10px;
+    border-radius: 4px; cursor: pointer; font-family: inherit; }
+  .lang-switch button.active { background: #3b82f6; color: #fff; }
+  .nav-pages { display: flex; gap: 8px; margin: 24px 0; padding: 14px;
+    background: #1e3a5f; border-radius: 10px; align-items: center; flex-wrap: wrap; }
+  .nav-pages a { color: #c5d4ee; text-decoration: none;
+    padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600;
+    transition: 0.2s; }
+  .nav-pages a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .nav-pages .label { color: #7c8db5; font-size: 11px;
+    letter-spacing: 1px; font-weight: 700; margin-right: 8px; }
+  [data-lang="en"] { display: none; }
+  body.lang-en [data-lang="zh"] { display: none; }
+  body.lang-en [data-lang="en"] { display: initial; }
+  body.lang-en h1[data-lang="en"], body.lang-en h2[data-lang="en"],
+  body.lang-en h3[data-lang="en"], body.lang-en h4[data-lang="en"],
+  body.lang-en p[data-lang="en"], body.lang-en div[data-lang="en"],
+  body.lang-en ol[data-lang="en"], body.lang-en ul[data-lang="en"] { display: block; }
+  body.lang-en li[data-lang="en"] { display: list-item; }
+  body.lang-en span[data-lang="en"] { display: inline; }
+  body.lang-en tspan[data-lang="en"] { display: inline; }
+</style>
 </head>
 <body>
 
-<nav class="top-nav">
-  <div class="top-nav-inner">
-    <a href="../index.html" class="top-nav-brand">
-      <span>🧬</span>
-      <span data-lang="zh">scRNA-seq 進階數學</span>
-      <span data-lang="en">scRNA-seq Advanced Math</span>
-      <span class="badge-math">MATH</span>
-    </a>
-    <ul class="top-nav-links">
-      <li><a href="../index.html#M1" class="active">M1</a></li>
-      <li><a href="../index.html#M2">M2</a></li>
-      <li><a href="../index.html#M3">M3</a></li>
-      <li><a href="../index.html#M4">M4</a></li>
-      <li><a href="../index.html#M5">M5</a></li>
-      <li><a href="../index.html#M6">M6</a></li>
-      <li><a href="../index.html" data-lang="zh">🏠 回首頁</a><span data-lang="en">🏠 Home</span></li>
-    </ul>
-    <div class="lang-switch">
-      <button data-lang-btn="zh" class="active">中文</button>
-      <button data-lang-btn="en">EN</button>
-    </div>
+<nav class="top-nav"><div class="top-nav-inner">
+  <a href="../index.html" class="top-nav-brand">
+    <span>🧬</span>
+    <span data-lang="zh">scRNA-seq 進階數學</span>
+    <span data-lang="en">scRNA-seq Advanced Math</span>
+    <span class="badge-math">MATH</span>
+  </a>
+  <ul class="top-nav-links">
+    <li class="dropdown"><a href="../index.html#M1" class="active">M1</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">基礎 / FOUNDATIONS</li>
+        <li><a href="1.1-sparse-matrix.html" class="active-sub">1.1 稀疏矩陣 ⭐ (本頁)</a></li>
+        <li><a href="1.2-count-distributions.html">1.2 計數分布</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M2">M2</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">前處理 / PREPROCESSING</li>
+        <li><a href="../M2-preprocessing/2.1-qc-statistics.html">2.1 QC 統計</a></li>
+        <li><a href="../M2-preprocessing/2.2-normalization.html">2.2 Normalization</a></li>
+        <li><a href="../M2-preprocessing/2.3-hvg-selection.html">2.3 HVG 選擇</a></li>
+        <li><a href="../M2-preprocessing/2.4-scaling.html">2.4 Scaling</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M3">M3</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">降維 / DIM. REDUCTION</li>
+        <li><a href="../M3-dimreduction/3.1-pca.html">3.1 PCA</a></li>
+        <li><a href="../M3-dimreduction/3.2-tsne.html">3.2 t-SNE</a></li>
+        <li><a href="../M3-dimreduction/3.3-umap.html">3.3 UMAP</a></li>
+        <li><a href="../M3-dimreduction/3.4-diffusion-map.html">3.4 Diffusion Maps</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M4">M4</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">圖與聚類 / GRAPH &amp; CLUSTERING</li>
+        <li><a href="../M4-graph-clustering/4.1-knn-graph.html">4.1 KNN Graph + HNSW</a></li>
+        <li><a href="../M4-graph-clustering/4.2-louvain-leiden.html">4.2 Louvain &amp; Leiden</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M5">M5</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">統計推論 / STATS</li>
+        <li><a href="../M5-statistics/5.1-de-tests.html">5.1 DE 檢定</a></li>
+        <li><a href="../M5-statistics/5.2-multiple-testing.html">5.2 多重檢定 / FDR</a></li>
+        <li><a href="../M5-statistics/5.3-classifier.html">5.3 細胞分類器</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M6">M6</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">進階 / ADVANCED</li>
+        <li><a href="../M6-advanced/6.1-integration.html">6.1 Integration</a></li>
+        <li><a href="../M6-advanced/6.2-pseudotime.html">6.2 Pseudotime</a></li>
+        <li><a href="../M6-advanced/6.3-cellchat.html">6.3 CellChat</a></li>
+      </ul></li>
+    <li><a href="../index.html"><span data-lang="zh">🏠 回首頁</span><span data-lang="en">🏠 Home</span></a></li>
+  </ul>
+  <div class="lang-switch">
+    <button data-lang-btn="zh" class="active">中文</button>
+    <button data-lang-btn="en">EN</button>
   </div>
-</nav>
+</div></nav>
 
-<header class="page-hero">
-  <div class="page-hero-inner">
-    <div class="page-badge">M1.1 · FOUNDATIONS</div>
-    <h1 data-lang="zh">計數矩陣與稀疏儲存</h1>
-    <h1 data-lang="en">Count Matrices &amp; Sparse Storage</h1>
-    <p class="subtitle" data-lang="zh">95% 是零的矩陣，怎麼放進記憶體？CSR / CSC / COO 三種編碼的本質差異。</p>
-    <p class="subtitle" data-lang="en">When a matrix is 95% zero, how do we store it? Essential differences between CSR, CSC, COO encodings.</p>
+<div class="wrap">
+
+<div class="nav-pages">
+  <span class="label" data-lang="zh">本頁章節</span><span class="label" data-lang="en">CHAPTERS</span>
+  <a href="#s0"><span data-lang="zh">§0 故事</span><span data-lang="en">§0 Story</span></a>
+  <a href="#s1"><span data-lang="zh">§1 三種編碼</span><span data-lang="en">§1 3 encodings</span></a>
+  <a href="#s2"><span data-lang="zh">§2 互動 memory</span><span data-lang="en">§2 Memory slider</span></a>
+  <a href="#s3"><span data-lang="zh">§3 CSR 數學</span><span data-lang="en">§3 CSR math</span></a>
+  <a href="#s4"><span data-lang="zh">§4 互動 CSR</span><span data-lang="en">§4 CSR builder</span></a>
+  <a href="#s5"><span data-lang="zh">§5 SpMV</span><span data-lang="en">§5 SpMV</span></a>
+  <a href="#s6"><span data-lang="zh">§6 PCA vs KNN</span><span data-lang="en">§6 PCA vs KNN</span></a>
+  <a href="#s7"><span data-lang="zh">§7 AnnData + 限制</span><span data-lang="en">§7 AnnData + limits</span></a>
+</div>
+
+<header class="cover">
+  <div class="badge"><span data-lang="zh">深入互動版 · 從直覺到數學</span><span data-lang="en">Deep Interactive · From Intuition to Math</span></div>
+  <h1 data-lang="zh">稀疏矩陣：COO / CSR / CSC 編碼的本質</h1>
+  <h1 data-lang="en">Sparse Matrices: The essence of COO / CSR / CSC encodings</h1>
+  <div class="sub" data-lang="zh">
+    一個典型 10x Genomics 實驗：<b>10,000 細胞 × 20,000 基因 = 2 億個元素</b>。
+    用 <code class="inline">numpy.ndarray</code> 直接放 → <b>1.6 GB 記憶體</b>。
+    但其實 <b>90-95% 的元素是 0</b>——記錄那麼多 0 太浪費。<br><br>
+    這節從「為什麼稀疏」的具體例子開始，理解 COO、CSR、CSC 三種編碼的數學結構，
+    親手在互動圖上把矩陣壓進這三種格式，看每種格式記憶體跟運算速度的取捨。
+    最後解釋為什麼 Scanpy / Seurat 在 PCA / KNN 階段會做格式轉換。
+  </div>
+  <div class="sub" data-lang="en">
+    A typical 10x experiment: <b>10,000 cells × 20,000 genes = 200M entries</b>.
+    Plain <code class="inline">numpy.ndarray</code> → <b>1.6 GB RAM</b>.
+    But <b>90–95% of entries are 0</b> — storing those zeros is wasteful.<br><br>
+    We start from the "why sparse" concrete example, work through COO, CSR, CSC encodings,
+    interactively compress a matrix into each format, and compare memory vs runtime trade-offs.
+    Finally, why Scanpy / Seurat switch formats between PCA and KNN.
   </div>
 </header>
 
-<main class="content-wrap">
-
-<section class="section">
-  <span class="section-label intuition">直覺 / Intuition</span>
-  <h2 data-lang="zh">為什麼 scRNA-seq 矩陣會這麼稀疏？</h2>
-  <h2 data-lang="en">Why are scRNA-seq matrices so sparse?</h2>
-  <div data-lang="zh">
-    <p>一個典型 10x Genomics 實驗：<b>10,000 細胞 × 20,000 基因 = 2 億個元素</b>。
-    但每個細胞實際上「捕捉到」的 mRNA 分子數通常只有 1,000~5,000 種基因。
-    所以這個矩陣裡<b>大約 90-95% 的元素是 0</b>。</p>
-    <p>用普通 <code>numpy.ndarray</code>（dense）儲存：
-    $200,000,000 \times 8 \text{ bytes} = 1.6 \text{ GB}$——光是讀進來就吃光記憶體。</p>
-    <p>核心問題：<b>有 95% 是 0 的資料，為什麼要花空間記錄那些 0？</b></p>
-  </div>
-  <div data-lang="en">
-    <p>A typical 10x Genomics experiment: <b>10,000 cells × 20,000 genes = 200 million entries</b>.
-    But each cell actually captures only ~1,000–5,000 detectable genes worth of mRNA.
-    So about <b>90–95% of the matrix is zero</b>.</p>
-    <p>Storing with plain <code>numpy.ndarray</code> (dense):
-    $200{,}000{,}000 \times 8 \text{ bytes} = 1.6 \text{ GB}$ — just loading exhausts memory.</p>
-    <p>The core question: <b>why store all those zeros explicitly?</b></p>
-  </div>
-</section>
-
-<section class="section">
-  <span class="section-label math">核心數學 / Math</span>
-  <h2 data-lang="zh">三種稀疏編碼：COO · CSR · CSC</h2>
-  <h2 data-lang="en">Three Sparse Encodings: COO · CSR · CSC</h2>
-
-  <h3>COO (Coordinate format)</h3>
-  <div data-lang="zh"><p>最直觀：用三個平行陣列記錄「行、列、值」。</p></div>
-  <div data-lang="en"><p>Most intuitive: three parallel arrays storing row, col, value.</p></div>
-  <div class="math-block">
-  $$\text{COO}(A) = \{(i_k, j_k, v_k) : v_k \neq 0\}_{k=1}^{\text{nnz}}$$
-  <div class="formula-caption" data-lang="zh">nnz = number of non-zeros（非零元素數）。需要 3 個長度為 nnz 的陣列。</div>
-  <div class="formula-caption" data-lang="en">nnz = number of non-zeros. Requires 3 arrays of length nnz.</div>
-  </div>
-  <p data-lang="zh"><b>記憶體</b>：$\text{nnz} \times (4 + 4 + 8) = 16 \text{ bytes per nnz}$（int32 + int32 + float64）</p>
-  <p data-lang="en"><b>Memory</b>: $\text{nnz} \times (4 + 4 + 8) = 16 \text{ bytes per nnz}$ (int32 + int32 + float64)</p>
-
-  <h3>CSR (Compressed Sparse Row)</h3>
-  <div data-lang="zh"><p>把 COO 的「行索引」進一步壓縮成「每列從哪一個位置開始」的指標。</p></div>
-  <div data-lang="en"><p>Compresses COO's row indices into pointers indicating where each row starts.</p></div>
-  <div class="math-block">
-  $$\text{CSR}(A) = \begin{cases}
-    \text{values}[k] = v_k & k = 1, \dots, \text{nnz} \\
-    \text{col\_idx}[k] = j_k & k = 1, \dots, \text{nnz} \\
-    \text{row\_ptr}[i] = \text{第 } i \text{ 列第一個非零在 values 的索引} & i = 0, \dots, n
-  \end{cases}$$
-  </div>
-  <p data-lang="zh">第 $i$ 列的非零元素 = <code>values[row_ptr[i] : row_ptr[i+1]]</code>。
-  記憶體：$\text{nnz} \times 12 + (n+1) \times 4$ bytes。<b>列向操作（row-slicing、SpMV）特快</b>。</p>
-  <p data-lang="en">Row $i$'s non-zeros are <code>values[row_ptr[i] : row_ptr[i+1]]</code>.
-  Memory: $\text{nnz} \times 12 + (n+1) \times 4$ bytes. <b>Row-slicing and SpMV are very fast</b>.</p>
-
-  <h3>CSC (Compressed Sparse Column)</h3>
-  <div data-lang="zh"><p>CSR 的轉置版本：壓縮列索引，得到「每行從哪開始」的指標。<b>行向操作快</b>（例如「取出基因 $g$ 在所有細胞的表現」）。</p></div>
-  <div data-lang="en"><p>Transpose of CSR: compresses column indices into column pointers. <b>Column-slicing is fast</b> (e.g., "expression of gene $g$ across all cells").</p></div>
-
-  <div class="callout callout-deep">
-    <strong data-lang="zh">💡 何時用 CSR vs CSC？</strong>
-    <strong data-lang="en">💡 When to use CSR vs CSC?</strong>
-    <p data-lang="zh"><b>Scanpy</b> 用 CSR（細胞為列，QC、subset cells 很多）。<br>
-    <b>Seurat</b> 內部用 dgCMatrix = CSC（基因為列，DE、HVG 是 per-gene 操作）。</p>
-    <p data-lang="en"><b>Scanpy</b> uses CSR (cells as rows, frequent cell subsetting). <br>
-    <b>Seurat</b> uses dgCMatrix = CSC internally (genes as columns, DE/HVG are per-gene).</p>
-  </div>
-</section>
-
-<section class="section">
-  <span class="section-label algo">演算法 / Algorithm</span>
-  <h2 data-lang="zh">稀疏矩陣乘以密集向量 (SpMV)</h2>
-  <h2 data-lang="en">Sparse Matrix × Dense Vector (SpMV)</h2>
-  <p data-lang="zh">PCA、KNN graph 都需要 $\mathbf{A} \mathbf{x}$ 運算（$\mathbf{A}$ 稀疏、$\mathbf{x}$ 密集）。CSR 形式下：</p>
-  <p data-lang="en">PCA, KNN graph all need $\mathbf{A} \mathbf{x}$ (sparse $\mathbf{A}$, dense $\mathbf{x}$). In CSR:</p>
-
-  <div class="algo-block">
-<span class="comment"># Input: A (CSR with values, col_idx, row_ptr), x (dense vector)</span>
-<span class="comment"># Output: y = A @ x</span>
-<span class="keyword">for</span> i <span class="keyword">in</span> range(n):
-    y[i] = 0
-    <span class="keyword">for</span> k <span class="keyword">in</span> range(row_ptr[i], row_ptr[i+1]):
-        j = col_idx[k]
-        y[i] += values[k] * x[j]      <span class="comment"># 只算非零項</span>
-  </div>
-
-  <p data-lang="zh"><b>複雜度</b>：$O(\text{nnz})$，而非 dense 的 $O(nm)$。
-  10,000 × 20,000、5% 密度 → CSR SpMV 比 dense 快 <b>~20 倍</b>。</p>
-  <p data-lang="en"><b>Complexity</b>: $O(\text{nnz})$ instead of dense $O(nm)$.
-  10,000 × 20,000 at 5% density → CSR SpMV is ~<b>20× faster</b> than dense.</p>
-</section>
-
-<section class="section">
-  <span class="section-label">互動 / Interactive</span>
-  <h2 data-lang="zh">記憶體佔用試算器</h2>
-  <h2 data-lang="en">Memory Estimator</h2>
-  <p data-lang="zh">拉動下面的滑桿模擬你的資料規模，比較 dense / COO / CSR 三種儲存方式的記憶體佔用。</p>
-  <p data-lang="en">Adjust sliders to match your data and compare dense / COO / CSR memory footprints.</p>
-
-  <div style="background:#f6f8fc; padding:18px; border-radius:10px; margin:18px 0">
-    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:14px">
-      <div>
-        <label style="font-size:12px; color:#4a5779; font-weight:700" data-lang="zh">細胞數 n</label>
-        <label style="font-size:12px; color:#4a5779; font-weight:700" data-lang="en">Cells n</label>
-        <input type="range" id="cellsR" min="1000" max="1000000" value="10000" step="1000" style="width:100%">
-        <div id="cellsV" style="font-family:monospace; font-size:14px; font-weight:700">10,000</div>
-      </div>
-      <div>
-        <label style="font-size:12px; color:#4a5779; font-weight:700" data-lang="zh">基因數 m</label>
-        <label style="font-size:12px; color:#4a5779; font-weight:700" data-lang="en">Genes m</label>
-        <input type="range" id="genesR" min="2000" max="50000" value="20000" step="1000" style="width:100%">
-        <div id="genesV" style="font-family:monospace; font-size:14px; font-weight:700">20,000</div>
-      </div>
-      <div>
-        <label style="font-size:12px; color:#4a5779; font-weight:700" data-lang="zh">密度 (%) 非零比例</label>
-        <label style="font-size:12px; color:#4a5779; font-weight:700" data-lang="en">Density % nonzero</label>
-        <input type="range" id="densR" min="1" max="50" value="5" step="1" style="width:100%">
-        <div id="densV" style="font-family:monospace; font-size:14px; font-weight:700">5%</div>
-      </div>
-    </div>
-    <div style="margin-top:16px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px">
-      <div style="background:#fff; padding:14px; border-radius:8px; border-left:4px solid #dc2626">
-        <div style="font-size:11px; color:#666; letter-spacing:1px">DENSE</div>
-        <div id="denseMem" style="font-size:22px; font-weight:800; color:#dc2626; font-family:monospace">— GB</div>
-        <div style="font-size:11px; color:#888" data-lang="zh">n × m × 8 bytes</div>
-        <div style="font-size:11px; color:#888" data-lang="en">n × m × 8 bytes</div>
-      </div>
-      <div style="background:#fff; padding:14px; border-radius:8px; border-left:4px solid #f59e0b">
-        <div style="font-size:11px; color:#666; letter-spacing:1px">COO</div>
-        <div id="cooMem" style="font-size:22px; font-weight:800; color:#f59e0b; font-family:monospace">— MB</div>
-        <div style="font-size:11px; color:#888">nnz × 16 bytes</div>
-      </div>
-      <div style="background:#fff; padding:14px; border-radius:8px; border-left:4px solid #06a77d">
-        <div style="font-size:11px; color:#666; letter-spacing:1px">CSR</div>
-        <div id="csrMem" style="font-size:22px; font-weight:800; color:#06a77d; font-family:monospace">— MB</div>
-        <div style="font-size:11px; color:#888">nnz × 12 + (n+1) × 4</div>
-      </div>
-    </div>
-    <div id="ratioMsg" style="margin-top:14px; padding:10px; background:#eef2ff; border-radius:6px; font-size:13px; color:#1e2a5c"></div>
-  </div>
-</section>
-
-<section class="section">
-  <span class="section-label code">程式碼 / Code</span>
-  <h2 data-lang="zh">實作範例</h2>
-  <h2 data-lang="en">Code Examples</h2>
-  <div class="code-tabs">
-    <div class="code-tab-btns">
-      <button class="code-tab-btn active" onclick="switchTab(this,'py1')">Python / Scanpy</button>
-      <button class="code-tab-btn" onclick="switchTab(this,'r1')">R / Seurat</button>
-    </div>
-    <div class="code-tab-content active" id="py1"><pre><span class="keyword">import</span> scanpy <span class="keyword">as</span> sc
-<span class="keyword">import</span> scipy.sparse <span class="keyword">as</span> sp
-
-<span class="comment"># 載入時就是 CSR 格式</span>
-adata = sc.read_h5ad(<span class="str">"pbmc.h5ad"</span>)
-<span class="func">print</span>(<span class="func">type</span>(adata.X))    <span class="comment"># scipy.sparse._csr.csr_matrix</span>
-<span class="func">print</span>(adata.X.nnz)      <span class="comment"># 非零元素總數</span>
-<span class="func">print</span>(adata.X.shape)    <span class="comment"># (n_cells, n_genes)</span>
-
-<span class="comment"># 密度</span>
-density = adata.X.nnz / (adata.X.shape[<span class="num">0</span>] * adata.X.shape[<span class="num">1</span>])
-<span class="func">print</span>(<span class="str">f"Density: {density:.2%}"</span>)
-
-<span class="comment"># 取一列 = 一個細胞（CSR 適合）</span>
-cell_row = adata.X[<span class="num">0</span>]                 <span class="comment"># O(平均 nnz/n)</span>
-
-<span class="comment"># 取一行 = 一個基因（CSC 適合，CSR 慢）</span>
-adata.X_csc = adata.X.tocsc()
-gene_col = adata.X_csc[:, gene_idx]   <span class="comment"># O(平均 nnz/m)</span>
-</pre></div>
-    <div class="code-tab-content" id="r1"><pre><span class="keyword">library</span>(Matrix)
-<span class="keyword">library</span>(Seurat)
-
-<span class="comment"># Seurat 內部使用 dgCMatrix = CSC 格式</span>
-pbmc &lt;- <span class="func">Read10X</span>(<span class="str">"data/"</span>)
-<span class="func">class</span>(pbmc)              <span class="comment"># "dgCMatrix"</span>
-<span class="func">dim</span>(pbmc)                <span class="comment"># [基因數, 細胞數]</span>
-
-<span class="comment"># 取出非零項數量</span>
-nnz &lt;- <span class="func">length</span>(pbmc@x)
-density &lt;- nnz / <span class="func">prod</span>(<span class="func">dim</span>(pbmc))
-<span class="func">cat</span>(<span class="func">sprintf</span>(<span class="str">"Density: %.2f%%\n"</span>, density*<span class="num">100</span>))
-
-<span class="comment"># dgCMatrix 三個 slot 對應 CSC 編碼</span>
-pbmc@x       <span class="comment"># values</span>
-pbmc@i       <span class="comment"># row indices (對應 col_idx 的角色)</span>
-pbmc@p       <span class="comment"># column pointers</span>
-
-<span class="comment"># 行操作（取基因）快</span>
-gene_expr &lt;- pbmc[<span class="str">"CD3D"</span>, ]    <span class="comment"># O(該基因的 nnz)</span>
-</pre></div>
-  </div>
-</section>
-
-<section class="section">
-  <span class="section-label">比較 / Comparison</span>
-  <h2 data-lang="zh">三種編碼快速對照</h2>
-  <h2 data-lang="en">Quick Comparison</h2>
-  <table class="compare-table">
-    <tr>
-      <th></th><th>COO</th><th>CSR</th><th>CSC</th>
-    </tr>
-    <tr>
-      <td data-lang="zh">建構速度</td><td data-lang="en">Construction</td>
-      <td class="good">最快</td>
-      <td class="meh">需排序</td>
-      <td class="meh">需排序</td>
-    </tr>
-    <tr>
-      <td data-lang="zh">記憶體</td><td data-lang="en">Memory</td>
-      <td class="meh">16 B/nnz</td>
-      <td class="good">12 B/nnz + 列指標</td>
-      <td class="good">12 B/nnz + 行指標</td>
-    </tr>
-    <tr>
-      <td data-lang="zh">列切片（取細胞）</td><td data-lang="en">Row slice</td>
-      <td class="bad">慢 O(nnz)</td>
-      <td class="good">O(nnz/n)</td>
-      <td class="bad">需掃所有行</td>
-    </tr>
-    <tr>
-      <td data-lang="zh">行切片（取基因）</td><td data-lang="en">Col slice</td>
-      <td class="bad">慢 O(nnz)</td>
-      <td class="bad">需掃所有列</td>
-      <td class="good">O(nnz/m)</td>
-    </tr>
-    <tr>
-      <td>SpMV (Ax)</td><td>SpMV (Ax)</td>
-      <td class="meh">中</td>
-      <td class="good">最快</td>
-      <td class="meh">需轉置</td>
-    </tr>
-    <tr>
-      <td data-lang="zh">框架預設</td><td data-lang="en">Framework</td>
-      <td>scipy default</td>
-      <td>Scanpy</td>
-      <td>Seurat (dgCMatrix)</td>
-    </tr>
-  </table>
-</section>
-
-<section class="section">
-  <span class="section-label">參考 / References</span>
-  <ul class="refs-list">
-    <li>
-      <div class="ref-title">Saad, Y. (2003). Iterative Methods for Sparse Linear Systems, 2nd ed.</div>
-      <div class="ref-meta">SIAM. <span data-lang="zh">稀疏矩陣編碼與運算的經典教科書。</span><span data-lang="en">Classic textbook on sparse matrix encodings.</span></div>
-    </li>
-    <li>
-      <div class="ref-title">Wolf, F.A. et al. (2018). SCANPY: large-scale single-cell gene expression data analysis.</div>
-      <div class="ref-meta">Genome Biology 19, 15. <a href="https://doi.org/10.1186/s13059-017-1382-0">10.1186/s13059-017-1382-0</a></div>
-    </li>
-    <li>
-      <div class="ref-title">Hao, Y. et al. (2021). Integrated analysis of multimodal single-cell data.</div>
-      <div class="ref-meta">Cell 184, 13. Seurat v4 / dgCMatrix usage. <a href="https://doi.org/10.1016/j.cell.2021.04.048">10.1016/j.cell.2021.04.048</a></div>
-    </li>
-  </ul>
-</section>
-
-<div class="cross-links">
-  <a href="1.2-count-distributions.html" class="cross-link">
-    <div class="cross-label" data-lang="zh">下一篇 →</div>
-    <div class="cross-label" data-lang="en">NEXT →</div>
-    <div class="cross-title"><span class="cross-id">M1.2</span> <span data-lang="zh">計數分布：Poisson · NB · ZINB</span><span data-lang="en">Count Distributions</span></div>
-  </a>
-  <a href="../M2-preprocessing/2.1-qc-statistics.html" class="cross-link">
-    <div class="cross-label" data-lang="zh">前處理 →</div>
-    <div class="cross-label" data-lang="en">PREPROCESSING →</div>
-    <div class="cross-title"><span class="cross-id">M2.1</span> <span data-lang="zh">QC 統計：MAD 離群偵測</span><span data-lang="en">QC: MAD Outlier Detection</span></div>
-  </a>
+<div class="toc">
+  <h4 data-lang="zh">目錄</h4>
+  <h4 data-lang="en">Table of Contents</h4>
+  <ol start="0">
+    <li><a href="#s0"><span data-lang="zh">故事：1.6 GB 還是 100 MB？</span><span data-lang="en">Story: 1.6 GB or 100 MB?</span></a><span class="new" data-lang="zh">新增</span><span class="new" data-lang="en">NEW</span></li>
+    <li><a href="#s1"><span data-lang="zh">三種稀疏編碼：COO · CSR · CSC</span><span data-lang="en">Three encodings: COO · CSR · CSC</span></a></li>
+    <li><a href="#s2"><span data-lang="zh">互動：拉稀疏度看記憶體節省</span><span data-lang="en">Interactive: sparsity vs memory</span></a></li>
+    <li><a href="#s3"><span data-lang="zh">CSR 的 row_ptr 是怎麼算的？</span><span data-lang="en">How is CSR's row_ptr computed?</span></a></li>
+    <li><a href="#s4"><span data-lang="zh">互動 CSR 構造：點 cell 看 row range</span><span data-lang="en">Interactive CSR builder</span></a><span class="new" data-lang="zh">核心</span><span class="new" data-lang="en">CORE</span></li>
+    <li><a href="#s5"><span data-lang="zh">SpMV：稀疏矩陣乘向量的複雜度</span><span data-lang="en">SpMV complexity</span></a></li>
+    <li><a href="#s6"><span data-lang="zh">為什麼 PCA 用 CSC、KNN 用 CSR</span><span data-lang="en">Why PCA uses CSC, KNN uses CSR</span></a></li>
+    <li><a href="#s7"><span data-lang="zh">AnnData 整合 + 限制</span><span data-lang="en">AnnData integration + limits</span></a></li>
+  </ol>
 </div>
 
-</main>
+<!-- §0 -->
+<h2 id="s0"><span class="num">§0</span> <span data-lang="zh">故事：1.6 GB 還是 100 MB？</span><span data-lang="en">Story: 1.6 GB or 100 MB?</span></h2>
 
-<footer class="site-footer">
-  <p>© Charlene · <span data-lang="zh">scRNA-seq 進階數學教程</span><span data-lang="en">scRNA-seq Advanced Math Tutorial</span></p>
-</footer>
+<p class="lead" data-lang="zh">
+  你剛拿到 10x 跑出來的細胞-基因矩陣，10,000 個細胞、20,000 個基因。你打開 Jupyter：
+</p>
+<p class="lead" data-lang="en">
+  You just received a 10x cell × gene matrix: 10,000 cells, 20,000 genes. Open Jupyter:
+</p>
+
+<pre class="code"><span class="c"># Memory bomb</span>
+import numpy as np
+X = np.zeros((<span class="n">10000</span>, <span class="n">20000</span>), dtype=np.float64)
+<span class="c"># X 已經吃掉 1.6 GB</span>
+print(X.nbytes / <span class="n">1e9</span>)  <span class="c"># 1.6</span></pre>
+
+<p data-lang="zh">但你打開細胞數，每個細胞平均只有 <b>1500 個基因</b>有 count——其他 18500 都是 0。</p>
+<p data-lang="en">But each cell averages only <b>1500 detected genes</b> — the other 18500 are 0.</p>
+
+<div class="card">
+  <h3 data-lang="zh">§0-1 直覺檢驗：稀疏度與「無用的 0」</h3>
+  <h3 data-lang="en">§0-1 Intuition: sparsity vs "wasteful zeros"</h3>
+  <p data-lang="zh">下面是個 5×8 的 mini cell-gene 矩陣，sparsity = 80%。看「實際非零元素」(藍底) 跟「白費的 0」(灰底)。</p>
+  <p data-lang="en">A 5×8 mini cell-gene matrix, sparsity = 80%. Blue = non-zero, gray = wasteful zeros.</p>
+
+  <div class="matgrid" id="s0grid"></div>
+
+  <div class="stat-row">
+    <div class="item"><span class="lbl" data-lang="zh">總元素</span><span class="lbl" data-lang="en">Total entries</span><span class="val">40</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">非零 (nnz)</span><span class="lbl" data-lang="en">non-zero</span><span class="val" style="color:#1e3a8a">8</span></div>
+    <div class="item"><span class="lbl">sparsity</span><span class="lbl">sparsity</span><span class="val">80%</span></div>
+    <div class="item"><span class="lbl">dense bytes</span><span class="lbl">dense bytes</span><span class="val">40 × 8 = 320</span></div>
+    <div class="item"><span class="lbl">COO bytes</span><span class="lbl">COO bytes</span><span class="val" style="color:#27795a">8 × 16 = 128</span></div>
+  </div>
+
+  <div class="callout idea">
+    <strong data-lang="zh">第一個 aha</strong><strong data-lang="en">First aha</strong>:
+    <span data-lang="zh">即使這個小矩陣，COO 已經省 60% 空間。
+    在真實 10x 矩陣（95% 稀疏），COO 大約只用 dense 的 <b>4-5%</b> 記憶體。</span>
+    <span data-lang="en">Even on this tiny matrix, COO saves 60% space.
+    On real 10x data (95% sparse), COO uses only <b>4–5%</b> of dense memory.</span>
+  </div>
+</div>
+
+<!-- §1 -->
+<h2 id="s1"><span class="num">§1</span> <span data-lang="zh">三種稀疏編碼：COO · CSR · CSC</span><span data-lang="en">Three encodings: COO · CSR · CSC</span></h2>
+
+<p data-lang="zh">三種編碼解決同一個問題（只記錄非零），但<b>排序與索引方式</b>不同，造成不同操作的速度差。</p>
+<p data-lang="en">Three encodings solve the same problem (store only non-zeros), but differ in <b>ordering and indexing</b>, leading to different operation costs.</p>
+
+<h3>1.1 COO (Coordinate format)</h3>
+<p data-lang="zh">最直觀：三個平行陣列 <code class="inline">(row, col, val)</code>，每筆 = 一個非零元素。</p>
+<p data-lang="en">Most intuitive: three parallel arrays <code class="inline">(row, col, val)</code>, one entry per non-zero.</p>
+
+<div class="math-block">
+  $$\text{COO}(A) = \{(i_k, j_k, v_k) : v_k \neq 0\}_{k=1}^{\text{nnz}}$$
+  <div class="formula-caption" data-lang="zh">nnz = number of non-zeros。3 個長度 nnz 的陣列</div>
+  <div class="formula-caption" data-lang="en">nnz = non-zero count. Three nnz-length arrays</div>
+</div>
+
+<p data-lang="zh"><b>記憶體</b>: $\text{nnz} \times (4 + 4 + 8) = 16$ bytes per nnz (int32 row + int32 col + float64 val)</p>
+<p data-lang="en"><b>Memory</b>: $\text{nnz} \times 16$ bytes (int32 row + int32 col + float64 val)</p>
+
+<div class="card">
+  <h4 data-lang="zh">看 §0 那個 5×8 矩陣的 COO 編碼</h4>
+  <h4 data-lang="en">COO encoding of the §0 5×8 matrix</h4>
+  <div class="array-show">row = [0, 0, 1, 2, 2, 3, 4, 4]</div>
+  <div class="array-show">col = [1, 4, 5, 0, 3, 6, 2, 7]</div>
+  <div class="array-show">val = [3.0, 2.0, 1.0, 4.0, 5.0, 2.0, 1.0, 3.0]</div>
+</div>
+
+<h3>1.2 CSR (Compressed Sparse Row)</h3>
+<p data-lang="zh">把 COO 的「row」陣列壓縮成「每列從第幾個非零開始」的指標：</p>
+<p data-lang="en">Compresses COO's row array into "where each row starts" pointers:</p>
+
+<div class="math-block">
+  $$\text{CSR}(A) = \begin{cases}
+    \text{values}[k] = v_k \\
+    \text{col\_idx}[k] = j_k \\
+    \text{row\_ptr}[i] = \text{累計到第 } i \text{ 列為止的非零數}
+  \end{cases}$$
+</div>
+
+<p data-lang="zh">第 $i$ 列的非零元素位置 = <code class="inline">values[row_ptr[i] : row_ptr[i+1]]</code>。</p>
+<p data-lang="en">Row $i$'s non-zeros = <code class="inline">values[row_ptr[i] : row_ptr[i+1]]</code>.</p>
+
+<p data-lang="zh"><b>記憶體</b>: $\text{nnz} \times 12 + (n+1) \times 4$ bytes。<b>列向操作（row-slicing、SpMV）特快</b>。</p>
+<p data-lang="en"><b>Memory</b>: $\text{nnz} \times 12 + (n+1) \times 4$ bytes. <b>Row-slicing and SpMV are very fast</b>.</p>
+
+<h3>1.3 CSC (Compressed Sparse Column)</h3>
+<p data-lang="zh">跟 CSR 對稱——壓縮的是「col」陣列，<b>欄向操作特快</b>。</p>
+<p data-lang="en">Mirror of CSR — compresses "col" array, <b>column operations fast</b>.</p>
+
+<table class="compare">
+  <tr><th></th><th>COO</th><th>COO</th><th>CSR</th><th>CSR</th><th>CSC</th><th>CSC</th></tr>
+  <tr><td data-lang="zh">記憶體（nnz=N, n×p）</td><td data-lang="en">Memory (nnz=N, n×p)</td>
+      <td>16N</td><td>16N</td>
+      <td>12N + 4(n+1)</td><td>12N + 4(n+1)</td>
+      <td>12N + 4(p+1)</td><td>12N + 4(p+1)</td></tr>
+  <tr><td data-lang="zh">建構速度</td><td data-lang="en">Build speed</td>
+      <td data-lang="zh">最快</td><td data-lang="en">fastest</td>
+      <td data-lang="zh">中</td><td data-lang="en">mid</td>
+      <td data-lang="zh">中</td><td data-lang="en">mid</td></tr>
+  <tr><td data-lang="zh">列 (row) 取值</td><td data-lang="en">Row access</td>
+      <td>O(nnz)</td><td>O(nnz)</td>
+      <td style="background:#dbeafe"><b>O(nnz_i)</b></td><td style="background:#dbeafe"><b>O(nnz_i)</b></td>
+      <td>O(nnz)</td><td>O(nnz)</td></tr>
+  <tr><td data-lang="zh">欄 (col) 取值</td><td data-lang="en">Col access</td>
+      <td>O(nnz)</td><td>O(nnz)</td>
+      <td>O(nnz)</td><td>O(nnz)</td>
+      <td style="background:#dbeafe"><b>O(nnz_j)</b></td><td style="background:#dbeafe"><b>O(nnz_j)</b></td></tr>
+  <tr><td>SpMV Ax</td><td>SpMV Ax</td>
+      <td>O(nnz)</td><td>O(nnz)</td>
+      <td style="background:#dbeafe"><b>O(nnz)</b> 快</td><td style="background:#dbeafe"><b>O(nnz)</b> fast</td>
+      <td>O(nnz)</td><td>O(nnz)</td></tr>
+  <tr><td data-lang="zh">支援算術（+, ×）</td><td data-lang="en">Arithmetic (+, ×)</td>
+      <td>❌</td><td>❌</td>
+      <td>✅</td><td>✅</td>
+      <td>✅</td><td>✅</td></tr>
+</table>
+
+<!-- §2 -->
+<h2 id="s2"><span class="num">§2</span> <span data-lang="zh">互動：拉稀疏度看記憶體節省</span><span data-lang="en">Interactive: sparsity vs memory</span></h2>
+
+<div class="card">
+  <p data-lang="zh">拉滑桿改變矩陣的<b>稀疏度</b>，看 dense vs COO vs CSR 的記憶體與「斷點」（哪個稀疏度開始 COO 比 dense 省）。</p>
+  <p data-lang="en">Drag sparsity slider — see dense vs COO vs CSR memory, and the "breakeven" point (sparsity where COO beats dense).</p>
+  <div class="controls">
+    <label><span data-lang="zh">矩陣大小 (n×p)</span><span data-lang="en">Matrix size</span>:
+      <select id="s2size">
+        <option value="100" data-lang="zh">100 × 100 (小)</option>
+        <option value="100" data-lang="en">100 × 100 (small)</option>
+        <option value="10000" data-lang="zh" selected>10000 × 20000 (典型 scRNA)</option>
+        <option value="10000" data-lang="en">10000 × 20000 (typical scRNA)</option>
+        <option value="100000" data-lang="zh">100000 × 30000 (大規模)</option>
+        <option value="100000" data-lang="en">100000 × 30000 (large)</option>
+      </select>
+    </label>
+    <label><span data-lang="zh">稀疏度</span><span data-lang="en">Sparsity</span>:
+      <input type="range" id="s2sp" min="0" max="99" value="92" step="1"><span id="s2spVal">92</span>%
+    </label>
+  </div>
+  <svg class="canvas" id="s2svg" viewBox="0 0 800 360" width="100%"></svg>
+  <div class="stat-row">
+    <div class="item"><span class="lbl">dense</span><span class="lbl">dense</span><span class="val" id="s2dense">—</span></div>
+    <div class="item" style="color:var(--green)"><span class="lbl">COO</span><span class="lbl">COO</span><span class="val" id="s2coo">—</span></div>
+    <div class="item" style="color:var(--blue1)"><span class="lbl">CSR</span><span class="lbl">CSR</span><span class="val" id="s2csr">—</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">節省</span><span class="lbl" data-lang="en">Savings</span><span class="val" id="s2save">—</span></div>
+  </div>
+  <p data-lang="zh">數學上的「斷點」：當 sparsity &gt; $1 - \frac{8}{16} = 50\%$ 時，COO 開始比 dense 省（COO 16 bytes/nnz vs dense 8 bytes/entry）。實務 scRNA &gt; 90%，省超多。</p>
+  <p data-lang="en">Breakeven: COO &lt; dense iff sparsity &gt; $1 - \frac{8}{16} = 50\%$. scRNA &gt; 90% saves a lot.</p>
+</div>
+
+<!-- §3 -->
+<h2 id="s3"><span class="num">§3</span> <span data-lang="zh">CSR 的 row_ptr 是怎麼算的？</span><span data-lang="en">How is CSR's row_ptr computed?</span></h2>
+
+<p data-lang="zh">這節我們把 §0 那個 5×8 矩陣<b>手動</b>編成 CSR。理解 <code class="inline">row_ptr</code> 的構造邏輯。</p>
+<p data-lang="en">Manually encode the §0 5×8 matrix into CSR. Understand <code class="inline">row_ptr</code> construction.</p>
+
+<h3 data-lang="zh">3.1 五步驟構造</h3>
+<h3 data-lang="en">3.1 Five-step construction</h3>
+<ol>
+  <li><span data-lang="zh">逐列掃描矩陣，記下每列的非零元素</span><span data-lang="en">Scan rows; record each row's non-zeros</span></li>
+  <li><span data-lang="zh">第 0 列有 2 個非零 (在 col 1, 4)，值 3, 2 → values 加 [3, 2], col_idx 加 [1, 4]</span>
+      <span data-lang="en">Row 0 has 2 non-zeros (cols 1, 4, vals 3, 2) → values += [3, 2], col_idx += [1, 4]</span></li>
+  <li><span data-lang="zh">第 1 列有 1 個 (col 5, val 1) → values 加 [1], col_idx 加 [5]</span>
+      <span data-lang="en">Row 1 has 1 (col 5, val 1) → append</span></li>
+  <li><span data-lang="zh">...持續到第 4 列</span><span data-lang="en">...continue through row 4</span></li>
+  <li><span data-lang="zh"><b>row_ptr 是「每列累計」</b>：row_ptr[0]=0, row_ptr[1]=row_ptr[0]+(第 0 列 nnz)=2，以此類推</span>
+      <span data-lang="en"><b>row_ptr is cumulative</b>: row_ptr[0]=0, row_ptr[1]=row_ptr[0]+(row-0 nnz)=2, etc.</span></li>
+</ol>
+
+<div class="card">
+  <h4 data-lang="zh">手算結果</h4>
+  <h4 data-lang="en">Hand-computed result</h4>
+  <div class="array-show">values = [3.0, 2.0, 1.0, 4.0, 5.0, 2.0, 1.0, 3.0]</div>
+  <div class="array-show">col_idx = [1, 4, 5, 0, 3, 6, 2, 7]</div>
+  <div class="array-show">row_ptr = [0, 2, 3, 5, 6, 8]</div>
+  <p data-lang="zh"><b>row_ptr 的長度 = 列數 + 1</b>。最後一個值 = nnz = 8。</p>
+  <p data-lang="en"><b>row_ptr length = num_rows + 1</b>. Last value = nnz = 8.</p>
+
+  <h4 data-lang="zh">驗證讀取：拿第 2 列</h4>
+  <h4 data-lang="en">Verify: read row 2</h4>
+  <p data-lang="zh">row_ptr[2] = 3, row_ptr[3] = 5。所以第 2 列的非零在 values[3:5] = [4.0, 5.0]，欄位 col_idx[3:5] = [0, 3]。✓</p>
+  <p data-lang="en">row_ptr[2] = 3, row_ptr[3] = 5. Row 2 non-zeros = values[3:5] = [4.0, 5.0], cols = col_idx[3:5] = [0, 3]. ✓</p>
+</div>
+
+<h3 data-lang="zh">3.2 Python 一行構造</h3>
+<h3 data-lang="en">3.2 One-line Python construction</h3>
+
+<pre class="code"><span class="k">from</span> scipy.sparse <span class="k">import</span> csr_matrix
+A_csr = csr_matrix(A_dense)
+<span class="c"># 或從 (row, col, val) 三陣列直接給</span>
+A_csr = csr_matrix((vals, (rows, cols)), shape=(<span class="n">5</span>, <span class="n">8</span>))</pre>
+
+<!-- §4 -->
+<h2 id="s4"><span class="num">§4</span> <span data-lang="zh">互動 CSR 構造：點 cell 看 row range</span><span data-lang="en">Interactive CSR builder: click cell, see row range</span></h2>
+
+<div class="card">
+  <p data-lang="zh">下面有一個 6×10 的稀疏矩陣。<b>點任何一格</b>，視覺會：
+    (1) 高亮那一列；(2) 顯示這列在 CSR 的 row_ptr 範圍；(3) 顯示這個值在 values 陣列的索引。</p>
+  <p data-lang="en">A 6×10 sparse matrix. <b>Click any cell</b> to: (1) highlight that row; (2) show its CSR row_ptr range; (3) show this value's index in values array.</p>
+  <div class="controls">
+    <button id="s4regen"><span data-lang="zh">重新生成隨機矩陣</span><span data-lang="en">Regenerate random matrix</span></button>
+    <label><span data-lang="zh">稀疏度</span><span data-lang="en">Sparsity</span>:
+      <input type="range" id="s4sp" min="50" max="95" value="80" step="5"><span id="s4spVal">80</span>%
+    </label>
+  </div>
+  <div id="s4grid"></div>
+  <div id="s4detail" style="font-family: 'JetBrains Mono', monospace; font-size:13px; padding:14px; background:#dbeafe; border-radius:6px; margin-top:14px; min-height:80px">
+    <span data-lang="zh">點任何一格看詳細資訊</span>
+    <span data-lang="en">Click any cell to see details</span>
+  </div>
+  <div style="font-family: 'JetBrains Mono', monospace; font-size:12px; margin-top:12px">
+    <div id="s4values" class="array-show"></div>
+    <div id="s4colidx" class="array-show"></div>
+    <div id="s4rowptr" class="array-show"></div>
+  </div>
+</div>
+
+<!-- §5 -->
+<h2 id="s5"><span class="num">§5</span> <span data-lang="zh">SpMV：稀疏矩陣乘向量的複雜度</span><span data-lang="en">SpMV complexity</span></h2>
+
+<p data-lang="zh">
+  <b>SpMV (Sparse Matrix-Vector multiply)</b> $\mathbf{y} = A\mathbf{x}$ 是 PCA、KNN graph、Leiden 等核心運算。
+  Dense 是 $O(np)$，稀疏可以做到 $O(\text{nnz})$。
+</p>
+<p data-lang="en">
+  <b>SpMV</b> $\mathbf{y} = A\mathbf{x}$ is the core operation in PCA, KNN graph, Leiden, etc.
+  Dense: $O(np)$. Sparse: $O(\text{nnz})$.
+</p>
+
+<h3 data-lang="zh">5.1 CSR 的 SpMV 演算法</h3>
+<h3 data-lang="en">5.1 SpMV with CSR</h3>
+
+<pre class="code"><span class="c"># y = A * x</span>
+y = np.zeros(n)
+<span class="k">for</span> i <span class="k">in range</span>(n):
+    <span class="k">for</span> k <span class="k">in range</span>(row_ptr[i], row_ptr[i+<span class="n">1</span>]):
+        y[i] += values[k] * x[col_idx[k]]</pre>
+
+<p data-lang="zh">內外迴圈總次數 = nnz。對 95% 稀疏的 scRNA 矩陣，比 dense 快 <b>20 倍</b>。</p>
+<p data-lang="en">Total iterations = nnz. For 95%-sparse scRNA, this is <b>20× faster</b> than dense.</p>
+
+<h3 data-lang="zh">5.2 為什麼 CSR 快、CSC 在 SpMV 比較慢？</h3>
+<h3 data-lang="en">5.2 Why CSR fast, CSC slower for SpMV?</h3>
+<p data-lang="zh">SpMV 算 $y = Ax$ 是「對每列 $A_i$ 跟 $x$ 做內積」——天然按列走，所以 CSR 把每列收成連續記憶體最有效率。CSC 要算 $y$ 必須「對每欄做累加」，cache locality 較差。</p>
+<p data-lang="en">SpMV computes "row $A_i$ · x" — naturally row-wise. CSR's contiguous-per-row layout maximizes cache locality. CSC requires "accumulate column-wise into y" — worse cache behavior.</p>
+
+<h3 data-lang="zh">5.3 SpMV 在 scRNA 流程的應用</h3>
+<h3 data-lang="en">5.3 SpMV in the scRNA pipeline</h3>
+<table class="compare">
+  <tr><th data-lang="zh">階段</th><th data-lang="en">Stage</th>
+      <th data-lang="zh">用 SpMV 做什麼</th><th data-lang="en">What it does</th>
+      <th data-lang="zh">建議格式</th><th data-lang="en">Format</th></tr>
+  <tr><td>PCA (lazy)</td><td>PCA (lazy)</td>
+      <td>Lanczos / IRAM：$A^T A v$ 反覆算</td><td>Lanczos / IRAM: repeated $A^T A v$</td>
+      <td><b>CSC</b></td><td><b>CSC</b></td></tr>
+  <tr><td>KNN graph</td><td>KNN graph</td>
+      <td data-lang="zh">每細胞算到所有細胞的距離</td><td data-lang="en">distance from each cell to all others</td>
+      <td><b>CSR</b></td><td><b>CSR</b></td></tr>
+  <tr><td>Leiden update</td><td>Leiden update</td>
+      <td data-lang="zh">每節點看鄰居 cluster</td><td data-lang="en">each node checks neighbor clusters</td>
+      <td><b>CSR</b></td><td><b>CSR</b></td></tr>
+</table>
+
+<!-- §6 -->
+<h2 id="s6"><span class="num">§6</span> <span data-lang="zh">為什麼 PCA 用 CSC、KNN 用 CSR</span><span data-lang="en">Why PCA uses CSC, KNN uses CSR</span></h2>
+
+<p data-lang="zh">看到底層後，這兩個選擇就很自然：</p>
+<p data-lang="en">Once you see the internals, both choices are natural:</p>
+
+<div class="callout idea">
+  <strong data-lang="zh">PCA 的核心運算</strong><strong data-lang="en">PCA's core</strong>:
+  <span data-lang="zh">是「對每個 feature (gene) 算 mean 跟 variance」——<b>欄向走訪</b>。
+  CSC 把每欄存連續，scan 一遍就拿到該 gene 的所有值。CSR 要對每列查 col_idx 找 gene，慢得多。</span>
+  <span data-lang="en">"compute mean/variance per feature (gene)" — <b>column-wise traversal</b>.
+  CSC stores columns contiguously. CSR would require scanning every row for each gene — much slower.</span>
+</div>
+
+<div class="callout idea">
+  <strong data-lang="zh">KNN 的核心運算</strong><strong data-lang="en">KNN's core</strong>:
+  <span data-lang="zh">是「對每個 cell 跟其他 cell 比距離」——<b>列向走訪</b>。
+  CSR 把每列存連續，拿到 cell 表現量直接做 dot product。</span>
+  <span data-lang="en">"compute distance from each cell to others" — <b>row-wise traversal</b>.
+  CSR stores rows contiguously; get cell vector, dot product directly.</span>
+</div>
+
+<div class="callout warn">
+  <strong data-lang="zh">在 scanpy 裡的轉換</strong><strong data-lang="en">Conversion in Scanpy</strong>:
+  <span data-lang="zh">scanpy 在 <code class="inline">sc.tl.pca</code> 前會把 CSR 轉 CSC（隱式）；之後 <code class="inline">sc.pp.neighbors</code> 又會用 CSR 表示 graph。轉換成本是 $O(\text{nnz})$——對大資料不該頻繁來回切換。</span>
+  <span data-lang="en">Scanpy implicitly converts CSR → CSC before <code class="inline">sc.tl.pca</code>; then back to CSR for the graph in <code class="inline">sc.pp.neighbors</code>. Conversion cost $O(\text{nnz})$ — don't switch repeatedly.</span>
+</div>
+
+<!-- §7 -->
+<h2 id="s7"><span class="num">§7</span> <span data-lang="zh">AnnData 整合 + 限制</span><span data-lang="en">AnnData integration + limits</span></h2>
+
+<h3 data-lang="zh">7.1 AnnData 的儲存設計</h3>
+<h3 data-lang="en">7.1 AnnData storage design</h3>
+
+<p data-lang="zh">AnnData (Scanpy 的核心物件) 預設用 CSR 儲存 <code class="inline">.X</code>。原因：</p>
+<p data-lang="en">AnnData (Scanpy's core) defaults to CSR for <code class="inline">.X</code>. Reasons:</p>
+
+<ul>
+  <li data-lang="zh">大多數操作（QC 算每細胞的 total_counts、normalize 除以 size factor）都是 <b>per-cell</b>，即列向</li>
+  <li data-lang="en">Most operations (QC compute per-cell total_counts, normalize divide by size factor) are <b>per-cell</b> = row-wise</li>
+  <li data-lang="zh">cell-by-cell 的子集 (<code class="inline">adata[:, mask]</code>) 在 CSR 上 O(nnz_subset)</li>
+  <li data-lang="en">cell-by-cell subset (<code class="inline">adata[:, mask]</code>) in CSR is O(nnz_subset)</li>
+  <li data-lang="zh">PCA 階段才轉 CSC（隱式 + 一次性）</li>
+  <li data-lang="en">CSC conversion only at PCA stage (implicit, one-shot)</li>
+</ul>
+
+<pre class="code"><span class="k">import</span> scanpy <span class="k">as</span> sc
+adata = sc.read_10x_h5(<span class="s">"filtered.h5"</span>)
+<span class="c"># adata.X is csr_matrix by default</span>
+print(<span class="k">type</span>(adata.X))  <span class="c"># &lt;class 'scipy.sparse.csr_matrix'&gt;</span>
+
+<span class="c"># operations that stay sparse:</span>
+sc.pp.calculate_qc_metrics(adata, inplace=<span class="k">True</span>)  <span class="c"># row-wise OK</span>
+sc.pp.normalize_total(adata)                       <span class="c"># row-wise OK</span>
+sc.pp.log1p(adata)                                 <span class="c"># row-wise OK</span>
+
+<span class="c"># operations that DENSIFY (memory risk):</span>
+sc.pp.scale(adata)        <span class="c"># z-score: subtraction → 0 entries become non-zero → matrix densifies</span>
+sc.pp.regress_out(adata, [<span class="s">"total_counts"</span>])  <span class="c"># also densifies</span></pre>
+
+<h3 data-lang="zh">7.2 哪些 scanpy 操作會「densify」?</h3>
+<h3 data-lang="en">7.2 Which Scanpy ops "densify"?</h3>
+
+<div class="callout warn">
+  <strong data-lang="zh">記憶體陷阱</strong><strong data-lang="en">Memory trap</strong>:
+  <span data-lang="zh"><code class="inline">sc.pp.scale</code> 與 <code class="inline">sc.pp.regress_out</code> 會減 mean——
+  讓原本是 0 的元素變成非零，矩陣從稀疏變 dense。對 10k × 2000 HVG，dense 才 160 MB 還好；
+  但對 1M × 2000 cells 就會炸（16 GB）。實務上會先 HVG 篩選把矩陣縮小再做 scale。</span>
+  <span data-lang="en"><code class="inline">sc.pp.scale</code> and <code class="inline">sc.pp.regress_out</code> subtract means —
+  zero entries become non-zero, matrix densifies. For 10k × 2000 HVG, dense is 160 MB — fine;
+  but 1M × 2000 cells gives 16 GB. Practice: HVG-filter first to shrink before scale.</span>
+</div>
+
+<h3 data-lang="zh">7.3 限制</h3>
+<h3 data-lang="en">7.3 Limitations</h3>
+<table class="compare">
+  <tr><th data-lang="zh">限制</th><th data-lang="en">Limitation</th>
+      <th data-lang="zh">後果</th><th data-lang="en">Consequence</th>
+      <th data-lang="zh">緩解</th><th data-lang="en">Mitigation</th></tr>
+  <tr>
+    <td data-lang="zh">稀疏編碼不支援所有 numpy 操作</td>
+    <td data-lang="en">Sparse doesn't support all numpy ops</td>
+    <td data-lang="zh">遇到 <code class="inline">scipy.sparse</code> 沒實作的函式會自動 dense</td>
+    <td data-lang="en">unsupported funcs trigger auto-densify</td>
+    <td data-lang="zh">確認用 <code class="inline">isinstance(X, sp.csr_matrix)</code></td>
+    <td data-lang="en">check <code class="inline">isinstance(X, sp.csr_matrix)</code></td>
+  </tr>
+  <tr>
+    <td data-lang="zh">改單一元素 <code class="inline">A[i,j]=v</code> 在 CSR 慢</td>
+    <td data-lang="en">Single-element edit <code class="inline">A[i,j]=v</code> slow in CSR</td>
+    <td data-lang="zh">O(nnz_row) 因為要重組陣列</td>
+    <td data-lang="en">O(nnz_row) to reshuffle arrays</td>
+    <td data-lang="zh">大量修改用 LIL 或 DOK 格式</td>
+    <td data-lang="en">heavy edits use LIL or DOK</td>
+  </tr>
+  <tr>
+    <td data-lang="zh">CSR 跟 CSC 轉換成本 O(nnz)</td>
+    <td data-lang="en">CSR↔CSC conversion O(nnz)</td>
+    <td data-lang="zh">頻繁切換會慢</td>
+    <td data-lang="en">repeated switching is slow</td>
+    <td data-lang="zh">設計 pipeline 時保留同格式</td>
+    <td data-lang="en">design pipeline to keep one format</td>
+  </tr>
+</table>
+
+<div class="callout prog">
+  <strong data-lang="zh">下一步</strong><strong data-lang="en">Next</strong>:
+  <span data-lang="zh">稀疏儲存只解決「怎麼放進記憶體」。下一站 <a href="1.2-count-distributions.html"><b>1.2 計數分布</b></a> 看看這些 count 值的「機率分布」是什麼——Poisson？NB？ZINB？
+  之後就進入真實的 <a href="../M2-preprocessing/2.1-qc-statistics.html"><b>M2.1 QC</b></a> 流程。</span>
+  <span data-lang="en">Sparse storage solves "how to fit in memory". Next: <a href="1.2-count-distributions.html"><b>1.2 Count Distributions</b></a> — Poisson? NB? ZINB? Then on to <a href="../M2-preprocessing/2.1-qc-statistics.html"><b>M2.1 QC</b></a>.</span>
+</div>
+
+<p class="footer">
+  <span data-lang="zh">© scRNA-seq Advanced Math · M1.1 Sparse Matrix Deep Interactive</span>
+  <span data-lang="en">© scRNA-seq Advanced Math · M1.1 Sparse Matrix Deep Interactive</span>
+</p>
+
+</div>
 
 <script src="../i18n.js"></script>
 <script>
-function switchTab(b,id){
-  const p=b.closest(".code-tabs");
-  p.querySelectorAll(".code-tab-btn").forEach(x=>x.classList.remove("active"));
-  p.querySelectorAll(".code-tab-content").forEach(x=>x.classList.remove("active"));
-  b.classList.add("active");
-  document.getElementById(id).classList.add("active");
-}
-
-function updateMem() {
-  const n = +document.getElementById('cellsR').value;
-  const m = +document.getElementById('genesR').value;
-  const d = +document.getElementById('densR').value / 100;
-  const nnz = Math.round(n * m * d);
-  const denseB = n * m * 8;
-  const cooB = nnz * 16;
-  const csrB = nnz * 12 + (n+1)*4;
-
-  document.getElementById('cellsV').textContent = n.toLocaleString();
-  document.getElementById('genesV').textContent = m.toLocaleString();
-  document.getElementById('densV').textContent = (d*100).toFixed(0) + '%';
-
-  function fmt(b) {
-    if (b > 1e9) return (b/1e9).toFixed(2) + ' GB';
-    if (b > 1e6) return (b/1e6).toFixed(1) + ' MB';
-    return (b/1e3).toFixed(0) + ' KB';
+// ====== §0 grid ======
+(function() {
+  const data = [
+    [0,3,0,0,2,0,0,0],
+    [0,0,0,0,0,1,0,0],
+    [4,0,0,5,0,0,0,0],
+    [0,0,0,0,0,0,2,0],
+    [0,0,1,0,0,0,0,3]
+  ];
+  let s = '<table>';
+  for (let i = 0; i < 5; i++) {
+    s += '<tr>';
+    for (let j = 0; j < 8; j++) {
+      const v = data[i][j];
+      s += `<td class="${v===0 ? 'zero' : 'nonzero'}">${v===0?'·':v}</td>`;
+    }
+    s += '</tr>';
   }
-  document.getElementById('denseMem').textContent = fmt(denseB);
-  document.getElementById('cooMem').textContent = fmt(cooB);
-  document.getElementById('csrMem').textContent = fmt(csrB);
+  s += '</table>';
+  document.getElementById('s0grid').innerHTML = s;
+})();
 
-  const ratio = (denseB/csrB).toFixed(1);
-  const L = (window.I18n && window.I18n.get && window.I18n.get()) || 'zh';
-  document.getElementById('ratioMsg').innerHTML = L === 'zh'
-    ? `📊 用 CSR 比 Dense 節省 <b>${ratio}×</b> 記憶體。nnz = ${nnz.toLocaleString()} 個非零元素。`
-    : `📊 CSR saves <b>${ratio}×</b> memory vs Dense. nnz = ${nnz.toLocaleString()} non-zero entries.`;
-}
-['cellsR','genesR','densR'].forEach(id => document.getElementById(id).addEventListener('input', updateMem));
-document.addEventListener('langchange', updateMem);
-updateMem();
+// ====== §2 sparsity vs memory ======
+(function() {
+  function compute() {
+    const sz = document.getElementById('s2size').value;
+    const sp = +document.getElementById('s2sp').value / 100;
+    document.getElementById('s2spVal').textContent = (sp*100).toFixed(0);
+    let n, p;
+    if (sz === '100') { n = 100; p = 100; }
+    else if (sz === '10000') { n = 10000; p = 20000; }
+    else { n = 100000; p = 30000; }
+    const total = n * p;
+    const nnz = Math.round(total * (1-sp));
+    const dense = total * 8;
+    const coo = nnz * 16;
+    const csr = nnz * 12 + (n+1)*4;
+    function fmt(b) {
+      if (b > 1e9) return (b/1e9).toFixed(2) + ' GB';
+      if (b > 1e6) return (b/1e6).toFixed(1) + ' MB';
+      if (b > 1e3) return (b/1e3).toFixed(1) + ' KB';
+      return b + ' B';
+    }
+    document.getElementById('s2dense').textContent = fmt(dense);
+    document.getElementById('s2coo').textContent = fmt(coo);
+    document.getElementById('s2csr').textContent = fmt(csr);
+    document.getElementById('s2save').textContent = ((1 - csr/dense)*100).toFixed(1) + '%';
+    // bar chart
+    const W = 800, H = 360;
+    const maxV = Math.max(dense, coo, csr);
+    const Y = v => 320 - Math.log10(v+1)/Math.log10(maxV+1) * 280;
+    let svg = '';
+    svg += `<line class="axis" x1="60" y1="320" x2="760" y2="320"/>`;
+    svg += `<line class="axis" x1="60" y1="30" x2="60" y2="320"/>`;
+    svg += `<text class="lbl" x="400" y="345" text-anchor="middle" font-weight="700">Memory (log scale)</text>`;
+    const bars = [
+      {x: 140, label: 'dense', v: dense, color: '#c0392b'},
+      {x: 360, label: 'COO', v: coo, color: '#27795a'},
+      {x: 580, label: 'CSR', v: csr, color: '#1e3a8a'}
+    ];
+    bars.forEach(b => {
+      const yt = Y(b.v);
+      svg += `<rect x="${b.x}" y="${yt}" width="120" height="${320-yt}" fill="${b.color}" opacity="0.85"/>`;
+      svg += `<text class="lbl" x="${b.x+60}" y="${yt-8}" text-anchor="middle" font-weight="700" fill="${b.color}">${fmt(b.v)}</text>`;
+      svg += `<text class="lbl" x="${b.x+60}" y="338" text-anchor="middle" font-weight="700">${b.label}</text>`;
+    });
+    document.getElementById('s2svg').innerHTML = svg;
+  }
+  document.getElementById('s2size').addEventListener('change', compute);
+  document.getElementById('s2sp').addEventListener('input', compute);
+  compute();
+})();
+
+// ====== §4 interactive CSR builder ======
+(function() {
+  let mat;
+  let csrVals, csrCols, csrRowPtr;
+  function regen() {
+    const sp = +document.getElementById('s4sp').value;
+    document.getElementById('s4spVal').textContent = sp;
+    mat = [];
+    const nR = 6, nC = 10;
+    for (let i = 0; i < nR; i++) {
+      const row = [];
+      for (let j = 0; j < nC; j++) {
+        row.push(Math.random()*100 < (100-sp) ? Math.floor(Math.random()*9)+1 : 0);
+      }
+      mat.push(row);
+    }
+    // build CSR
+    csrVals = []; csrCols = []; csrRowPtr = [0];
+    for (let i = 0; i < nR; i++) {
+      for (let j = 0; j < nC; j++) {
+        if (mat[i][j] !== 0) {
+          csrVals.push(mat[i][j]);
+          csrCols.push(j);
+        }
+      }
+      csrRowPtr.push(csrVals.length);
+    }
+    draw();
+  }
+  function draw(highlightRow=-1, highlightK=-1) {
+    let s = '<div class="matgrid"><table>';
+    for (let i = 0; i < mat.length; i++) {
+      s += '<tr>';
+      for (let j = 0; j < mat[i].length; j++) {
+        const v = mat[i][j];
+        let cls = v === 0 ? 'zero' : 'nonzero';
+        if (i === highlightRow) cls += ' highlight';
+        s += `<td class="${cls}" data-i="${i}" data-j="${j}" style="cursor:pointer">${v===0?'·':v}</td>`;
+      }
+      s += '</tr>';
+    }
+    s += '</table></div>';
+    document.getElementById('s4grid').innerHTML = s;
+    document.getElementById('s4grid').querySelectorAll('td').forEach(td => {
+      td.addEventListener('click', () => onClick(+td.dataset.i, +td.dataset.j));
+    });
+    // arrays
+    function arrSpan(arr, hl) {
+      return arr.map((v,k) => `<span style="${k===hl?'background:#fde68a;font-weight:700;padding:0 3px':''}">${v}</span>`).join(', ');
+    }
+    document.getElementById('s4values').innerHTML = 'values = [' + arrSpan(csrVals, highlightK) + ']';
+    document.getElementById('s4colidx').innerHTML = 'col_idx = [' + arrSpan(csrCols, highlightK) + ']';
+    document.getElementById('s4rowptr').innerHTML = 'row_ptr = [' + arrSpan(csrRowPtr, highlightRow >= 0 ? highlightRow : -1) + ']';
+  }
+  function onClick(i, j) {
+    const v = mat[i][j];
+    if (v === 0) {
+      document.getElementById('s4detail').innerHTML = `<span style="color:#999">Cell [${i}, ${j}] = 0, not stored in CSR (省記憶體 / not stored to save memory)</span>`;
+      draw(i, -1);
+      return;
+    }
+    // find k
+    let k = -1;
+    for (let kk = csrRowPtr[i]; kk < csrRowPtr[i+1]; kk++) {
+      if (csrCols[kk] === j) { k = kk; break; }
+    }
+    const lang = document.body.classList.contains('lang-en') ? 'en' : 'zh';
+    const html = lang==='en'
+      ? `Cell [${i}, ${j}] = ${v}<br>Row ${i} occupies values[<b>${csrRowPtr[i]}:${csrRowPtr[i+1]}</b>] (i.e. ${csrRowPtr[i+1]-csrRowPtr[i]} non-zeros)<br>This value is at <b>values[${k}]</b>, col_idx[${k}] = ${j} ✓`
+      : `Cell [${i}, ${j}] = ${v}<br>第 ${i} 列佔 values[<b>${csrRowPtr[i]}:${csrRowPtr[i+1]}</b>]（共 ${csrRowPtr[i+1]-csrRowPtr[i]} 個非零）<br>這個值存在 <b>values[${k}]</b>，col_idx[${k}] = ${j} ✓`;
+    document.getElementById('s4detail').innerHTML = html;
+    draw(i, k);
+  }
+  document.getElementById('s4regen').addEventListener('click', regen);
+  document.getElementById('s4sp').addEventListener('input', regen);
+  regen();
+})();
 </script>
 </body>
 </html>

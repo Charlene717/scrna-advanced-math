@@ -1,140 +1,725 @@
 <!DOCTYPE html>
-<html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>2.2 Normalization 數學 — scRNA-seq Advanced Math</title>
-<link rel="stylesheet" href="../styles.css">
-<script>MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] } };</script>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>2.2 Normalization：CPM、log1p、Pearson residuals — Deep Interactive</title>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
-</head><body>
+<style>
+  :root {
+    --bg: #fafaf7; --fg: #1a1a1a; --muted: #666;
+    --accent: #c0392b; --accent2: #2c5aa0;
+    --green: #27795a; --purple: #8e44ad; --yellow: #f0c419;
+    --card: #ffffff; --border: #e0e0d8; --code: #f4f1ea;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Helvetica Neue", "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif; background: var(--bg); color: var(--fg); line-height: 1.75; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 40px 28px 120px; }
+  header.cover { margin: 20px 0 60px; padding: 52px 40px;
+    background: linear-gradient(135deg, #1d3d2b 0%, #2d6a4f 55%, #52b788 100%);
+    color: #fff; border-radius: 16px; box-shadow: 0 14px 40px rgba(28,80,50,0.18); }
+  header.cover h1 { margin: 0 0 14px; font-size: 36px; }
+  header.cover .sub { font-size: 17px; opacity: 0.92; line-height: 1.65; }
+  header.cover .badge { display: inline-block; background: rgba(255,255,255,0.18);
+    padding: 4px 12px; border-radius: 20px; font-size: 13px; margin-bottom: 16px; }
+  h2 { margin-top: 70px; padding-bottom: 8px; border-bottom: 3px solid var(--green);
+    font-size: 26px; display: flex; align-items: baseline; gap: 12px; }
+  h2 .num { color: var(--green); font-weight: 800; font-size: 20px; }
+  h3 { margin-top: 36px; font-size: 19px; color: var(--accent2); }
+  h4 { margin-top: 22px; font-size: 16px; color: var(--accent); }
+  p { margin: 14px 0; }
+  .lead { font-size: 17px; color: #2a2a2a; }
+  .callout { background: #fff8e6; border-left: 4px solid var(--yellow); padding: 14px 18px; border-radius: 6px; margin: 22px 0; }
+  .callout.idea { background: #eaf4ff; border-left-color: var(--accent2); }
+  .callout.warn { background: #fdecec; border-left-color: var(--accent); }
+  .callout.bio  { background: #effaf3; border-left-color: var(--green); }
+  .callout.prog { background: #f3eafa; border-left-color: var(--purple); }
+  .card { background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px 26px; margin: 26px 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+  .card h3 { margin-top: 0; }
+  .controls { display: flex; flex-wrap: wrap; gap: 14px 22px;
+    align-items: center; margin: 14px 0; padding: 12px 16px;
+    background: #f4f1ea; border-radius: 8px; font-size: 14px; }
+  .controls label { display: flex; align-items: center; gap: 8px; }
+  button { background: var(--green); color: #fff; border: 0;
+    padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 14px;
+    font-family: inherit; }
+  button:hover { background: #1f5c45; }
+  button.ghost { background: #fff; color: var(--green); border: 1px solid var(--green); }
+  input[type="range"] { width: 180px; vertical-align: middle; }
+  svg.canvas { background: #fcfcfa; border: 1px solid var(--border); border-radius: 8px; display: block; }
+  svg.canvas .axis { stroke: #bbb; stroke-width: 1; }
+  svg.canvas .grid { stroke: #ececea; stroke-width: 0.5; }
+  svg.canvas text.lbl { font-size: 12px; fill: #333; }
+  .stat-row { display: flex; flex-wrap: wrap; gap: 22px; margin: 14px 0; font-size: 14px; }
+  .stat-row .item { display: flex; flex-direction: column; }
+  .stat-row .item .lbl { color: var(--muted); font-size: 12px; }
+  .stat-row .item .val { font-family: "JetBrains Mono", monospace; font-size: 18px; }
+  details { margin: 16px 0; }
+  details summary { cursor: pointer; font-weight: 600; color: var(--accent2); padding: 6px 0; }
+  .toc { background: #fff; border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 28px; margin: 30px 0; }
+  .toc h4 { margin: 0 0 10px; color: var(--green); }
+  .toc ol { margin: 6px 0; padding-left: 24px; line-height: 1.9; }
+  .toc a { color: var(--accent2); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .toc .new { background: var(--green); color: #fff; font-size: 11px;
+    padding: 1px 8px; border-radius: 10px; margin-left: 6px; }
+  code.inline { background: var(--code); padding: 2px 6px; border-radius: 4px;
+    font-size: 13px; font-family: "JetBrains Mono", "Consolas", monospace; }
+  pre.code { background: #1e1e1e; color: #dcdcdc;
+    padding: 14px 18px; border-radius: 8px; overflow-x: auto; font-size: 13px;
+    font-family: "JetBrains Mono", "Consolas", monospace; line-height: 1.55; }
+  pre.code .k { color: #569cd6; }
+  pre.code .s { color: #ce9178; }
+  pre.code .c { color: #6a9955; }
+  pre.code .n { color: #b5cea8; }
+  table.compare { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.compare th, table.compare td { border: 1px solid var(--border); padding: 8px 12px; }
+  table.compare th { background: #f4f1ea; text-align: left; }
+  .math-block { background: #fff; border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 18px; margin: 18px 0; }
+  .math-block.boxed { border: 2px solid var(--green); background: #effaf3; }
+  .formula-caption { font-size: 12.5px; color: var(--muted); text-align: center; margin-top: 6px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; }
+  .grid-2 > * { min-width: 0; }
+  @media (max-width: 760px) { .grid-2 { grid-template-columns: 1fr; } }
+  .footer { text-align: center; color: var(--muted); margin-top: 80px; font-size: 13px; }
+  .top-nav { background: #1d3d2b; color: #fff; padding: 14px 28px;
+    position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(28,80,50,0.25); }
+  .top-nav-inner { max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; gap: 28px; }
+  .top-nav-brand { color: #fff; text-decoration: none;
+    font-weight: 700; font-size: 17px;
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .top-nav-brand .badge-math { background: #52b788; color: #fff;
+    padding: 3px 9px; border-radius: 4px; font-size: 11px; }
+  .top-nav-links { list-style: none; margin: 0; padding: 0;
+    display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+  .top-nav-links a { color: #c8e8d2; text-decoration: none;
+    padding: 6px 11px; border-radius: 6px; font-size: 13px; font-weight: 500;
+    transition: 0.2s; }
+  .top-nav-links a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .top-nav-links a.active { background: #52b788; color: #fff; }
+  .top-nav-links li.dropdown { position: relative; }
+  .top-nav-links li.dropdown > a::after { content: ' ▾';
+    font-size: 10px; opacity: 0.7; margin-left: 3px;
+    display: inline-block; transition: transform 0.2s; }
+  .top-nav-links li.dropdown:hover > a::after,
+  .top-nav-links li.dropdown.open > a::after { transform: rotate(180deg); }
+  .top-nav-links .dropdown-menu { display: none; position: absolute; top: 100%; left: 0;
+    background: #2a4d3a; border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px; padding: 6px 0; min-width: 230px;
+    list-style: none; z-index: 200;
+    box-shadow: 0 8px 28px rgba(28,80,50,0.5); margin: 6px 0 0; }
+  .top-nav-links li.dropdown:hover > .dropdown-menu,
+  .top-nav-links li.dropdown.open > .dropdown-menu { display: block; }
+  .top-nav-links .dropdown-menu li { display: block; }
+  .top-nav-links .dropdown-menu li a { display: block; padding: 9px 18px;
+    border-radius: 0; font-size: 13px; white-space: nowrap; color: #c8e8d2; }
+  .top-nav-links .dropdown-menu li a:hover { background: rgba(82,183,136,0.2); color: #fff; }
+  .top-nav-links .dropdown-menu li a.active-sub { background: #52b788; color: #fff; font-weight: 700; }
+  .top-nav-links .dropdown-menu .sub-label { font-size: 10px; color: #8db59b;
+    letter-spacing: 1px; padding: 4px 18px 2px; text-transform: uppercase; }
+  .lang-switch { display: flex; gap: 4px;
+    background: rgba(255,255,255,0.08); padding: 4px; border-radius: 6px; flex-shrink: 0; }
+  .lang-switch button { background: transparent; border: 0; color: #c8e8d2;
+    font-size: 12px; font-weight: 700; padding: 5px 10px;
+    border-radius: 4px; cursor: pointer; font-family: inherit; }
+  .lang-switch button.active { background: #52b788; color: #fff; }
+  .nav-pages { display: flex; gap: 8px; margin: 24px 0; padding: 14px;
+    background: #2a4d3a; border-radius: 10px; align-items: center; flex-wrap: wrap; }
+  .nav-pages a { color: #c8e8d2; text-decoration: none;
+    padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600;
+    transition: 0.2s; }
+  .nav-pages a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .nav-pages .label { color: #8db59b; font-size: 11px;
+    letter-spacing: 1px; font-weight: 700; margin-right: 8px; }
+  [data-lang="en"] { display: none; }
+  body.lang-en [data-lang="zh"] { display: none; }
+  body.lang-en [data-lang="en"] { display: initial; }
+  body.lang-en h1[data-lang="en"], body.lang-en h2[data-lang="en"],
+  body.lang-en h3[data-lang="en"], body.lang-en h4[data-lang="en"],
+  body.lang-en p[data-lang="en"], body.lang-en div[data-lang="en"],
+  body.lang-en ol[data-lang="en"], body.lang-en ul[data-lang="en"] { display: block; }
+  body.lang-en li[data-lang="en"] { display: list-item; }
+  body.lang-en span[data-lang="en"] { display: inline; }
+  body.lang-en tspan[data-lang="en"] { display: inline; }
+</style>
+</head>
+<body>
+
 <nav class="top-nav"><div class="top-nav-inner">
-  <a href="../index.html" class="top-nav-brand"><span>🧬</span><span data-lang="zh">scRNA-seq 進階數學</span><span data-lang="en">scRNA-seq Advanced Math</span><span class="badge-math">MATH</span></a>
+  <a href="../index.html" class="top-nav-brand">
+    <span>🧬</span>
+    <span data-lang="zh">scRNA-seq 進階數學</span>
+    <span data-lang="en">scRNA-seq Advanced Math</span>
+    <span class="badge-math">MATH</span>
+  </a>
   <ul class="top-nav-links">
-    <li><a href="../index.html#M1">M1</a></li><li><a href="../index.html#M2" class="active">M2</a></li><li><a href="../index.html#M3">M3</a></li><li><a href="../index.html#M4">M4</a></li><li><a href="../index.html#M5">M5</a></li><li><a href="../index.html#M6">M6</a></li>
-    <li><a href="../index.html" data-lang="zh">🏠 回首頁</a><span data-lang="en">🏠 Home</span></li>
+    <li class="dropdown"><a href="../index.html#M1">M1</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">基礎 / FOUNDATIONS</li>
+        <li><a href="../M1-foundations/1.1-sparse-matrix.html">1.1 稀疏矩陣 / Sparse Matrix</a></li>
+        <li><a href="../M1-foundations/1.2-count-distributions.html">1.2 計數分布 / Count Distributions</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M2" class="active">M2</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">前處理 / PREPROCESSING</li>
+        <li><a href="2.1-qc-statistics.html">2.1 QC 統計</a></li>
+        <li><a href="2.2-normalization.html" class="active-sub">2.2 Normalization ⭐ (本頁)</a></li>
+        <li><a href="2.3-hvg-selection.html">2.3 HVG 選擇</a></li>
+        <li><a href="2.4-scaling.html">2.4 Scaling</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M3">M3</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">降維 / DIM. REDUCTION</li>
+        <li><a href="../M3-dimreduction/3.1-pca.html">3.1 PCA</a></li>
+        <li><a href="../M3-dimreduction/3.2-tsne.html">3.2 t-SNE</a></li>
+        <li><a href="../M3-dimreduction/3.3-umap.html">3.3 UMAP</a></li>
+        <li><a href="../M3-dimreduction/3.4-diffusion-map.html">3.4 Diffusion Maps</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M4">M4</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">圖與聚類 / GRAPH &amp; CLUSTERING</li>
+        <li><a href="../M4-graph-clustering/4.1-knn-graph.html">4.1 KNN Graph + HNSW</a></li>
+        <li><a href="../M4-graph-clustering/4.2-louvain-leiden.html">4.2 Louvain &amp; Leiden</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M5">M5</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">統計推論 / STATS</li>
+        <li><a href="../M5-statistics/5.1-de-tests.html">5.1 DE 檢定</a></li>
+        <li><a href="../M5-statistics/5.2-multiple-testing.html">5.2 多重檢定 / FDR</a></li>
+        <li><a href="../M5-statistics/5.3-classifier.html">5.3 細胞分類器</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M6">M6</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">進階 / ADVANCED</li>
+        <li><a href="../M6-advanced/6.1-integration.html">6.1 Integration</a></li>
+        <li><a href="../M6-advanced/6.2-pseudotime.html">6.2 Pseudotime</a></li>
+        <li><a href="../M6-advanced/6.3-cellchat.html">6.3 CellChat</a></li>
+      </ul></li>
+    <li><a href="../index.html"><span data-lang="zh">🏠 回首頁</span><span data-lang="en">🏠 Home</span></a></li>
   </ul>
-  <div class="lang-switch"><button data-lang-btn="zh" class="active">中文</button><button data-lang-btn="en">EN</button></div>
+  <div class="lang-switch">
+    <button data-lang-btn="zh" class="active">中文</button>
+    <button data-lang-btn="en">EN</button>
+  </div>
 </div></nav>
 
-<header class="page-hero"><div class="page-hero-inner">
-  <div class="page-badge">M2.2 · PREPROCESSING</div>
-  <h1 data-lang="zh">Normalization 的數學</h1>
-  <h1 data-lang="en">The Math of Normalization</h1>
-  <p class="subtitle" data-lang="zh">log(x+1) 從何而來？SCTransform 的 Pearson residuals 又是什麼？正則化負二項回歸完整推導。</p>
-  <p class="subtitle" data-lang="en">Where does log(x+1) come from? What are SCTransform's Pearson residuals? Full regularized NB regression.</p>
-</div></header>
+<div class="wrap">
 
-<main class="content-wrap">
-
-<section class="section">
-  <span class="section-label intuition">直覺 / Intuition</span>
-  <h2 data-lang="zh">為什麼要 Normalization？</h2>
-  <h2 data-lang="en">Why normalize?</h2>
-  <div data-lang="zh">
-    <p>同樣是「CD3D 表達 100」，在<b>細胞 A 共捕捉 5,000 分子</b>跟<b>細胞 B 共捕捉 20,000 分子</b>下完全不一樣——
-    前者代表「CD3D 是高表現基因」、後者代表「普通基因」。
-    必須先<b>校正 sequencing depth</b>，才能跨細胞比較表現量。</p>
-  </div>
-  <div data-lang="en">
-    <p>"CD3D = 100" means different things in cell A (5,000 total UMIs) vs cell B (20,000 total UMIs). Depth correction is necessary before comparing across cells.</p>
-  </div>
-</section>
-
-<section class="section">
-  <span class="section-label math">核心數學 / Math</span>
-  <h2>① LogNormalize <span data-lang="zh">（Seurat 預設）</span><span data-lang="en">(Seurat default)</span></h2>
-  <div class="math-block">
-  $$\tilde{x}_{ij} = \log\left( \frac{x_{ij}}{\sum_k x_{ik}} \cdot 10^4 + 1 \right)$$
-  <div class="formula-caption" data-lang="zh">3 個操作：除以該細胞總計數、乘 10,000（scale factor）、log(.+1)</div>
-  <div class="formula-caption" data-lang="en">Three steps: divide by total count, scale to 10^4, log(.+1)</div>
-  </div>
-  <p data-lang="zh"><b>為什麼 log？</b>表現量呈右偏分布，log 後接近常態，方便後續 PCA。<br>
-  <b>為什麼 +1？</b>避免 $\log(0) = -\infty$，且把零保留為 $\log 1 = 0$。</p>
-  <p data-lang="en"><b>Why log?</b> Right-skewed expressions become near-normal after log, suitable for PCA. <b>Why +1?</b> Avoids $\log(0)$ and keeps zeros as 0.</p>
-
-  <div class="callout callout-warn">
-    <strong data-lang="zh">⚠️ LogNormalize 的副作用</strong><strong data-lang="en">⚠️ Side effect of LogNormalize</strong>
-    <p data-lang="zh"><b>過度校正</b>：low-depth 細胞被「放大」，<b>低表現基因被高估方差</b>，造成下游 PCA 受 sparse genes 主宰。SCTransform 就是要解決這個。</p>
-    <p data-lang="en"><b>Over-correction</b>: low-depth cells get amplified, low-expression genes have inflated variance, leading PCA dominated by sparse genes. SCTransform addresses this.</p>
-  </div>
-
-  <h2>② SCTransform <span data-lang="zh">（Hafemeister &amp; Satija 2019）</span></h2>
-  <p data-lang="zh">對每個基因擬合一個負二項 GLM：</p>
-  <p data-lang="en">Fit a Negative Binomial GLM for each gene:</p>
-  <div class="math-block">
-  $$\log(\mu_{ij}) = \beta_0^{(j)} + \beta_1^{(j)} \log(n_i), \quad x_{ij} \sim \text{NB}(\mu_{ij}, \theta_j)$$
-  <div class="formula-caption" data-lang="zh">$n_i$ = 細胞 $i$ 總計數；$\beta_0^{(j)}, \beta_1^{(j)}, \theta_j$ 是基因 $j$ 專屬參數</div>
-  <div class="formula-caption" data-lang="en">$n_i$ = total counts of cell $i$; $\beta_0^{(j)}, \beta_1^{(j)}, \theta_j$ are gene-specific</div>
-  </div>
-  <p data-lang="zh">然後用 <b>Pearson residual</b> 當作標準化後的值：</p>
-  <p data-lang="en">Use <b>Pearson residuals</b> as normalized values:</p>
-  <div class="math-block">
-  $$z_{ij} = \frac{x_{ij} - \hat\mu_{ij}}{\sqrt{\hat\mu_{ij} + \hat\mu_{ij}^2 / \hat\theta_j}}$$
-  <div class="formula-caption" data-lang="zh">分母 = NB 的標準差。「比模型預期高/低多少個 σ」</div>
-  <div class="formula-caption" data-lang="en">Denominator = NB std. "How many σ above/below model prediction"</div>
-  </div>
-
-  <h3 data-lang="zh">「Regularized」是什麼意思？</h3>
-  <h3 data-lang="en">What does "regularized" mean?</h3>
-  <p data-lang="zh">參數 $\beta_0, \beta_1, \theta$ 對<b>低表現基因</b>會擬得不穩。SCTransform 用<b>核密度回歸</b>把這三個參數作為「平均表現量」的<b>平滑函數</b>，借相鄰基因的資訊使估計更穩定。</p>
-  <p data-lang="en">Parameters fluctuate wildly for low-expression genes. SCTransform applies kernel regression to smooth $\beta_0, \beta_1, \theta$ as functions of mean expression, borrowing strength across genes.</p>
-
-  <h2>③ scran <span data-lang="zh">（pool-based normalization）</span></h2>
-  <p data-lang="zh">用「細胞池」估計 size factor，再用線性回歸去除單細胞噪音。對<b>稀少 cell type</b>有時比 SCTransform 穩定。</p>
-  <p data-lang="en">Pool-based estimation of size factors, then linear deconvolution. Sometimes more stable for rare cell types than SCTransform.</p>
-</section>
-
-<section class="section">
-  <span class="section-label code">程式碼 / Code</span>
-  <div class="code-tabs">
-    <div class="code-tab-btns"><button class="code-tab-btn active" onclick="switchTab(this,'py4')">Python</button><button class="code-tab-btn" onclick="switchTab(this,'r4')">R</button></div>
-    <div class="code-tab-content active" id="py4"><pre><span class="comment"># LogNormalize</span>
-sc.pp.normalize_total(adata, target_sum=<span class="num">1e4</span>)
-sc.pp.log1p(adata)
-
-<span class="comment"># Pearson residuals (Lause et al. 2021 — simplified SCTransform)</span>
-sc.experimental.pp.normalize_pearson_residuals(adata, theta=<span class="num">100</span>)
-</pre></div>
-    <div class="code-tab-content" id="r4"><pre><span class="comment"># LogNormalize (Seurat default)</span>
-pbmc &lt;- <span class="func">NormalizeData</span>(pbmc, normalization.method = <span class="str">"LogNormalize"</span>, scale.factor = <span class="num">10000</span>)
-
-<span class="comment"># SCTransform (推薦做法)</span>
-pbmc &lt;- <span class="func">SCTransform</span>(pbmc, vst.flavor = <span class="str">"v2"</span>, verbose = <span class="keyword">FALSE</span>)
-
-<span class="comment"># scran (size factor)</span>
-<span class="keyword">library</span>(scran)
-sce &lt;- <span class="func">computeSumFactors</span>(sce, clusters = <span class="func">quickCluster</span>(sce))
-sce &lt;- <span class="func">logNormCounts</span>(sce)
-</pre></div>
-  </div>
-</section>
-
-<section class="section">
-  <span class="section-label">比較 / Comparison</span>
-  <table class="compare-table">
-    <tr><th></th><th>LogNormalize</th><th>SCTransform</th><th>scran</th></tr>
-    <tr><td data-lang="zh">速度</td><td data-lang="en">Speed</td><td class="good">秒級</td><td class="meh">分鐘級</td><td class="meh">分鐘級</td></tr>
-    <tr><td data-lang="zh">模型假設</td><td data-lang="en">Model</td><td class="meh">無顯式模型</td><td class="good">NB GLM</td><td class="good">線性 + pool</td></tr>
-    <tr><td data-lang="zh">處理 depth bias</td><td data-lang="en">Depth bias</td><td class="bad">部分</td><td class="good">完全</td><td class="good">完全</td></tr>
-    <tr><td data-lang="zh">稀少 cell type</td><td data-lang="en">Rare types</td><td class="meh">中</td><td class="meh">中</td><td class="good">較穩定</td></tr>
-    <tr><td data-lang="zh">下游 PCA 品質</td><td data-lang="en">PCA quality</td><td class="meh">受 sparse genes 主宰</td><td class="good">優</td><td class="good">優</td></tr>
-  </table>
-</section>
-
-<section class="section">
-  <span class="section-label">參考 / References</span>
-  <ul class="refs-list">
-    <li><div class="ref-title">Hafemeister, C. &amp; Satija, R. (2019). SCTransform.</div><div class="ref-meta">Genome Biology 20. <a href="https://doi.org/10.1186/s13059-019-1874-1">10.1186/s13059-019-1874-1</a></div></li>
-    <li><div class="ref-title">Lause, J., Berens, P., Kobak, D. (2021). Analytic Pearson residuals for normalization.</div><div class="ref-meta">Genome Biology 22. <a href="https://doi.org/10.1186/s13059-021-02451-7">10.1186/s13059-021-02451-7</a></div></li>
-    <li><div class="ref-title">Lun, A.T.L., Bach, K., Marioni, J.C. (2016). Pooling across cells for normalization.</div><div class="ref-meta">Genome Biology 17. scran. <a href="https://doi.org/10.1186/s13059-016-0947-7">10.1186/s13059-016-0947-7</a></div></li>
-  </ul>
-</section>
-
-<div class="cross-links">
-  <a href="2.1-qc-statistics.html" class="cross-link"><div class="cross-label" data-lang="zh">← 上一篇</div><div class="cross-label" data-lang="en">← PREV</div><div class="cross-title"><span class="cross-id">M2.1</span> QC</div></a>
-  <a href="2.3-hvg-selection.html" class="cross-link"><div class="cross-label" data-lang="zh">下一篇 →</div><div class="cross-label" data-lang="en">NEXT →</div><div class="cross-title"><span class="cross-id">M2.3</span> HVG <span data-lang="zh">選擇</span></div></a>
+<div class="nav-pages">
+  <span class="label" data-lang="zh">本頁章節</span><span class="label" data-lang="en">CHAPTERS</span>
+  <a href="#s0"><span data-lang="zh">§0 故事</span><span data-lang="en">§0 Story</span></a>
+  <a href="#s1"><span data-lang="zh">§1 size factor</span><span data-lang="en">§1 Size factor</span></a>
+  <a href="#s2"><span data-lang="zh">§2 CPM</span><span data-lang="en">§2 CPM</span></a>
+  <a href="#s3"><span data-lang="zh">§3 log1p</span><span data-lang="en">§3 log1p</span></a>
+  <a href="#s4"><span data-lang="zh">§4 互動 depth</span><span data-lang="en">§4 Depth slider</span></a>
+  <a href="#s5"><span data-lang="zh">§5 NB / Pearson</span><span data-lang="en">§5 NB / Pearson</span></a>
+  <a href="#s6"><span data-lang="zh">§6 NB 變異</span><span data-lang="en">§6 NB variance</span></a>
+  <a href="#s7"><span data-lang="zh">§7 餵 PCA</span><span data-lang="en">§7 Feed to PCA</span></a>
+  <a href="#s8"><span data-lang="zh">§8 串起</span><span data-lang="en">§8 Wrap-up</span></a>
 </div>
 
-</main>
-<footer class="site-footer"><p>© Charlene</p></footer>
+<header class="cover">
+  <div class="badge"><span data-lang="zh">深入互動版 · 從直覺到數學</span><span data-lang="en">Deep Interactive · From Intuition to Math</span></div>
+  <h1 data-lang="zh">Normalization：從 CPM 到 Pearson Residuals</h1>
+  <h1 data-lang="en">Normalization: from CPM to Pearson Residuals</h1>
+  <div class="sub" data-lang="zh">
+    QC 砍完壞細胞後，你手上的細胞 <code class="inline">total_counts</code> 還是<b>差很多</b>——
+    細胞 A 有 8000 個 mRNA、細胞 B 只有 2000。
+    這不見得是生物差異，可能只是隨機抽樣深度不同（droplet 體積、capture efficiency）。
+    在後續比較細胞 vs 細胞之前，你要先把這個「測序深度」的雜訊先移除。<br><br>
+    這節我們從最直觀的<b>比例</b>開始，推到 CPM、log1p，
+    再進到 Pearson residuals 用<b>負二項模型</b>把「平均-變異關係」一起處理掉。
+    每一步都會有互動圖讓你看到分布怎麼變。
+  </div>
+  <div class="sub" data-lang="en">
+    After QC, the remaining cells still have <b>very different</b> <code class="inline">total_counts</code> —
+    cell A may have 8000 mRNA, cell B only 2000.
+    This isn't necessarily biology — it's often sequencing depth variation (droplet volume, capture efficiency).
+    Before comparing cells, you have to remove this depth noise.<br><br>
+    We start from the intuitive idea of <b>proportions</b>, derive CPM, log1p,
+    then advance to Pearson residuals which use the <b>negative binomial model</b> to jointly remove the mean-variance relationship.
+    Every step has an interactive visualization.
+  </div>
+</header>
+
+<div class="toc">
+  <h4 data-lang="zh">目錄</h4>
+  <h4 data-lang="en">Table of Contents</h4>
+  <ol start="0">
+    <li><a href="#s0"><span data-lang="zh">故事：兩個一樣的細胞，counts 卻不同</span><span data-lang="en">Story: two identical cells, different counts</span></a><span class="new" data-lang="zh">新增</span><span class="new" data-lang="en">NEW</span></li>
+    <li><a href="#s1"><span data-lang="zh">Size factor 的直覺</span><span data-lang="en">Size factor intuition</span></a></li>
+    <li><a href="#s2"><span data-lang="zh">CPM / CP10K：第一個合理公式</span><span data-lang="en">CPM / CP10K: first reasonable formula</span></a></li>
+    <li><a href="#s3"><span data-lang="zh">為什麼 log1p？— 變異穩定化 + 處理 0</span><span data-lang="en">Why log1p? variance stabilization + handling 0</span></a></li>
+    <li><a href="#s4"><span data-lang="zh">互動：拉細胞 depth 看分布變化</span><span data-lang="en">Interactive: drag depth, watch distribution</span></a></li>
+    <li><a href="#s5"><span data-lang="zh">負二項與 Pearson Residuals（scTransform）</span><span data-lang="en">NB model and Pearson Residuals (scTransform)</span></a><span class="new" data-lang="zh">核心</span><span class="new" data-lang="en">CORE</span></li>
+    <li><a href="#s6"><span data-lang="zh">NB 變異函數的互動</span><span data-lang="en">NB variance interactive</span></a></li>
+    <li><a href="#s7"><span data-lang="zh">為什麼 normalization 影響 PCA 結果</span><span data-lang="en">Why normalization changes PCA result</span></a></li>
+    <li><a href="#s8"><span data-lang="zh">把整套故事串起來 + 限制</span><span data-lang="en">Tying it together + limits</span></a></li>
+  </ol>
+</div>
+
+<h2 id="s0"><span class="num">§0</span> <span data-lang="zh">故事：兩個一樣的細胞，counts 卻不同</span><span data-lang="en">Story: two identical cells, different counts</span></h2>
+
+<p class="lead" data-lang="zh">
+  想像兩個完全相同的 T 細胞，<b>真實</b>的轉錄組一模一樣：CD3D 表現量「中等」、CD8A「高」、CD4「低」。
+  但測序之後，10x 工具告訴你：
+</p>
+<p class="lead" data-lang="en">
+  Imagine two identical T cells with the <b>same true</b> transcriptome: CD3D "moderate", CD8A "high", CD4 "low".
+  After sequencing, 10x reports:
+</p>
+
+<div class="card">
+  <table class="compare">
+    <tr><th data-lang="zh">基因</th><th data-lang="en">Gene</th><th>Cell A</th><th>Cell B</th></tr>
+    <tr><td>CD3D</td><td>CD3D</td><td>40</td><td>10</td></tr>
+    <tr><td>CD8A</td><td>CD8A</td><td>80</td><td>20</td></tr>
+    <tr><td>CD4</td><td>CD4</td><td>16</td><td>4</td></tr>
+    <tr><td>...</td><td>...</td><td>...</td><td>...</td></tr>
+    <tr style="background:#fef5e7;"><td><b data-lang="zh">總 counts</b><b data-lang="en">total counts</b></td><td><b data-lang="zh">總 counts</b><b data-lang="en">total counts</b></td><td><b>8000</b></td><td><b>2000</b></td></tr>
+  </table>
+
+  <p data-lang="zh">
+    A 看起來每個基因都比 B 表現高 4 倍。但其實兩個細胞「<b>比例</b>」完全一樣——
+    A/CD3D = 40/8000 = 0.5%、B/CD3D = 10/2000 = 0.5%。<br>
+    差別只是<b>測序深度</b>不同。
+  </p>
+  <p data-lang="en">
+    A appears to have 4× higher expression for every gene. But the <b>proportions</b> are identical —
+    A/CD3D = 40/8000 = 0.5%, B/CD3D = 10/2000 = 0.5%. The only difference is <b>sequencing depth</b>.
+  </p>
+
+  <div class="callout idea">
+    <strong data-lang="zh">第一個 aha</strong><strong data-lang="en">First aha</strong>:
+    <span data-lang="zh">normalization 的本質就是「把 count 除以 total，變成比例」。
+    這就是最原始的 size-factor normalization。</span>
+    <span data-lang="en">normalization is essentially "divide each gene's count by total, get a proportion".
+    That's the simplest size-factor normalization.</span>
+  </div>
+</div>
+
+<div class="card">
+  <h3 data-lang="zh">§0-1 互動：拖滑桿改變 cell A 跟 cell B 的測序深度</h3>
+  <h3 data-lang="en">§0-1 Interactive: drag sliders to change cell A and B's depths</h3>
+  <p data-lang="zh">底下兩個 bar plot 是 cell A 和 cell B 的「同 3 個基因」原始 count。拉滑桿改變兩細胞的 depth，看：raw 高度變、CP10K 不變。</p>
+  <p data-lang="en">Two bar plots: cells A and B with same 3 genes. Drag depth, observe: raw heights jump, CP10K stays still.</p>
+  <div class="controls">
+    <label>Cell A depth: <input type="range" id="depthA" min="1000" max="20000" value="8000" step="500"><span id="depthAval">8000</span></label>
+    <label>Cell B depth: <input type="range" id="depthB" min="1000" max="20000" value="2000" step="500"><span id="depthBval">2000</span></label>
+  </div>
+  <svg class="canvas" id="s0svg" viewBox="0 0 800 280" width="100%"></svg>
+</div>
+
+<h2 id="s1"><span class="num">§1</span> <span data-lang="zh">Size factor 的直覺</span><span data-lang="en">Size factor intuition</span></h2>
+
+<p data-lang="zh">「除以 total」可以看成「除以一個 <b>size factor</b> $s_i$」。最簡單的選擇 $s_i = \text{total}_i$。</p>
+<p data-lang="en">"Dividing by total" generalizes to dividing by a <b>size factor</b> $s_i$. Simplest: $s_i = \text{total}_i$.</p>
+
+<div class="math-block">
+  $$\tilde{x}_{ij} = \frac{x_{ij}}{s_i}$$
+  <div class="formula-caption" data-lang="zh">$x_{ij}$ = cell $i$ 中 gene $j$ 的原始 count</div>
+  <div class="formula-caption" data-lang="en">$x_{ij}$ = raw count of gene $j$ in cell $i$</div>
+</div>
+
+<h3 data-lang="zh">1.1 三種 size factor 選擇</h3>
+<h3 data-lang="en">1.1 Three choices of size factor</h3>
+<table class="compare">
+  <tr><th data-lang="zh">方法</th><th data-lang="en">Method</th>
+      <th data-lang="zh">$s_i$ 定義</th><th data-lang="en">$s_i$</th>
+      <th data-lang="zh">優缺點</th><th data-lang="en">Pros / Cons</th></tr>
+  <tr><td data-lang="zh">總和</td><td data-lang="en">Total</td>
+      <td>$s_i = \sum_j x_{ij}$</td><td>$s_i = \sum_j x_{ij}$</td>
+      <td data-lang="zh">+ 直觀。− 高表現基因可能拉走 $s_i$</td>
+      <td data-lang="en">+ intuitive. − high-expr genes can hijack $s_i$</td></tr>
+  <tr><td data-lang="zh">scran pooling</td><td data-lang="en">scran pooling</td>
+      <td data-lang="zh">用相鄰細胞池估計</td><td data-lang="en">pooled neighbors</td>
+      <td data-lang="zh">+ robust。− 慢</td>
+      <td data-lang="en">+ robust. − slow</td></tr>
+  <tr><td data-lang="zh">DESeq2 中位 ratio</td><td data-lang="en">DESeq2 median ratio</td>
+      <td>$\text{median}_j \frac{x_{ij}}{(\prod_i x_{ij})^{1/n}}$</td>
+      <td>$\text{median}_j \frac{x_{ij}}{(\prod_i x_{ij})^{1/n}}$</td>
+      <td data-lang="zh">+ robust。− 不適合 sparse</td>
+      <td data-lang="en">+ robust. − unsuitable for sparse</td></tr>
+</table>
+
+<div class="callout idea">
+  <strong data-lang="zh">實務</strong><strong data-lang="en">In practice</strong>:
+  <span data-lang="zh">Scanpy / Seurat 預設都用「總和」($s_i = \sum_j x_{ij}$)，因為快、簡單且對 scRNA 通常夠好。</span>
+  <span data-lang="en">Scanpy / Seurat default to "total" — fast, simple, usually good enough.</span>
+</div>
+
+<h2 id="s2"><span class="num">§2</span> <span data-lang="zh">CPM / CP10K：第一個合理公式</span><span data-lang="en">CPM / CP10K: first reasonable formula</span></h2>
+
+<p data-lang="zh">$\tilde{x}_{ij}$ 是極小比例，乘上常數 $K$ 比較好讀。bulk RNA-seq 用 $K=10^6$（CPM）；scRNA 因計數少改用 $K=10^4$（CP10K）。</p>
+<p data-lang="en">$\tilde{x}_{ij}$ is tiny — multiply by $K$ for readability. Bulk uses $K=10^6$ (CPM); scRNA uses $K=10^4$ (CP10K).</p>
+
+<div class="math-block boxed">
+  $$\text{CP10K}_{ij} = \frac{x_{ij}}{s_i} \times 10^4, \quad s_i = \sum_j x_{ij}$$
+</div>
+
+<h3 data-lang="zh">2.1 數字檢驗</h3>
+<h3 data-lang="en">2.1 Number check</h3>
+<p data-lang="zh">cell A：CD3D=40, total=8000 → CP10K = 40/8000×10000 = <b>50</b>。<br>
+cell B：CD3D=10, total=2000 → CP10K = 10/2000×10000 = <b>50</b>。一致。</p>
+<p data-lang="en">cell A: 40/8000×10000 = <b>50</b>. cell B: 10/2000×10000 = <b>50</b>. Match.</p>
+
+<div class="callout warn">
+  <strong data-lang="zh">K 的選擇</strong><strong data-lang="en">Careful with K</strong>:
+  <span data-lang="zh">K 只影響「數字尺度」不影響「比例關係」。K=10K vs 1M 數學等價，但 K=10K 配合 log1p 後 0 不會被誇大。</span>
+  <span data-lang="en">$K$ only sets scale, not ratios. K=10K vs 1M are mathematically equivalent, but K=10K avoids inflating 0s after log1p.</span>
+</div>
+
+<h2 id="s3"><span class="num">§3</span> <span data-lang="zh">為什麼 log1p？— 變異穩定化 + 處理 0</span><span data-lang="en">Why log1p? variance stabilization + handling 0</span></h2>
+
+<h3 data-lang="zh">3.1 理由一：變異穩定化</h3>
+<h3 data-lang="en">3.1 Reason 1: variance stabilization</h3>
+
+<p data-lang="zh">Poisson 變異 $\text{Var}(X) = \mu$——高表現基因的變異本來就大，PCA 會被高表現綁架。log 把這拉直：</p>
+<p data-lang="en">Poisson variance $\text{Var}(X)=\mu$ — high-expr genes have inherently large variance, hijacking PCA. Log straightens:</p>
+
+<div class="math-block">
+  $$\text{Var}(\log X) \approx \frac{\text{Var}(X)}{\mu^2} = \frac{\mu}{\mu^2} = \frac{1}{\mu}$$
+  <div class="formula-caption" data-lang="zh">delta 法：log 後變異隨平均「遞減」</div>
+  <div class="formula-caption" data-lang="en">delta method: post-log variance decreasing in mean</div>
+</div>
+
+<p data-lang="zh">所以 log(CPM) 在「中-高表現」變異較均勻，PCA 不再被高表現綁架。</p>
+<p data-lang="en">log(CPM) has more uniform variance across mid-high expression — PCA freed from high-expr genes.</p>
+
+<h3 data-lang="zh">3.2 理由二：處理 0</h3>
+<h3 data-lang="en">3.2 Reason 2: handling 0</h3>
+<p data-lang="zh">$\log 0 = -\infty$。用 $\log(1+x)$ 代替——這就是 <code class="inline">log1p</code>。</p>
+<p data-lang="en">$\log 0 = -\infty$. Use $\log(1+x)$ — this is <code class="inline">log1p</code>.</p>
+
+<div class="math-block boxed">
+  $$\text{logCP10K}_{ij} = \log\!\left(1 + \frac{x_{ij}}{s_i} \cdot 10^4\right)$$
+</div>
+
+<details>
+<summary data-lang="zh">▸ 為什麼 +1 不會破壞數學</summary>
+<summary data-lang="en">▸ Why "+1" doesn't break the math</summary>
+<p data-lang="zh">大 $x$ 時 $\log(1+x) \approx \log x$。$x=0$ 時 $\log(1+0)=0$。所以加 1 只在「接近 0」處有實質效果——恰好就是我們要的。</p>
+<p data-lang="en">For large $x$, $\log(1+x)\approx\log x$. For $x=0$, $\log(1+0)=0$. The "+1" only matters near 0 — exactly where we want it.</p>
+</details>
+
+<h2 id="s4"><span class="num">§4</span> <span data-lang="zh">互動：拉細胞 depth 看分布變化</span><span data-lang="en">Interactive: drag depth, watch distribution</span></h2>
+
+<div class="card">
+  <p data-lang="zh">50 個細胞、1 個目標基因。拉滑桿改變細胞間的 depth 變異。觀察：raw 變異大、CP10K 一致、log(CP10K+1) 最對稱。</p>
+  <p data-lang="en">50 cells, 1 target gene. Drag depth variability. Observe: raw highly variable, CP10K consistent, log(CP10K+1) most symmetric.</p>
+  <div class="controls">
+    <label><span data-lang="zh">depth 差異</span><span data-lang="en">Depth variability</span>:
+      <input type="range" id="depthVar" min="0" max="100" value="50" step="5"><span id="depthVarVal">50</span>%
+    </label>
+    <label><span data-lang="zh">基因「真」表現比例</span><span data-lang="en">True expression ratio</span>:
+      <input type="range" id="trueProp" min="0.005" max="0.05" value="0.02" step="0.005"><span id="truePropVal">0.020</span>
+    </label>
+  </div>
+  <svg class="canvas" id="s4svg" viewBox="0 0 800 200" width="100%"></svg>
+</div>
+
+<h2 id="s5"><span class="num">§5</span> <span data-lang="zh">負二項與 Pearson Residuals（scTransform）</span><span data-lang="en">NB model and Pearson Residuals (scTransform)</span></h2>
+
+<p data-lang="zh">
+  log(CP10K+1) 有結構缺陷：<b>低表現基因的變異還是太大</b>（log 變異穩定化在 $\mu \to 0$ 失效）。
+  Pearson residuals（Hafemeister & Satija 2019，scTransform）用 NB 模型，把「平均-變異關係」整個吸收。
+</p>
+<p data-lang="en">
+  log(CP10K+1) has a structural flaw: <b>low-expression genes still have inflated variance</b>
+  (the log variance-stabilization fails as $\mu \to 0$).
+  Pearson residuals (Hafemeister & Satija 2019) use NB to absorb the full mean-variance relationship.
+</p>
+
+<h3 data-lang="zh">5.1 為什麼 scRNA-seq 是 NB 而非 Poisson？</h3>
+<h3 data-lang="en">5.1 Why scRNA-seq is NB, not Poisson?</h3>
+<p data-lang="zh">Poisson 假設 mean = variance。但實測 scRNA-seq 變異<b>總是 &gt; mean</b>——這叫 <b>overdispersion</b>。NB 用離散度參數 $\theta$ 處理：</p>
+<p data-lang="en">Poisson assumes mean=variance. Empirically, scRNA-seq variance is <b>always &gt; mean</b> — <b>overdispersion</b>. NB adds $\theta$:</p>
+
+<div class="math-block">
+  $$X \sim \text{NB}(\mu, \theta) \quad\Longrightarrow\quad E[X]=\mu, \quad \text{Var}(X)=\mu + \frac{\mu^2}{\theta}$$
+  <div class="formula-caption" data-lang="zh">$\theta \to \infty$ 退回 Poisson；$\theta$ 越小越 overdispersed</div>
+  <div class="formula-caption" data-lang="en">$\theta \to \infty$ recovers Poisson; smaller $\theta$ = more overdispersion</div>
+</div>
+
+<h3 data-lang="zh">5.2 Pearson Residual 定義</h3>
+<h3 data-lang="en">5.2 Pearson Residual definition</h3>
+
+<div class="math-block boxed">
+  $$z_{ij} = \frac{x_{ij} - \mu_{ij}}{\sqrt{\mu_{ij} + \mu_{ij}^2 / \theta_j}}$$
+  <div class="formula-caption" data-lang="zh">「觀察 − 預期」除以 NB 模型的 σ</div>
+  <div class="formula-caption" data-lang="en">"observed − expected" divided by NB-modeled SD</div>
+</div>
+
+<p data-lang="zh">其中 $\mu_{ij}, \theta_j$ 由每基因 fit GLM 得到：</p>
+<p data-lang="en">where $\mu_{ij}, \theta_j$ come from fitting a GLM per gene:</p>
+
+<div class="math-block">
+  $$\log \mu_{ij} = \beta_{0,j} + \beta_{1,j} \log s_i$$
+  <div class="formula-caption" data-lang="zh">基因 $j$ 的 mean 隨細胞 depth 的對數遞變</div>
+  <div class="formula-caption" data-lang="en">gene $j$'s mean varies log-linearly with cell depth</div>
+</div>
+
+<div class="callout idea">
+  <strong data-lang="zh">直覺</strong><strong data-lang="en">Intuition</strong>:
+  <span data-lang="zh">Pearson residual 是「比預期高/低幾個 NB-σ?」——所有基因的 residual 變異被打平成 ~1，PCA 不再被任何基因綁架。</span>
+  <span data-lang="en">Pearson residual asks: "how many NB-σ above/below expected?" — variances flatten to ~1 across all genes; PCA freed.</span>
+</div>
+
+<h3 data-lang="zh">5.3 對比：log(CP10K+1) vs Pearson residual</h3>
+<h3 data-lang="en">5.3 Comparison</h3>
+<table class="compare">
+  <tr><th></th><th data-lang="zh">log(CP10K+1)</th><th data-lang="en">log(CP10K+1)</th>
+      <th data-lang="zh">Pearson residual</th><th data-lang="en">Pearson residual</th></tr>
+  <tr><td data-lang="zh">假設</td><td data-lang="en">Assumption</td>
+      <td data-lang="zh">無</td><td data-lang="en">none</td>
+      <td data-lang="zh">NB 模型</td><td data-lang="en">NB model</td></tr>
+  <tr><td data-lang="zh">變異穩定性</td><td data-lang="en">Var stability</td>
+      <td data-lang="zh">中高 OK，低表現過大</td><td data-lang="en">OK mid/high; inflated low</td>
+      <td data-lang="zh">全部 ~1</td><td data-lang="en">~1 everywhere</td></tr>
+  <tr><td data-lang="zh">效能</td><td data-lang="en">Speed</td>
+      <td data-lang="zh">很快</td><td data-lang="en">very fast</td>
+      <td data-lang="zh">中等</td><td data-lang="en">medium</td></tr>
+  <tr><td data-lang="zh">實作</td><td data-lang="en">API</td>
+      <td><code class="inline">sc.pp.normalize_total + log1p</code></td>
+      <td><code class="inline">sc.pp.normalize_total + log1p</code></td>
+      <td><code class="inline">sc.experimental.pp.normalize_pearson_residuals</code></td>
+      <td><code class="inline">sc.experimental.pp.normalize_pearson_residuals</code></td></tr>
+</table>
+
+<h2 id="s6"><span class="num">§6</span> <span data-lang="zh">NB 變異函數的互動</span><span data-lang="en">NB variance interactive</span></h2>
+
+<div class="card">
+  <p data-lang="zh">下方 NB 變異 vs mean。拉 $\theta$ 看 NB 跟 Poisson 的差距：</p>
+  <p data-lang="en">NB variance vs mean. Drag $\theta$ to see NB vs Poisson:</p>
+  <div class="controls">
+    <label>$\theta$:
+      <input type="range" id="theta" min="0.5" max="50" value="5" step="0.5"><span id="thetaVal">5.0</span>
+    </label>
+  </div>
+  <svg class="canvas" id="s6svg" viewBox="0 0 800 360" width="100%"></svg>
+  <p data-lang="zh">紅虛線=Poisson, 藍實線=NB。$\theta$ 越小，NB 變異在高 $\mu$ 越大（更 overdispersed），這就是「先 log 再 PCA」會被高表現基因綁架的數學原因。</p>
+  <p data-lang="en">Red dashed=Poisson, blue solid=NB. Smaller $\theta$ → larger variance at high $\mu$ → log-then-PCA gets hijacked.</p>
+</div>
+
+<h2 id="s7"><span class="num">§7</span> <span data-lang="zh">為什麼 normalization 影響 PCA 結果</span><span data-lang="en">Why normalization changes PCA result</span></h2>
+
+<p data-lang="zh">Normalization 不是裝飾，它直接<b>決定 PCA 找到的方向</b>。</p>
+<p data-lang="en">Normalization isn't cosmetic — it <b>determines which directions PCA finds</b>.</p>
+
+<div class="card">
+  <h4 data-lang="zh">不 normalize 的災難</h4>
+  <h4 data-lang="en">The "no normalization" disaster</h4>
+  <p data-lang="zh">假設 5% 的細胞高 depth、95% 低 depth。PCA 的「最大變異方向」會是「所有基因都同步上下」——這個方向只反映 depth，沒有任何生物資訊。PC1 整個被 depth 綁架。</p>
+  <p data-lang="en">5% high-depth cells, 95% low. PCA's "max variance direction" = "all genes co-varying" = depth, no biology. PC1 hijacked.</p>
+</div>
+
+<div class="callout prog">
+  <strong data-lang="zh">流程順序很重要</strong><strong data-lang="en">Order matters</strong>:
+  <span data-lang="zh">QC → normalize → HVG → scale → PCA。每步順序都不可換。</span>
+  <span data-lang="en">QC → normalize → HVG → scale → PCA. Order is non-negotiable.</span>
+</div>
+
+<h2 id="s8"><span class="num">§8</span> <span data-lang="zh">把整套故事串起來 + 限制</span><span data-lang="en">Tying it together + limits</span></h2>
+
+<h3 data-lang="zh">8.1 Pipeline 範例</h3>
+<h3 data-lang="en">8.1 Pipeline example</h3>
+
+<pre class="code"><span class="k">import</span> scanpy <span class="k">as</span> sc
+
+<span class="c"># Path A: classic logCPM-style</span>
+sc.pp.normalize_total(adata, target_sum=<span class="n">1e4</span>)
+sc.pp.log1p(adata)
+
+<span class="c"># Path B: Pearson residuals</span>
+sc.experimental.pp.normalize_pearson_residuals(adata)
+
+sc.pp.highly_variable_genes(adata, n_top_genes=<span class="n">2000</span>)
+sc.pp.scale(adata, max_value=<span class="n">10</span>)
+sc.tl.pca(adata)</pre>
+
+<h3 data-lang="zh">8.2 限制</h3>
+<h3 data-lang="en">8.2 Limitations</h3>
+<table class="compare">
+  <tr><th data-lang="zh">限制</th><th data-lang="en">Limitation</th>
+      <th data-lang="zh">後果</th><th data-lang="en">Consequence</th>
+      <th data-lang="zh">緩解</th><th data-lang="en">Mitigation</th></tr>
+  <tr>
+    <td data-lang="zh">size factor 假設「全細胞 mRNA 量相當」</td>
+    <td data-lang="en">size factor assumes all cells have similar mRNA</td>
+    <td data-lang="zh">細胞型態差很大會被強制均一</td>
+    <td data-lang="en">truly different cell types get force-equalized</td>
+    <td data-lang="zh">scran pooling、ERCC spike-in</td>
+    <td data-lang="en">scran pooling, ERCC spike-ins</td>
+  </tr>
+  <tr>
+    <td data-lang="zh">log1p 對低表現變異還是大</td>
+    <td data-lang="en">log1p inflates low-expression variance</td>
+    <td data-lang="zh">PCA 看到的噪音偏多</td>
+    <td data-lang="en">PCA picks up noise</td>
+    <td data-lang="zh">用 Pearson residuals</td>
+    <td data-lang="en">use Pearson residuals</td>
+  </tr>
+  <tr>
+    <td data-lang="zh">Pearson 需估 θ，慢</td>
+    <td data-lang="en">Pearson needs θ, slow</td>
+    <td data-lang="zh">大資料較慢</td>
+    <td data-lang="en">slow on large data</td>
+    <td data-lang="zh">analytical Pearson</td>
+    <td data-lang="en">analytic Pearson</td>
+  </tr>
+</table>
+
+<div class="callout prog">
+  <strong data-lang="zh">下一步</strong><strong data-lang="en">Next</strong>:
+  <span data-lang="zh"><a href="2.3-hvg-selection.html"><b>2.3 HVG selection</b></a>（從 2 萬基因挑 2000）→ <a href="2.4-scaling.html"><b>2.4 Scaling</b></a> → <a href="../M3-dimreduction/3.1-pca.html"><b>M3.1 PCA</b></a>。</span>
+  <span data-lang="en"><a href="2.3-hvg-selection.html"><b>2.3 HVG</b></a> → <a href="2.4-scaling.html"><b>2.4 Scaling</b></a> → <a href="../M3-dimreduction/3.1-pca.html"><b>M3.1 PCA</b></a>.</span>
+</div>
+
+<p class="footer">
+  <span data-lang="zh">© scRNA-seq Advanced Math · M2.2 Normalization Deep Interactive</span>
+  <span data-lang="en">© scRNA-seq Advanced Math · M2.2 Normalization Deep Interactive</span>
+</p>
+
+</div>
+
 <script src="../i18n.js"></script>
-<script>function switchTab(b,id){const p=b.closest(".code-tabs");p.querySelectorAll(".code-tab-btn").forEach(x=>x.classList.remove("active"));p.querySelectorAll(".code-tab-content").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(id).classList.add("active");}</script>
-</body></html>
+<script>
+// ===== §0 interactive =====
+(function(){
+  function draw(){
+    const da = +document.getElementById('depthA').value;
+    const db = +document.getElementById('depthB').value;
+    document.getElementById('depthAval').textContent = da;
+    document.getElementById('depthBval').textContent = db;
+    const prop = [0.005, 0.010, 0.002];
+    const cA = prop.map(p=>p*da), cB = prop.map(p=>p*db);
+    const cpA = cA.map(v=>v/da*1e4), cpB = cB.map(v=>v/db*1e4);
+    const mxR = Math.max(...cA, ...cB, 1);
+    const mxC = Math.max(...cpA, ...cpB, 1);
+    function bg(x0, label, vals, mx, color){
+      let s = `<text class="lbl" x="${x0+90}" y="20" text-anchor="middle" font-weight="700">${label}</text>`;
+      vals.forEach((v,i)=>{
+        const bx = x0 + i*60 + 10;
+        const bh = (v/mx)*140;
+        s += `<rect x="${bx}" y="${190-bh}" width="40" height="${bh}" fill="${color}" opacity="0.85"/>`;
+        s += `<text class="lbl" x="${bx+20}" y="${188-bh}" text-anchor="middle">${v.toFixed(0)}</text>`;
+        s += `<text class="lbl" x="${bx+20}" y="208" text-anchor="middle">G${i+1}</text>`;
+      });
+      return s;
+    }
+    let s = '';
+    s += `<text class="lbl" x="200" y="245" text-anchor="middle" font-weight="700">Raw counts</text>`;
+    s += bg(20, 'Cell A', cA, mxR, '#2c5aa0');
+    s += bg(220, 'Cell B', cA===cB ? cA : cB, mxR, '#2c5aa0');
+    s += `<text class="lbl" x="600" y="245" text-anchor="middle" font-weight="700">CP10K (normalized)</text>`;
+    s += bg(420, 'Cell A', cpA, mxC, '#27795a');
+    s += bg(620, 'Cell B', cpB, mxC, '#27795a');
+    s += `<text class="lbl" x="200" y="270" text-anchor="middle" fill="#c0392b">↑ depth different → counts跑↑↓</text>`;
+    s += `<text class="lbl" x="600" y="270" text-anchor="middle" fill="#27795a">↑ depth different → CP10K 不動</text>`;
+    document.getElementById('s0svg').innerHTML = s;
+  }
+  document.getElementById('depthA').addEventListener('input', draw);
+  document.getElementById('depthB').addEventListener('input', draw);
+  draw();
+})();
+
+// ===== §4 interactive =====
+(function(){
+  let seed = 17;
+  const rnd = ()=>{seed=(seed*9301+49297)%233280;return seed/233280;};
+  function nrnd(m,s){const u1=rnd(),u2=rnd();return m+s*Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);}
+  function histo(values, x0, y0, w, h, label, color){
+    const vMin = Math.min(...values), vMax = Math.max(...values);
+    const nB = 12;
+    const bins = Array(nB).fill(0);
+    values.forEach(v=>{const idx=Math.min(nB-1, Math.floor((v-vMin)/(vMax-vMin+1e-9)*nB)); bins[idx]++;});
+    const mxB = Math.max(...bins);
+    let s = `<text class="lbl" x="${x0+w/2}" y="${y0-5}" text-anchor="middle" font-weight="700">${label}</text>`;
+    bins.forEach((c,i)=>{
+      const bx = x0 + i*(w/nB);
+      const bh = c/mxB * h;
+      s += `<rect x="${bx}" y="${y0+h-bh}" width="${w/nB - 1}" height="${bh}" fill="${color}" opacity="0.85"/>`;
+    });
+    s += `<line x1="${x0}" y1="${y0+h}" x2="${x0+w}" y2="${y0+h}" stroke="#bbb"/>`;
+    s += `<text class="lbl" x="${x0}" y="${y0+h+15}" text-anchor="start">${vMin.toFixed(1)}</text>`;
+    s += `<text class="lbl" x="${x0+w}" y="${y0+h+15}" text-anchor="end">${vMax.toFixed(1)}</text>`;
+    const mn = values.reduce((a,b)=>a+b,0)/values.length;
+    const sd = Math.sqrt(values.map(v=>(v-mn)**2).reduce((a,b)=>a+b,0)/values.length);
+    s += `<text class="lbl" x="${x0+w/2}" y="${y0+h+30}" text-anchor="middle">CV = ${(sd/(mn||1)).toFixed(3)}</text>`;
+    return s;
+  }
+  function draw(){
+    const dv = +document.getElementById('depthVar').value;
+    const tp = +document.getElementById('trueProp').value;
+    document.getElementById('depthVarVal').textContent = dv;
+    document.getElementById('truePropVal').textContent = tp.toFixed(3);
+    seed = 11;
+    const cells = [];
+    for (let i = 0; i < 50; i++){
+      const depth = Math.max(500, nrnd(5000, 5000*dv/100));
+      const tc = depth * tp;
+      const obs = Math.max(0, Math.round(nrnd(tc, Math.sqrt(tc + tc*tc/10))));
+      cells.push({depth, raw: obs, cpm: obs/depth*1e4, log: Math.log10(1 + obs/depth*1e4)});
+    }
+    let s = '';
+    s += histo(cells.map(c=>c.raw), 30, 25, 220, 130, 'Raw counts', '#c0392b');
+    s += histo(cells.map(c=>c.cpm), 290, 25, 220, 130, 'CP10K', '#f0c419');
+    s += histo(cells.map(c=>c.log), 550, 25, 220, 130, 'log(CP10K+1)', '#27795a');
+    document.getElementById('s4svg').innerHTML = s;
+  }
+  document.getElementById('depthVar').addEventListener('input', draw);
+  document.getElementById('trueProp').addEventListener('input', draw);
+  draw();
+})();
+
+// ===== §6 NB variance =====
+(function(){
+  function draw(){
+    const theta = +document.getElementById('theta').value;
+    document.getElementById('thetaVal').textContent = theta.toFixed(1);
+    const muMax = 100, varMax = 500;
+    const X = mu => 60 + mu/muMax * 700;
+    const Y = v => 320 - v/varMax * 280;
+    let s = '';
+    s += `<line class="axis" x1="60" y1="320" x2="760" y2="320"/>`;
+    s += `<line class="axis" x1="60" y1="40" x2="60" y2="320"/>`;
+    for (let v = 0; v <= varMax; v += 100){
+      s += `<line class="grid" x1="60" y1="${Y(v)}" x2="760" y2="${Y(v)}"/>`;
+      s += `<text class="lbl" x="55" y="${Y(v)+4}" text-anchor="end">${v}</text>`;
+    }
+    for (let m = 0; m <= muMax; m += 20){
+      s += `<line class="grid" x1="${X(m)}" y1="40" x2="${X(m)}" y2="320"/>`;
+      s += `<text class="lbl" x="${X(m)}" y="338" text-anchor="middle">${m}</text>`;
+    }
+    s += `<text class="lbl" x="400" y="355" text-anchor="middle" font-weight="700">mean μ</text>`;
+    s += `<text class="lbl" x="20" y="180" text-anchor="middle" font-weight="700" transform="rotate(-90 20 180)">variance</text>`;
+    let p = '';
+    for (let m = 0; m <= muMax; m += 1) p += `${m===0?'M':'L'} ${X(m)},${Y(Math.min(varMax, m))} `;
+    s += `<path d="${p}" fill="none" stroke="#c0392b" stroke-width="2" stroke-dasharray="6,3"/>`;
+    s += `<text class="lbl" x="${X(muMax)-50}" y="${Y(muMax)-5}" fill="#c0392b">Poisson</text>`;
+    let q = '';
+    for (let m = 0; m <= muMax; m += 1){
+      const v = m + m*m/theta;
+      if (v <= varMax) q += `${m===0?'M':'L'} ${X(m)},${Y(v)} `;
+    }
+    s += `<path d="${q}" fill="none" stroke="#2c5aa0" stroke-width="2.5"/>`;
+    s += `<text class="lbl" x="${X(70)}" y="${Y(Math.min(varMax-20, 70 + 70*70/theta))-5}" fill="#2c5aa0">NB (θ=${theta.toFixed(1)})</text>`;
+    document.getElementById('s6svg').innerHTML = s;
+  }
+  document.getElementById('theta').addEventListener('input', draw);
+  draw();
+})();
+</script>
+</body>
+</html>

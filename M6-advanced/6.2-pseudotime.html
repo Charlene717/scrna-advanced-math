@@ -1,105 +1,665 @@
 <!DOCTYPE html>
-<html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>6.2 Pseudotime · DPT &amp; Slingshot — scRNA-seq Advanced Math</title><link rel="stylesheet" href="../styles.css">
-<script>MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] } };</script>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>6.2 Pseudotime：DPT / Slingshot / Monocle — Deep Interactive</title>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
-</head><body>
+<style>
+  :root {
+    --bg: #fafaf7; --fg: #1a1a1a; --muted: #666;
+    --accent: #c0392b; --accent2: #2c5aa0;
+    --green: #27795a; --purple: #8e44ad; --yellow: #f0c419;
+    --cyan: #0891b2;
+    --card: #ffffff; --border: #e0e0d8; --code: #f4f1ea;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Helvetica Neue", "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif; background: var(--bg); color: var(--fg); line-height: 1.75; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 40px 28px 120px; }
+  header.cover { margin: 20px 0 60px; padding: 52px 40px;
+    background: linear-gradient(135deg, #083344 0%, #0891b2 55%, #67e8f9 100%);
+    color: #fff; border-radius: 16px; box-shadow: 0 14px 40px rgba(8,51,68,0.18); }
+  header.cover h1 { margin: 0 0 14px; font-size: 36px; }
+  header.cover .sub { font-size: 17px; opacity: 0.92; line-height: 1.65; }
+  header.cover .badge { display: inline-block; background: rgba(255,255,255,0.18);
+    padding: 4px 12px; border-radius: 20px; font-size: 13px; margin-bottom: 16px; }
+  h2 { margin-top: 70px; padding-bottom: 8px; border-bottom: 3px solid var(--cyan);
+    font-size: 26px; display: flex; align-items: baseline; gap: 12px; }
+  h2 .num { color: var(--cyan); font-weight: 800; font-size: 20px; }
+  h3 { margin-top: 36px; font-size: 19px; color: var(--accent2); }
+  h4 { margin-top: 22px; font-size: 16px; color: var(--accent); }
+  p { margin: 14px 0; }
+  .lead { font-size: 17px; color: #2a2a2a; }
+  .callout { background: #fff8e6; border-left: 4px solid var(--yellow); padding: 14px 18px; border-radius: 6px; margin: 22px 0; }
+  .callout.idea { background: #eaf4ff; border-left-color: var(--accent2); }
+  .callout.warn { background: #fdecec; border-left-color: var(--accent); }
+  .callout.bio  { background: #effaf3; border-left-color: var(--green); }
+  .callout.prog { background: #cffafe; border-left-color: var(--cyan); }
+  .card { background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px 26px; margin: 26px 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+  .card h3 { margin-top: 0; }
+  .controls { display: flex; flex-wrap: wrap; gap: 14px 22px;
+    align-items: center; margin: 14px 0; padding: 12px 16px;
+    background: #f4f1ea; border-radius: 8px; font-size: 14px; }
+  .controls label { display: flex; align-items: center; gap: 8px; }
+  button { background: var(--cyan); color: #fff; border: 0;
+    padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 14px;
+    font-family: inherit; }
+  button:hover { background: #155e75; }
+  button.ghost { background: #fff; color: var(--cyan); border: 1px solid var(--cyan); }
+  input[type="range"] { width: 180px; vertical-align: middle; }
+  svg.canvas { background: #fcfcfa; border: 1px solid var(--border); border-radius: 8px; display: block; }
+  svg.canvas .axis { stroke: #bbb; stroke-width: 1; }
+  svg.canvas .grid { stroke: #ececea; stroke-width: 0.5; }
+  svg.canvas text.lbl { font-size: 12px; fill: #333; }
+  .stat-row { display: flex; flex-wrap: wrap; gap: 22px; margin: 14px 0; font-size: 14px; }
+  .stat-row .item { display: flex; flex-direction: column; }
+  .stat-row .item .lbl { color: var(--muted); font-size: 12px; }
+  .stat-row .item .val { font-family: "JetBrains Mono", monospace; font-size: 18px; }
+  details { margin: 16px 0; }
+  details summary { cursor: pointer; font-weight: 600; color: var(--accent2); padding: 6px 0; }
+  .toc { background: #fff; border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 28px; margin: 30px 0; }
+  .toc h4 { margin: 0 0 10px; color: var(--cyan); }
+  .toc ol { margin: 6px 0; padding-left: 24px; line-height: 1.9; }
+  .toc a { color: var(--accent2); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .toc .new { background: var(--cyan); color: #fff; font-size: 11px;
+    padding: 1px 8px; border-radius: 10px; margin-left: 6px; }
+  code.inline { background: var(--code); padding: 2px 6px; border-radius: 4px;
+    font-size: 13px; font-family: "JetBrains Mono", "Consolas", monospace; }
+  pre.code { background: #1e1e1e; color: #dcdcdc;
+    padding: 14px 18px; border-radius: 8px; overflow-x: auto; font-size: 13px;
+    font-family: "JetBrains Mono", "Consolas", monospace; line-height: 1.55; }
+  pre.code .k { color: #569cd6; }
+  pre.code .s { color: #ce9178; }
+  pre.code .c { color: #6a9955; }
+  pre.code .n { color: #b5cea8; }
+  table.compare { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.compare th, table.compare td { border: 1px solid var(--border); padding: 8px 12px; }
+  table.compare th { background: #f4f1ea; text-align: left; }
+  .math-block { background: #fff; border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 18px; margin: 18px 0; }
+  .math-block.boxed { border: 2px solid var(--cyan); background: #cffafe; }
+  .formula-caption { font-size: 12.5px; color: var(--muted); text-align: center; margin-top: 6px; }
+  .footer { text-align: center; color: var(--muted); margin-top: 80px; font-size: 13px; }
+  .top-nav { background: #083344; color: #fff; padding: 14px 28px;
+    position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(8,51,68,0.25); }
+  .top-nav-inner { max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; gap: 28px; }
+  .top-nav-brand { color: #fff; text-decoration: none;
+    font-weight: 700; font-size: 17px;
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .top-nav-brand .badge-math { background: #0891b2; color: #fff;
+    padding: 3px 9px; border-radius: 4px; font-size: 11px; }
+  .top-nav-links { list-style: none; margin: 0; padding: 0;
+    display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+  .top-nav-links a { color: #a5f3fc; text-decoration: none;
+    padding: 6px 11px; border-radius: 6px; font-size: 13px; font-weight: 500;
+    transition: 0.2s; }
+  .top-nav-links a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .top-nav-links a.active { background: #0891b2; color: #fff; }
+  .top-nav-links li.dropdown { position: relative; }
+  .top-nav-links li.dropdown > a::after { content: ' ▾';
+    font-size: 10px; opacity: 0.7; margin-left: 3px;
+    display: inline-block; transition: transform 0.2s; }
+  .top-nav-links li.dropdown:hover > a::after,
+  .top-nav-links li.dropdown.open > a::after { transform: rotate(180deg); }
+  .top-nav-links .dropdown-menu { display: none; position: absolute; top: 100%; left: 0;
+    background: #155e75; border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px; padding: 6px 0; min-width: 230px;
+    list-style: none; z-index: 200;
+    box-shadow: 0 8px 28px rgba(8,51,68,0.5); margin: 6px 0 0; }
+  .top-nav-links li.dropdown:hover > .dropdown-menu,
+  .top-nav-links li.dropdown.open > .dropdown-menu { display: block; }
+  .top-nav-links .dropdown-menu li { display: block; }
+  .top-nav-links .dropdown-menu li a { display: block; padding: 9px 18px;
+    border-radius: 0; font-size: 13px; white-space: nowrap; color: #a5f3fc; }
+  .top-nav-links .dropdown-menu li a:hover { background: rgba(8,145,178,0.3); color: #fff; }
+  .top-nav-links .dropdown-menu li a.active-sub { background: #0891b2; color: #fff; font-weight: 700; }
+  .top-nav-links .dropdown-menu .sub-label { font-size: 10px; color: #67e8f9;
+    letter-spacing: 1px; padding: 4px 18px 2px; text-transform: uppercase; }
+  .lang-switch { display: flex; gap: 4px;
+    background: rgba(255,255,255,0.08); padding: 4px; border-radius: 6px; flex-shrink: 0; }
+  .lang-switch button { background: transparent; border: 0; color: #a5f3fc;
+    font-size: 12px; font-weight: 700; padding: 5px 10px;
+    border-radius: 4px; cursor: pointer; font-family: inherit; }
+  .lang-switch button.active { background: #0891b2; color: #fff; }
+  .nav-pages { display: flex; gap: 8px; margin: 24px 0; padding: 14px;
+    background: #155e75; border-radius: 10px; align-items: center; flex-wrap: wrap; }
+  .nav-pages a { color: #a5f3fc; text-decoration: none;
+    padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600;
+    transition: 0.2s; }
+  .nav-pages a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .nav-pages .label { color: #67e8f9; font-size: 11px;
+    letter-spacing: 1px; font-weight: 700; margin-right: 8px; }
+  [data-lang="en"] { display: none; }
+  body.lang-en [data-lang="zh"] { display: none; }
+  body.lang-en [data-lang="en"] { display: initial; }
+  body.lang-en h1[data-lang="en"], body.lang-en h2[data-lang="en"],
+  body.lang-en h3[data-lang="en"], body.lang-en h4[data-lang="en"],
+  body.lang-en p[data-lang="en"], body.lang-en div[data-lang="en"],
+  body.lang-en ol[data-lang="en"], body.lang-en ul[data-lang="en"] { display: block; }
+  body.lang-en li[data-lang="en"] { display: list-item; }
+  body.lang-en span[data-lang="en"] { display: inline; }
+  body.lang-en tspan[data-lang="en"] { display: inline; }
+</style>
+</head>
+<body>
+
 <nav class="top-nav"><div class="top-nav-inner">
-  <a href="../index.html" class="top-nav-brand"><span>🧬</span><span data-lang="zh">scRNA-seq 進階數學</span><span data-lang="en">scRNA-seq Advanced Math</span><span class="badge-math">MATH</span></a>
-  <ul class="top-nav-links"><li><a href="../index.html#M1">M1</a></li><li><a href="../index.html#M2">M2</a></li><li><a href="../index.html#M3">M3</a></li><li><a href="../index.html#M4">M4</a></li><li><a href="../index.html#M5">M5</a></li><li><a href="../index.html#M6" class="active">M6</a></li><li><a href="../index.html" data-lang="zh">🏠 回首頁</a><span data-lang="en">🏠 Home</span></li></ul>
-  <div class="lang-switch"><button data-lang-btn="zh" class="active">中文</button><button data-lang-btn="en">EN</button></div>
-</div></nav>
-<header class="page-hero"><div class="page-hero-inner">
-  <div class="page-badge">M6.2 · ADVANCED</div>
-  <h1 data-lang="zh">Pseudotime · DPT &amp; Slingshot</h1><h1 data-lang="en">Pseudotime · DPT &amp; Slingshot</h1>
-  <p class="subtitle" data-lang="zh">如何從 snapshot 資料推估時間順序？DPT 的擴散距離、Slingshot 的 principal curves、PAGA 圖簡化。</p>
-  <p class="subtitle" data-lang="en">Inferring temporal order from snapshot data. DPT diffusion distance, Slingshot principal curves, PAGA.</p>
-</div></header>
-
-<main class="content-wrap">
-
-<section class="section">
-  <span class="section-label intuition">直覺 / Intuition</span>
-  <div data-lang="zh"><p>細胞發育是<b>連續過程</b>：幹細胞 → 中間態 → 成熟態。實驗只能拍「快照」，但發育中的細胞混在一起。<b>Pseudotime</b> 就是要從這個混雜快照重建出時間順序。</p></div>
-  <div data-lang="en"><p>Differentiation is continuous: stem → intermediate → mature. Snapshots capture mixed states. <b>Pseudotime</b> reconstructs temporal order.</p></div>
-</section>
-
-<section class="section">
-  <span class="section-label math">核心數學 / Math</span>
-  <h3>① DPT (Diffusion Pseudotime) <span data-lang="zh">— Haghverdi 2016</span></h3>
-  <p data-lang="zh">建立在 <a href="../M3-dimreduction/3.4-diffusion-map.html">Diffusion Maps</a> 之上。給定 root cell $x_r$，pseudotime 是擴散距離：</p>
-  <p data-lang="en">Built on <a href="../M3-dimreduction/3.4-diffusion-map.html">Diffusion Maps</a>. Given root cell $x_r$, pseudotime is diffusion distance:</p>
-  <div class="math-block">$$\text{dpt}(x_r, x_i) = \|\Psi_t(x_r) - \Psi_t(x_i)\|$$</div>
-  <p data-lang="zh">用「累積轉移機率矩陣」$M = \sum_{t=1}^{\infty} (T - \mathbf{1}\boldsymbol{\pi}^\top)^t$ 算更穩定。</p>
-  <p data-lang="en">Numerically stabilized via cumulative transition matrix $M$.</p>
-
-  <h3>② Slingshot <span data-lang="zh">— principal curves</span></h3>
-  <p data-lang="zh">兩階段：</p>
-  <p data-lang="en">Two stages:</p>
-  <ol data-lang="zh">
-    <li><b>骨幹圖</b>：對 cluster 質心做最小生成樹 (MST)，找分歧點</li>
-    <li><b>Principal curves</b>：對每條 lineage 擬合「平滑曲線」<br>
-    $\mathbf{f}: [0, 1] \to \mathbb{R}^d$ 最小化 $\sum_i \|x_i - \mathbf{f}(\lambda_i)\|^2$，其中 $\lambda_i$ 是 $x_i$ 在曲線上的投影位置</li>
-  </ol>
-  <ol data-lang="en">
-    <li><b>Skeleton</b>: MST on cluster centroids, find branching</li>
-    <li><b>Principal curves</b>: smooth $\mathbf{f}: [0,1] \to \mathbb{R}^d$ minimizing $\sum_i \|x_i - \mathbf{f}(\lambda_i)\|^2$</li>
-  </ol>
-  <p data-lang="zh">Pseudotime = 投影位置 $\lambda_i$。優點：能<b>明確處理 lineage 分支</b>。</p>
-  <p data-lang="en">Pseudotime = projection $\lambda_i$. Handles branching explicitly.</p>
-
-  <h3>③ PAGA <span data-lang="zh">— Wolf 2019</span></h3>
-  <p data-lang="zh">把細胞分群後，把「群與群之間的連通性」量化為圖。簡化複雜流形成可解讀的拓撲圖。</p>
-  <p data-lang="en">Cluster cells, quantify "connectivity between groups" into a simplified graph topology.</p>
-  <div class="math-block">$$w_{kl} = \frac{|E(C_k, C_l)|}{E_{\text{expected}}(C_k, C_l)}$$</div>
-  <p data-lang="zh">$E(C_k, C_l)$ = 跨 cluster 邊數；分母 = 隨機期望邊數。權重 > 1 表示連結比隨機強。</p>
-  <p data-lang="en">$E(C_k, C_l)$ = inter-cluster edges; denominator = random expectation. Weight &gt; 1 → stronger than chance.</p>
-
-  <div class="callout callout-warn">
-    <strong data-lang="zh">⚠️ Pseudotime 的詮釋陷阱</strong><strong data-lang="en">⚠️ Interpretation pitfalls</strong>
-    <p data-lang="zh">(1) <b>不是真實時間</b>——只是「順序」；(2) <b>對 root cell 選擇敏感</b>；(3) <b>不同方法結果可能差很多</b>（Saelens et al. 2019 benchmarked &gt;30 methods）。</p>
-    <p data-lang="en">(1) <b>Not real time</b> — only order; (2) <b>Sensitive to root choice</b>; (3) <b>Methods disagree</b> (Saelens et al. 2019 benchmarked 30+).</p>
-  </div>
-</section>
-
-<section class="section">
-  <span class="section-label code">程式碼 / Code</span>
-  <div class="code-tabs"><div class="code-tab-btns"><button class="code-tab-btn active" onclick="switchTab(this,'py16')">Python</button><button class="code-tab-btn" onclick="switchTab(this,'r16')">R</button></div>
-    <div class="code-tab-content active" id="py16"><pre><span class="comment"># DPT</span>
-sc.tl.diffmap(adata)
-adata.uns[<span class="str">"iroot"</span>] = np.flatnonzero(adata.obs[<span class="str">"cell_type"</span>] == <span class="str">"stem"</span>)[<span class="num">0</span>]
-sc.tl.dpt(adata)
-sc.pl.umap(adata, color=<span class="str">"dpt_pseudotime"</span>)
-
-<span class="comment"># PAGA</span>
-sc.tl.paga(adata, groups=<span class="str">"leiden"</span>)
-sc.pl.paga(adata)
-</pre></div>
-    <div class="code-tab-content" id="r16"><pre><span class="keyword">library</span>(slingshot)
-sce &lt;- <span class="func">slingshot</span>(sce, clusterLabels = <span class="str">"leiden"</span>, reducedDim = <span class="str">"UMAP"</span>,
-                start.clus = <span class="str">"stem"</span>)
-<span class="func">slingPseudotime</span>(sce)
-</pre></div>
-  </div>
-</section>
-
-<section class="section">
-  <span class="section-label">參考 / References</span>
-  <ul class="refs-list">
-    <li><div class="ref-title">Haghverdi, L. et al. (2016). DPT.</div><div class="ref-meta">Nat Methods 13. <a href="https://doi.org/10.1038/nmeth.3971">10.1038/nmeth.3971</a></div></li>
-    <li><div class="ref-title">Street, K. et al. (2018). Slingshot.</div><div class="ref-meta">BMC Genomics 19. <a href="https://doi.org/10.1186/s12864-018-4772-0">10.1186/s12864-018-4772-0</a></div></li>
-    <li><div class="ref-title">Wolf, F.A. et al. (2019). PAGA.</div><div class="ref-meta">Genome Biology 20. <a href="https://doi.org/10.1186/s13059-019-1663-x">10.1186/s13059-019-1663-x</a></div></li>
-    <li><div class="ref-title">Saelens, W. et al. (2019). A comparison of single-cell trajectory inference methods.</div><div class="ref-meta">Nat Biotech 37. <a href="https://doi.org/10.1038/s41587-019-0071-9">10.1038/s41587-019-0071-9</a></div></li>
+  <a href="../index.html" class="top-nav-brand">
+    <span>🧬</span>
+    <span data-lang="zh">scRNA-seq 進階數學</span>
+    <span data-lang="en">scRNA-seq Advanced Math</span>
+    <span class="badge-math">MATH</span>
+  </a>
+  <ul class="top-nav-links">
+    <li class="dropdown"><a href="../index.html#M1">M1</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">基礎 / FOUNDATIONS</li>
+        <li><a href="../M1-foundations/1.1-sparse-matrix.html">1.1 稀疏矩陣</a></li>
+        <li><a href="../M1-foundations/1.2-count-distributions.html">1.2 計數分布</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M2">M2</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">前處理 / PREPROCESSING</li>
+        <li><a href="../M2-preprocessing/2.1-qc-statistics.html">2.1 QC 統計</a></li>
+        <li><a href="../M2-preprocessing/2.2-normalization.html">2.2 Normalization</a></li>
+        <li><a href="../M2-preprocessing/2.3-hvg-selection.html">2.3 HVG 選擇</a></li>
+        <li><a href="../M2-preprocessing/2.4-scaling.html">2.4 Scaling</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M3">M3</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">降維 / DIM. REDUCTION</li>
+        <li><a href="../M3-dimreduction/3.1-pca.html">3.1 PCA</a></li>
+        <li><a href="../M3-dimreduction/3.2-tsne.html">3.2 t-SNE</a></li>
+        <li><a href="../M3-dimreduction/3.3-umap.html">3.3 UMAP</a></li>
+        <li><a href="../M3-dimreduction/3.4-diffusion-map.html">3.4 Diffusion Maps</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M4">M4</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">圖與聚類 / GRAPH &amp; CLUSTERING</li>
+        <li><a href="../M4-graph-clustering/4.1-knn-graph.html">4.1 KNN Graph + HNSW</a></li>
+        <li><a href="../M4-graph-clustering/4.2-louvain-leiden.html">4.2 Louvain &amp; Leiden</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M5">M5</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">統計推論 / STATS</li>
+        <li><a href="../M5-statistics/5.1-de-tests.html">5.1 DE 檢定</a></li>
+        <li><a href="../M5-statistics/5.2-multiple-testing.html">5.2 多重檢定 / FDR</a></li>
+        <li><a href="../M5-statistics/5.3-classifier.html">5.3 細胞分類器</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M6" class="active">M6</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">進階 / ADVANCED</li>
+        <li><a href="6.1-integration.html">6.1 Integration</a></li>
+        <li><a href="6.2-pseudotime.html" class="active-sub">6.2 Pseudotime ⭐ (本頁)</a></li>
+        <li><a href="6.3-cellchat.html">6.3 CellChat</a></li>
+      </ul></li>
+    <li><a href="../index.html"><span data-lang="zh">🏠 回首頁</span><span data-lang="en">🏠 Home</span></a></li>
   </ul>
-</section>
+  <div class="lang-switch">
+    <button data-lang-btn="zh" class="active">中文</button>
+    <button data-lang-btn="en">EN</button>
+  </div>
+</div></nav>
 
-<div class="cross-links">
-  <a href="6.1-integration.html" class="cross-link"><div class="cross-label" data-lang="zh">← 上一篇</div><div class="cross-label" data-lang="en">← PREV</div><div class="cross-title"><span class="cross-id">M6.1</span> Integration</div></a>
-  <a href="6.3-cellchat.html" class="cross-link"><div class="cross-label" data-lang="zh">下一篇 →</div><div class="cross-label" data-lang="en">NEXT →</div><div class="cross-title"><span class="cross-id">M6.3</span> CellChat</div></a>
+<div class="wrap">
+
+<div class="nav-pages">
+  <span class="label" data-lang="zh">本頁章節</span><span class="label" data-lang="en">CHAPTERS</span>
+  <a href="#s0"><span data-lang="zh">§0 故事</span><span data-lang="en">§0 Story</span></a>
+  <a href="#s1"><span data-lang="zh">§1 軌跡 vs 群</span><span data-lang="en">§1 Trajectory vs cluster</span></a>
+  <a href="#s2"><span data-lang="zh">§2 DPT 數學</span><span data-lang="en">§2 DPT math</span></a>
+  <a href="#s3"><span data-lang="zh">§3 互動 DPT</span><span data-lang="en">§3 Interactive DPT</span></a>
+  <a href="#s4"><span data-lang="zh">§4 Slingshot</span><span data-lang="en">§4 Slingshot</span></a>
+  <a href="#s5"><span data-lang="zh">§5 Monocle3</span><span data-lang="en">§5 Monocle3</span></a>
+  <a href="#s6"><span data-lang="zh">§6 RNA velocity</span><span data-lang="en">§6 RNA velocity</span></a>
+  <a href="#s7"><span data-lang="zh">§7 限制</span><span data-lang="en">§7 Limits</span></a>
 </div>
 
-</main>
-<footer class="site-footer"><p>© Charlene</p></footer>
+<header class="cover">
+  <div class="badge"><span data-lang="zh">深入互動版 · 從直覺到數學</span><span data-lang="en">Deep Interactive · From Intuition to Math</span></div>
+  <h1 data-lang="zh">Pseudotime：把細胞排成分化軌跡</h1>
+  <h1 data-lang="en">Pseudotime: ordering cells along differentiation trajectories</h1>
+  <div class="sub" data-lang="zh">
+    Leiden 把細胞分群——但<b>「分化」是連續的</b>。
+    幹細胞 → 早期 progenitor → 中期 → 晚期 → 成熟細胞，沒有明確的群邊界。
+    硬分群會丟失「<b>時間軸</b>」這個重要訊號。<br><br>
+    Pseudotime 給每個細胞一個「<b>沿軌跡的位置</b>」（0 = 起點、1 = 終點），
+    不需要實驗時間資料，純從表現量距離結構推。
+    本節從 DPT 的 diffusion map 推導出發，介紹 Slingshot 主曲線、Monocle3 partition graph，
+    最後談 RNA velocity 提供方向資訊。
+  </div>
+  <div class="sub" data-lang="en">
+    Leiden gives discrete clusters — but <b>differentiation is continuous</b>.
+    Stem → early progenitor → mid → late → mature: no sharp boundaries.
+    Hard clustering loses the <b>time axis</b>.<br><br>
+    Pseudotime assigns each cell a <b>position along the trajectory</b> (0 = origin, 1 = end),
+    without experimental timing — purely from expression distance structure.
+    Starting from DPT's diffusion map derivation, we cover Slingshot's principal curves, Monocle3's partition graph,
+    and finally RNA velocity for directionality.
+  </div>
+</header>
+
+<div class="toc">
+  <h4 data-lang="zh">目錄</h4>
+  <h4 data-lang="en">Table of Contents</h4>
+  <ol start="0">
+    <li><a href="#s0"><span data-lang="zh">故事：分化是連續的</span><span data-lang="en">Story: differentiation is continuous</span></a><span class="new" data-lang="zh">新增</span><span class="new" data-lang="en">NEW</span></li>
+    <li><a href="#s1"><span data-lang="zh">軌跡 vs 群的直覺差異</span><span data-lang="en">Trajectory vs cluster</span></a></li>
+    <li><a href="#s2"><span data-lang="zh">DPT (Diffusion Pseudotime) 數學</span><span data-lang="en">DPT math</span></a><span class="new" data-lang="zh">核心</span><span class="new" data-lang="en">CORE</span></li>
+    <li><a href="#s3"><span data-lang="zh">互動 DPT：從 root 開始</span><span data-lang="en">Interactive DPT from root</span></a></li>
+    <li><a href="#s4"><span data-lang="zh">Slingshot：主曲線擬合</span><span data-lang="en">Slingshot principal curves</span></a></li>
+    <li><a href="#s5"><span data-lang="zh">Monocle3：partition graph</span><span data-lang="en">Monocle3 partition graph</span></a></li>
+    <li><a href="#s6"><span data-lang="zh">RNA velocity 提供方向</span><span data-lang="en">RNA velocity for direction</span></a></li>
+    <li><a href="#s7"><span data-lang="zh">限制與下一步</span><span data-lang="en">Limits & next</span></a></li>
+  </ol>
+</div>
+
+<h2 id="s0"><span class="num">§0</span> <span data-lang="zh">故事：分化是連續的</span><span data-lang="en">Story: differentiation is continuous</span></h2>
+
+<p class="lead" data-lang="zh">
+  造血系統是教科書例子：<b>HSC（造血幹細胞）→ MPP → CMP → GMP → 單核球</b>。
+  每階段表現量緩慢改變，沒有「跳躍」。
+  你用 Leiden 把細胞分成 5 群——但其實它們<b>沿一條線</b>連續排列。
+  cluster 邊界是<b>人為</b>切的，不對應任何生物學現實。
+</p>
+<p class="lead" data-lang="en">
+  Hematopoiesis is the textbook example: <b>HSC → MPP → CMP → GMP → monocyte</b>.
+  Each stage's expression changes gradually, no "jumps".
+  Leiden gives 5 clusters — but cells actually form <b>a continuous line</b>.
+  Cluster boundaries are <b>artificial</b>, with no biological meaning.
+</p>
+
+<div class="card">
+  <h3 data-lang="zh">§0-1 同樣的細胞：cluster 視角 vs pseudotime 視角</h3>
+  <h3 data-lang="en">§0-1 Same cells: cluster vs pseudotime view</h3>
+  <svg class="canvas" id="s0svg" viewBox="0 0 800 360" width="100%"></svg>
+  <div class="callout idea">
+    <strong data-lang="zh">直覺</strong><strong data-lang="en">Intuition</strong>:
+    <span data-lang="zh">cluster 視角告訴你「有哪些<b>身份</b>」；pseudotime 視角告訴你「<b>過程</b>怎麼進行」。後者讓你能找<b>沿軌跡逐漸開關的 gene</b>——transcription factor、分化決定因子。</span>
+    <span data-lang="en">Cluster view = "what <b>identities</b>"; pseudotime view = "how the <b>process</b> unfolds". The latter reveals <b>genes that gradually turn on/off along the trajectory</b> — transcription factors, fate determinants.</span>
+  </div>
+</div>
+
+<h2 id="s1"><span class="num">§1</span> <span data-lang="zh">軌跡 vs 群的直覺差異</span><span data-lang="en">Trajectory vs cluster</span></h2>
+
+<table class="compare">
+  <tr><th></th>
+      <th data-lang="zh">cluster (Leiden)</th><th data-lang="en">cluster (Leiden)</th>
+      <th data-lang="zh">trajectory (pseudotime)</th><th data-lang="en">trajectory (pseudotime)</th></tr>
+  <tr><td data-lang="zh">輸出</td><td data-lang="en">Output</td>
+      <td data-lang="zh">離散標籤</td><td data-lang="en">discrete label</td>
+      <td data-lang="zh">連續位置 (0~1)</td><td data-lang="en">continuous position (0~1)</td></tr>
+  <tr><td data-lang="zh">適用</td><td data-lang="en">Suited for</td>
+      <td data-lang="zh">穩態組織（PBMC、腦切片）</td>
+      <td data-lang="en">steady-state tissue (PBMC, brain slice)</td>
+      <td data-lang="zh">發育、分化、活化、疾病進程</td>
+      <td data-lang="en">development, differentiation, activation, disease progression</td></tr>
+  <tr><td data-lang="zh">回答的問題</td><td data-lang="en">Question</td>
+      <td>"有什麼細胞型?"</td><td>"What cell types are there?"</td>
+      <td>"細胞怎麼從 A 變到 B?"</td><td>"How do cells go from A to B?"</td></tr>
+</table>
+
+<h2 id="s2"><span class="num">§2</span> <span data-lang="zh">DPT (Diffusion Pseudotime) 數學</span><span data-lang="en">DPT math</span></h2>
+
+<p data-lang="zh">
+  DPT（Haghverdi et al. 2016）核心想法：把細胞當圖節點，定義「<b>隨機漫步從 root 細胞走到每個細胞</b>的期望時間」當 pseudotime。
+</p>
+<p data-lang="en">
+  DPT (Haghverdi et al. 2016) core idea: treat cells as graph nodes, define pseudotime as the <b>expected random-walk time from a root cell to each other cell</b>.
+</p>
+
+<h3 data-lang="zh">2.1 三步驟</h3>
+<h3 data-lang="en">2.1 Three steps</h3>
+
+<ol>
+  <li><span data-lang="zh"><b>建轉移矩陣</b>：</span><span data-lang="en"><b>Build transition matrix</b>: </span>$T_{ij} = K(x_i, x_j) / \sum_l K(x_i, x_l)$（Gaussian kernel + normalize）</li>
+  <li><span data-lang="zh"><b>對 $T$ 做特徵分解</b>：</span><span data-lang="en"><b>Eigen-decompose $T$</b>: </span>$T = \Phi \Lambda \Phi^{-1}$</li>
+  <li><span data-lang="zh"><b>DPT 距離</b> = 在 diffusion space 的歐式距離：</span>
+      <span data-lang="en"><b>DPT distance</b> = Euclidean in diffusion space: </span></li>
+</ol>
+
+<div class="math-block boxed">
+  $$\text{dpt}(i, j) = \sqrt{\sum_{k \ge 1} \left(\frac{\lambda_k}{1 - \lambda_k}\right)^2 (\phi_k(i) - \phi_k(j))^2}$$
+  <div class="formula-caption" data-lang="zh">$\phi_k, \lambda_k$ 是轉移矩陣 $T$ 的第 $k$ 個特徵向量 / 值</div>
+  <div class="formula-caption" data-lang="en">$\phi_k, \lambda_k$ are $T$'s $k$-th eigenvector / eigenvalue</div>
+</div>
+
+<p data-lang="zh">給定 root 細胞 $i_0$，每細胞的 pseudotime = $\text{dpt}(i_0, i)$。</p>
+<p data-lang="en">Given root cell $i_0$, each cell's pseudotime = $\text{dpt}(i_0, i)$.</p>
+
+<h3 data-lang="zh">2.2 為什麼用 diffusion 距離?</h3>
+<h3 data-lang="en">2.2 Why diffusion distance?</h3>
+
+<div class="callout idea">
+  <strong data-lang="zh">關鍵</strong><strong data-lang="en">Key</strong>:
+  <span data-lang="zh">歐氏距離只看「直線距離」會被噪音影響。Diffusion 距離考慮「<b>所有可能路徑</b>」的權重——
+  兩細胞有多條短路徑連通 → DPT 近；只有一條長路徑 → DPT 遠。對軌跡上彎曲、複雜分支特別有效。</span>
+  <span data-lang="en">Euclidean is noise-sensitive (straight-line). Diffusion considers <b>all paths weighted</b> —
+  two cells with many short paths between them → DPT close; single long path → DPT far. Excellent for curved or branching trajectories.</span>
+</div>
+
+<h2 id="s3"><span class="num">§3</span> <span data-lang="zh">互動 DPT：從 root 開始</span><span data-lang="en">Interactive DPT from root</span></h2>
+
+<div class="card">
+  <p data-lang="zh">下方 60 個細胞排成「Y」型軌跡（1 個起點 → 分叉兩條）。<b>點任何細胞當 root</b>，看 DPT pseudotime 顏色梯度（藍 = 早、紅 = 晚）。</p>
+  <p data-lang="en">60 cells in a "Y" trajectory (1 origin → 2 branches). <b>Click any cell as root</b>, watch DPT color gradient (blue = early, red = late).</p>
+  <svg class="canvas" id="s3svg" viewBox="0 0 800 400" width="100%"></svg>
+  <div class="stat-row">
+    <div class="item"><span class="lbl" data-lang="zh">root 細胞 ID</span><span class="lbl" data-lang="en">root cell ID</span><span class="val" id="s3root">—</span></div>
+    <div class="item"><span class="lbl">DPT 範圍</span><span class="lbl">DPT range</span><span class="val" id="s3range">—</span></div>
+  </div>
+  <p data-lang="zh">📌 觀察：點軌跡<b>頂端</b>當 root → 整條軌跡有明顯漸層；點<b>中間</b>當 root → 兩端都「同樣遠」。<br>
+    生物學上 root 應該是<b>幹細胞 marker 最高</b>的細胞（如 HSC 的 CD34、PROM1）。</p>
+  <p data-lang="en">📌 Observe: click <b>top</b> as root → clear gradient along trajectory; click <b>middle</b> → both ends look "equally far".<br>
+    Biologically, root should be the cell with <b>highest stem marker</b> (e.g., CD34, PROM1 for HSC).</p>
+</div>
+
+<h2 id="s4"><span class="num">§4</span> <span data-lang="zh">Slingshot：主曲線擬合</span><span data-lang="en">Slingshot principal curves</span></h2>
+
+<p data-lang="zh">
+  Slingshot（Street et al. 2018）走完全不同路徑：先用 Leiden 找 cluster，再構造 <b>cluster 連通的最小生成樹（MST）</b>，
+  最後在每條 lineage 上擬合<b>主曲線（principal curve）</b>。
+</p>
+<p data-lang="en">
+  Slingshot (Street et al. 2018) takes a different path: Leiden first to find clusters, then build a <b>cluster MST (minimum spanning tree)</b>,
+  finally fit a <b>principal curve</b> along each lineage.
+</p>
+
+<h3 data-lang="zh">4.1 三步驟</h3>
+<h3 data-lang="en">4.1 Three steps</h3>
+
+<ol>
+  <li><span data-lang="zh"><b>cluster MST</b>：用 cluster centroid 算距離 → 最小生成樹找 lineage 拓樸</span>
+      <span data-lang="en"><b>cluster MST</b>: distance between cluster centroids → MST gives lineage topology</span></li>
+  <li><span data-lang="zh"><b>主曲線擬合</b>：對每條從 root 到 leaf 的 lineage，擬合一條「平滑曲線」穿過 cluster centroids</span>
+      <span data-lang="en"><b>Principal curve fitting</b>: fit smooth curve through cluster centroids from root to leaf</span></li>
+  <li><span data-lang="zh"><b>細胞投影</b>：每細胞投影到最近曲線，取投影位置當 pseudotime</span>
+      <span data-lang="en"><b>Cell projection</b>: project each cell onto nearest curve, use position as pseudotime</span></li>
+</ol>
+
+<div class="callout idea">
+  <strong data-lang="zh">優勢</strong><strong data-lang="en">Advantages</strong>:
+  <span data-lang="zh">直接利用 cluster 結構 → 對分支軌跡（Y 型、多分支）很穩健。比 DPT 更「實用」。</span>
+  <span data-lang="en">Leverages cluster structure → robust on branching trajectories (Y, multi-branch). More "practical" than DPT.</span>
+</div>
+
+<h2 id="s5"><span class="num">§5</span> <span data-lang="zh">Monocle3：partition graph</span><span data-lang="en">Monocle3 partition graph</span></h2>
+
+<p data-lang="zh">
+  Monocle3（Cao et al. 2019）支援<b>多斷裂、多分支</b>的軌跡：用 UMAP 嵌入後，構造 <b>partitioned principal graph</b>。
+  允許多個獨立軌跡（如不同 lineage）+ 一個軌跡內多個分支。
+</p>
+<p data-lang="en">
+  Monocle3 (Cao et al. 2019) supports <b>disjoint, multi-branch</b> trajectories: build <b>partitioned principal graph</b> on UMAP.
+  Allows multiple independent trajectories (e.g., distinct lineages) + multiple branches within each.
+</p>
+
+<h3 data-lang="zh">5.1 SimplePPT 演算法</h3>
+<h3 data-lang="en">5.1 SimplePPT algorithm</h3>
+
+<p data-lang="zh">
+  Monocle3 內部用 <b>SimplePPT (simple principal tree)</b>：在 UMAP 上找一棵樹結構，最小化「細胞到樹的距離 + 樹的長度」。
+  數學上是一個 reversed graph embedding 問題。
+</p>
+<p data-lang="en">
+  Internally uses <b>SimplePPT (simple principal tree)</b>: find a tree on UMAP minimizing "cell-to-tree distance + tree length".
+  Mathematically a reversed graph embedding problem.
+</p>
+
+<pre class="code"><span class="c"># Scanpy 沒有 Monocle3 但有等價 PAGA</span>
+sc.tl.paga(adata, groups=<span class="s">"leiden"</span>)  <span class="c"># cluster 連通圖</span>
+sc.tl.draw_graph(adata, init_pos=<span class="s">"paga"</span>)  <span class="c"># 用 PAGA 初始化的 ForceAtlas2 嵌入</span>
+
+<span class="c"># 或 DPT</span>
+adata.uns[<span class="s">"iroot"</span>] = root_idx
+sc.tl.dpt(adata)
+<span class="c"># adata.obs["dpt_pseudotime"]</span></pre>
+
+<h2 id="s6"><span class="num">§6</span> <span data-lang="zh">RNA velocity 提供方向</span><span data-lang="en">RNA velocity for direction</span></h2>
+
+<p data-lang="zh">
+  DPT / Slingshot / Monocle3 都假設「root 由人指定」。但<b>實際分化方向</b>是哪邊？
+  RNA velocity（La Manno et al. 2018）利用 <b>spliced vs unspliced mRNA 比例</b>推斷 gene 的「未來表現量變化方向」，
+  再用 cell-level 平均得到「<b>細胞分化方向向量</b>」。
+</p>
+<p data-lang="en">
+  DPT / Slingshot / Monocle3 all assume "root specified by user". But <b>which direction</b> is differentiation actually going?
+  RNA velocity (La Manno et al. 2018) uses <b>spliced vs unspliced mRNA ratios</b> to infer each gene's "future expression direction",
+  then cell-level averaging gives <b>per-cell direction vectors</b>.
+</p>
+
+<h3 data-lang="zh">6.1 核心方程</h3>
+<h3 data-lang="en">6.1 Core equation</h3>
+
+<div class="math-block">
+  $$\frac{ds(t)}{dt} = \beta \cdot u(t) - \gamma \cdot s(t)$$
+  <div class="formula-caption" data-lang="zh">$u$ = unspliced mRNA、$s$ = spliced mRNA、$\beta$ = splicing rate、$\gamma$ = degradation rate</div>
+  <div class="formula-caption" data-lang="en">$u$ = unspliced, $s$ = spliced, $\beta$ = splicing rate, $\gamma$ = degradation rate</div>
+</div>
+
+<p data-lang="zh"><b>velocity</b> = $u - \gamma s$（線性近似）。正 → gene 正在增加；負 → 正在減少。</p>
+<p data-lang="en"><b>Velocity</b> = $u - \gamma s$ (linear approx). Positive → gene rising; negative → falling.</p>
+
+<div class="callout bio">
+  <strong data-lang="zh">為什麼有用</strong><strong data-lang="en">Why useful</strong>:
+  <span data-lang="zh">不需人類給 root，每細胞自己「指向未來」。整個 UMAP 上的箭頭組成<b>velocity field</b>——告訴你軌跡的真實方向。</span>
+  <span data-lang="en">No human-defined root; each cell "points toward future". Combined arrows on UMAP form a <b>velocity field</b> — reveals true trajectory direction.</span>
+</div>
+
+<h2 id="s7"><span class="num">§7</span> <span data-lang="zh">限制與下一步</span><span data-lang="en">Limits & next</span></h2>
+
+<h3 data-lang="zh">7.1 方法選擇</h3>
+<h3 data-lang="en">7.1 Method choice</h3>
+
+<table class="compare">
+  <tr><th data-lang="zh">情境</th><th data-lang="en">Scenario</th>
+      <th data-lang="zh">推薦</th><th data-lang="en">Recommended</th></tr>
+  <tr><td data-lang="zh">線性軌跡、scanpy 內建</td><td data-lang="en">Linear, in Scanpy</td>
+      <td><b>DPT</b></td><td><b>DPT</b></td></tr>
+  <tr><td data-lang="zh">明顯分支</td><td data-lang="en">Clear branches</td>
+      <td>Slingshot (R)</td><td>Slingshot (R)</td></tr>
+  <tr><td data-lang="zh">多斷裂、複雜結構</td><td data-lang="en">Disjoint / complex</td>
+      <td>Monocle3</td><td>Monocle3</td></tr>
+  <tr><td data-lang="zh">無人指定 root、需方向</td><td data-lang="en">No root, need direction</td>
+      <td>RNA velocity (scVelo)</td><td>RNA velocity (scVelo)</td></tr>
+</table>
+
+<h3 data-lang="zh">7.2 限制</h3>
+<h3 data-lang="en">7.2 Limitations</h3>
+<table class="compare">
+  <tr><th data-lang="zh">限制</th><th data-lang="en">Limitation</th>
+      <th data-lang="zh">後果</th><th data-lang="en">Consequence</th>
+      <th data-lang="zh">緩解</th><th data-lang="en">Mitigation</th></tr>
+  <tr>
+    <td data-lang="zh">root 需人類指定（DPT/Slingshot）</td>
+    <td data-lang="en">root must be user-specified</td>
+    <td data-lang="zh">指錯方向就全錯</td>
+    <td data-lang="en">wrong root → wrong trajectory</td>
+    <td data-lang="zh">用 stem marker、或 RNA velocity</td>
+    <td data-lang="en">stem markers, or RNA velocity</td>
+  </tr>
+  <tr>
+    <td data-lang="zh">假設一條軌跡有單一方向</td>
+    <td data-lang="en">assumes monotone direction</td>
+    <td data-lang="zh">cyclic 過程（cell cycle）失靈</td>
+    <td data-lang="en">fails on cyclic processes (cell cycle)</td>
+    <td data-lang="zh">用 cyclic-aware 工具 (scCloud, CytoTRACE)</td>
+    <td data-lang="en">use cyclic-aware tools</td>
+  </tr>
+  <tr>
+    <td data-lang="zh">RNA velocity 在穩態組織不準</td>
+    <td data-lang="en">RNA velocity unreliable on steady-state</td>
+    <td data-lang="zh">無真實分化的細胞會被指錯方向</td>
+    <td data-lang="en">non-differentiating cells get spurious directions</td>
+    <td data-lang="zh">先確認資料含分化過程</td>
+    <td data-lang="en">verify data contains differentiation</td>
+  </tr>
+</table>
+
+<div class="callout prog">
+  <strong data-lang="zh">下一步</strong><strong data-lang="en">Next</strong>:
+  <span data-lang="zh">軌跡分析完成 → <a href="6.3-cellchat.html"><b>6.3 CellChat</b></a> 找細胞型態之間的 ligand-receptor 通訊網路。</span>
+  <span data-lang="en">After trajectory → <a href="6.3-cellchat.html"><b>6.3 CellChat</b></a> for ligand-receptor cell-cell communication.</span>
+</div>
+
+<p class="footer">
+  <span data-lang="zh">© scRNA-seq Advanced Math · M6.2 Pseudotime Deep Interactive</span>
+  <span data-lang="en">© scRNA-seq Advanced Math · M6.2 Pseudotime Deep Interactive</span>
+</p>
+
+</div>
+
 <script src="../i18n.js"></script>
-<script>function switchTab(b,id){const p=b.closest(".code-tabs");p.querySelectorAll(".code-tab-btn").forEach(x=>x.classList.remove("active"));p.querySelectorAll(".code-tab-content").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(id).classList.add("active");}</script>
-</body></html>
+<script>
+// ===== §0 cluster vs pseudotime view =====
+(function() {
+  // generate Y trajectory: linear from (100, 280) -> (350, 180), branch (350,180) -> (500, 80), (500, 280)
+  let seed = 9;
+  const rnd = () => { seed = (seed*9301+49297)%233280; return seed/233280; };
+  const cells = [];
+  // stem
+  for (let i = 0; i < 20; i++) {
+    const t = i/20;
+    const x = 100 + t*250 + (rnd()-0.5)*20;
+    const y = 280 - t*100 + (rnd()-0.5)*20;
+    cells.push({x, y, time: t/3});
+  }
+  // branch up
+  for (let i = 0; i < 20; i++) {
+    const t = i/20;
+    const x = 350 + t*150 + (rnd()-0.5)*20;
+    const y = 180 - t*100 + (rnd()-0.5)*20;
+    cells.push({x, y, time: 0.33 + t/3});
+  }
+  // branch down
+  for (let i = 0; i < 20; i++) {
+    const t = i/20;
+    const x = 350 + t*150 + (rnd()-0.5)*20;
+    const y = 180 + t*100 + (rnd()-0.5)*20;
+    cells.push({x, y, time: 0.67 + t/3});
+  }
+  let s = '';
+  s += `<text class="lbl" x="200" y="25" text-anchor="middle" font-weight="700">Cluster view (Leiden)</text>`;
+  s += `<text class="lbl" x="600" y="25" text-anchor="middle" font-weight="700">Pseudotime view (DPT)</text>`;
+  s += `<rect x="20" y="40" width="370" height="280" fill="#fff" stroke="#ddd"/>`;
+  s += `<rect x="410" y="40" width="370" height="280" fill="#fff" stroke="#ddd"/>`;
+  const cluCols = ['#2c5aa0', '#27795a', '#c0392b', '#8e44ad', '#f0c419'];
+  cells.forEach((c, i) => {
+    const cluId = i < 10 ? 0 : i < 20 ? 1 : i < 30 ? 2 : i < 40 ? 3 : 4;
+    s += `<circle cx="${c.x}" cy="${c.y}" r="5" fill="${cluCols[cluId]}" opacity="0.75"/>`;
+  });
+  cells.forEach(c => {
+    const r = c.time * 255, b = (1 - c.time) * 255;
+    const fill = `rgb(${Math.round(r)}, 80, ${Math.round(b)})`;
+    s += `<circle cx="${c.x + 410}" cy="${c.y}" r="5" fill="${fill}" opacity="0.85"/>`;
+  });
+  // pseudotime colorbar
+  s += `<g transform="translate(420, 335)">`;
+  for (let i = 0; i < 100; i++) {
+    const t = i/100;
+    const r = t * 255, b = (1-t) * 255;
+    s += `<rect x="${i*2.5}" y="0" width="2.5" height="14" fill="rgb(${Math.round(r)}, 80, ${Math.round(b)})"/>`;
+  }
+  s += `<text class="lbl" x="0" y="-3" font-size="11">early</text>`;
+  s += `<text class="lbl" x="250" y="-3" text-anchor="end" font-size="11">late</text>`;
+  s += `</g>`;
+  document.getElementById('s0svg').innerHTML = s;
+})();
+
+// ===== §3 interactive DPT =====
+(function() {
+  let seed = 11;
+  const rnd = () => { seed = (seed*9301+49297)%233280; return seed/233280; };
+  // Y trajectory: 60 cells
+  const cells = [];
+  for (let i = 0; i < 25; i++) {
+    const t = i/25;
+    cells.push({x: 200 + t*200, y: 100 + t*100, id: cells.length});
+  }
+  for (let i = 0; i < 17; i++) {
+    const t = i/17;
+    cells.push({x: 400 + t*200, y: 200 - t*120, id: cells.length});
+  }
+  for (let i = 0; i < 18; i++) {
+    const t = i/18;
+    cells.push({x: 400 + t*180, y: 200 + t*120, id: cells.length});
+  }
+  let root = 0;
+  function dist(a, b) { return Math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2); }
+  // approximate diffusion distance via shortest path on KNN graph
+  function knnGraph(k) {
+    const adj = cells.map(() => []);
+    cells.forEach((c, i) => {
+      const ds = cells.map((c2, j) => ({j, d: i===j ? Infinity : dist(c, c2)}));
+      ds.sort((a,b)=>a.d-b.d);
+      ds.slice(0, k).forEach(nb => { adj[i].push({j: nb.j, w: nb.d}); });
+    });
+    return adj;
+  }
+  function shortest(adj, src) {
+    const n = adj.length;
+    const dist = Array(n).fill(Infinity);
+    dist[src] = 0;
+    const visited = Array(n).fill(false);
+    for (let it = 0; it < n; it++) {
+      let u = -1, m = Infinity;
+      for (let i = 0; i < n; i++) {
+        if (!visited[i] && dist[i] < m) { m = dist[i]; u = i; }
+      }
+      if (u === -1) break;
+      visited[u] = true;
+      adj[u].forEach(e => {
+        if (dist[u] + e.w < dist[e.j]) dist[e.j] = dist[u] + e.w;
+      });
+    }
+    return dist;
+  }
+  const adj = knnGraph(5);
+  function draw() {
+    const d = shortest(adj, root);
+    const mx = Math.max(...d.filter(x => isFinite(x)));
+    document.getElementById('s3root').textContent = root;
+    document.getElementById('s3range').textContent = mx.toFixed(0);
+    let s = '';
+    s += `<rect x="0" y="0" width="800" height="400" fill="#fcfcfa"/>`;
+    cells.forEach((c, i) => {
+      const t = mx > 0 ? d[i] / mx : 0;
+      const r = Math.round(t * 255), b = Math.round((1-t) * 255);
+      const fill = i === root ? '#f0c419' : `rgb(${r}, 80, ${b})`;
+      const stroke = i === root ? '#000' : 'none';
+      const sw = i === root ? 3 : 0;
+      s += `<circle cx="${c.x}" cy="${c.y}" r="${i === root ? 9 : 6}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" opacity="0.9" style="cursor:pointer" data-i="${i}"/>`;
+    });
+    // colorbar
+    s += `<g transform="translate(20, 360)">`;
+    s += `<text class="lbl" x="0" y="0" font-size="11">DPT pseudotime:</text>`;
+    for (let i = 0; i < 100; i++) {
+      const t = i/100;
+      const r = t * 255, b = (1-t) * 255;
+      s += `<rect x="${100 + i*2}" y="-10" width="2" height="14" fill="rgb(${Math.round(r)}, 80, ${Math.round(b)})"/>`;
+    }
+    s += `<text class="lbl" x="100" y="14" font-size="11">early (root)</text>`;
+    s += `<text class="lbl" x="300" y="14" text-anchor="end" font-size="11">late</text>`;
+    s += `<text class="lbl" x="500" y="0" font-size="11" font-weight="700" fill="#f0c419">⬤ root (click any cell)</text>`;
+    s += `</g>`;
+    document.getElementById('s3svg').innerHTML = s;
+    document.getElementById('s3svg').querySelectorAll('circle').forEach(c => {
+      c.addEventListener('click', () => { root = +c.dataset.i; draw(); });
+    });
+  }
+  draw();
+})();
+</script>
+</body>
+</html>

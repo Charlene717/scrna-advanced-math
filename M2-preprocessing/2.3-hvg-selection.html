@@ -1,179 +1,743 @@
 <!DOCTYPE html>
-<html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>2.3 HVG 選擇 — scRNA-seq Advanced Math</title>
-<link rel="stylesheet" href="../styles.css">
-<script>MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] } };</script>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>2.3 HVG selection — Deep Interactive</title>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
-</head><body>
+<style>
+  :root {
+    --bg: #fafaf7; --fg: #1a1a1a; --muted: #666;
+    --accent: #c0392b; --accent2: #2c5aa0;
+    --green: #27795a; --purple: #8e44ad; --yellow: #f0c419;
+    --orange: #d97706;
+    --card: #ffffff; --border: #e0e0d8; --code: #f4f1ea;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Helvetica Neue", "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif; background: var(--bg); color: var(--fg); line-height: 1.75; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 40px 28px 120px; }
+  header.cover { margin: 20px 0 60px; padding: 52px 40px;
+    background: linear-gradient(135deg, #4a2806 0%, #b45309 55%, #f59e0b 100%);
+    color: #fff; border-radius: 16px; box-shadow: 0 14px 40px rgba(74,40,6,0.18); }
+  header.cover h1 { margin: 0 0 14px; font-size: 36px; }
+  header.cover .sub { font-size: 17px; opacity: 0.92; line-height: 1.65; }
+  header.cover .badge { display: inline-block; background: rgba(255,255,255,0.18);
+    padding: 4px 12px; border-radius: 20px; font-size: 13px; margin-bottom: 16px; }
+  h2 { margin-top: 70px; padding-bottom: 8px; border-bottom: 3px solid var(--orange);
+    font-size: 26px; display: flex; align-items: baseline; gap: 12px; }
+  h2 .num { color: var(--orange); font-weight: 800; font-size: 20px; }
+  h3 { margin-top: 36px; font-size: 19px; color: var(--accent2); }
+  h4 { margin-top: 22px; font-size: 16px; color: var(--accent); }
+  p { margin: 14px 0; }
+  .lead { font-size: 17px; color: #2a2a2a; }
+  .callout { background: #fff8e6; border-left: 4px solid var(--yellow); padding: 14px 18px; border-radius: 6px; margin: 22px 0; }
+  .callout.idea { background: #eaf4ff; border-left-color: var(--accent2); }
+  .callout.warn { background: #fdecec; border-left-color: var(--accent); }
+  .callout.bio  { background: #effaf3; border-left-color: var(--green); }
+  .callout.prog { background: #fff3d6; border-left-color: var(--orange); }
+  .card { background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px 26px; margin: 26px 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+  .card h3 { margin-top: 0; }
+  .controls { display: flex; flex-wrap: wrap; gap: 14px 22px;
+    align-items: center; margin: 14px 0; padding: 12px 16px;
+    background: #f4f1ea; border-radius: 8px; font-size: 14px; }
+  .controls label { display: flex; align-items: center; gap: 8px; }
+  button { background: var(--orange); color: #fff; border: 0;
+    padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 14px;
+    font-family: inherit; }
+  button:hover { background: #b45309; }
+  button.ghost { background: #fff; color: var(--orange); border: 1px solid var(--orange); }
+  input[type="range"] { width: 180px; vertical-align: middle; }
+  svg.canvas { background: #fcfcfa; border: 1px solid var(--border); border-radius: 8px; display: block; }
+  svg.canvas .axis { stroke: #bbb; stroke-width: 1; }
+  svg.canvas .grid { stroke: #ececea; stroke-width: 0.5; }
+  svg.canvas text.lbl { font-size: 12px; fill: #333; }
+  .stat-row { display: flex; flex-wrap: wrap; gap: 22px; margin: 14px 0; font-size: 14px; }
+  .stat-row .item { display: flex; flex-direction: column; }
+  .stat-row .item .lbl { color: var(--muted); font-size: 12px; }
+  .stat-row .item .val { font-family: "JetBrains Mono", monospace; font-size: 18px; }
+  details { margin: 16px 0; }
+  details summary { cursor: pointer; font-weight: 600; color: var(--accent2); padding: 6px 0; }
+  .toc { background: #fff; border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 28px; margin: 30px 0; }
+  .toc h4 { margin: 0 0 10px; color: var(--orange); }
+  .toc ol { margin: 6px 0; padding-left: 24px; line-height: 1.9; }
+  .toc a { color: var(--accent2); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .toc .new { background: var(--orange); color: #fff; font-size: 11px;
+    padding: 1px 8px; border-radius: 10px; margin-left: 6px; }
+  code.inline { background: var(--code); padding: 2px 6px; border-radius: 4px;
+    font-size: 13px; font-family: "JetBrains Mono", "Consolas", monospace; }
+  pre.code { background: #1e1e1e; color: #dcdcdc;
+    padding: 14px 18px; border-radius: 8px; overflow-x: auto; font-size: 13px;
+    font-family: "JetBrains Mono", "Consolas", monospace; line-height: 1.55; }
+  pre.code .k { color: #569cd6; }
+  pre.code .s { color: #ce9178; }
+  pre.code .c { color: #6a9955; }
+  pre.code .n { color: #b5cea8; }
+  table.compare { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.compare th, table.compare td { border: 1px solid var(--border); padding: 8px 12px; }
+  table.compare th { background: #f4f1ea; text-align: left; }
+  .math-block { background: #fff; border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 18px; margin: 18px 0; }
+  .math-block.boxed { border: 2px solid var(--orange); background: #fff8e6; }
+  .formula-caption { font-size: 12.5px; color: var(--muted); text-align: center; margin-top: 6px; }
+  .footer { text-align: center; color: var(--muted); margin-top: 80px; font-size: 13px; }
+  .top-nav { background: #4a2806; color: #fff; padding: 14px 28px;
+    position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(74,40,6,0.25); }
+  .top-nav-inner { max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; gap: 28px; }
+  .top-nav-brand { color: #fff; text-decoration: none;
+    font-weight: 700; font-size: 17px;
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .top-nav-brand .badge-math { background: #f59e0b; color: #fff;
+    padding: 3px 9px; border-radius: 4px; font-size: 11px; }
+  .top-nav-links { list-style: none; margin: 0; padding: 0;
+    display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+  .top-nav-links a { color: #fde68a; text-decoration: none;
+    padding: 6px 11px; border-radius: 6px; font-size: 13px; font-weight: 500;
+    transition: 0.2s; }
+  .top-nav-links a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .top-nav-links a.active { background: #f59e0b; color: #fff; }
+  .top-nav-links li.dropdown { position: relative; }
+  .top-nav-links li.dropdown > a::after { content: ' ▾';
+    font-size: 10px; opacity: 0.7; margin-left: 3px;
+    display: inline-block; transition: transform 0.2s; }
+  .top-nav-links li.dropdown:hover > a::after,
+  .top-nav-links li.dropdown.open > a::after { transform: rotate(180deg); }
+  .top-nav-links .dropdown-menu { display: none; position: absolute; top: 100%; left: 0;
+    background: #5d3a14; border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px; padding: 6px 0; min-width: 230px;
+    list-style: none; z-index: 200;
+    box-shadow: 0 8px 28px rgba(74,40,6,0.5); margin: 6px 0 0; }
+  .top-nav-links li.dropdown:hover > .dropdown-menu,
+  .top-nav-links li.dropdown.open > .dropdown-menu { display: block; }
+  .top-nav-links .dropdown-menu li { display: block; }
+  .top-nav-links .dropdown-menu li a { display: block; padding: 9px 18px;
+    border-radius: 0; font-size: 13px; white-space: nowrap; color: #fde68a; }
+  .top-nav-links .dropdown-menu li a:hover { background: rgba(245,158,11,0.2); color: #fff; }
+  .top-nav-links .dropdown-menu li a.active-sub { background: #f59e0b; color: #fff; font-weight: 700; }
+  .top-nav-links .dropdown-menu .sub-label { font-size: 10px; color: #b8945c;
+    letter-spacing: 1px; padding: 4px 18px 2px; text-transform: uppercase; }
+  .lang-switch { display: flex; gap: 4px;
+    background: rgba(255,255,255,0.08); padding: 4px; border-radius: 6px; flex-shrink: 0; }
+  .lang-switch button { background: transparent; border: 0; color: #fde68a;
+    font-size: 12px; font-weight: 700; padding: 5px 10px;
+    border-radius: 4px; cursor: pointer; font-family: inherit; }
+  .lang-switch button.active { background: #f59e0b; color: #fff; }
+  .nav-pages { display: flex; gap: 8px; margin: 24px 0; padding: 14px;
+    background: #5d3a14; border-radius: 10px; align-items: center; flex-wrap: wrap; }
+  .nav-pages a { color: #fde68a; text-decoration: none;
+    padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600;
+    transition: 0.2s; }
+  .nav-pages a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .nav-pages .label { color: #b8945c; font-size: 11px;
+    letter-spacing: 1px; font-weight: 700; margin-right: 8px; }
+  [data-lang="en"] { display: none; }
+  body.lang-en [data-lang="zh"] { display: none; }
+  body.lang-en [data-lang="en"] { display: initial; }
+  body.lang-en h1[data-lang="en"], body.lang-en h2[data-lang="en"],
+  body.lang-en h3[data-lang="en"], body.lang-en h4[data-lang="en"],
+  body.lang-en p[data-lang="en"], body.lang-en div[data-lang="en"],
+  body.lang-en ol[data-lang="en"], body.lang-en ul[data-lang="en"] { display: block; }
+  body.lang-en li[data-lang="en"] { display: list-item; }
+  body.lang-en span[data-lang="en"] { display: inline; }
+  body.lang-en tspan[data-lang="en"] { display: inline; }
+</style>
+</head>
+<body>
+
 <nav class="top-nav"><div class="top-nav-inner">
-  <a href="../index.html" class="top-nav-brand"><span>🧬</span><span data-lang="zh">scRNA-seq 進階數學</span><span data-lang="en">scRNA-seq Advanced Math</span><span class="badge-math">MATH</span></a>
+  <a href="../index.html" class="top-nav-brand">
+    <span>🧬</span>
+    <span data-lang="zh">scRNA-seq 進階數學</span>
+    <span data-lang="en">scRNA-seq Advanced Math</span>
+    <span class="badge-math">MATH</span>
+  </a>
   <ul class="top-nav-links">
-    <li><a href="../index.html#M1">M1</a></li><li><a href="../index.html#M2" class="active">M2</a></li><li><a href="../index.html#M3">M3</a></li><li><a href="../index.html#M4">M4</a></li><li><a href="../index.html#M5">M5</a></li><li><a href="../index.html#M6">M6</a></li>
-    <li><a href="../index.html" data-lang="zh">🏠 回首頁</a><span data-lang="en">🏠 Home</span></li>
+    <li class="dropdown"><a href="../index.html#M1">M1</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">基礎 / FOUNDATIONS</li>
+        <li><a href="../M1-foundations/1.1-sparse-matrix.html">1.1 稀疏矩陣 / Sparse Matrix</a></li>
+        <li><a href="../M1-foundations/1.2-count-distributions.html">1.2 計數分布 / Count Distributions</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M2" class="active">M2</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">前處理 / PREPROCESSING</li>
+        <li><a href="2.1-qc-statistics.html">2.1 QC 統計</a></li>
+        <li><a href="2.2-normalization.html">2.2 Normalization</a></li>
+        <li><a href="2.3-hvg-selection.html" class="active-sub">2.3 HVG 選擇 ⭐ (本頁)</a></li>
+        <li><a href="2.4-scaling.html">2.4 Scaling</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M3">M3</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">降維 / DIM. REDUCTION</li>
+        <li><a href="../M3-dimreduction/3.1-pca.html">3.1 PCA</a></li>
+        <li><a href="../M3-dimreduction/3.2-tsne.html">3.2 t-SNE</a></li>
+        <li><a href="../M3-dimreduction/3.3-umap.html">3.3 UMAP</a></li>
+        <li><a href="../M3-dimreduction/3.4-diffusion-map.html">3.4 Diffusion Maps</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M4">M4</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">圖與聚類 / GRAPH &amp; CLUSTERING</li>
+        <li><a href="../M4-graph-clustering/4.1-knn-graph.html">4.1 KNN Graph + HNSW</a></li>
+        <li><a href="../M4-graph-clustering/4.2-louvain-leiden.html">4.2 Louvain &amp; Leiden</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M5">M5</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">統計推論 / STATS</li>
+        <li><a href="../M5-statistics/5.1-de-tests.html">5.1 DE 檢定</a></li>
+        <li><a href="../M5-statistics/5.2-multiple-testing.html">5.2 多重檢定 / FDR</a></li>
+        <li><a href="../M5-statistics/5.3-classifier.html">5.3 細胞分類器</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M6">M6</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">進階 / ADVANCED</li>
+        <li><a href="../M6-advanced/6.1-integration.html">6.1 Integration</a></li>
+        <li><a href="../M6-advanced/6.2-pseudotime.html">6.2 Pseudotime</a></li>
+        <li><a href="../M6-advanced/6.3-cellchat.html">6.3 CellChat</a></li>
+      </ul></li>
+    <li><a href="../index.html"><span data-lang="zh">🏠 回首頁</span><span data-lang="en">🏠 Home</span></a></li>
   </ul>
-  <div class="lang-switch"><button data-lang-btn="zh" class="active">中文</button><button data-lang-btn="en">EN</button></div>
+  <div class="lang-switch">
+    <button data-lang-btn="zh" class="active">中文</button>
+    <button data-lang-btn="en">EN</button>
+  </div>
 </div></nav>
 
-<header class="page-hero"><div class="page-hero-inner">
-  <div class="page-badge">M2.3 · PREPROCESSING</div>
-  <h1 data-lang="zh">HVG 選擇：mean-variance 建模</h1>
-  <h1 data-lang="en">HVG Selection: Mean-Variance Modeling</h1>
-  <p class="subtitle" data-lang="zh">為什麼變異最大的基因 ≠ 最有資訊的基因？vst、dispersion estimation 的數學。</p>
-  <p class="subtitle" data-lang="en">Why most-variable ≠ most-informative. The math behind vst and dispersion estimation.</p>
-</div></header>
+<div class="wrap">
 
-<main class="content-wrap">
-
-<section class="section">
-  <span class="section-label intuition">直覺 / Intuition</span>
-  <h2 data-lang="zh">高變異 ≠ 有資訊</h2>
-  <h2 data-lang="en">High variance ≠ informative</h2>
-  <div data-lang="zh">
-    <p>「挑變異最大的基因」聽起來合理，但問題是：<b>變異本身與平均成正比</b>。
-    一個平均表現 100 的基因「自然」就有比較大的變異——這只是 NB 分布的性質，不代表它「有生物學意義」。</p>
-    <p>真正想要的是：<b>變異「比預期高」</b>的基因——這些才是真正在不同細胞群之間有差別的。</p>
-  </div>
-  <div data-lang="en">
-    <p>"Pick highest-variance genes" sounds reasonable, but variance scales with mean — a mean-100 gene has natural variance due to NB. We want genes with variance <b>higher than expected</b> at their mean.</p>
-  </div>
-</section>
-
-<section class="section">
-  <span class="section-label math">核心數學 / Math</span>
-  <h2 data-lang="zh">Mean-Variance 關係</h2>
-  <h2 data-lang="en">Mean-Variance Relationship</h2>
-  <p data-lang="zh">對所有基因畫 log(mean) vs log(var)，會看到一條清楚的趨勢線：</p>
-  <p data-lang="en">Plot log(mean) vs log(var) across all genes — a clear trend emerges:</p>
-  <div class="math-block">
-  $$\log(\mathrm{Var}_j) = f(\log(\mathrm{Mean}_j)) + \epsilon_j$$
-  <div class="formula-caption" data-lang="zh">$f$ 通常是平滑函數（loess 擬合），$\epsilon$ 是偏離趨勢的殘差</div>
-  <div class="formula-caption" data-lang="en">$f$ is a smooth function (loess), $\epsilon$ is residual deviation from trend</div>
-  </div>
-
-  <h3>Seurat v3 <span data-lang="zh">的 vst 方法</span><span data-lang="en">vst method</span></h3>
-  <div class="algo-block">
-<span class="comment"># Step 1: 對所有基因擬合 log(var) ~ loess(log(mean))</span>
-trend = loess(log_var ~ log_mean)
-expected_var[j] = exp(predict(trend, log_mean[j]))
-
-<span class="comment"># Step 2: 把每個基因的計數除以 √(expected_var)</span>
-<span class="comment">#         這就是 variance stabilizing transformation</span>
-y[i,j] = x[i,j] / sqrt(expected_var[j])
-
-<span class="comment"># Step 3: 計算 standardized variance</span>
-std_var[j] = var(y[:, j])
-
-<span class="comment"># Step 4: 挑 std_var 最大的前 N 個基因</span>
-HVG = top_N(std_var, N=<span class="num">2000</span>)
-  </div>
-
-  <h3>Scanpy <span data-lang="zh">的 seurat_v3 / cell_ranger</span></h3>
-  <p data-lang="zh">Scanpy 的 <code>flavor="seurat_v3"</code> 對應上面流程，<code>cell_ranger</code> 則是早期方法：把 mean-variance 散布圖切 bin，每個 bin 內取「normalized dispersion」最大的基因。</p>
-  <p data-lang="en">Scanpy's <code>flavor="seurat_v3"</code> matches above. <code>cell_ranger</code> bins mean-variance scatter and takes top normalized dispersions per bin.</p>
-
-  <h3>scran <span data-lang="zh">的 modelGeneVar</span></h3>
-  <p data-lang="zh">把總變異拆解成「技術變異 + 生物變異」，挑出<b>生物變異顯著為正</b>的基因。理論上最嚴謹。</p>
-  <p data-lang="en">Decomposes total variance into "technical + biological", selects genes with significantly positive biological variance. Most rigorous theoretically.</p>
-  <div class="math-block">
-  $$\mathrm{Var}_{\text{bio}, j} = \mathrm{Var}_{\text{total}, j} - \mathrm{Var}_{\text{tech}, j}$$
-  </div>
-</section>
-
-<section class="section">
-  <span class="section-label">互動 / Interactive</span>
-  <h2 data-lang="zh">Mean-Variance 散布圖</h2>
-  <h2 data-lang="en">Mean-Variance Scatter</h2>
-  <p data-lang="zh">模擬 200 個基因。黃色點 = 被選為 HVG（dispersion 超過趨勢線）；藍色 = 普通基因。</p>
-  <p data-lang="en">Simulated 200 genes. Yellow = HVG (dispersion above trend); Blue = ordinary.</p>
-  <div style="background:#f6f8fc; padding:18px; border-radius:10px">
-    <label data-lang="zh" style="font-size:13px">挑前 N 個 HVG</label><label data-lang="en" style="font-size:13px">Top N HVGs</label>
-    <input type="range" id="hvgR" min="10" max="100" value="40" step="5" style="width:100%">
-    <div id="hvgV" style="font-family:monospace; margin-bottom:10px">40</div>
-    <svg id="hvgSvg" viewBox="0 0 600 350" style="background:#fff; border-radius:8px; width:100%"></svg>
-  </div>
-</section>
-
-<section class="section">
-  <span class="section-label code">程式碼 / Code</span>
-  <div class="code-tabs">
-    <div class="code-tab-btns"><button class="code-tab-btn active" onclick="switchTab(this,'py5')">Python</button><button class="code-tab-btn" onclick="switchTab(this,'r5')">R</button></div>
-    <div class="code-tab-content active" id="py5"><pre>sc.pp.highly_variable_genes(adata, n_top_genes=<span class="num">2000</span>, flavor=<span class="str">"seurat_v3"</span>)
-adata = adata[:, adata.var.highly_variable]    <span class="comment"># subset</span>
-
-<span class="comment"># 視覺化趨勢線</span>
-sc.pl.highly_variable_genes(adata)
-</pre></div>
-    <div class="code-tab-content" id="r5"><pre>pbmc &lt;- <span class="func">FindVariableFeatures</span>(pbmc, selection.method = <span class="str">"vst"</span>, nfeatures = <span class="num">2000</span>)
-top10 &lt;- <span class="func">head</span>(<span class="func">VariableFeatures</span>(pbmc), <span class="num">10</span>)
-<span class="func">VariableFeaturePlot</span>(pbmc)
-</pre></div>
-  </div>
-</section>
-
-<section class="section">
-  <span class="section-label">參考 / References</span>
-  <ul class="refs-list">
-    <li><div class="ref-title">Stuart, T. et al. (2019). Comprehensive Integration of Single-Cell Data.</div><div class="ref-meta">Cell 177. Seurat v3 / vst. <a href="https://doi.org/10.1016/j.cell.2019.05.031">10.1016/j.cell.2019.05.031</a></div></li>
-    <li><div class="ref-title">Lun, A.T.L. (2018). modelGeneVar in scran.</div><div class="ref-meta">f1000 / Bioconductor</div></li>
-    <li><div class="ref-title">Yip, S.H., Wang, P., et al. (2019). Evaluation of tools for highly variable gene discovery.</div><div class="ref-meta">Briefings in Bioinformatics 20. <a href="https://doi.org/10.1093/bib/bby011">10.1093/bib/bby011</a></div></li>
-  </ul>
-</section>
-
-<div class="cross-links">
-  <a href="2.2-normalization.html" class="cross-link"><div class="cross-label" data-lang="zh">← 上一篇</div><div class="cross-label" data-lang="en">← PREV</div><div class="cross-title"><span class="cross-id">M2.2</span> Normalization</div></a>
-  <a href="2.4-scaling.html" class="cross-link"><div class="cross-label" data-lang="zh">下一篇 →</div><div class="cross-label" data-lang="en">NEXT →</div><div class="cross-title"><span class="cross-id">M2.4</span> Scaling</div></a>
+<div class="nav-pages">
+  <span class="label" data-lang="zh">本頁章節</span><span class="label" data-lang="en">CHAPTERS</span>
+  <a href="#s0"><span data-lang="zh">§0 故事</span><span data-lang="en">§0 Story</span></a>
+  <a href="#s1"><span data-lang="zh">§1 mean-variance</span><span data-lang="en">§1 mean-variance</span></a>
+  <a href="#s2"><span data-lang="zh">§2 互動 HVG</span><span data-lang="en">§2 Interactive HVG</span></a>
+  <a href="#s3"><span data-lang="zh">§3 dispersion</span><span data-lang="en">§3 dispersion</span></a>
+  <a href="#s4"><span data-lang="zh">§4 LOESS</span><span data-lang="en">§4 LOESS</span></a>
+  <a href="#s5"><span data-lang="zh">§5 Seurat vs Scanpy</span><span data-lang="en">§5 Seurat vs Scanpy</span></a>
+  <a href="#s6"><span data-lang="zh">§6 為何 2000</span><span data-lang="en">§6 Why 2000</span></a>
+  <a href="#s7"><span data-lang="zh">§7 PCA 因果鏈</span><span data-lang="en">§7 PCA chain</span></a>
+  <a href="#s8"><span data-lang="zh">§8 串起</span><span data-lang="en">§8 Wrap-up</span></a>
 </div>
 
-</main>
-<footer class="site-footer"><p>© Charlene</p></footer>
+<header class="cover">
+  <div class="badge"><span data-lang="zh">深入互動版 · 從直覺到數學</span><span data-lang="en">Deep Interactive · From Intuition to Math</span></div>
+  <h1 data-lang="zh">HVG selection：從 mean-variance 到 LOESS</h1>
+  <h1 data-lang="en">HVG selection: from mean-variance to LOESS</h1>
+  <div class="sub" data-lang="zh">
+    Normalize 完後，你手上還是 20,000 個基因。但其中<b>絕大多數對辨別細胞型態沒有貢獻</b>——
+    它們在所有細胞間都表現得差不多（housekeeping genes、或根本不表現）。
+    只有<b>變異最大</b>的那 1000-3000 個基因，才會真正讓 PCA 找到「細胞型態之間的差異方向」。<br><br>
+    這節用<b>互動散佈圖</b>讓你「親眼選出 HVG」——
+    從 mean-variance 圖開始，理解 dispersion / LOESS 為什麼必要、Seurat 跟 Scanpy 怎麼選 top 2000。
+  </div>
+  <div class="sub" data-lang="en">
+    After normalize, you still have 20,000 genes. <b>Most contribute nothing to cell-type discrimination</b> —
+    they look the same across all cells (housekeeping, or simply unexpressed).
+    Only the <b>1000–3000 most variable</b> genes carry the directions PCA cares about.<br><br>
+    This section lets you <b>pick HVGs by eye</b> on an interactive mean-variance plot —
+    understanding dispersion, LOESS, and how Seurat vs Scanpy pick top 2000.
+  </div>
+</header>
+
+<div class="toc">
+  <h4 data-lang="zh">目錄</h4>
+  <h4 data-lang="en">Table of Contents</h4>
+  <ol start="0">
+    <li><a href="#s0"><span data-lang="zh">故事：兩萬個基因不能全餵 PCA</span><span data-lang="en">Story: can't feed 20k genes to PCA</span></a><span class="new" data-lang="zh">新增</span><span class="new" data-lang="en">NEW</span></li>
+    <li><a href="#s1"><span data-lang="zh">mean-variance 關係：你看到什麼？</span><span data-lang="en">Mean-variance relationship</span></a></li>
+    <li><a href="#s2"><span data-lang="zh">互動：拉門檻挑出 HVG</span><span data-lang="en">Interactive: drag threshold, pick HVGs</span></a></li>
+    <li><a href="#s3"><span data-lang="zh">Dispersion 的定義</span><span data-lang="en">Defining dispersion</span></a></li>
+    <li><a href="#s4"><span data-lang="zh">LOESS：把曲線當基準</span><span data-lang="en">LOESS: use the curve as baseline</span></a><span class="new" data-lang="zh">核心</span><span class="new" data-lang="en">CORE</span></li>
+    <li><a href="#s5"><span data-lang="zh">Seurat vst vs Scanpy</span><span data-lang="en">Seurat vst vs Scanpy</span></a></li>
+    <li><a href="#s6"><span data-lang="zh">為什麼 n_top_genes = 2000</span><span data-lang="en">Why n_top_genes = 2000</span></a></li>
+    <li><a href="#s7"><span data-lang="zh">HVG → PCA → clustering 的因果鏈</span><span data-lang="en">HVG → PCA → clustering causal chain</span></a></li>
+    <li><a href="#s8"><span data-lang="zh">串起 + 限制</span><span data-lang="en">Wrap-up + limits</span></a></li>
+  </ol>
+</div>
+
+<h2 id="s0"><span class="num">§0</span> <span data-lang="zh">故事：兩萬個基因不能全餵 PCA</span><span data-lang="en">Story: can't feed 20k genes to PCA</span></h2>
+
+<p class="lead" data-lang="zh">
+  人類基因組有 ~20,000 個蛋白質編碼基因。對一份 10,000 個細胞的 10x 資料，原始矩陣就是 10,000 × 20,000 = 2 億個數字。
+  問題是：<b>大多數基因在所有細胞間表現量幾乎一樣</b>——它們對「分辨細胞型態」毫無貢獻。
+</p>
+<p class="lead" data-lang="en">
+  Humans have ~20k protein-coding genes. A 10k-cell 10x dataset gives a 10k × 20k = 200M-number matrix.
+  Problem: <b>most genes have nearly constant expression across cells</b> — useless for distinguishing cell types.
+</p>
+
+<div class="card">
+  <h3 data-lang="zh">§0-1 三種基因，三種命運</h3>
+  <h3 data-lang="en">§0-1 Three kinds of genes, three fates</h3>
+  <table class="compare">
+    <tr><th data-lang="zh">類型</th><th data-lang="en">Type</th>
+        <th data-lang="zh">範例</th><th data-lang="en">Example</th>
+        <th data-lang="zh">平均表現</th><th data-lang="en">Mean expr</th>
+        <th data-lang="zh">細胞間變異</th><th data-lang="en">Variance</th>
+        <th data-lang="zh">PCA 有用?</th><th data-lang="en">Useful for PCA?</th></tr>
+    <tr><td data-lang="zh">家管 (housekeeping)</td><td data-lang="en">Housekeeping</td>
+        <td>GAPDH, ACTB</td><td>GAPDH, ACTB</td>
+        <td data-lang="zh">高</td><td data-lang="en">high</td>
+        <td data-lang="zh">低</td><td data-lang="en">low</td>
+        <td data-lang="zh">❌ 沒區別力</td><td data-lang="en">❌ no discriminative power</td></tr>
+    <tr><td data-lang="zh">不表現</td><td data-lang="en">Unexpressed</td>
+        <td data-lang="zh">在此組織中不活躍</td><td data-lang="en">tissue-inactive</td>
+        <td data-lang="zh">≈ 0</td><td data-lang="en">≈ 0</td>
+        <td data-lang="zh">≈ 0</td><td data-lang="en">≈ 0</td>
+        <td data-lang="zh">❌ 只是 0</td><td data-lang="en">❌ just zeros</td></tr>
+    <tr style="background:#fef5e7;"><td><b data-lang="zh">細胞型態標記</b><b data-lang="en">Cell-type markers</b></td>
+        <td><b data-lang="zh">細胞型態標記</b><b data-lang="en">Cell-type markers</b></td>
+        <td><b>CD3D, MS4A1, CD14</b></td><td><b>CD3D, MS4A1, CD14</b></td>
+        <td data-lang="zh"><b>中</b></td><td data-lang="en"><b>medium</b></td>
+        <td data-lang="zh"><b>高（某類別高、其他低）</b></td><td data-lang="en"><b>high (high in one type, low elsewhere)</b></td>
+        <td data-lang="zh">✅ <b>關鍵</b></td><td data-lang="en">✅ <b>critical</b></td></tr>
+  </table>
+  <p data-lang="zh">第三類就是我們要的 <b>HVG (Highly Variable Genes)</b>。怎麼自動找到它們？看下面這張圖。</p>
+  <p data-lang="en">The third row is what we want: <b>HVG (Highly Variable Genes)</b>. How to find them automatically? See below.</p>
+</div>
+
+<h2 id="s1"><span class="num">§1</span> <span data-lang="zh">mean-variance 關係：你看到什麼？</span><span data-lang="en">Mean-variance relationship</span></h2>
+
+<p data-lang="zh">把每個基因的「平均表現」當 x 軸、「變異」當 y 軸，畫散佈圖。你會看到一條<b>固定形狀的曲線</b>：
+  低表現 → 變異也低；中表現 → 變異跟著爬升；高表現 → 變異最高。這背後就是 Poisson 或 NB 變異的「mean-variance trend」。</p>
+<p data-lang="en">Plot each gene's mean (x) vs variance (y). You see a <b>characteristic curve</b>: low mean → low variance; mid → rising; high → high. This is the Poisson/NB mean-variance trend.</p>
+
+<div class="math-block">
+  $$\text{Var}(X_j) = \mu_j + \frac{\mu_j^2}{\theta_j} \quad \text{(NB model)}$$
+  <div class="formula-caption" data-lang="zh">$\mu_j, \theta_j$ 是 gene $j$ 的 NB 參數</div>
+  <div class="formula-caption" data-lang="en">$\mu_j, \theta_j$ are NB params for gene $j$</div>
+</div>
+
+<p data-lang="zh">如果<b>所有基因都遵循這條曲線</b>，那就沒有 HVG——所有基因的變異都「正好」對應它的 mean。</p>
+<p data-lang="en">If <b>every gene followed this curve exactly</b>, there'd be no HVG — every gene's variance would match its mean.</p>
+
+<p data-lang="zh">真正的 HVG 是「<b>變異比曲線預期還高</b>」的基因——
+這代表它在某些細胞特別高、其他細胞特別低——也就是「帶資訊」。</p>
+<p data-lang="en">True HVGs have <b>variance above the curve</b> — meaning they spike in some cells, drop in others — i.e., they're <b>informative</b>.</p>
+
+<h2 id="s2"><span class="num">§2</span> <span data-lang="zh">互動：拉門檻挑出 HVG</span><span data-lang="en">Interactive: drag threshold, pick HVGs</span></h2>
+
+<div class="card">
+  <p data-lang="zh">下面是模擬的 500 個基因的 mean-variance 圖。藍色點 = 普通基因、紅色點 = 真實 HVG。
+    拉「門檻」滑桿改變「離曲線多遠就算 HVG」，看你能不能挑得乾淨：</p>
+  <p data-lang="en">500 simulated genes' mean-variance plot. Blue = ordinary, red = true HVG.
+    Drag the threshold slider — how cleanly can you separate?</p>
+  <div class="controls">
+    <label><span data-lang="zh">門檻 (z-score)</span><span data-lang="en">Threshold (z-score)</span>:
+      <input type="range" id="s2thr" min="0" max="3" value="1.5" step="0.1"><span id="s2thrVal">1.50</span>
+    </label>
+    <label><span data-lang="zh">參考線</span><span data-lang="en">Reference line</span>:
+      <select id="s2ref">
+        <option value="poisson" data-lang="zh">Poisson (y=x)</option>
+        <option value="poisson" data-lang="en">Poisson (y=x)</option>
+        <option value="loess" data-lang="zh">LOESS 局部曲線</option>
+        <option value="loess" data-lang="en">LOESS local curve</option>
+      </select>
+    </label>
+  </div>
+  <svg class="canvas" id="s2svg" viewBox="0 0 800 480" width="100%"></svg>
+  <div class="stat-row">
+    <div class="item"><span class="lbl" data-lang="zh">選中 HVG 數</span><span class="lbl" data-lang="en">Selected HVGs</span><span class="val" id="s2sel">—</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">真陽性</span><span class="lbl" data-lang="en">True positives</span><span class="val" id="s2tp" style="color:#27795a">—</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">假陽性</span><span class="lbl" data-lang="en">False positives</span><span class="val" id="s2fp" style="color:#c0392b">—</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">遺漏 (假陰性)</span><span class="lbl" data-lang="en">False negatives</span><span class="val" id="s2fn" style="color:#f0c419">—</span></div>
+  </div>
+</div>
+
+<h2 id="s3"><span class="num">§3</span> <span data-lang="zh">Dispersion 的定義</span><span data-lang="en">Defining dispersion</span></h2>
+
+<p data-lang="zh">最簡單的 HVG 量化指標叫 <b>dispersion</b>：</p>
+<p data-lang="en">The simplest HVG metric is <b>dispersion</b>:</p>
+
+<div class="math-block boxed">
+  $$\text{dispersion}_j = \frac{\text{Var}(x_j)}{\text{Mean}(x_j)}$$
+  <div class="formula-caption" data-lang="zh">用 mean 去 normalize variance，消除「高 mean 自然 variance 大」的影響</div>
+  <div class="formula-caption" data-lang="en">normalize variance by mean to remove "high mean → high variance" effect</div>
+</div>
+
+<p data-lang="zh">在 Poisson 下，所有基因的 dispersion 應該 ≈ 1。HVG 就是「dispersion 顯著大於 1」的。</p>
+<p data-lang="en">Under Poisson, all genes have dispersion ≈ 1. HVGs are those with dispersion significantly &gt; 1.</p>
+
+<h3 data-lang="zh">3.1 Dispersion 的不足</h3>
+<h3 data-lang="en">3.1 Why dispersion isn't enough</h3>
+<p data-lang="zh">問題是 scRNA-seq 不是純 Poisson 而是 NB——高 mean 基因的 dispersion <b>本來就會 &gt; 1</b>（overdispersion）。
+所以「dispersion &gt; 1」會被高表現基因壟斷，挑出來的 HVG 通通是高表現的。我們需要更聰明的方法。</p>
+<p data-lang="en">But scRNA-seq is NB, not Poisson — high-mean genes naturally have dispersion &gt; 1 (overdispersion).
+"dispersion &gt; 1" gets hijacked by high-mean genes. We need something smarter.</p>
+
+<h2 id="s4"><span class="num">§4</span> <span data-lang="zh">LOESS：把曲線當基準</span><span data-lang="en">LOESS: use the curve as baseline</span></h2>
+
+<p data-lang="zh">
+  LOESS（Locally Estimated Scatterplot Smoothing）是一種<b>局部加權回歸</b>。
+  在 mean-variance 圖上，它對每個 $\mu$ 周圍的點做局部加權平均，畫出一條<b>平滑曲線</b>當「預期 variance」。
+  HVG 就是「實測 variance &gt; LOESS 曲線 + k·σ」的基因。
+</p>
+<p data-lang="en">
+  LOESS (Locally Estimated Scatterplot Smoothing) is a <b>local weighted regression</b>.
+  For each $\mu$ on the mean-variance plot, it fits a local weighted average → a <b>smooth curve</b> = "expected variance".
+  HVG = "observed variance &gt; LOESS curve + k·σ".
+</p>
+
+<h3 data-lang="zh">4.1 LOESS 的核心構造</h3>
+<h3 data-lang="en">4.1 LOESS in detail</h3>
+
+<p data-lang="zh">對每個目標點 $x_0$，做下面三步：</p>
+<p data-lang="en">For each target $x_0$, do three steps:</p>
+
+<ol>
+  <li><span data-lang="zh">挑「鄰居」：</span><span data-lang="en">Pick "neighbors": </span>所有 $|x_i - x_0| \le h$ 的點</li>
+  <li><span data-lang="zh">給權重：</span><span data-lang="en">Weight: </span>$w_i = (1 - (|x_i - x_0|/h)^3)^3$ (tricube kernel)</li>
+  <li><span data-lang="zh">加權回歸：</span><span data-lang="en">Weighted regression: </span>對 $\{(x_i, y_i, w_i)\}$ 做 weighted linear / quadratic regression，取 $x_0$ 處的預測值</li>
+</ol>
+
+<div class="callout idea">
+  <strong data-lang="zh">為什麼用 LOESS 而非全域回歸?</strong>
+  <strong data-lang="en">Why LOESS, not global regression?</strong>
+  <span data-lang="zh">mean-variance 關係<b>不是直線</b>——它在低 mean 跟高 mean 處的斜率不一樣。全域回歸會「平均掉」這個差異；LOESS 對每個 $\mu$ 估計局部斜率，更貼近真實趨勢。</span>
+  <span data-lang="en">The mean-variance relationship <b>isn't linear</b> — slope differs at low vs high mean. Global regression "averages out" the difference; LOESS fits local slopes, tracking the true trend.</span>
+</div>
+
+<h3 data-lang="zh">4.2 互動：bandwidth h 的影響</h3>
+<h3 data-lang="en">4.2 Interactive: effect of bandwidth h</h3>
+
+<div class="card">
+  <p data-lang="zh">拉滑桿改變 bandwidth $h$（鄰居範圍）：太小 → 曲線抖動、太大 → 變直線。</p>
+  <p data-lang="en">Drag bandwidth $h$: too small → wobbly, too large → straight line.</p>
+  <div class="controls">
+    <label>$h$ (bandwidth):
+      <input type="range" id="s4h" min="0.05" max="1" value="0.3" step="0.05"><span id="s4hVal">0.30</span>
+    </label>
+  </div>
+  <svg class="canvas" id="s4svg" viewBox="0 0 800 400" width="100%"></svg>
+  <p data-lang="zh">實務上 Scanpy 預設 $h \approx 0.3$（在 log mean-variance 空間）。</p>
+  <p data-lang="en">In practice, Scanpy defaults to $h \approx 0.3$ on log mean-variance.</p>
+</div>
+
+<h2 id="s5"><span class="num">§5</span> <span data-lang="zh">Seurat vst vs Scanpy</span><span data-lang="en">Seurat vst vs Scanpy</span></h2>
+
+<table class="compare">
+  <tr><th></th><th>Seurat <code>vst</code></th><th>Seurat <code>vst</code></th>
+      <th>Scanpy <code>seurat</code> / <code>cell_ranger</code></th><th>Scanpy <code>seurat</code> / <code>cell_ranger</code></th></tr>
+  <tr><td data-lang="zh">空間</td><td data-lang="en">Space</td>
+      <td data-lang="zh">log(count)</td><td data-lang="en">log(count)</td>
+      <td data-lang="zh">log(normalized)</td><td data-lang="en">log(normalized)</td></tr>
+  <tr><td data-lang="zh">擬合曲線</td><td data-lang="en">Fit</td>
+      <td>LOESS on log(var) vs log(mean)</td><td>LOESS on log(var) vs log(mean)</td>
+      <td>bins by mean → normalized dispersion</td><td>bins by mean → normalized dispersion</td></tr>
+  <tr><td data-lang="zh">挑選</td><td data-lang="en">Select</td>
+      <td data-lang="zh">標準化的 variance 取前 N</td><td data-lang="en">standardized variance, top N</td>
+      <td data-lang="zh">normalized dispersion 取前 N</td><td data-lang="en">normalized dispersion, top N</td></tr>
+  <tr><td data-lang="zh">優點</td><td data-lang="en">Pros</td>
+      <td data-lang="zh">較新、被廣泛採用</td><td data-lang="en">newer, widely used</td>
+      <td data-lang="zh">快、簡單</td><td data-lang="en">fast, simple</td></tr>
+</table>
+
+<h3 data-lang="zh">5.1 Seurat vst 的詳細步驟</h3>
+<h3 data-lang="en">5.1 Seurat vst step-by-step</h3>
+
+<ol>
+  <li><span data-lang="zh">對每個 gene 算 mean 跟 variance</span><span data-lang="en">Compute mean and variance per gene</span></li>
+  <li><span data-lang="zh">在 log 空間做 LOESS：</span><span data-lang="en">LOESS in log space: </span>$\widehat{\log \sigma^2}(g) = \text{LOESS}(\log \bar{x}_g)$</li>
+  <li><span data-lang="zh">每個基因的 expected variance：</span><span data-lang="en">Expected variance per gene: </span>$\hat{\sigma}_g^2 = \exp(\widehat{\log \sigma^2}(g))$</li>
+  <li><span data-lang="zh">z-score 標準化每個 cell 的表現：</span><span data-lang="en">Z-score standardize per cell: </span>$z_{ij} = \min\!\left(\sqrt{n}, \frac{x_{ij} - \bar{x}_j}{\hat{\sigma}_j}\right)$（用 $\sqrt{n}$ clip 防止離群值主導）</li>
+  <li><span data-lang="zh">每個基因取 z 的 variance 當 「standardized variance」，取前 N。</span><span data-lang="en">Variance of z per gene = "standardized variance"; pick top N.</span></li>
+</ol>
+
+<h2 id="s6"><span class="num">§6</span> <span data-lang="zh">為什麼 n_top_genes = 2000</span><span data-lang="en">Why n_top_genes = 2000</span></h2>
+
+<p data-lang="zh">
+  Seurat / Scanpy 預設都選 2000 個 HVG。為什麼這個數字？這是「<b>計算效率 vs 資訊保留</b>」的折衷。
+</p>
+<p data-lang="en">
+  Seurat / Scanpy default to 2000 HVGs. Why this number? A <b>compute vs information</b> trade-off.
+</p>
+
+<table class="compare">
+  <tr><th>n_top_genes</th><th>n_top_genes</th>
+      <th data-lang="zh">後果</th><th data-lang="en">Consequence</th></tr>
+  <tr><td>500</td><td>500</td>
+      <td data-lang="zh">缺漏訊號、難分罕見細胞型態</td><td data-lang="en">miss signals, can't resolve rare types</td></tr>
+  <tr style="background:#effaf3;"><td><b>2000</b></td><td><b>2000</b></td>
+      <td data-lang="zh">大多數 benchmark 的 sweet spot</td><td data-lang="en">sweet spot in most benchmarks</td></tr>
+  <tr><td>5000</td><td>5000</td>
+      <td data-lang="zh">變慢、可能引入雜訊基因</td><td data-lang="en">slower, may include noisy genes</td></tr>
+  <tr><td>20000</td><td>20000</td>
+      <td data-lang="zh">PCA 慢 4-5 倍，且結果常被 housekeeping 主導</td><td data-lang="en">PCA 4-5× slower, results often dominated by housekeeping</td></tr>
+</table>
+
+<div class="callout warn">
+  <strong data-lang="zh">不是固定的數字</strong><strong data-lang="en">Not a fixed number</strong>:
+  <span data-lang="zh">遇到罕見細胞型態（&lt;1%）或細微差異要分群，可能要選 3000-5000。
+  異質性極高的組織（如腦）甚至 10000。</span>
+  <span data-lang="en">For rare types (&lt; 1%) or subtle clusters, use 3000–5000.
+  Highly heterogeneous tissues (e.g., brain) may need 10000.</span>
+</div>
+
+<h2 id="s7"><span class="num">§7</span> <span data-lang="zh">HVG → PCA → clustering 的因果鏈</span><span data-lang="en">HVG → PCA → clustering causal chain</span></h2>
+
+<p data-lang="zh">為什麼挑 HVG 直接決定後續分群結果？</p>
+<p data-lang="en">Why does HVG selection directly determine clustering?</p>
+
+<ol>
+  <li><span data-lang="zh"><b>HVG 餵 PCA</b>：只用 2000 個 HVG，所以 PCA 找的「最大變異方向」就是「HVG 中變異最大」的線性組合。</span>
+      <span data-lang="en"><b>HVG feeds PCA</b>: only 2000 HVGs in, so PCA's "max variance direction" is a linear combo of those 2000.</span></li>
+  <li><span data-lang="zh"><b>PCA 餵 KNN graph</b>：用 PC1-50 算細胞間 cosine 距離。距離 &lt; 1/k 的成為鄰居。</span>
+      <span data-lang="en"><b>PCA feeds KNN</b>: PC1-50 → cosine distance → top-k neighbors per cell.</span></li>
+  <li><span data-lang="zh"><b>KNN 餵 Leiden/Louvain</b>：在這張圖上做模組度最大化，得到 clusters。</span>
+      <span data-lang="en"><b>KNN feeds Leiden/Louvain</b>: maximize modularity on the graph → clusters.</span></li>
+</ol>
+
+<div class="callout bio">
+  <strong data-lang="zh">後果</strong><strong data-lang="en">Implication</strong>:
+  <span data-lang="zh">如果你的 HVG 漏掉一個重要 marker（例如 CD3D），下游 PCA → KNN → clustering 都會看不到那個方向，T 細胞 vs B 細胞可能分不開。</span>
+  <span data-lang="en">If your HVG misses a key marker (e.g., CD3D), downstream PCA → KNN → clustering all lose that direction. T vs B may not separate.</span>
+</div>
+
+<h2 id="s8"><span class="num">§8</span> <span data-lang="zh">把整套故事串起來 + 限制</span><span data-lang="en">Wrap-up + limits</span></h2>
+
+<pre class="code"><span class="k">import</span> scanpy <span class="k">as</span> sc
+
+<span class="c"># after normalize + log1p</span>
+sc.pp.highly_variable_genes(
+    adata,
+    n_top_genes=<span class="n">2000</span>,
+    flavor=<span class="s">"seurat_v3"</span>,  <span class="c"># or "seurat", "cell_ranger"</span>
+    batch_key=<span class="s">"sample"</span>,    <span class="c"># account for batch effects</span>
+)
+
+<span class="c"># Visualize</span>
+sc.pl.highly_variable_genes(adata)
+
+<span class="c"># keep only HVG for downstream</span>
+adata = adata[:, adata.var[<span class="s">"highly_variable"</span>]].copy()
+
+<span class="c"># continue: scale → PCA</span>
+sc.pp.scale(adata, max_value=<span class="n">10</span>)
+sc.tl.pca(adata)</pre>
+
+<h3 data-lang="zh">8.2 限制</h3>
+<h3 data-lang="en">8.2 Limitations</h3>
+<table class="compare">
+  <tr><th data-lang="zh">限制</th><th data-lang="en">Limitation</th>
+      <th data-lang="zh">後果</th><th data-lang="en">Consequence</th>
+      <th data-lang="zh">緩解</th><th data-lang="en">Mitigation</th></tr>
+  <tr>
+    <td data-lang="zh">罕見細胞 marker 被遺漏</td>
+    <td data-lang="en">Rare cell markers can be missed</td>
+    <td data-lang="zh">少數細胞型態分不出來</td>
+    <td data-lang="en">rare types lost</td>
+    <td data-lang="zh">加大 n_top_genes、用 batch_key</td>
+    <td data-lang="en">increase n_top_genes, use batch_key</td>
+  </tr>
+  <tr>
+    <td data-lang="zh">技術雜訊 (mt, ribosomal) 也是 HV</td>
+    <td data-lang="en">technical noise (mt, ribosomal) also HV</td>
+    <td data-lang="zh">PC1 可能被技術變異主導</td>
+    <td data-lang="en">PC1 may be dominated by tech noise</td>
+    <td data-lang="zh">先 regress out 或排除 mt/rps gene</td>
+    <td data-lang="en">regress out first, or exclude mt/rps</td>
+  </tr>
+  <tr>
+    <td data-lang="zh">batch 之間 HVG 不同</td>
+    <td data-lang="en">HVGs differ across batches</td>
+    <td data-lang="zh">合併資料時 PCA 跑 batch axis</td>
+    <td data-lang="en">PCA captures batch axis</td>
+    <td data-lang="zh">用 batch_key 取「每個 batch 都是 HV」的基因</td>
+    <td data-lang="en">batch_key, take intersection across batches</td>
+  </tr>
+</table>
+
+<div class="callout prog">
+  <strong data-lang="zh">下一步</strong><strong data-lang="en">Next</strong>:
+  <span data-lang="zh">HVG 挑完 → <a href="2.4-scaling.html"><b>2.4 Scaling</b></a> 把每個 gene z-score → <a href="../M3-dimreduction/3.1-pca.html"><b>M3.1 PCA</b></a>。</span>
+  <span data-lang="en">After HVG → <a href="2.4-scaling.html"><b>2.4 Scaling</b></a> z-score per gene → <a href="../M3-dimreduction/3.1-pca.html"><b>M3.1 PCA</b></a>.</span>
+</div>
+
+<p class="footer">
+  <span data-lang="zh">© scRNA-seq Advanced Math · M2.3 HVG Deep Interactive</span>
+  <span data-lang="en">© scRNA-seq Advanced Math · M2.3 HVG Deep Interactive</span>
+</p>
+
+</div>
+
 <script src="../i18n.js"></script>
 <script>
-function switchTab(b,id){const p=b.closest(".code-tabs");p.querySelectorAll(".code-tab-btn").forEach(x=>x.classList.remove("active"));p.querySelectorAll(".code-tab-content").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(id).classList.add("active");}
-
-// HVG scatter sim
-const genes = [];
-let rng = 1;
-function r() { rng = (rng * 9301 + 49297) % 233280; return rng/233280; }
-for (let i = 0; i < 200; i++) {
-  const logMean = -1 + r() * 4;
-  const trend = -0.5 + 0.95 * logMean;
-  const deviation = (r() - 0.4) * 0.8;
-  const logVar = trend + deviation + (r()-0.5)*0.15;
-  genes.push({logMean, logVar, dev: deviation});
-}
-function drawHVG() {
-  const N = +document.getElementById('hvgR').value;
-  document.getElementById('hvgV').textContent = N;
-  const sorted = [...genes].sort((a,b)=>b.dev - a.dev);
-  const hvgSet = new Set(sorted.slice(0, N));
-  const W=600, H=350, padL=50, padB=40, padT=20, padR=20;
-  const xs = genes.map(g=>g.logMean), ys = genes.map(g=>g.logVar);
-  const xmin = Math.min(...xs), xmax = Math.max(...xs);
-  const ymin = Math.min(...ys), ymax = Math.max(...ys);
-  function sx(v){ return padL + (v-xmin)/(xmax-xmin)*(W-padL-padR); }
-  function sy(v){ return H-padB - (v-ymin)/(ymax-ymin)*(H-padT-padB); }
-  let h = '';
-  h += `<line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="#999"/>`;
-  h += `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${H-padB}" stroke="#999"/>`;
-  // trend line
-  const trendPts = [];
-  for (let lm = xmin; lm <= xmax; lm += 0.1) trendPts.push([lm, -0.5 + 0.95*lm]);
-  const path = trendPts.map((p,i)=>(i?'L':'M')+sx(p[0])+','+sy(p[1])).join(' ');
-  h += `<path d="${path}" stroke="#dc2626" stroke-width="2" stroke-dasharray="4 3" fill="none"/>`;
-  h += `<text x="${W-80}" y="${padT+30}" font-size="11" fill="#dc2626">trend</text>`;
-  // points
-  for (const g of genes) {
-    const isHVG = hvgSet.has(g);
-    h += `<circle cx="${sx(g.logMean)}" cy="${sy(g.logVar)}" r="${isHVG?5:3}" fill="${isHVG?'#f59e0b':'#4f7df4'}" opacity="0.85" stroke="#fff"/>`;
+// ===== §2 interactive HVG plot =====
+(function(){
+  let seed = 5;
+  const rnd = ()=>{seed=(seed*9301+49297)%233280;return seed/233280;};
+  function nrnd(m,s){const u1=rnd(),u2=rnd();return m+s*Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);}
+  const genes = [];
+  // 480 ordinary genes following NB mean-variance trend
+  for (let i = 0; i < 460; i++){
+    const lm = nrnd(-1.5, 1.5);
+    const mean = Math.exp(lm);
+    const expVar = mean + mean*mean/3;
+    const noise = Math.exp(nrnd(0, 0.4));
+    genes.push({mean, variance: expVar * noise, hvg: false});
   }
-  // labels
-  h += `<text x="${W/2}" y="${H-8}" text-anchor="middle" font-size="12" fill="#444">log(mean)</text>`;
-  h += `<text x="14" y="${H/2}" font-size="12" fill="#444" transform="rotate(-90 14 ${H/2})" text-anchor="middle">log(var)</text>`;
-  h += `<text x="${W-150}" y="${padT+10}" font-size="11" fill="#f59e0b">● HVG (above trend)</text>`;
-  h += `<text x="${W-150}" y="${padT+24}" font-size="11" fill="#4f7df4">● ordinary</text>`;
-  document.getElementById('hvgSvg').innerHTML = h;
-}
-document.getElementById('hvgR').addEventListener('input', drawHVG);
-drawHVG();
+  // 40 true HVGs: variance much higher than trend
+  for (let i = 0; i < 40; i++){
+    const lm = nrnd(-0.5, 1.0);
+    const mean = Math.exp(lm);
+    const expVar = mean + mean*mean/3;
+    genes.push({mean, variance: expVar * Math.exp(nrnd(1.8, 0.3)), hvg: true});
+  }
+  function draw(){
+    const thr = +document.getElementById('s2thr').value;
+    const ref = document.getElementById('s2ref').value;
+    document.getElementById('s2thrVal').textContent = thr.toFixed(2);
+    const W = 800, H = 480;
+    const xMin = Math.log10(Math.min(...genes.map(g=>g.mean))) - 0.3;
+    const xMax = Math.log10(Math.max(...genes.map(g=>g.mean))) + 0.3;
+    const yMin = Math.log10(Math.min(...genes.map(g=>g.variance))) - 0.3;
+    const yMax = Math.log10(Math.max(...genes.map(g=>g.variance))) + 0.3;
+    const X = m => 70 + (Math.log10(m) - xMin)/(xMax-xMin) * 700;
+    const Y = v => 440 - (Math.log10(v) - yMin)/(yMax-yMin) * 400;
+    let s = '';
+    // axes & grid
+    s += `<rect x="70" y="30" width="700" height="410" fill="#fff"/>`;
+    s += `<line class="axis" x1="70" y1="440" x2="770" y2="440"/>`;
+    s += `<line class="axis" x1="70" y1="30" x2="70" y2="440"/>`;
+    for (let i = Math.ceil(xMin); i <= Math.floor(xMax); i++){
+      s += `<line class="grid" x1="${X(Math.pow(10,i))}" y1="30" x2="${X(Math.pow(10,i))}" y2="440"/>`;
+      s += `<text class="lbl" x="${X(Math.pow(10,i))}" y="455" text-anchor="middle">10^${i}</text>`;
+    }
+    for (let i = Math.ceil(yMin); i <= Math.floor(yMax); i++){
+      s += `<line class="grid" x1="70" y1="${Y(Math.pow(10,i))}" x2="770" y2="${Y(Math.pow(10,i))}"/>`;
+      s += `<text class="lbl" x="65" y="${Y(Math.pow(10,i))+4}" text-anchor="end">10^${i}</text>`;
+    }
+    s += `<text class="lbl" x="420" y="475" text-anchor="middle" font-weight="700">log10(mean)</text>`;
+    s += `<text class="lbl" x="20" y="235" text-anchor="middle" font-weight="700" transform="rotate(-90 20 235)">log10(variance)</text>`;
+    // reference line
+    if (ref === 'poisson') {
+      let p = '';
+      for (let lm = xMin; lm <= xMax; lm += 0.1){
+        const m = Math.pow(10, lm);
+        p += `${lm===xMin?'M':'L'} ${X(m)},${Y(m)} `;
+      }
+      s += `<path d="${p}" fill="none" stroke="#c0392b" stroke-width="2" stroke-dasharray="6,3"/>`;
+      s += `<text class="lbl" x="${X(Math.pow(10, xMax-0.5))}" y="${Y(Math.pow(10, xMax-0.5))-8}" fill="#c0392b">Poisson y=x</text>`;
+    } else {
+      // simple LOESS: window average in log space
+      let p = '';
+      const h = 0.5;
+      const pts = genes.filter(g=>!g.hvg).map(g=>({lx: Math.log10(g.mean), ly: Math.log10(g.variance)}));
+      for (let lm = xMin; lm <= xMax; lm += 0.1){
+        const weights = pts.map(pt => {
+          const d = Math.abs(pt.lx - lm) / h;
+          return d < 1 ? Math.pow(1 - d*d*d, 3) : 0;
+        });
+        const W_ = weights.reduce((a,b)=>a+b,0);
+        if (W_ < 0.01) continue;
+        const wy = pts.map((pt,i)=>weights[i]*pt.ly).reduce((a,b)=>a+b,0) / W_;
+        p += `${p===''?'M':'L'} ${X(Math.pow(10,lm))},${Y(Math.pow(10,wy))} `;
+      }
+      s += `<path d="${p}" fill="none" stroke="#27795a" stroke-width="2.5"/>`;
+      s += `<text class="lbl" x="${X(Math.pow(10, xMin+0.5))-5}" y="${Y(Math.pow(10, xMin+0.5))-10}" fill="#27795a">LOESS</text>`;
+    }
+    // classify
+    let sel=0, tp=0, fp=0, fn=0;
+    genes.forEach(g => {
+      // z-score relative to trend (rough)
+      const expVar = g.mean + g.mean*g.mean/3;
+      const z = (Math.log10(g.variance) - Math.log10(expVar)) / 0.5;
+      g.picked = z > thr;
+      if (g.picked) sel++;
+      if (g.picked && g.hvg) tp++;
+      if (g.picked && !g.hvg) fp++;
+      if (!g.picked && g.hvg) fn++;
+    });
+    document.getElementById('s2sel').textContent = sel;
+    document.getElementById('s2tp').textContent = tp;
+    document.getElementById('s2fp').textContent = fp;
+    document.getElementById('s2fn').textContent = fn;
+    // points
+    genes.forEach(g => {
+      const fill = g.hvg ? '#c0392b' : '#2c5aa0';
+      const stroke = g.picked ? '#f0c419' : 'none';
+      const sw = g.picked ? 2.5 : 0;
+      s += `<circle cx="${X(g.mean)}" cy="${Y(g.variance)}" r="3.5" fill="${fill}" opacity="0.6" stroke="${stroke}" stroke-width="${sw}"/>`;
+    });
+    // legend
+    s += `<g transform="translate(580, 50)">`;
+    s += `<rect x="0" y="0" width="180" height="78" fill="#fff" stroke="#ddd"/>`;
+    s += `<circle cx="14" cy="14" r="5" fill="#2c5aa0"/><text class="lbl" x="26" y="18">ordinary gene</text>`;
+    s += `<circle cx="14" cy="34" r="5" fill="#c0392b"/><text class="lbl" x="26" y="38">true HVG</text>`;
+    s += `<circle cx="14" cy="56" r="5" fill="#fff" stroke="#f0c419" stroke-width="3"/><text class="lbl" x="26" y="60">selected (your pick)</text>`;
+    s += `</g>`;
+    document.getElementById('s2svg').innerHTML = s;
+  }
+  document.getElementById('s2thr').addEventListener('input', draw);
+  document.getElementById('s2ref').addEventListener('change', draw);
+  draw();
+})();
+
+// ===== §4 LOESS bandwidth =====
+(function(){
+  let seed = 88;
+  const rnd = ()=>{seed=(seed*9301+49297)%233280;return seed/233280;};
+  function nrnd(m,s){const u1=rnd(),u2=rnd();return m+s*Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);}
+  const pts = [];
+  for (let i = 0; i < 150; i++){
+    const x = rnd()*4;
+    const y = Math.sin(x*1.5) + 0.4*x + nrnd(0, 0.4);
+    pts.push({x, y});
+  }
+  function draw(){
+    const h = +document.getElementById('s4h').value;
+    document.getElementById('s4hVal').textContent = h.toFixed(2);
+    const xMin = 0, xMax = 4, yMin = -2, yMax = 3.5;
+    const W = 800, H = 400;
+    const X = x => 60 + (x-xMin)/(xMax-xMin) * 700;
+    const Y = y => 360 - (y-yMin)/(yMax-yMin) * 320;
+    let s = '';
+    s += `<line class="axis" x1="60" y1="360" x2="760" y2="360"/>`;
+    s += `<line class="axis" x1="60" y1="40" x2="60" y2="360"/>`;
+    for (let i = xMin; i <= xMax; i++){
+      s += `<text class="lbl" x="${X(i)}" y="380" text-anchor="middle">${i}</text>`;
+    }
+    for (let i = Math.ceil(yMin); i <= Math.floor(yMax); i++){
+      s += `<line class="grid" x1="60" y1="${Y(i)}" x2="760" y2="${Y(i)}"/>`;
+      s += `<text class="lbl" x="55" y="${Y(i)+4}" text-anchor="end">${i}</text>`;
+    }
+    s += `<text class="lbl" x="400" y="395" text-anchor="middle" font-weight="700">x</text>`;
+    s += `<text class="lbl" x="20" y="200" text-anchor="middle" font-weight="700" transform="rotate(-90 20 200)">y</text>`;
+    // LOESS curve
+    let p = '';
+    for (let x = xMin; x <= xMax; x += 0.05){
+      let wsum = 0, wysum = 0;
+      pts.forEach(pt => {
+        const d = Math.abs(pt.x - x) / h;
+        if (d < 1) {
+          const w = Math.pow(1 - d*d*d, 3);
+          wsum += w; wysum += w * pt.y;
+        }
+      });
+      if (wsum > 0.01) {
+        const yfit = wysum / wsum;
+        p += `${p===''?'M':'L'} ${X(x)},${Y(yfit)} `;
+      }
+    }
+    s += `<path d="${p}" fill="none" stroke="#d97706" stroke-width="2.5"/>`;
+    // points
+    pts.forEach(pt => {
+      s += `<circle cx="${X(pt.x)}" cy="${Y(pt.y)}" r="3" fill="#2c5aa0" opacity="0.5"/>`;
+    });
+    s += `<text class="lbl" x="640" y="60" fill="#d97706" font-weight="700">LOESS (h=${h.toFixed(2)})</text>`;
+    document.getElementById('s4svg').innerHTML = s;
+  }
+  document.getElementById('s4h').addEventListener('input', draw);
+  draw();
+})();
 </script>
-</body></html>
+</body>
+</html>

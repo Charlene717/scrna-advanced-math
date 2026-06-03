@@ -3,375 +3,914 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>1.2 計數分布：Poisson · NB · ZINB — scRNA-seq Advanced Math</title>
-<link rel="stylesheet" href="../styles.css">
-<script>MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] } };</script>
+<title>1.2 計數分布：Poisson / NB / ZINB — Deep Interactive</title>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
+<style>
+  :root {
+    --bg: #fafaf7; --fg: #1a1a1a; --muted: #666;
+    --accent: #c0392b; --accent2: #2c5aa0;
+    --green: #27795a; --purple: #8e44ad; --yellow: #f0c419;
+    --blue1: #1e3a8a;
+    --indigo: #4338ca;
+    --card: #ffffff; --border: #e0e0d8; --code: #f4f1ea;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Helvetica Neue", "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif; background: var(--bg); color: var(--fg); line-height: 1.75; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 40px 28px 120px; }
+  header.cover { margin: 20px 0 60px; padding: 52px 40px;
+    background: linear-gradient(135deg, #1e1b4b 0%, #4338ca 55%, #818cf8 100%);
+    color: #fff; border-radius: 16px; box-shadow: 0 14px 40px rgba(30,27,75,0.18); }
+  header.cover h1 { margin: 0 0 14px; font-size: 36px; }
+  header.cover .sub { font-size: 17px; opacity: 0.92; line-height: 1.65; }
+  header.cover .badge { display: inline-block; background: rgba(255,255,255,0.18);
+    padding: 4px 12px; border-radius: 20px; font-size: 13px; margin-bottom: 16px; }
+  h2 { margin-top: 70px; padding-bottom: 8px; border-bottom: 3px solid var(--indigo);
+    font-size: 26px; display: flex; align-items: baseline; gap: 12px; }
+  h2 .num { color: var(--indigo); font-weight: 800; font-size: 20px; }
+  h3 { margin-top: 36px; font-size: 19px; color: var(--accent2); }
+  h4 { margin-top: 22px; font-size: 16px; color: var(--accent); }
+  p { margin: 14px 0; }
+  .lead { font-size: 17px; color: #2a2a2a; }
+  .callout { background: #fff8e6; border-left: 4px solid var(--yellow); padding: 14px 18px; border-radius: 6px; margin: 22px 0; }
+  .callout.idea { background: #eaf4ff; border-left-color: var(--accent2); }
+  .callout.warn { background: #fdecec; border-left-color: var(--accent); }
+  .callout.bio  { background: #effaf3; border-left-color: var(--green); }
+  .callout.prog { background: #e0e7ff; border-left-color: var(--indigo); }
+  .card { background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px 26px; margin: 26px 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+  .card h3 { margin-top: 0; }
+  .controls { display: flex; flex-wrap: wrap; gap: 14px 22px;
+    align-items: center; margin: 14px 0; padding: 12px 16px;
+    background: #f4f1ea; border-radius: 8px; font-size: 14px; }
+  .controls label { display: flex; align-items: center; gap: 8px; }
+  button { background: var(--indigo); color: #fff; border: 0;
+    padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 14px;
+    font-family: inherit; }
+  button:hover { background: #312e81; }
+  button.ghost { background: #fff; color: var(--indigo); border: 1px solid var(--indigo); }
+  input[type="range"] { width: 180px; vertical-align: middle; }
+  svg.canvas { background: #fcfcfa; border: 1px solid var(--border); border-radius: 8px; display: block; }
+  svg.canvas .axis { stroke: #bbb; stroke-width: 1; }
+  svg.canvas .grid { stroke: #ececea; stroke-width: 0.5; }
+  svg.canvas text.lbl { font-size: 12px; fill: #333; }
+  .stat-row { display: flex; flex-wrap: wrap; gap: 22px; margin: 14px 0; font-size: 14px; }
+  .stat-row .item { display: flex; flex-direction: column; }
+  .stat-row .item .lbl { color: var(--muted); font-size: 12px; }
+  .stat-row .item .val { font-family: "JetBrains Mono", monospace; font-size: 18px; }
+  details { margin: 16px 0; }
+  details summary { cursor: pointer; font-weight: 600; color: var(--accent2); padding: 6px 0; }
+  .toc { background: #fff; border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 28px; margin: 30px 0; }
+  .toc h4 { margin: 0 0 10px; color: var(--indigo); }
+  .toc ol { margin: 6px 0; padding-left: 24px; line-height: 1.9; }
+  .toc a { color: var(--accent2); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .toc .new { background: var(--indigo); color: #fff; font-size: 11px;
+    padding: 1px 8px; border-radius: 10px; margin-left: 6px; }
+  code.inline { background: var(--code); padding: 2px 6px; border-radius: 4px;
+    font-size: 13px; font-family: "JetBrains Mono", "Consolas", monospace; }
+  pre.code { background: #1e1e1e; color: #dcdcdc;
+    padding: 14px 18px; border-radius: 8px; overflow-x: auto; font-size: 13px;
+    font-family: "JetBrains Mono", "Consolas", monospace; line-height: 1.55; }
+  pre.code .k { color: #569cd6; }
+  pre.code .s { color: #ce9178; }
+  pre.code .c { color: #6a9955; }
+  pre.code .n { color: #b5cea8; }
+  table.compare { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.compare th, table.compare td { border: 1px solid var(--border); padding: 8px 12px; }
+  table.compare th { background: #f4f1ea; text-align: left; }
+  .math-block { background: #fff; border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 18px; margin: 18px 0; }
+  .math-block.boxed { border: 2px solid var(--indigo); background: #e0e7ff; }
+  .formula-caption { font-size: 12.5px; color: var(--muted); text-align: center; margin-top: 6px; }
+  .footer { text-align: center; color: var(--muted); margin-top: 80px; font-size: 13px; }
+  .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 14px 0; }
+  @media (max-width: 600px) { .quiz-options { grid-template-columns: 1fr; } }
+  .quiz-options button.opt { background: #fff; color: #222; border: 2px solid var(--border);
+    text-align: left; padding: 14px 16px; font-size: 14px; line-height: 1.5; }
+  .quiz-options button.opt:hover { border-color: var(--indigo); background: #e0e7ff; }
+  .quiz-options button.opt.correct { border-color: var(--green); background: #effaf3; }
+  .quiz-options button.opt.wrong { border-color: var(--accent); background: #fdecec; opacity: 0.6; }
+  .quiz-feedback { margin-top: 12px; padding: 12px 14px; border-radius: 6px;
+    background: #fff8e6; border-left: 4px solid var(--yellow); font-size: 14px; }
+  .top-nav { background: #1e1b4b; color: #fff; padding: 14px 28px;
+    position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(30,27,75,0.25); }
+  .top-nav-inner { max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; gap: 28px; }
+  .top-nav-brand { color: #fff; text-decoration: none;
+    font-weight: 700; font-size: 17px;
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .top-nav-brand .badge-math { background: #818cf8; color: #fff;
+    padding: 3px 9px; border-radius: 4px; font-size: 11px; }
+  .top-nav-links { list-style: none; margin: 0; padding: 0;
+    display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+  .top-nav-links a { color: #c7d2fe; text-decoration: none;
+    padding: 6px 11px; border-radius: 6px; font-size: 13px; font-weight: 500;
+    transition: 0.2s; }
+  .top-nav-links a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .top-nav-links a.active { background: #4338ca; color: #fff; }
+  .top-nav-links li.dropdown { position: relative; }
+  .top-nav-links li.dropdown > a::after { content: ' ▾';
+    font-size: 10px; opacity: 0.7; margin-left: 3px;
+    display: inline-block; transition: transform 0.2s; }
+  .top-nav-links li.dropdown:hover > a::after,
+  .top-nav-links li.dropdown.open > a::after { transform: rotate(180deg); }
+  .top-nav-links .dropdown-menu { display: none; position: absolute; top: 100%; left: 0;
+    background: #2d2a5f; border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px; padding: 6px 0; min-width: 230px;
+    list-style: none; z-index: 200;
+    box-shadow: 0 8px 28px rgba(30,27,75,0.5); margin: 6px 0 0; }
+  .top-nav-links li.dropdown:hover > .dropdown-menu,
+  .top-nav-links li.dropdown.open > .dropdown-menu { display: block; }
+  .top-nav-links .dropdown-menu li { display: block; }
+  .top-nav-links .dropdown-menu li a { display: block; padding: 9px 18px;
+    border-radius: 0; font-size: 13px; white-space: nowrap; color: #c7d2fe; }
+  .top-nav-links .dropdown-menu li a:hover { background: rgba(67,56,202,0.3); color: #fff; }
+  .top-nav-links .dropdown-menu li a.active-sub { background: #4338ca; color: #fff; font-weight: 700; }
+  .top-nav-links .dropdown-menu .sub-label { font-size: 10px; color: #818cf8;
+    letter-spacing: 1px; padding: 4px 18px 2px; text-transform: uppercase; }
+  .lang-switch { display: flex; gap: 4px;
+    background: rgba(255,255,255,0.08); padding: 4px; border-radius: 6px; flex-shrink: 0; }
+  .lang-switch button { background: transparent; border: 0; color: #c7d2fe;
+    font-size: 12px; font-weight: 700; padding: 5px 10px;
+    border-radius: 4px; cursor: pointer; font-family: inherit; }
+  .lang-switch button.active { background: #4338ca; color: #fff; }
+  .nav-pages { display: flex; gap: 8px; margin: 24px 0; padding: 14px;
+    background: #2d2a5f; border-radius: 10px; align-items: center; flex-wrap: wrap; }
+  .nav-pages a { color: #c7d2fe; text-decoration: none;
+    padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600;
+    transition: 0.2s; }
+  .nav-pages a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .nav-pages .label { color: #818cf8; font-size: 11px;
+    letter-spacing: 1px; font-weight: 700; margin-right: 8px; }
+  [data-lang="en"] { display: none; }
+  body.lang-en [data-lang="zh"] { display: none; }
+  body.lang-en [data-lang="en"] { display: initial; }
+  body.lang-en h1[data-lang="en"], body.lang-en h2[data-lang="en"],
+  body.lang-en h3[data-lang="en"], body.lang-en h4[data-lang="en"],
+  body.lang-en p[data-lang="en"], body.lang-en div[data-lang="en"],
+  body.lang-en ol[data-lang="en"], body.lang-en ul[data-lang="en"] { display: block; }
+  body.lang-en li[data-lang="en"] { display: list-item; }
+  body.lang-en span[data-lang="en"] { display: inline; }
+  body.lang-en tspan[data-lang="en"] { display: inline; }
+</style>
 </head>
 <body>
 
-<nav class="top-nav">
-  <div class="top-nav-inner">
-    <a href="../index.html" class="top-nav-brand">
-      <span>🧬</span>
-      <span data-lang="zh">scRNA-seq 進階數學</span>
-      <span data-lang="en">scRNA-seq Advanced Math</span>
-      <span class="badge-math">MATH</span>
-    </a>
-    <ul class="top-nav-links">
-      <li><a href="../index.html#M1" class="active">M1</a></li>
-      <li><a href="../index.html#M2">M2</a></li>
-      <li><a href="../index.html#M3">M3</a></li>
-      <li><a href="../index.html#M4">M4</a></li>
-      <li><a href="../index.html#M5">M5</a></li>
-      <li><a href="../index.html#M6">M6</a></li>
-      <li><a href="../index.html" data-lang="zh">🏠 回首頁</a><span data-lang="en">🏠 Home</span></li>
-    </ul>
-    <div class="lang-switch">
-      <button data-lang-btn="zh" class="active">中文</button>
-      <button data-lang-btn="en">EN</button>
-    </div>
+<nav class="top-nav"><div class="top-nav-inner">
+  <a href="../index.html" class="top-nav-brand">
+    <span>🧬</span>
+    <span data-lang="zh">scRNA-seq 進階數學</span>
+    <span data-lang="en">scRNA-seq Advanced Math</span>
+    <span class="badge-math">MATH</span>
+  </a>
+  <ul class="top-nav-links">
+    <li class="dropdown"><a href="../index.html#M1" class="active">M1</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">基礎 / FOUNDATIONS</li>
+        <li><a href="1.1-sparse-matrix.html">1.1 稀疏矩陣</a></li>
+        <li><a href="1.2-count-distributions.html" class="active-sub">1.2 計數分布 ⭐ (本頁)</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M2">M2</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">前處理 / PREPROCESSING</li>
+        <li><a href="../M2-preprocessing/2.1-qc-statistics.html">2.1 QC 統計</a></li>
+        <li><a href="../M2-preprocessing/2.2-normalization.html">2.2 Normalization</a></li>
+        <li><a href="../M2-preprocessing/2.3-hvg-selection.html">2.3 HVG 選擇</a></li>
+        <li><a href="../M2-preprocessing/2.4-scaling.html">2.4 Scaling</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M3">M3</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">降維 / DIM. REDUCTION</li>
+        <li><a href="../M3-dimreduction/3.1-pca.html">3.1 PCA</a></li>
+        <li><a href="../M3-dimreduction/3.2-tsne.html">3.2 t-SNE</a></li>
+        <li><a href="../M3-dimreduction/3.3-umap.html">3.3 UMAP</a></li>
+        <li><a href="../M3-dimreduction/3.4-diffusion-map.html">3.4 Diffusion Maps</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M4">M4</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">圖與聚類 / GRAPH &amp; CLUSTERING</li>
+        <li><a href="../M4-graph-clustering/4.1-knn-graph.html">4.1 KNN Graph + HNSW</a></li>
+        <li><a href="../M4-graph-clustering/4.2-louvain-leiden.html">4.2 Louvain &amp; Leiden</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M5">M5</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">統計推論 / STATS</li>
+        <li><a href="../M5-statistics/5.1-de-tests.html">5.1 DE 檢定</a></li>
+        <li><a href="../M5-statistics/5.2-multiple-testing.html">5.2 多重檢定 / FDR</a></li>
+        <li><a href="../M5-statistics/5.3-classifier.html">5.3 細胞分類器</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M6">M6</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">進階 / ADVANCED</li>
+        <li><a href="../M6-advanced/6.1-integration.html">6.1 Integration</a></li>
+        <li><a href="../M6-advanced/6.2-pseudotime.html">6.2 Pseudotime</a></li>
+        <li><a href="../M6-advanced/6.3-cellchat.html">6.3 CellChat</a></li>
+      </ul></li>
+    <li><a href="../index.html"><span data-lang="zh">🏠 回首頁</span><span data-lang="en">🏠 Home</span></a></li>
+  </ul>
+  <div class="lang-switch">
+    <button data-lang-btn="zh" class="active">中文</button>
+    <button data-lang-btn="en">EN</button>
   </div>
-</nav>
+</div></nav>
 
-<header class="page-hero">
-  <div class="page-hero-inner">
-    <div class="page-badge">M1.2 · FOUNDATIONS</div>
-    <h1 data-lang="zh">計數分布：Poisson · NB · ZINB</h1>
-    <h1 data-lang="en">Count Distributions: Poisson · NB · ZINB</h1>
-    <p class="subtitle" data-lang="zh">為什麼 scRNA-seq 不能假設高斯分布？三大計數分布的數學本質與適用情境。</p>
-    <p class="subtitle" data-lang="en">Why Gaussian fails for scRNA-seq. The math of three fundamental count distributions.</p>
+<div class="wrap">
+
+<div class="nav-pages">
+  <span class="label" data-lang="zh">本頁章節</span><span class="label" data-lang="en">CHAPTERS</span>
+  <a href="#s0"><span data-lang="zh">§0 故事</span><span data-lang="en">§0 Story</span></a>
+  <a href="#s1"><span data-lang="zh">§1 Poisson</span><span data-lang="en">§1 Poisson</span></a>
+  <a href="#s2"><span data-lang="zh">§2 overdispersion</span><span data-lang="en">§2 overdispersion</span></a>
+  <a href="#s3"><span data-lang="zh">§3 NB 推導</span><span data-lang="en">§3 NB derivation</span></a>
+  <a href="#s4"><span data-lang="zh">§4 NB 互動</span><span data-lang="en">§4 NB interactive</span></a>
+  <a href="#s5"><span data-lang="zh">§5 dropout</span><span data-lang="en">§5 dropout</span></a>
+  <a href="#s6"><span data-lang="zh">§6 ZINB</span><span data-lang="en">§6 ZINB</span></a>
+  <a href="#s7"><span data-lang="zh">§7 現代共識</span><span data-lang="en">§7 modern consensus</span></a>
+  <a href="#s8"><span data-lang="zh">§8 串起</span><span data-lang="en">§8 Wrap-up</span></a>
+</div>
+
+<header class="cover">
+  <div class="badge"><span data-lang="zh">深入互動版 · 從直覺到數學</span><span data-lang="en">Deep Interactive · From Intuition to Math</span></div>
+  <h1 data-lang="zh">計數分布：從 Poisson 到 ZINB</h1>
+  <h1 data-lang="en">Count Distributions: from Poisson to ZINB</h1>
+  <div class="sub" data-lang="zh">
+    打開一個 10x 矩陣，看 CD3D 這個基因在 1000 個細胞中的 count：<b>大多是 0、有些是 1-3、少數高達 50</b>。
+    這種「<b>多 0、長尾</b>」的分布形狀，背後的<b>機率模型</b>是什麼？<br><br>
+    這節從最簡單的 Poisson 出發，互動比較 Poisson vs 實測，
+    發現「Poisson 不夠」（overdispersion），然後推導 Negative Binomial（NB）為 Poisson-Gamma mixture，
+    最後談 Zero-Inflated NB（ZINB）是不是必要——以及為什麼現代共識是「<b>NB 已經夠了</b>」。
+  </div>
+  <div class="sub" data-lang="en">
+    Open a 10x matrix, look at CD3D's counts across 1000 cells: <b>mostly 0, some 1–3, occasional 50</b>.
+    What <b>probabilistic model</b> generates this "many zeros, long tail" shape?<br><br>
+    We start from Poisson, compare it interactively to empirical data,
+    discover Poisson isn't enough (overdispersion), derive Negative Binomial as Poisson-Gamma mixture,
+    then discuss Zero-Inflated NB (ZINB) — and why the modern consensus is "<b>NB suffices</b>".
   </div>
 </header>
 
-<main class="content-wrap">
-
-<section class="section">
-  <span class="section-label intuition">直覺 / Intuition</span>
-  <h2 data-lang="zh">計數資料的三個怪癖</h2>
-  <h2 data-lang="en">Three quirks of count data</h2>
-  <div data-lang="zh">
-    <p>scRNA-seq 量到的是「分子數」——只能是 <b>0, 1, 2, ...</b>（不會是 3.7 個分子）。
-    這帶來三個高斯分布處理不了的特性：</p>
-    <ol>
-      <li><b>離散值</b>：只能取整數</li>
-      <li><b>非負</b>：機率質量集中在 0 附近、有「零膨脹」</li>
-      <li><b>變異隨平均放大</b>：高表現基因的變異天然較大</li>
-    </ol>
-    <p>所以我們需要<b>計數分布</b>來建模——這節介紹三個由簡入深的選擇。</p>
-  </div>
-  <div data-lang="en">
-    <p>scRNA-seq measures molecule counts — only <b>0, 1, 2, ...</b> (never 3.7 molecules).
-    Three properties Gaussian cannot handle:</p>
-    <ol>
-      <li><b>Discrete</b>: integers only</li>
-      <li><b>Non-negative</b>: probability mass near 0, with "zero inflation"</li>
-      <li><b>Variance scales with mean</b>: highly expressed genes have inherently higher variance</li>
-    </ol>
-    <p>We need <b>count distributions</b> — three increasingly sophisticated choices.</p>
-  </div>
-</section>
-
-<section class="section">
-  <span class="section-label math">核心數學 / Math</span>
-  <h2>① Poisson <span data-lang="zh">— 最簡單的計數分布</span><span data-lang="en">— Simplest Count Distribution</span></h2>
-
-  <div class="math-block">
-  $$P(X = k \mid \lambda) = \frac{\lambda^k e^{-\lambda}}{k!}, \quad k = 0, 1, 2, \ldots$$
-  </div>
-  <p data-lang="zh"><b>關鍵性質</b>：$E(X) = \mathrm{Var}(X) = \lambda$（平均 = 變異）。<br>
-  這代表「<b>均值決定變異</b>」——一個參數搞定一切。<br>
-  生物意義：若 RNA 分子捕捉是<b>純隨機事件</b>，理論上應該服從 Poisson。</p>
-  <p data-lang="en"><b>Key property</b>: $E(X) = \mathrm{Var}(X) = \lambda$ (mean = variance).<br>
-  Means "<b>mean determines variance</b>" — one parameter does everything.<br>
-  Biology: if mRNA capture were purely random, it should follow Poisson.</p>
-
-  <div class="callout callout-warn">
-    <strong data-lang="zh">⚠️ 但實際資料的變異遠大於平均！</strong>
-    <strong data-lang="en">⚠️ But real data has much larger variance than mean!</strong>
-    <p data-lang="zh">這稱為<b>過度離散 (overdispersion)</b>。原因是不同細胞之間的「真實表現量」本身就有變異（生物變異 + 技術偏差），不只是 Poisson 的隨機取樣噪音。</p>
-    <p data-lang="en">This is called <b>overdispersion</b>. Different cells have varying "true expression" (biological + technical noise), not just Poisson sampling.</p>
-  </div>
-
-  <h2>② Negative Binomial (NB) <span data-lang="zh">— 加入過度離散</span><span data-lang="en">— Adding Overdispersion</span></h2>
-  <div data-lang="zh"><p>把 Poisson 的 $\lambda$ 視為「隨機變數」，假設它服從 Gamma 分布，混合之後就得到 NB：</p></div>
-  <div data-lang="en"><p>Treat Poisson's $\lambda$ as a random variable from a Gamma distribution; the mixture is NB:</p></div>
-  <div class="math-block">
-  $$P(X = k \mid \mu, \theta) = \binom{k + \theta - 1}{k} \left(\frac{\theta}{\theta + \mu}\right)^\theta \left(\frac{\mu}{\theta + \mu}\right)^k$$
-  $$E(X) = \mu, \quad \mathrm{Var}(X) = \mu + \frac{\mu^2}{\theta}$$
-  <div class="formula-caption" data-lang="zh">$\mu$ = 平均、$\theta$ = 分散參數（越大越接近 Poisson、越小越離散）</div>
-  <div class="formula-caption" data-lang="en">$\mu$ = mean, $\theta$ = dispersion (larger → closer to Poisson; smaller → more overdispersed)</div>
-  </div>
-  <p data-lang="zh">當 $\theta \to \infty$，$\mathrm{Var} \to \mu$，退化為 Poisson。<br>
-  典型 scRNA-seq 基因 $\theta \approx 1\text{--}10$，變異是平均的好幾倍。</p>
-  <p data-lang="en">As $\theta \to \infty$, $\mathrm{Var} \to \mu$, reducing to Poisson.<br>
-  Typical scRNA-seq genes have $\theta \approx 1\text{--}10$, variance several times the mean.</p>
-
-  <h2>③ Zero-Inflated NB (ZINB) <span data-lang="zh">— 再多解決「過多的零」</span><span data-lang="en">— Modeling Excess Zeros</span></h2>
-  <div data-lang="zh"><p>有時候 NB 還是低估了 0 的數量（特別是 droplet-based 平台）。ZINB 多加一個「dropout 機率 $\pi$」：</p></div>
-  <div data-lang="en"><p>Sometimes NB still underestimates zeros (especially droplet-based platforms). ZINB adds a dropout probability $\pi$:</p></div>
-  <div class="math-block">
-  $$P(X = k) = \begin{cases}
-    \pi + (1-\pi) \cdot \text{NB}(0 \mid \mu, \theta) & k = 0 \\
-    (1-\pi) \cdot \text{NB}(k \mid \mu, \theta) & k > 0
-  \end{cases}$$
-  </div>
-  <p data-lang="zh"><b>解讀</b>：<br>
-  • $\pi$ = 「結構性零」的比例（捕捉失敗、技術 dropout）<br>
-  • $1-\pi$ = 「真實計數」遵循 NB<br>
-  scVI、scVAE 等深度模型常用 ZINB 作為 decoder 的 likelihood。</p>
-  <p data-lang="en"><b>Interpretation</b>: $\pi$ = fraction of "structural zeros" (technical dropouts), $1-\pi$ follows NB. scVI, scVAE use ZINB as decoder likelihood.</p>
-
-  <div class="callout callout-deep">
-    <strong data-lang="zh">🔬 ZINB 真的有必要嗎？爭議所在</strong>
-    <strong data-lang="en">🔬 Is ZINB really needed? The controversy</strong>
-    <p data-lang="zh">Svensson (2020) 與 Townes et al. (2019) 顯示：對於 UMI-based scRNA-seq（10x），<b>NB 已經足夠</b>，加 zero-inflation 並沒有顯著幫助。爭議至今未完全解決，但目前共識傾向：<b>UMI 用 NB；read-based（Smart-seq2）才考慮 ZINB</b>。</p>
-    <p data-lang="en">Svensson (2020) and Townes et al. (2019): for UMI-based scRNA-seq (10x), <b>NB suffices</b>; zero inflation doesn't help significantly. Current consensus: <b>use NB for UMI; consider ZINB only for read-based (Smart-seq2)</b>.</p>
-  </div>
-</section>
-
-<section class="section">
-  <span class="section-label">互動 / Interactive</span>
-  <h2 data-lang="zh">分布視覺化器</h2>
-  <h2 data-lang="en">Distribution Visualizer</h2>
-  <p data-lang="zh">調整參數比較三種分布的形狀。注意過度離散時 NB 的尾巴變長。</p>
-  <p data-lang="en">Adjust parameters to compare distribution shapes. Note how NB's tail extends with overdispersion.</p>
-
-  <div style="background:#f6f8fc; padding:18px; border-radius:10px">
-    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:14px">
-      <div>
-        <label style="font-size:12px; color:#4a5779; font-weight:700">μ (mean)</label>
-        <input type="range" id="muR" min="0.5" max="20" value="5" step="0.5" style="width:100%">
-        <div id="muV" style="font-family:monospace; font-weight:700">5.0</div>
-      </div>
-      <div>
-        <label style="font-size:12px; color:#4a5779; font-weight:700">θ (dispersion)</label>
-        <input type="range" id="thetaR" min="0.5" max="100" value="2" step="0.5" style="width:100%">
-        <div id="thetaV" style="font-family:monospace; font-weight:700">2.0</div>
-      </div>
-      <div>
-        <label style="font-size:12px; color:#4a5779; font-weight:700">π (dropout)</label>
-        <input type="range" id="piR" min="0" max="0.8" value="0.2" step="0.05" style="width:100%">
-        <div id="piV" style="font-family:monospace; font-weight:700">0.20</div>
-      </div>
-    </div>
-    <svg id="distSvg" viewBox="0 0 600 280" style="background:#fff; border-radius:8px; width:100%"></svg>
-    <div id="distStats" style="margin-top:10px; padding:10px; background:#fff; border-radius:6px; font-size:13px; font-family:monospace"></div>
-  </div>
-</section>
-
-<section class="section">
-  <span class="section-label code">程式碼 / Code</span>
-  <h2 data-lang="zh">擬合 NB 到實際資料</h2>
-  <h2 data-lang="en">Fitting NB to Real Data</h2>
-  <div class="code-tabs">
-    <div class="code-tab-btns">
-      <button class="code-tab-btn active" onclick="switchTab(this,'py2')">Python</button>
-      <button class="code-tab-btn" onclick="switchTab(this,'r2')">R</button>
-    </div>
-    <div class="code-tab-content active" id="py2"><pre><span class="keyword">import</span> numpy <span class="keyword">as</span> np
-<span class="keyword">from</span> scipy.stats <span class="keyword">import</span> nbinom
-<span class="keyword">from</span> scipy.optimize <span class="keyword">import</span> minimize
-
-<span class="comment"># counts: 某個基因在所有細胞的計數</span>
-<span class="keyword">def</span> <span class="func">nb_nll</span>(params, x):
-    mu, theta = params
-    <span class="keyword">if</span> mu &lt;= <span class="num">0</span> <span class="keyword">or</span> theta &lt;= <span class="num">0</span>: <span class="keyword">return</span> np.inf
-    p = theta / (theta + mu)
-    <span class="keyword">return</span> -nbinom.logpmf(x, theta, p).sum()
-
-mu0, theta0 = counts.mean(), <span class="num">2.0</span>
-res = minimize(nb_nll, [mu0, theta0], args=(counts,), method=<span class="str">"Nelder-Mead"</span>)
-mu_hat, theta_hat = res.x
-<span class="func">print</span>(<span class="str">f"μ̂ = {mu_hat:.3f}, θ̂ = {theta_hat:.3f}"</span>)
-
-<span class="comment"># 判斷是否過度離散</span>
-<span class="func">print</span>(<span class="str">f"Variance / Mean = {counts.var() / counts.mean():.2f}"</span>)
-<span class="comment"># &gt; 1 表示過度離散，Poisson 不夠</span>
-</pre></div>
-    <div class="code-tab-content" id="r2"><pre><span class="keyword">library</span>(MASS)
-
-<span class="comment"># fitdistr 直接擬合 NB</span>
-fit &lt;- <span class="func">fitdistr</span>(counts, <span class="str">"negative binomial"</span>)
-mu_hat &lt;- fit$estimate[<span class="str">"mu"</span>]
-size_hat &lt;- fit$estimate[<span class="str">"size"</span>]   <span class="comment"># size = theta</span>
-
-<span class="func">cat</span>(<span class="func">sprintf</span>(<span class="str">"μ̂ = %.3f, θ̂ = %.3f\n"</span>, mu_hat, size_hat))
-
-<span class="comment"># 過度離散測試 (likelihood ratio)</span>
-<span class="keyword">library</span>(pscl)
-<span class="func">odTest</span>(<span class="func">glm.nb</span>(counts ~ <span class="num">1</span>))
-</pre></div>
-  </div>
-</section>
-
-<section class="section">
-  <span class="section-label">比較 / Comparison</span>
-  <h2 data-lang="zh">三種分布的選擇指南</h2>
-  <h2 data-lang="en">Choice Guide</h2>
-  <table class="compare-table">
-    <tr><th></th><th>Poisson</th><th>NB</th><th>ZINB</th></tr>
-    <tr>
-      <td data-lang="zh">參數</td><td data-lang="en">Params</td>
-      <td>$\lambda$</td>
-      <td>$\mu, \theta$</td>
-      <td>$\mu, \theta, \pi$</td>
-    </tr>
-    <tr>
-      <td>Var/Mean</td><td>Var/Mean</td>
-      <td>= 1</td>
-      <td>&gt; 1（過度離散）</td>
-      <td>&gt; 1 + 零膨脹</td>
-    </tr>
-    <tr>
-      <td data-lang="zh">擬合難度</td><td data-lang="en">Fitting</td>
-      <td class="good">最簡</td>
-      <td class="meh">MLE 迭代</td>
-      <td class="bad">EM / VI</td>
-    </tr>
-    <tr>
-      <td data-lang="zh">適用平台</td><td data-lang="en">Platform</td>
-      <td class="bad">理想化、實際少用</td>
-      <td class="good">UMI（10x）標配</td>
-      <td class="meh">Smart-seq2</td>
-    </tr>
-    <tr>
-      <td data-lang="zh">使用工具</td><td data-lang="en">Tools</td>
-      <td>edgeR（早期）</td>
-      <td>DESeq2、SCTransform、glmGamPoi</td>
-      <td>scVI、ZINB-WaVE</td>
-    </tr>
-  </table>
-</section>
-
-<section class="section">
-  <span class="section-label">參考 / References</span>
-  <ul class="refs-list">
-    <li>
-      <div class="ref-title">Lopez, R. et al. (2018). Deep generative modeling for single-cell transcriptomics.</div>
-      <div class="ref-meta">Nature Methods. scVI 用 ZINB. <a href="https://doi.org/10.1038/s41592-018-0229-2">10.1038/s41592-018-0229-2</a></div>
-    </li>
-    <li>
-      <div class="ref-title">Svensson, V. (2020). Droplet scRNA-seq is not zero-inflated.</div>
-      <div class="ref-meta">Nature Biotech 38. <a href="https://doi.org/10.1038/s41587-019-0379-5">10.1038/s41587-019-0379-5</a></div>
-    </li>
-    <li>
-      <div class="ref-title">Townes, F.W. et al. (2019). Feature selection and dimension reduction for single-cell RNA-Seq based on a multinomial model.</div>
-      <div class="ref-meta">Genome Biology 20, 295. <a href="https://doi.org/10.1186/s13059-019-1861-6">10.1186/s13059-019-1861-6</a></div>
-    </li>
-    <li>
-      <div class="ref-title">Hafemeister, C. &amp; Satija, R. (2019). Normalization and variance stabilization of single-cell RNA-seq data using regularized negative binomial regression.</div>
-      <div class="ref-meta">Genome Biology 20, 296. SCTransform. <a href="https://doi.org/10.1186/s13059-019-1874-1">10.1186/s13059-019-1874-1</a></div>
-    </li>
-  </ul>
-</section>
-
-<div class="cross-links">
-  <a href="1.1-sparse-matrix.html" class="cross-link">
-    <div class="cross-label" data-lang="zh">← 上一篇</div>
-    <div class="cross-label" data-lang="en">← PREV</div>
-    <div class="cross-title"><span class="cross-id">M1.1</span> <span data-lang="zh">稀疏矩陣</span><span data-lang="en">Sparse Matrices</span></div>
-  </a>
-  <a href="../M2-preprocessing/2.2-normalization.html" class="cross-link">
-    <div class="cross-label" data-lang="zh">下一個應用 →</div>
-    <div class="cross-label" data-lang="en">NEXT APPLICATION →</div>
-    <div class="cross-title"><span class="cross-id">M2.2</span> <span data-lang="zh">Normalization 用 NB 做的事</span><span data-lang="en">NB-based Normalization</span></div>
-  </a>
+<div class="toc">
+  <h4 data-lang="zh">目錄</h4>
+  <h4 data-lang="en">Table of Contents</h4>
+  <ol start="0">
+    <li><a href="#s0"><span data-lang="zh">故事：CD3D 在 1000 個細胞中的樣子</span><span data-lang="en">Story: CD3D across 1000 cells</span></a><span class="new" data-lang="zh">新增</span><span class="new" data-lang="en">NEW</span></li>
+    <li><a href="#s1"><span data-lang="zh">Poisson：第一個合理模型</span><span data-lang="en">Poisson: first reasonable model</span></a></li>
+    <li><a href="#s2"><span data-lang="zh">為什麼 Poisson 不夠：overdispersion</span><span data-lang="en">Why Poisson fails: overdispersion</span></a></li>
+    <li><a href="#s3"><span data-lang="zh">NB 的推導：Poisson-Gamma mixture</span><span data-lang="en">NB derivation: Poisson-Gamma mixture</span></a><span class="new" data-lang="zh">核心</span><span class="new" data-lang="en">CORE</span></li>
+    <li><a href="#s4"><span data-lang="zh">NB 互動：拉 μ 跟 θ 看分布形狀</span><span data-lang="en">NB interactive: drag μ and θ</span></a></li>
+    <li><a href="#s5"><span data-lang="zh">Dropout：為什麼 0 看起來「太多」？</span><span data-lang="en">Dropout: why "too many" zeros?</span></a></li>
+    <li><a href="#s6"><span data-lang="zh">ZINB：把 dropout 加進來</span><span data-lang="en">ZINB: add dropout</span></a></li>
+    <li><a href="#s7"><span data-lang="zh">現代共識：UMI 資料用 NB 就好</span><span data-lang="en">Modern consensus: NB suffices for UMI</span></a></li>
+    <li><a href="#s8"><span data-lang="zh">把整套故事串起來 + 限制</span><span data-lang="en">Tying it together + limits</span></a></li>
+  </ol>
 </div>
 
-</main>
+<!-- §0 -->
+<h2 id="s0"><span class="num">§0</span> <span data-lang="zh">故事：CD3D 在 1000 個細胞中的樣子</span><span data-lang="en">Story: CD3D across 1000 cells</span></h2>
 
-<footer class="site-footer">
-  <p>© Charlene · <span data-lang="zh">scRNA-seq 進階數學教程</span><span data-lang="en">scRNA-seq Advanced Math Tutorial</span></p>
-</footer>
+<p class="lead" data-lang="zh">
+  你打開 10x 資料，把 CD3D（T 細胞 marker）的 count 拉出來：1000 個細胞各有一個整數。
+  畫 histogram，你看到一個典型的 scRNA-seq 形狀：
+</p>
+<p class="lead" data-lang="en">
+  Open 10x data, extract CD3D (T cell marker) counts across 1000 cells. Histogram:
+</p>
+
+<div class="card">
+  <h3 data-lang="zh">§0-1 觀察實測 histogram</h3>
+  <h3 data-lang="en">§0-1 Observe the empirical histogram</h3>
+  <svg class="canvas" id="s0svg" viewBox="0 0 800 300" width="100%"></svg>
+  <div class="stat-row">
+    <div class="item"><span class="lbl">N cells</span><span class="lbl">N cells</span><span class="val">1000</span></div>
+    <div class="item"><span class="lbl">mean</span><span class="lbl">mean</span><span class="val">2.5</span></div>
+    <div class="item"><span class="lbl">variance</span><span class="lbl">variance</span><span class="val" style="color:#c0392b">11.3</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">0 的比例</span><span class="lbl" data-lang="en">% zeros</span><span class="val" style="color:#2c5aa0">52%</span></div>
+    <div class="item"><span class="lbl">max</span><span class="lbl">max</span><span class="val">38</span></div>
+  </div>
+
+  <div class="callout idea">
+    <strong data-lang="zh">三個怪現象</strong><strong data-lang="en">Three observations</strong>:
+    <ol>
+      <li data-lang="zh">52% 的細胞 count = 0 → 「太多 0」</li>
+      <li data-lang="en">52% of cells have count = 0 → "too many zeros"</li>
+      <li data-lang="zh">variance (11.3) 是 mean (2.5) 的 <b>4.5 倍</b> → 比 Poisson 散布得多</li>
+      <li data-lang="en">variance (11.3) is <b>4.5× the mean (2.5)</b> → way more spread than Poisson</li>
+      <li data-lang="zh">右側有少數細胞 count = 30+ → 長尾</li>
+      <li data-lang="en">a few cells with count = 30+ → long tail</li>
+    </ol>
+  </div>
+</div>
+
+<div class="card">
+  <h3 data-lang="zh">§0-2 小測：以下哪個分布最像實測？</h3>
+  <h3 data-lang="en">§0-2 Mini-quiz: which distribution best matches?</h3>
+  <p data-lang="zh">給定 mean = 2.5、variance = 11.3、52% 是 0，下列哪個分布最有可能？</p>
+  <p data-lang="en">Given mean = 2.5, variance = 11.3, 52% zeros, which distribution fits best?</p>
+  <div class="quiz-options" id="quiz0">
+    <button class="opt" data-correct="false"
+      data-fb-zh="Normal 是連續、對稱、可負；scRNA count 是離散非負，且呈右偏，完全不適合。"
+      data-fb-en="Normal is continuous, symmetric, can be negative; scRNA counts are discrete, non-negative, right-skewed — completely unfit.">
+      <span data-lang="zh">a) Normal（常態分布）</span>
+      <span data-lang="en">a) Normal distribution</span>
+    </button>
+    <button class="opt" data-correct="false"
+      data-fb-zh="Poisson 預測 variance = mean = 2.5，但實測 variance = 11.3，差 4 倍。"
+      data-fb-en="Poisson predicts variance = mean = 2.5, but observed variance = 11.3 — 4× off.">
+      <span data-lang="zh">b) Poisson(λ=2.5)</span>
+      <span data-lang="en">b) Poisson(λ=2.5)</span>
+    </button>
+    <button class="opt" data-correct="true"
+      data-fb-zh="NB 可以同時讓 mean = 2.5、variance &gt; mean、且有右尾。後面我們會看到它幾乎可以完美擬合。"
+      data-fb-en="NB allows mean = 2.5, variance &gt; mean, and a right tail. We'll see it fits almost perfectly.">
+      <span data-lang="zh">c) Negative Binomial (NB)</span>
+      <span data-lang="en">c) Negative Binomial (NB)</span>
+    </button>
+    <button class="opt" data-correct="false"
+      data-fb-zh="Uniform 沒有任何「中心」或「尾巴」，是錯誤的形狀。"
+      data-fb-en="Uniform has no center or tail — wrong shape entirely.">
+      <span data-lang="zh">d) Uniform</span>
+      <span data-lang="en">d) Uniform</span>
+    </button>
+  </div>
+  <div id="quiz0fb" style="display:none" class="quiz-feedback"></div>
+</div>
+
+<!-- §1 -->
+<h2 id="s1"><span class="num">§1</span> <span data-lang="zh">Poisson：第一個合理模型</span><span data-lang="en">Poisson: first reasonable model</span></h2>
+
+<p data-lang="zh">
+  Poisson 是最古典的「<b>計數</b>分布」。想像一個 mRNA 池子，每個 mRNA 分子被捕捉的機率很小，
+  但分子數很多——這正是 Poisson 適用的場景（「rare events」極限）。
+</p>
+<p data-lang="en">
+  Poisson is the classical "<b>count</b> distribution". Imagine an mRNA pool: each molecule has tiny capture probability,
+  but there are many molecules — exactly Poisson's regime (rare-events limit).
+</p>
+
+<h3 data-lang="zh">1.1 PMF</h3>
+<h3 data-lang="en">1.1 PMF</h3>
+
+<div class="math-block boxed">
+  $$P(X = k) = \frac{\lambda^k e^{-\lambda}}{k!}, \quad k = 0, 1, 2, \dots$$
+  <div class="formula-caption" data-lang="zh">$\lambda$ 是平均（也是變異）</div>
+  <div class="formula-caption" data-lang="en">$\lambda$ is the mean (and also the variance)</div>
+</div>
+
+<h3 data-lang="zh">1.2 性質</h3>
+<h3 data-lang="en">1.2 Properties</h3>
+<ul>
+  <li>$E[X] = \lambda$</li>
+  <li>$\text{Var}(X) = \lambda$</li>
+  <li><span data-lang="zh">兩 Poisson 相加：</span><span data-lang="en">Sum of Poissons: </span>$X_1 + X_2 \sim \text{Poisson}(\lambda_1 + \lambda_2)$</li>
+</ul>
+
+<h3 data-lang="zh">1.3 互動：Poisson PMF</h3>
+<h3 data-lang="en">1.3 Interactive Poisson PMF</h3>
+
+<div class="card">
+  <div class="controls">
+    <label>$\lambda$: <input type="range" id="s1lambda" min="0.5" max="10" value="2.5" step="0.5"><span id="s1lambdaVal">2.5</span></label>
+  </div>
+  <svg class="canvas" id="s1svg" viewBox="0 0 800 280" width="100%"></svg>
+  <div class="stat-row">
+    <div class="item"><span class="lbl">mean</span><span class="lbl">mean</span><span class="val" id="s1mean">—</span></div>
+    <div class="item"><span class="lbl">variance</span><span class="lbl">variance</span><span class="val" id="s1var">—</span></div>
+    <div class="item"><span class="lbl">P(X=0)</span><span class="lbl">P(X=0)</span><span class="val" id="s1p0">—</span></div>
+  </div>
+</div>
+
+<!-- §2 -->
+<h2 id="s2"><span class="num">§2</span> <span data-lang="zh">為什麼 Poisson 不夠：overdispersion</span><span data-lang="en">Why Poisson fails: overdispersion</span></h2>
+
+<p data-lang="zh">
+  Poisson 預測 variance = mean。但實測 scRNA-seq 永遠 <b>variance &gt; mean</b>，差距常常 5-50 倍。這就是 <b>overdispersion</b>。
+</p>
+<p data-lang="en">
+  Poisson predicts variance = mean. Empirically, scRNA-seq always shows <b>variance &gt; mean</b>, often 5–50× off. This is <b>overdispersion</b>.
+</p>
+
+<h3 data-lang="zh">2.1 為什麼會有 overdispersion?</h3>
+<h3 data-lang="en">2.1 Why does overdispersion happen?</h3>
+
+<table class="compare">
+  <tr><th data-lang="zh">原因</th><th data-lang="en">Cause</th>
+      <th data-lang="zh">說明</th><th data-lang="en">Explanation</th></tr>
+  <tr><td data-lang="zh">細胞型態混合</td><td data-lang="en">Cell-type mixture</td>
+      <td data-lang="zh">CD3D 在 T 細胞高、其他細胞低 → 混在一起看就 overdispersed</td>
+      <td data-lang="en">CD3D high in T cells, low elsewhere → pooled distribution is overdispersed</td></tr>
+  <tr><td data-lang="zh">細胞間生物變異</td><td data-lang="en">Cell-to-cell biological variation</td>
+      <td data-lang="zh">即使同型細胞，每個細胞「實際」基因表現也不同</td>
+      <td data-lang="en">Even same type, cells truly vary in expression</td></tr>
+  <tr><td data-lang="zh">技術變異（capture）</td><td data-lang="en">Technical (capture) variation</td>
+      <td data-lang="zh">每細胞 capture efficiency 不同</td>
+      <td data-lang="en">Capture efficiency varies cell-to-cell</td></tr>
+</table>
+
+<p data-lang="zh">這三件事都可以歸納成：<b>「每個細胞的真實 $\lambda$ 不一樣」</b>。Poisson 假設所有細胞共用同一個 $\lambda$，所以低估變異。</p>
+<p data-lang="en">All three reduce to: <b>"each cell has a different true $\lambda$"</b>. Poisson assumes one shared $\lambda$ — underestimating variance.</p>
+
+<!-- §3 -->
+<h2 id="s3"><span class="num">§3</span> <span data-lang="zh">NB 的推導：Poisson-Gamma mixture</span><span data-lang="en">NB derivation: Poisson-Gamma mixture</span></h2>
+
+<p data-lang="zh">
+  如果每個細胞的 $\lambda_i$ 來自一個<b>分布</b>而不是固定常數，就會自然產生 overdispersion。
+  數學家發現：如果 $\lambda$ 來自 <b>Gamma 分布</b>，整個合成分布<b>剛好就是 Negative Binomial</b>。
+</p>
+<p data-lang="en">
+  If each cell's $\lambda_i$ comes from a <b>distribution</b> rather than a fixed constant, overdispersion emerges naturally.
+  Mathematically: when $\lambda$ has a <b>Gamma distribution</b>, the marginal becomes <b>exactly Negative Binomial</b>.
+</p>
+
+<div class="math-block boxed">
+  $$\lambda \sim \text{Gamma}(\theta, \theta/\mu), \quad X | \lambda \sim \text{Poisson}(\lambda) \quad\Longrightarrow\quad X \sim \text{NB}(\mu, \theta)$$
+  <div class="formula-caption" data-lang="zh">Poisson-Gamma mixture 就是 NB（也叫 Gamma-Poisson）</div>
+  <div class="formula-caption" data-lang="en">Poisson-Gamma mixture = NB (a.k.a. Gamma-Poisson)</div>
+</div>
+
+<h3 data-lang="zh">3.1 NB 的 PMF</h3>
+<h3 data-lang="en">3.1 NB PMF</h3>
+
+<div class="math-block">
+  $$P(X=k) = \frac{\Gamma(k+\theta)}{k! \, \Gamma(\theta)} \left(\frac{\theta}{\theta+\mu}\right)^\theta \left(\frac{\mu}{\theta+\mu}\right)^k$$
+</div>
+
+<h3 data-lang="zh">3.2 性質</h3>
+<h3 data-lang="en">3.2 Properties</h3>
+<ul>
+  <li>$E[X] = \mu$</li>
+  <li>$\text{Var}(X) = \mu + \mu^2 / \theta$ <span data-lang="zh">→ 第二項就是 overdispersion 的來源</span><span data-lang="en">→ second term is the overdispersion</span></li>
+  <li><span data-lang="zh">$\theta \to \infty$ 時退回 Poisson</span><span data-lang="en">$\theta \to \infty$ recovers Poisson</span></li>
+  <li><span data-lang="zh">$\theta$ 越小 → overdispersion 越大</span><span data-lang="en">Smaller $\theta$ → more overdispersion</span></li>
+</ul>
+
+<details>
+<summary data-lang="zh">▸ 一個簡化推導（積分掉 λ）</summary>
+<summary data-lang="en">▸ Sketch derivation (integrate out λ)</summary>
+<div data-lang="zh">
+  <p>$P(X=k) = \int_0^\infty P(X=k|\lambda) \, p(\lambda) \, d\lambda$</p>
+  <p>= $\int_0^\infty \frac{\lambda^k e^{-\lambda}}{k!} \cdot \frac{(\theta/\mu)^\theta}{\Gamma(\theta)} \lambda^{\theta-1} e^{-\theta \lambda/\mu} \, d\lambda$</p>
+  <p>= $\frac{(\theta/\mu)^\theta}{k! \, \Gamma(\theta)} \int_0^\infty \lambda^{k+\theta-1} e^{-\lambda(1 + \theta/\mu)} \, d\lambda$</p>
+  <p>= $\frac{(\theta/\mu)^\theta}{k! \, \Gamma(\theta)} \cdot \frac{\Gamma(k+\theta)}{(1 + \theta/\mu)^{k+\theta}}$</p>
+  <p>整理 → 上面那個 NB PMF。✓</p>
+</div>
+<div data-lang="en">
+  <p>$P(X=k) = \int_0^\infty P(X=k|\lambda) \, p(\lambda) \, d\lambda$</p>
+  <p>= $\frac{(\theta/\mu)^\theta}{k! \, \Gamma(\theta)} \int_0^\infty \lambda^{k+\theta-1} e^{-\lambda(1 + \theta/\mu)} \, d\lambda$</p>
+  <p>= $\frac{(\theta/\mu)^\theta}{k! \, \Gamma(\theta)} \cdot \frac{\Gamma(k+\theta)}{(1+\theta/\mu)^{k+\theta}}$</p>
+  <p>Rearrange → NB PMF above. ✓</p>
+</div>
+</details>
+
+<!-- §4 -->
+<h2 id="s4"><span class="num">§4</span> <span data-lang="zh">NB 互動：拉 μ 跟 θ 看分布形狀</span><span data-lang="en">NB interactive: drag μ and θ</span></h2>
+
+<div class="card">
+  <p data-lang="zh">底下 NB PMF 跟 Poisson(λ=μ) 同畫。拉 θ 看 NB 怎麼從 Poisson 偏離：</p>
+  <p data-lang="en">NB PMF vs Poisson(λ=μ). Drag θ to see NB diverge from Poisson:</p>
+  <div class="controls">
+    <label>$\mu$: <input type="range" id="s4mu" min="0.5" max="10" value="2.5" step="0.5"><span id="s4muVal">2.5</span></label>
+    <label>$\theta$: <input type="range" id="s4theta" min="0.5" max="50" value="2" step="0.5"><span id="s4thetaVal">2.0</span></label>
+  </div>
+  <svg class="canvas" id="s4svg" viewBox="0 0 800 320" width="100%"></svg>
+  <div class="stat-row">
+    <div class="item"><span class="lbl">NB mean</span><span class="lbl">NB mean</span><span class="val" id="s4mean">—</span></div>
+    <div class="item"><span class="lbl">NB variance</span><span class="lbl">NB variance</span><span class="val" id="s4var">—</span></div>
+    <div class="item"><span class="lbl">NB P(X=0)</span><span class="lbl">NB P(X=0)</span><span class="val" id="s4p0">—</span></div>
+    <div class="item"><span class="lbl">Poisson P(X=0)</span><span class="lbl">Poisson P(X=0)</span><span class="val" id="s4poi">—</span></div>
+  </div>
+  <p data-lang="zh">
+    <b>觀察 1</b>: $\theta = 50$ 時 NB ≈ Poisson；$\theta = 0.5$ 時 NB 在 0 處<b>變得更高</b>、尾巴更長。<br>
+    <b>觀察 2</b>: NB 的 P(X=0) 永遠 ≥ Poisson 的——這是「為什麼 NB 自然能擬合『多 0』的資料」。
+  </p>
+  <p data-lang="en">
+    <b>Observe 1</b>: $\theta = 50$ → NB ≈ Poisson; $\theta = 0.5$ → NB has <b>higher zero probability</b> and longer tail.<br>
+    <b>Observe 2</b>: NB P(X=0) is always ≥ Poisson's — this is why NB naturally fits "many zeros" data.
+  </p>
+</div>
+
+<!-- §5 -->
+<h2 id="s5"><span class="num">§5</span> <span data-lang="zh">Dropout：為什麼 0 看起來「太多」？</span><span data-lang="en">Dropout: why "too many" zeros?</span></h2>
+
+<p data-lang="zh">
+  早期 scRNA-seq 文獻常說「scRNA 有 dropout」——意指「有些基因明明該有表現，但因為技術問題（mRNA 降解、reverse transcription 失敗）count 變成 0」。
+  這多出來的 0 不是「真正沒表現」，是「技術上漏掉」。
+</p>
+<p data-lang="en">
+  Early scRNA literature talks about "dropout" — genes that should be expressed but show 0 counts due to technical issues
+  (mRNA degradation, failed reverse transcription). These extra zeros aren't "truly unexpressed", they're "technically missed".
+</p>
+
+<h3 data-lang="zh">5.1 數學模型：Zero-inflation</h3>
+<h3 data-lang="en">5.1 Math: zero-inflation</h3>
+
+<div class="math-block boxed">
+  $$X = \begin{cases}
+    0 & \text{with probability } \pi \quad (\text{dropout}) \\
+    Y & \text{with probability } 1 - \pi, \quad Y \sim \text{NB}(\mu, \theta)
+  \end{cases}$$
+  <div class="formula-caption" data-lang="zh">$\pi$ = dropout 機率，多出來的「技術 0」</div>
+  <div class="formula-caption" data-lang="en">$\pi$ = dropout probability, extra "technical zeros"</div>
+</div>
+
+<h3 data-lang="zh">5.2 PMF</h3>
+<h3 data-lang="en">5.2 PMF</h3>
+
+<div class="math-block">
+  $$P(X=0) = \pi + (1-\pi) \cdot P_{\text{NB}}(0), \quad P(X=k>0) = (1-\pi) \cdot P_{\text{NB}}(k)$$
+</div>
+
+<!-- §6 -->
+<h2 id="s6"><span class="num">§6</span> <span data-lang="zh">ZINB：把 dropout 加進來</span><span data-lang="en">ZINB: add dropout</span></h2>
+
+<div class="card">
+  <h3 data-lang="zh">6.1 ZINB 互動</h3>
+  <h3 data-lang="en">6.1 ZINB interactive</h3>
+  <p data-lang="zh">紅色 = NB；紫色 = ZINB（含 dropout）。拉 π 看 0 怎麼被「人工抬高」。</p>
+  <p data-lang="en">Red = NB; purple = ZINB (with dropout). Drag π to see zero counts artificially inflated.</p>
+  <div class="controls">
+    <label>$\mu$: <input type="range" id="s6mu" min="0.5" max="10" value="2.5" step="0.5"><span id="s6muVal">2.5</span></label>
+    <label>$\theta$: <input type="range" id="s6theta" min="0.5" max="20" value="2" step="0.5"><span id="s6thetaVal">2.0</span></label>
+    <label>$\pi$ (dropout): <input type="range" id="s6pi" min="0" max="0.7" value="0.3" step="0.05"><span id="s6piVal">0.30</span></label>
+  </div>
+  <svg class="canvas" id="s6svg" viewBox="0 0 800 320" width="100%"></svg>
+  <div class="stat-row">
+    <div class="item"><span class="lbl">NB P(X=0)</span><span class="lbl">NB P(X=0)</span><span class="val" id="s6nb0">—</span></div>
+    <div class="item"><span class="lbl">ZINB P(X=0)</span><span class="lbl">ZINB P(X=0)</span><span class="val" id="s6zinb0" style="color:#8e44ad">—</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">「人工」0 比例</span><span class="lbl" data-lang="en">"artificial" zero %</span><span class="val" id="s6extra">—</span></div>
+  </div>
+</div>
+
+<!-- §7 -->
+<h2 id="s7"><span class="num">§7</span> <span data-lang="zh">現代共識：UMI 資料用 NB 就好</span><span data-lang="en">Modern consensus: NB suffices for UMI</span></h2>
+
+<p data-lang="zh">
+  ZINB 在 2014-2017 年的早期 scRNA 文獻中很流行（Pierson & Yau ZIFA, ZinbWave 等）。
+  但 2019 之後 Hafemeister & Satija (scTransform)、Townes (GLM-PCA) 等多篇論文發現：
+  <b>對 UMI-based 資料（10x、Drop-seq），NB 已經夠了</b>。
+</p>
+<p data-lang="en">
+  ZINB was popular in early scRNA literature (2014–2017): Pierson & Yau ZIFA, ZinbWave, etc.
+  Post-2019, Hafemeister & Satija (scTransform), Townes (GLM-PCA), and others showed:
+  <b>for UMI-based data (10x, Drop-seq), NB suffices</b>.
+</p>
+
+<h3 data-lang="zh">7.1 為什麼 UMI 不需要 ZINB?</h3>
+<h3 data-lang="en">7.1 Why doesn't UMI need ZINB?</h3>
+
+<div class="callout idea">
+  <strong data-lang="zh">關鍵理解</strong><strong data-lang="en">Key insight</strong>:
+  <span data-lang="zh">所謂的「dropout」在<b>非 UMI</b> 平台（Smart-seq2 等）是因為 PCR amplification 的隨機性造成的——某些分子沒被 amplify、其他大量 amplify。
+  <b>UMI 平台</b>（10x 等）每個分子帶獨一無二的 barcode，PCR 後去重，所以「PCR dropout」這個來源根本不存在。剩下的「0」就是真正的「沒表現 + Poisson noise」——NB 完美擬合。</span>
+  <span data-lang="en">"Dropout" in <b>non-UMI</b> platforms (Smart-seq2) comes from PCR amplification randomness — some molecules don't amplify, others over-amplify.
+  In <b>UMI platforms</b> (10x), each molecule has a unique barcode; PCR is deduplicated post-hoc — PCR dropout simply doesn't exist.
+  Remaining zeros are genuinely "unexpressed + Poisson noise" — NB fits perfectly.</span>
+</div>
+
+<h3 data-lang="zh">7.2 實證：NB vs ZINB 擬合 10x 資料</h3>
+<h3 data-lang="en">7.2 Evidence: NB vs ZINB fit to 10x data</h3>
+<p data-lang="zh">在 Hafemeister & Satija 2019 的實驗：對 33000 個 10x cells × 22000 genes 同時 fit NB 跟 ZINB。
+結果：99.5% 的 gene，NB 跟 ZINB 的 likelihood 幾乎一樣（差 &lt; 0.5%）。多出 ZINB 的 π 參數沒幫助。</p>
+<p data-lang="en">In Hafemeister & Satija 2019: fit NB and ZINB to 33k 10x cells × 22k genes.
+Result: for 99.5% of genes, NB and ZINB likelihoods differ &lt; 0.5%. The extra π parameter doesn't help.</p>
+
+<h3 data-lang="zh">7.3 什麼時候還要用 ZINB?</h3>
+<h3 data-lang="en">7.3 When to still use ZINB?</h3>
+<table class="compare">
+  <tr><th data-lang="zh">平台</th><th data-lang="en">Platform</th>
+      <th data-lang="zh">建議</th><th data-lang="en">Recommendation</th></tr>
+  <tr><td>10x Chromium, Drop-seq</td><td>10x Chromium, Drop-seq</td>
+      <td><b>NB</b></td><td><b>NB</b></td></tr>
+  <tr><td>Smart-seq2, MARS-seq</td><td>Smart-seq2, MARS-seq</td>
+      <td data-lang="zh">ZINB 可能還有幫助（非 UMI）</td>
+      <td data-lang="en">ZINB may still help (non-UMI)</td></tr>
+  <tr><td>SHARE-seq, CITE-seq protein</td><td>SHARE-seq, CITE-seq protein</td>
+      <td data-lang="zh">看資料形狀決定</td>
+      <td data-lang="en">depends on data shape</td></tr>
+</table>
+
+<!-- §8 -->
+<h2 id="s8"><span class="num">§8</span> <span data-lang="zh">把整套故事串起來 + 限制</span><span data-lang="en">Tying it together + limits</span></h2>
+
+<h3 data-lang="zh">8.1 一張路徑圖</h3>
+<h3 data-lang="en">8.1 Roadmap</h3>
+
+<table class="compare">
+  <tr><th data-lang="zh">模型</th><th data-lang="en">Model</th>
+      <th data-lang="zh">參數</th><th data-lang="en">Params</th>
+      <th data-lang="zh">變異</th><th data-lang="en">Variance</th>
+      <th data-lang="zh">用在哪</th><th data-lang="en">Used in</th></tr>
+  <tr><td>Poisson</td><td>Poisson</td>
+      <td>$\lambda$</td><td>$\lambda$</td>
+      <td>$\lambda$</td><td>$\lambda$</td>
+      <td data-lang="zh">非常少；spike-ins, simple counting</td>
+      <td data-lang="en">rare; spike-ins, simple counting</td></tr>
+  <tr style="background:#effaf3;"><td><b>NB</b></td><td><b>NB</b></td>
+      <td>$\mu, \theta$</td><td>$\mu, \theta$</td>
+      <td>$\mu + \mu^2/\theta$</td><td>$\mu + \mu^2/\theta$</td>
+      <td><b>scTransform, GLM-PCA, scVI</b></td><td><b>scTransform, GLM-PCA, scVI</b></td></tr>
+  <tr><td>ZINB</td><td>ZINB</td>
+      <td>$\mu, \theta, \pi$</td><td>$\mu, \theta, \pi$</td>
+      <td data-lang="zh">NB + dropout 修正</td><td data-lang="en">NB + dropout adj</td>
+      <td>ZinbWave, DCA (non-UMI)</td><td>ZinbWave, DCA (non-UMI)</td></tr>
+</table>
+
+<h3 data-lang="zh">8.2 跟 M2.2 的連接</h3>
+<h3 data-lang="en">8.2 Connection to M2.2</h3>
+
+<div class="callout prog">
+  <strong data-lang="zh">直接後果</strong><strong data-lang="en">Direct consequence</strong>:
+  <span data-lang="zh"><a href="../M2-preprocessing/2.2-normalization.html"><b>M2.2 Pearson Residuals</b></a> (scTransform) 用的就是這節的 NB 模型——
+  $z_{ij} = \frac{x_{ij} - \mu_{ij}}{\sqrt{\mu_{ij} + \mu_{ij}^2/\theta_j}}$。分母正是 NB 的 σ。本節已經幫你打好理解這個公式的基礎。</span>
+  <span data-lang="en"><a href="../M2-preprocessing/2.2-normalization.html"><b>M2.2 Pearson Residuals</b></a> (scTransform) uses the NB model from here —
+  $z_{ij} = \frac{x_{ij} - \mu_{ij}}{\sqrt{\mu_{ij} + \mu_{ij}^2/\theta_j}}$. The denominator IS the NB σ. This section gives you the foundation.</span>
+</div>
+
+<h3 data-lang="zh">8.3 限制</h3>
+<h3 data-lang="en">8.3 Limitations</h3>
+<table class="compare">
+  <tr><th data-lang="zh">限制</th><th data-lang="en">Limitation</th>
+      <th data-lang="zh">後果</th><th data-lang="en">Consequence</th>
+      <th data-lang="zh">緩解</th><th data-lang="en">Mitigation</th></tr>
+  <tr>
+    <td data-lang="zh">NB 假設「同基因 θ 一致」</td>
+    <td data-lang="en">NB assumes "θ shared per gene"</td>
+    <td data-lang="zh">在細胞型態混合很重時可能偏</td>
+    <td data-lang="en">may be biased with strong cell-type mixture</td>
+    <td data-lang="zh">per-cluster fit、或用 scVI 含 batch effect</td>
+    <td data-lang="en">per-cluster fit, or scVI with batch effects</td>
+  </tr>
+  <tr>
+    <td data-lang="zh">θ 估計在低表現基因不穩</td>
+    <td data-lang="en">θ unstable for low-expression genes</td>
+    <td data-lang="zh">罕見基因的 NB σ 估計差</td>
+    <td data-lang="en">poor σ estimation for rare genes</td>
+    <td data-lang="zh">用 regularized estimation（scTransform v2）</td>
+    <td data-lang="en">regularized estimation (scTransform v2)</td>
+  </tr>
+  <tr>
+    <td data-lang="zh">非 UMI 平台仍需考慮 dropout</td>
+    <td data-lang="en">non-UMI still needs dropout modeling</td>
+    <td data-lang="zh">Smart-seq2 用 NB 可能 underfit 0</td>
+    <td data-lang="en">Smart-seq2 with NB may underfit zeros</td>
+    <td data-lang="zh">用 ZINB or hurdle model</td>
+    <td data-lang="en">use ZINB or hurdle model</td>
+  </tr>
+</table>
+
+<div class="callout prog">
+  <strong data-lang="zh">下一步</strong><strong data-lang="en">Next</strong>:
+  <span data-lang="zh">基礎篇完成！現在你掌握了：(1) 稀疏儲存 (M1.1)、(2) 計數分布 (本頁)。接下來進入 <a href="../M2-preprocessing/2.1-qc-statistics.html"><b>M2 前處理</b></a>。</span>
+  <span data-lang="en">Foundations complete! You now know: (1) sparse storage (M1.1), (2) count distributions (this page). Next: <a href="../M2-preprocessing/2.1-qc-statistics.html"><b>M2 Preprocessing</b></a>.</span>
+</div>
+
+<p class="footer">
+  <span data-lang="zh">© scRNA-seq Advanced Math · M1.2 Count Distributions Deep Interactive</span>
+  <span data-lang="en">© scRNA-seq Advanced Math · M1.2 Count Distributions Deep Interactive</span>
+</p>
+
+</div>
 
 <script src="../i18n.js"></script>
 <script>
-function switchTab(b,id){
-  const p=b.closest(".code-tabs");
-  p.querySelectorAll(".code-tab-btn").forEach(x=>x.classList.remove("active"));
-  p.querySelectorAll(".code-tab-content").forEach(x=>x.classList.remove("active"));
-  b.classList.add("active");
-  document.getElementById(id).classList.add("active");
-}
-
-// Distribution visualization
-function logGamma(z) {
-  const c = [76.18009172947146, -86.50532032941677, 24.01409824083091,
-             -1.231739572450155, 1.208650973866179e-3, -5.395239384953e-6];
-  let x = z, y = z, tmp = x + 5.5;
-  tmp -= (x + 0.5) * Math.log(tmp);
-  let ser = 1.000000000190015;
-  for (let j = 0; j < 6; j++) ser += c[j] / (++y);
-  return -tmp + Math.log(2.5066282746310005 * ser / x);
-}
-function poisspmf(k, lam) {
-  if (lam <= 0 || k < 0) return 0;
-  return Math.exp(k * Math.log(lam) - lam - logGamma(k + 1));
-}
-function nbpmf(k, mu, theta) {
-  if (mu <= 0 || theta <= 0 || k < 0) return 0;
-  const lg = logGamma(k + theta) - logGamma(theta) - logGamma(k + 1);
-  return Math.exp(lg + theta * Math.log(theta / (theta + mu)) + k * Math.log(mu / (theta + mu)));
-}
-
-function drawDist() {
-  const mu = +document.getElementById('muR').value;
-  const theta = +document.getElementById('thetaR').value;
-  const pi = +document.getElementById('piR').value;
-  document.getElementById('muV').textContent = mu.toFixed(1);
-  document.getElementById('thetaV').textContent = theta.toFixed(1);
-  document.getElementById('piV').textContent = pi.toFixed(2);
-
-  const kmax = Math.min(50, Math.ceil(mu * 4 + 8));
-  const ks = [];
-  for (let k = 0; k <= kmax; k++) ks.push(k);
-
-  const pPois = ks.map(k => poisspmf(k, mu));
-  const pNB = ks.map(k => nbpmf(k, mu, theta));
-  const pZINB = ks.map((k, i) => k === 0 ? pi + (1-pi)*pNB[i] : (1-pi)*pNB[i]);
-
-  const W=600, H=280, padL=40, padR=20, padT=20, padB=40;
-  const maxY = Math.max(...pPois, ...pNB, ...pZINB) * 1.1;
-  const barW = (W - padL - padR) / kmax * 0.28;
-  function sx(k) { return padL + (k / kmax) * (W - padL - padR); }
-  function sy(p) { return H - padB - (p / maxY) * (H - padT - padB); }
-
-  let h = '';
-  // axes
-  h += `<line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="#999"/>`;
-  h += `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${H-padB}" stroke="#999"/>`;
-  // x ticks
-  for (let k = 0; k <= kmax; k += Math.max(1, Math.ceil(kmax/10))) {
-    h += `<text x="${sx(k)}" y="${H-padB+14}" text-anchor="middle" font-size="11" fill="#666">${k}</text>`;
+// ====== §0 empirical histogram ======
+(function() {
+  // Mock CD3D-like counts: NB(μ=2.5, θ=0.7) ~ many zeros + long tail
+  let seed = 21;
+  const rnd = () => { seed = (seed*9301+49297)%233280; return seed/233280; };
+  // sample NB via Poisson-Gamma
+  function gamma(theta, scale) {
+    // simple: sum of theta exp(1) when theta integer; for continuous use Marsaglia approx
+    // approximation via central limit-ish: not accurate but illustrative
+    if (theta < 1) {
+      // boost: gamma(theta) = gamma(theta+1) * U^(1/theta)
+      return gamma(theta+1, scale) * Math.pow(rnd(), 1/theta);
+    }
+    // Marsaglia-Tsang
+    const d = theta - 1/3;
+    const c = 1/Math.sqrt(9*d);
+    while(true) {
+      let x = Math.sqrt(-2*Math.log(rnd()))*Math.cos(2*Math.PI*rnd());
+      const v = (1 + c*x)**3;
+      if (v > 0) {
+        const u = rnd();
+        if (u < 1 - 0.0331*x**4) return d*v*scale;
+        if (Math.log(u) < 0.5*x*x + d*(1 - v + Math.log(v))) return d*v*scale;
+      }
+    }
   }
-  // bars
-  for (let i = 0; i < ks.length; i++) {
-    const x = sx(ks[i]);
-    h += `<rect x="${x - barW*1.5}" y="${sy(pPois[i])}" width="${barW}" height="${H-padB-sy(pPois[i])}" fill="#06a77d" opacity="0.8"/>`;
-    h += `<rect x="${x - barW/2}" y="${sy(pNB[i])}" width="${barW}" height="${H-padB-sy(pNB[i])}" fill="#4f7df4" opacity="0.8"/>`;
-    h += `<rect x="${x + barW/2}" y="${sy(pZINB[i])}" width="${barW}" height="${H-padB-sy(pZINB[i])}" fill="#8b5cf6" opacity="0.8"/>`;
+  function poisson(lam) {
+    if (lam <= 0) return 0;
+    let L = Math.exp(-lam), p = 1, k = 0;
+    while(p > L) { k++; p *= rnd(); }
+    return k-1;
   }
-  // legend
-  h += `<rect x="${W-180}" y="${padT}" width="14" height="14" fill="#06a77d"/><text x="${W-160}" y="${padT+12}" font-size="12" fill="#333">Poisson</text>`;
-  h += `<rect x="${W-180}" y="${padT+20}" width="14" height="14" fill="#4f7df4"/><text x="${W-160}" y="${padT+32}" font-size="12" fill="#333">NB</text>`;
-  h += `<rect x="${W-180}" y="${padT+40}" width="14" height="14" fill="#8b5cf6"/><text x="${W-160}" y="${padT+52}" font-size="12" fill="#333">ZINB</text>`;
-  // axis labels
-  h += `<text x="${W/2}" y="${H-8}" text-anchor="middle" font-size="12" fill="#444">k (count)</text>`;
-  h += `<text x="14" y="${H/2}" font-size="12" fill="#444" transform="rotate(-90 14 ${H/2})" text-anchor="middle">P(X=k)</text>`;
+  function nb(mu, theta) {
+    const lam = gamma(theta, mu/theta);
+    return poisson(lam);
+  }
+  const counts = [];
+  for (let i = 0; i < 1000; i++) counts.push(nb(2.5, 0.7));
+  // bin
+  const max = 25;
+  const bins = Array(max+1).fill(0);
+  counts.forEach(c => { bins[Math.min(c, max)]++; });
+  const mxB = Math.max(...bins);
+  const W = 800, H = 300;
+  const X = k => 60 + k/max * 700;
+  const Y = c => 240 - c/mxB * 200;
+  let s = '';
+  s += `<line class="axis" x1="60" y1="240" x2="760" y2="240"/>`;
+  s += `<line class="axis" x1="60" y1="30" x2="60" y2="240"/>`;
+  bins.forEach((c, k) => {
+    const bx = X(k);
+    const bw = 700/max - 1;
+    const bh = c/mxB * 200;
+    s += `<rect x="${bx}" y="${240-bh}" width="${bw}" height="${bh}" fill="#4338ca" opacity="0.85"/>`;
+  });
+  for (let k = 0; k <= max; k += 5) {
+    s += `<text class="lbl" x="${X(k)}" y="260" text-anchor="middle">${k}</text>`;
+  }
+  s += `<text class="lbl" x="400" y="285" text-anchor="middle" font-weight="700">CD3D count per cell</text>`;
+  s += `<text class="lbl" x="${X(0)}" y="${Y(bins[0])-8}" text-anchor="middle" fill="#c0392b" font-weight="700">${bins[0]}</text>`;
+  document.getElementById('s0svg').innerHTML = s;
+})();
 
-  document.getElementById('distSvg').innerHTML = h;
+// ====== §0 quiz ======
+document.querySelectorAll('#quiz0 .opt').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const correct = btn.dataset.correct === 'true';
+    document.querySelectorAll('#quiz0 .opt').forEach(b => {
+      b.classList.add(b.dataset.correct === 'true' ? 'correct' : 'wrong');
+      b.disabled = true;
+    });
+    const fb = document.getElementById('quiz0fb');
+    fb.style.display = 'block';
+    const lang = document.body.classList.contains('lang-en') ? 'en' : 'zh';
+    fb.innerHTML = (correct
+      ? (lang==='en'?'✅ Correct! ':'✅ 答對！ ')
+      : (lang==='en'?'❌ Not quite. ':'❌ 不對。 ')) + btn.dataset['fb'+(lang==='en'?'En':'Zh')];
+  });
+});
 
-  // stats
-  const varP = mu;
-  const varNB = mu + mu*mu/theta;
-  document.getElementById('distStats').innerHTML =
-    `Poisson: Var = ${varP.toFixed(2)}, Var/μ = 1.00<br>` +
-    `NB: Var = ${varNB.toFixed(2)}, Var/μ = ${(varNB/mu).toFixed(2)} ${varNB/mu>1.5?'<b style="color:#dc2626">(過度離散!)</b>':''}<br>` +
-    `ZINB P(X=0): NB=${pNB[0].toFixed(3)}, ZINB=${(pi+(1-pi)*pNB[0]).toFixed(3)} ${pi>0.1?'<b style="color:#8b5cf6">(零膨脹)</b>':''}`;
-}
-['muR','thetaR','piR'].forEach(id => document.getElementById(id).addEventListener('input', drawDist));
-drawDist();
+// ====== §1 Poisson PMF ======
+(function() {
+  function logfact(k) { let s = 0; for (let i = 2; i <= k; i++) s += Math.log(i); return s; }
+  function poissPmf(k, lam) { return Math.exp(k * Math.log(lam) - lam - logfact(k)); }
+  function draw() {
+    const lam = +document.getElementById('s1lambda').value;
+    document.getElementById('s1lambdaVal').textContent = lam.toFixed(1);
+    document.getElementById('s1mean').textContent = lam.toFixed(2);
+    document.getElementById('s1var').textContent = lam.toFixed(2);
+    document.getElementById('s1p0').textContent = Math.exp(-lam).toFixed(3);
+    const max = 20;
+    const probs = [];
+    for (let k = 0; k <= max; k++) probs.push(poissPmf(k, lam));
+    const mx = Math.max(...probs);
+    const X = k => 60 + k/max * 700;
+    const Y = p => 220 - p/mx * 180;
+    let s = '';
+    s += `<line class="axis" x1="60" y1="220" x2="760" y2="220"/>`;
+    s += `<line class="axis" x1="60" y1="20" x2="60" y2="220"/>`;
+    probs.forEach((p, k) => {
+      const bx = X(k); const bw = 700/max - 2; const bh = p/mx * 180;
+      s += `<rect x="${bx}" y="${220-bh}" width="${bw}" height="${bh}" fill="#4338ca" opacity="0.85"/>`;
+    });
+    for (let k = 0; k <= max; k += 4) s += `<text class="lbl" x="${X(k)}" y="240" text-anchor="middle">${k}</text>`;
+    s += `<text class="lbl" x="400" y="265" text-anchor="middle" font-weight="700">k</text>`;
+    document.getElementById('s1svg').innerHTML = s;
+  }
+  document.getElementById('s1lambda').addEventListener('input', draw);
+  draw();
+})();
+
+// ====== §4 NB vs Poisson ======
+(function() {
+  function lgamma(x) {
+    // Stirling-ish
+    const c = [76.18009172947146, -86.50532032941677, 24.01409824083091,
+      -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
+    let y = x, tmp = x + 5.5;
+    tmp -= (x + 0.5) * Math.log(tmp);
+    let ser = 1.000000000190015;
+    for (let j = 0; j < 6; j++) { y += 1; ser += c[j]/y; }
+    return -tmp + Math.log(2.5066282746310005 * ser / x);
+  }
+  function logfact(k) { return lgamma(k+1); }
+  function poissPmf(k, lam) { return Math.exp(k*Math.log(lam) - lam - logfact(k)); }
+  function nbPmf(k, mu, theta) {
+    // P = C(k+θ-1, k) (θ/(θ+μ))^θ (μ/(θ+μ))^k
+    const lp = lgamma(k+theta) - logfact(k) - lgamma(theta)
+      + theta*Math.log(theta/(theta+mu)) + k*Math.log(mu/(theta+mu));
+    return Math.exp(lp);
+  }
+  function draw() {
+    const mu = +document.getElementById('s4mu').value;
+    const theta = +document.getElementById('s4theta').value;
+    document.getElementById('s4muVal').textContent = mu.toFixed(1);
+    document.getElementById('s4thetaVal').textContent = theta.toFixed(1);
+    const max = 25;
+    const nbP = []; const poP = [];
+    for (let k = 0; k <= max; k++) { nbP.push(nbPmf(k, mu, theta)); poP.push(poissPmf(k, mu)); }
+    const mx = Math.max(...nbP, ...poP);
+    const X = k => 60 + k/max * 700;
+    const Y = p => 260 - p/mx * 220;
+    let s = '';
+    s += `<line class="axis" x1="60" y1="260" x2="760" y2="260"/>`;
+    s += `<line class="axis" x1="60" y1="20" x2="60" y2="260"/>`;
+    nbP.forEach((p, k) => {
+      const bx = X(k); const bw = 700/max - 4; const bh = p/mx * 220;
+      s += `<rect x="${bx}" y="${260-bh}" width="${bw/2}" height="${bh}" fill="#4338ca" opacity="0.85"/>`;
+    });
+    poP.forEach((p, k) => {
+      const bx = X(k) + (700/max - 4)/2; const bw = 700/max - 4; const bh = p/mx * 220;
+      s += `<rect x="${bx}" y="${260-bh}" width="${bw/2}" height="${bh}" fill="#c0392b" opacity="0.7"/>`;
+    });
+    for (let k = 0; k <= max; k += 5) s += `<text class="lbl" x="${X(k)}" y="280" text-anchor="middle">${k}</text>`;
+    s += `<text class="lbl" x="400" y="305" text-anchor="middle" font-weight="700">k</text>`;
+    // legend
+    s += `<g transform="translate(580, 30)">`;
+    s += `<rect x="0" y="0" width="12" height="12" fill="#4338ca"/><text class="lbl" x="18" y="11">NB(μ,θ)</text>`;
+    s += `<rect x="0" y="20" width="12" height="12" fill="#c0392b" opacity="0.7"/><text class="lbl" x="18" y="31">Poisson(λ=μ)</text>`;
+    s += `</g>`;
+    document.getElementById('s4svg').innerHTML = s;
+    document.getElementById('s4mean').textContent = mu.toFixed(2);
+    document.getElementById('s4var').textContent = (mu + mu*mu/theta).toFixed(2);
+    document.getElementById('s4p0').textContent = nbP[0].toFixed(3);
+    document.getElementById('s4poi').textContent = poP[0].toFixed(3);
+  }
+  document.getElementById('s4mu').addEventListener('input', draw);
+  document.getElementById('s4theta').addEventListener('input', draw);
+  draw();
+})();
+
+// ====== §6 ZINB ======
+(function() {
+  function lgamma(x) {
+    const c = [76.18009172947146, -86.50532032941677, 24.01409824083091,
+      -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
+    let y = x, tmp = x + 5.5;
+    tmp -= (x + 0.5) * Math.log(tmp);
+    let ser = 1.000000000190015;
+    for (let j = 0; j < 6; j++) { y += 1; ser += c[j]/y; }
+    return -tmp + Math.log(2.5066282746310005 * ser / x);
+  }
+  function logfact(k) { return lgamma(k+1); }
+  function nbPmf(k, mu, theta) {
+    const lp = lgamma(k+theta) - logfact(k) - lgamma(theta)
+      + theta*Math.log(theta/(theta+mu)) + k*Math.log(mu/(theta+mu));
+    return Math.exp(lp);
+  }
+  function draw() {
+    const mu = +document.getElementById('s6mu').value;
+    const theta = +document.getElementById('s6theta').value;
+    const pi = +document.getElementById('s6pi').value;
+    document.getElementById('s6muVal').textContent = mu.toFixed(1);
+    document.getElementById('s6thetaVal').textContent = theta.toFixed(1);
+    document.getElementById('s6piVal').textContent = pi.toFixed(2);
+    const max = 20;
+    const nbP = []; const zinbP = [];
+    for (let k = 0; k <= max; k++) {
+      const nbVal = nbPmf(k, mu, theta);
+      nbP.push(nbVal);
+      zinbP.push(k === 0 ? pi + (1-pi)*nbVal : (1-pi)*nbVal);
+    }
+    const mx = Math.max(...nbP, ...zinbP);
+    const X = k => 60 + k/max * 700;
+    let s = '';
+    s += `<line class="axis" x1="60" y1="260" x2="760" y2="260"/>`;
+    s += `<line class="axis" x1="60" y1="20" x2="60" y2="260"/>`;
+    nbP.forEach((p, k) => {
+      const bx = X(k); const bw = 700/max - 4; const bh = p/mx * 220;
+      s += `<rect x="${bx}" y="${260-bh}" width="${bw/2}" height="${bh}" fill="#c0392b" opacity="0.75"/>`;
+    });
+    zinbP.forEach((p, k) => {
+      const bx = X(k) + (700/max - 4)/2; const bw = 700/max - 4; const bh = p/mx * 220;
+      s += `<rect x="${bx}" y="${260-bh}" width="${bw/2}" height="${bh}" fill="#8e44ad" opacity="0.85"/>`;
+    });
+    for (let k = 0; k <= max; k += 4) s += `<text class="lbl" x="${X(k)}" y="280" text-anchor="middle">${k}</text>`;
+    s += `<text class="lbl" x="400" y="305" text-anchor="middle" font-weight="700">k</text>`;
+    s += `<g transform="translate(580, 30)">`;
+    s += `<rect x="0" y="0" width="12" height="12" fill="#c0392b" opacity="0.75"/><text class="lbl" x="18" y="11">NB</text>`;
+    s += `<rect x="0" y="20" width="12" height="12" fill="#8e44ad"/><text class="lbl" x="18" y="31">ZINB (with π)</text>`;
+    s += `</g>`;
+    document.getElementById('s6svg').innerHTML = s;
+    document.getElementById('s6nb0').textContent = nbP[0].toFixed(3);
+    document.getElementById('s6zinb0').textContent = zinbP[0].toFixed(3);
+    document.getElementById('s6extra').textContent = (pi*100).toFixed(0) + '%';
+  }
+  document.getElementById('s6mu').addEventListener('input', draw);
+  document.getElementById('s6theta').addEventListener('input', draw);
+  document.getElementById('s6pi').addEventListener('input', draw);
+  draw();
+})();
 </script>
 </body>
 </html>

@@ -1,244 +1,1473 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>2.1 QC 統計：MAD 離群偵測 — scRNA-seq Advanced Math</title>
-<link rel="stylesheet" href="../styles.css">
-<script>MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] } };</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>2.1 QC 統計：MAD 離群偵測 — From Intuition to Math (Deep Interactive)</title>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
+<style>
+  :root {
+    --bg: #fafaf7; --fg: #1a1a1a; --muted: #666;
+    --accent: #c0392b; --accent2: #2c5aa0;
+    --green: #27795a; --purple: #8e44ad; --yellow: #f0c419;
+    --card: #ffffff; --border: #e0e0d8; --code: #f4f1ea;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Helvetica Neue", "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif; background: var(--bg); color: var(--fg); line-height: 1.75; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 40px 28px 120px; }
+  header.cover { margin: 20px 0 60px; padding: 52px 40px;
+    background: linear-gradient(135deg, #2b1d3d 0%, #6a3a8a 55%, #a45dc8 100%);
+    color: #fff; border-radius: 16px; box-shadow: 0 14px 40px rgba(50,28,80,0.18); }
+  header.cover h1 { margin: 0 0 14px; font-size: 36px; letter-spacing: 0.5px; }
+  header.cover .sub { font-size: 17px; opacity: 0.92; line-height: 1.65; }
+  header.cover .badge { display: inline-block; background: rgba(255,255,255,0.18);
+    padding: 4px 12px; border-radius: 20px; font-size: 13px; margin-bottom: 16px; }
+  h2 { margin-top: 70px; padding-bottom: 8px; border-bottom: 3px solid var(--purple);
+    font-size: 26px; display: flex; align-items: baseline; gap: 12px; }
+  h2 .num { color: var(--purple); font-weight: 800; font-size: 20px; }
+  h3 { margin-top: 36px; font-size: 19px; color: var(--accent2); }
+  h4 { margin-top: 22px; font-size: 16px; color: var(--accent); }
+  p { margin: 14px 0; }
+  .lead { font-size: 17px; color: #2a2a2a; }
+  .callout { background: #fff8e6; border-left: 4px solid var(--yellow);
+    padding: 14px 18px; border-radius: 6px; margin: 22px 0; }
+  .callout.idea { background: #eaf4ff; border-left-color: var(--accent2); }
+  .callout.warn { background: #fdecec; border-left-color: var(--accent); }
+  .callout.bio  { background: #effaf3; border-left-color: var(--green); }
+  .callout.prog { background: #f3eafa; border-left-color: var(--purple); }
+  .card { background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px 26px; margin: 26px 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+  .card h3 { margin-top: 0; }
+  .controls { display: flex; flex-wrap: wrap; gap: 14px 22px;
+    align-items: center; margin: 14px 0; padding: 12px 16px;
+    background: #f4f1ea; border-radius: 8px; font-size: 14px; }
+  .controls label { display: flex; align-items: center; gap: 8px; }
+  button { background: var(--accent2); color: #fff; border: 0;
+    padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 14px;
+    font-family: inherit; }
+  button:hover { background: #1d4380; }
+  button.ghost { background: #fff; color: var(--accent2); border: 1px solid var(--accent2); }
+  button.purple { background: var(--purple); }
+  button.purple:hover { background: #6c3092; }
+  button.green { background: var(--green); }
+  button.warn { background: var(--accent); }
+  input[type="range"] { width: 180px; vertical-align: middle; }
+  svg.canvas { background: #fcfcfa; border: 1px solid var(--border);
+    border-radius: 8px; display: block; }
+  svg.canvas .axis { stroke: #bbb; stroke-width: 1; }
+  svg.canvas .grid { stroke: #ececea; stroke-width: 0.5; }
+  svg.canvas circle.pt { fill: #2c5aa0; cursor: pointer; }
+  svg.canvas circle.pt.bad { fill: #c0392b; }
+  svg.canvas circle.pt.good { fill: #27795a; }
+  svg.canvas text.lbl { font-size: 12px; fill: #333; }
+  .stat-row { display: flex; flex-wrap: wrap; gap: 22px; margin: 14px 0; font-size: 14px; }
+  .stat-row .item { display: flex; flex-direction: column; }
+  .stat-row .item .lbl { color: var(--muted); font-size: 12px; }
+  .stat-row .item .val { font-family: "JetBrains Mono", monospace; font-size: 18px; }
+  details { margin: 16px 0; }
+  details summary { cursor: pointer; font-weight: 600; color: var(--accent2); padding: 6px 0; }
+  .toc { background: #fff; border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 28px; margin: 30px 0; }
+  .toc h4 { margin: 0 0 10px; color: var(--purple); }
+  .toc ol { margin: 6px 0; padding-left: 24px; line-height: 1.9; }
+  .toc a { color: var(--accent2); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .toc .new { background: var(--purple); color: #fff; font-size: 11px;
+    padding: 1px 8px; border-radius: 10px; margin-left: 6px; }
+  code.inline { background: var(--code); padding: 2px 6px; border-radius: 4px;
+    font-size: 13px; font-family: "JetBrains Mono", "Consolas", monospace; }
+  pre.code { background: #1e1e1e; color: #dcdcdc;
+    padding: 14px 18px; border-radius: 8px; overflow-x: auto; font-size: 13px;
+    font-family: "JetBrains Mono", "Consolas", monospace; line-height: 1.55; }
+  pre.code .k { color: #569cd6; }
+  pre.code .s { color: #ce9178; }
+  pre.code .c { color: #6a9955; }
+  pre.code .n { color: #b5cea8; }
+  table.compare { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.compare th, table.compare td { border: 1px solid var(--border); padding: 8px 12px; }
+  table.compare th { background: #f4f1ea; text-align: left; }
+  .math-block { background: #fff; border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 18px; margin: 18px 0; }
+  .math-block.boxed { border: 2px solid var(--purple); background: #fbf6ff; }
+  .formula-caption { font-size: 12.5px; color: var(--muted); text-align: center; margin-top: 6px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; }
+  .grid-2 > * { min-width: 0; }
+  @media (max-width: 760px) { .grid-2 { grid-template-columns: 1fr; } }
+  .footer { text-align: center; color: var(--muted); margin-top: 80px; font-size: 13px; }
+  /* Quiz */
+  .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 14px 0; }
+  @media (max-width: 600px) { .quiz-options { grid-template-columns: 1fr; } }
+  .quiz-options button.opt { background: #fff; color: #222; border: 2px solid var(--border);
+    text-align: left; padding: 14px 16px; font-size: 14px; line-height: 1.5; }
+  .quiz-options button.opt:hover { border-color: var(--purple); background: #fbf6ff; }
+  .quiz-options button.opt.correct { border-color: var(--green); background: #effaf3; }
+  .quiz-options button.opt.wrong { border-color: var(--accent); background: #fdecec; opacity: 0.6; }
+  .quiz-feedback { margin-top: 12px; padding: 12px 14px; border-radius: 6px;
+    background: #fff8e6; border-left: 4px solid var(--yellow); font-size: 14px; }
+
+  /* Top nav (same as PCA) */
+  .top-nav { background: #2b1d3d; color: #fff; padding: 14px 28px;
+    position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(50,28,80,0.25); }
+  .top-nav-inner { max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; gap: 28px; }
+  .top-nav-brand { color: #fff; text-decoration: none;
+    font-weight: 700; font-size: 17px;
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .top-nav-brand .badge-math { background: #a45dc8; color: #fff;
+    padding: 3px 9px; border-radius: 4px; font-size: 11px; }
+  .top-nav-links { list-style: none; margin: 0; padding: 0;
+    display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+  .top-nav-links a { color: #d5cee8; text-decoration: none;
+    padding: 6px 11px; border-radius: 6px; font-size: 13px; font-weight: 500;
+    transition: 0.2s; }
+  .top-nav-links a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .top-nav-links a.active { background: #a45dc8; color: #fff; }
+  .top-nav-links li.dropdown { position: relative; }
+  .top-nav-links li.dropdown > a::after { content: ' ▾';
+    font-size: 10px; opacity: 0.7; margin-left: 3px;
+    display: inline-block; transition: transform 0.2s; }
+  .top-nav-links li.dropdown:hover > a::after,
+  .top-nav-links li.dropdown.open > a::after { transform: rotate(180deg); }
+  .top-nav-links .dropdown-menu { display: none; position: absolute; top: 100%; left: 0;
+    background: #3a2547; border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px; padding: 6px 0; min-width: 230px;
+    list-style: none; z-index: 200;
+    box-shadow: 0 8px 28px rgba(50,28,80,0.5); margin: 6px 0 0; }
+  .top-nav-links li.dropdown:hover > .dropdown-menu,
+  .top-nav-links li.dropdown.open > .dropdown-menu { display: block; }
+  .top-nav-links .dropdown-menu li { display: block; }
+  .top-nav-links .dropdown-menu li a { display: block; padding: 9px 18px;
+    border-radius: 0; font-size: 13px; white-space: nowrap; color: #d5cee8; }
+  .top-nav-links .dropdown-menu li a:hover { background: rgba(164,93,200,0.2); color: #fff; }
+  .top-nav-links .dropdown-menu li a.active-sub { background: #a45dc8; color: #fff; font-weight: 700; }
+  .top-nav-links .dropdown-menu .sub-label { font-size: 10px; color: #9b8db5;
+    letter-spacing: 1px; padding: 4px 18px 2px; text-transform: uppercase; }
+  .lang-switch { display: flex; gap: 4px;
+    background: rgba(255,255,255,0.08); padding: 4px; border-radius: 6px; flex-shrink: 0; }
+  .lang-switch button { background: transparent; border: 0; color: #d5cee8;
+    font-size: 12px; font-weight: 700; padding: 5px 10px;
+    border-radius: 4px; cursor: pointer; font-family: inherit; }
+  .lang-switch button.active { background: #a45dc8; color: #fff; }
+  .nav-pages { display: flex; gap: 8px; margin: 24px 0; padding: 14px;
+    background: #3a2547; border-radius: 10px;
+    align-items: center; flex-wrap: wrap; }
+  .nav-pages a { color: #d5cee8; text-decoration: none;
+    padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600;
+    transition: 0.2s; }
+  .nav-pages a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .nav-pages .label { color: #9b8db5; font-size: 11px;
+    letter-spacing: 1px; font-weight: 700; margin-right: 8px; }
+
+  /* Language switch CSS */
+  [data-lang="en"] { display: none; }
+  body.lang-en [data-lang="zh"] { display: none; }
+  body.lang-en [data-lang="en"] { display: initial; }
+  body.lang-en h1[data-lang="en"], body.lang-en h2[data-lang="en"],
+  body.lang-en h3[data-lang="en"], body.lang-en h4[data-lang="en"],
+  body.lang-en p[data-lang="en"], body.lang-en div[data-lang="en"],
+  body.lang-en ol[data-lang="en"], body.lang-en ul[data-lang="en"] { display: block; }
+  body.lang-en li[data-lang="en"] { display: list-item; }
+  body.lang-en span[data-lang="en"] { display: inline; }
+  body.lang-en tspan[data-lang="en"] { display: inline; }
+</style>
 </head>
 <body>
+
+<!-- Top nav -->
 <nav class="top-nav"><div class="top-nav-inner">
-  <a href="../index.html" class="top-nav-brand"><span>🧬</span><span data-lang="zh">scRNA-seq 進階數學</span><span data-lang="en">scRNA-seq Advanced Math</span><span class="badge-math">MATH</span></a>
+  <a href="../index.html" class="top-nav-brand">
+    <span>🧬</span>
+    <span data-lang="zh">scRNA-seq 進階數學</span>
+    <span data-lang="en">scRNA-seq Advanced Math</span>
+    <span class="badge-math">MATH</span>
+  </a>
   <ul class="top-nav-links">
-    <li><a href="../index.html#M1">M1</a></li><li><a href="../index.html#M2" class="active">M2</a></li><li><a href="../index.html#M3">M3</a></li><li><a href="../index.html#M4">M4</a></li><li><a href="../index.html#M5">M5</a></li><li><a href="../index.html#M6">M6</a></li>
-    <li><a href="../index.html" data-lang="zh">🏠 回首頁</a><span data-lang="en">🏠 Home</span></li>
+    <li class="dropdown">
+      <a href="../index.html#M1">M1</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">基礎 / FOUNDATIONS</li>
+        <li><a href="../M1-foundations/1.1-sparse-matrix.html">1.1 稀疏矩陣 / Sparse Matrix</a></li>
+        <li><a href="../M1-foundations/1.2-count-distributions.html">1.2 計數分布 / Count Distributions</a></li>
+      </ul>
+    </li>
+    <li class="dropdown">
+      <a href="../index.html#M2" class="active">M2</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">前處理 / PREPROCESSING</li>
+        <li><a href="2.1-qc-statistics.html" class="active-sub">2.1 QC 統計 ⭐ (本頁)</a></li>
+        <li><a href="2.2-normalization.html">2.2 Normalization</a></li>
+        <li><a href="2.3-hvg-selection.html">2.3 HVG 選擇</a></li>
+        <li><a href="2.4-scaling.html">2.4 Scaling</a></li>
+      </ul>
+    </li>
+    <li class="dropdown">
+      <a href="../index.html#M3">M3</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">降維 / DIM. REDUCTION</li>
+        <li><a href="../M3-dimreduction/3.1-pca.html">3.1 PCA</a></li>
+        <li><a href="../M3-dimreduction/3.2-tsne.html">3.2 t-SNE</a></li>
+        <li><a href="../M3-dimreduction/3.3-umap.html">3.3 UMAP</a></li>
+        <li><a href="../M3-dimreduction/3.4-diffusion-map.html">3.4 Diffusion Maps</a></li>
+      </ul>
+    </li>
+    <li class="dropdown">
+      <a href="../index.html#M4">M4</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">圖與聚類 / GRAPH &amp; CLUSTERING</li>
+        <li><a href="../M4-graph-clustering/4.1-knn-graph.html">4.1 KNN Graph + HNSW</a></li>
+        <li><a href="../M4-graph-clustering/4.2-louvain-leiden.html">4.2 Louvain &amp; Leiden</a></li>
+      </ul>
+    </li>
+    <li class="dropdown">
+      <a href="../index.html#M5">M5</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">統計推論 / STATS</li>
+        <li><a href="../M5-statistics/5.1-de-tests.html">5.1 DE 檢定</a></li>
+        <li><a href="../M5-statistics/5.2-multiple-testing.html">5.2 多重檢定 / FDR</a></li>
+        <li><a href="../M5-statistics/5.3-classifier.html">5.3 細胞分類器</a></li>
+      </ul>
+    </li>
+    <li class="dropdown">
+      <a href="../index.html#M6">M6</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">進階 / ADVANCED</li>
+        <li><a href="../M6-advanced/6.1-integration.html">6.1 Integration</a></li>
+        <li><a href="../M6-advanced/6.2-pseudotime.html">6.2 Pseudotime</a></li>
+        <li><a href="../M6-advanced/6.3-cellchat.html">6.3 CellChat</a></li>
+      </ul>
+    </li>
+    <li><a href="../index.html"><span data-lang="zh">🏠 回首頁</span><span data-lang="en">🏠 Home</span></a></li>
   </ul>
-  <div class="lang-switch"><button data-lang-btn="zh" class="active">中文</button><button data-lang-btn="en">EN</button></div>
+  <div class="lang-switch">
+    <button data-lang-btn="zh" class="active">中文</button>
+    <button data-lang-btn="en">EN</button>
+  </div>
 </div></nav>
 
-<header class="page-hero"><div class="page-hero-inner">
-  <div class="page-badge">M2.1 · PREPROCESSING</div>
-  <h1 data-lang="zh">QC 統計：MAD 離群偵測</h1>
-  <h1 data-lang="en">QC: MAD-based Outlier Detection</h1>
-  <p class="subtitle" data-lang="zh">為什麼 QC 不用平均±2 標準差？MAD 為什麼比標準差更穩健？Scrublet 怎麼用模擬算 doublet 機率？</p>
-  <p class="subtitle" data-lang="en">Why QC avoids ±2σ thresholds. Why MAD is more robust than σ. How Scrublet simulates doublet probability.</p>
-</div></header>
+<div class="wrap">
 
-<main class="content-wrap">
-
-<section class="section">
-  <span class="section-label intuition">直覺 / Intuition</span>
-  <h2 data-lang="zh">為什麼平均±標準差會「失靈」？</h2>
-  <h2 data-lang="en">Why mean ± σ fails</h2>
-  <div data-lang="zh">
-    <p>QC 目的是過濾「壞細胞」——nFeature 太低（空 droplet）、MT% 太高（破裂死細胞）、nCount 過高（doublet）。
-    但這些「壞細胞」本身會<b>把平均跟標準差拉走</b>——
-    用 mean ± 2σ 當門檻反而把「不夠壞」的細胞也保留下來。</p>
-    <p>解法：用<b>中位數</b>取代平均、用 <b>MAD（中位數絕對偏差）</b>取代標準差。
-    中位數 / MAD 不會被極端值拉走，是「穩健統計」(robust statistics) 的基本工具。</p>
-  </div>
-  <div data-lang="en">
-    <p>QC filters bad cells — low nFeature (empty droplets), high MT% (dying cells), high nCount (doublets).
-    But these bad cells <b>pull mean and σ themselves</b> — using mean ± 2σ ironically retains less-bad outliers.</p>
-    <p>Solution: replace mean with <b>median</b>, σ with <b>MAD (Median Absolute Deviation)</b>. Both are unaffected by extreme values — the foundation of robust statistics.</p>
-  </div>
-</section>
-
-<section class="section">
-  <span class="section-label math">核心數學 / Math</span>
-  <h2>MAD <span data-lang="zh">的定義</span><span data-lang="en">definition</span></h2>
-  <div class="math-block">
-  $$\mathrm{MAD}(\mathbf{x}) = \mathrm{median}_i \left( \left| x_i - \mathrm{median}(\mathbf{x}) \right| \right)$$
-  <div class="formula-caption" data-lang="zh">中位數的「中位數絕對偏差」——對極端值不敏感</div>
-  <div class="formula-caption" data-lang="en">Median of absolute deviations from median — insensitive to extremes</div>
-  </div>
-
-  <h3 data-lang="zh">為什麼是 1.4826？</h3>
-  <h3 data-lang="en">Why the 1.4826 factor?</h3>
-  <p data-lang="zh">若資料其實是高斯分布，<code>1.4826 × MAD</code> 是 σ 的<b>無偏估計</b>。常數來自：</p>
-  <p data-lang="en">If data are Gaussian, <code>1.4826 × MAD</code> is an unbiased estimator of σ. The constant comes from:</p>
-  <div class="math-block">
-  $$1.4826 = \frac{1}{\Phi^{-1}(0.75)} = \frac{1}{0.6745}$$
-  <div class="formula-caption" data-lang="zh">$\Phi^{-1}(0.75)$ 是標準常態的第 75 分位數</div>
-  <div class="formula-caption" data-lang="en">$\Phi^{-1}(0.75)$ is the 75th percentile of standard normal</div>
-  </div>
-
-  <h3 data-lang="zh">QC 門檻設定</h3>
-  <h3 data-lang="en">QC threshold</h3>
-  <div class="math-block boxed">
-  $$\text{離群} \iff \left| x_i - \mathrm{median}(\mathbf{x}) \right| > k \cdot \mathrm{MAD}(\mathbf{x})$$
-  <div class="formula-caption" data-lang="zh">常用 $k = 3$（對應 ~99% Gaussian）或 $k = 5$（保守）</div>
-  <div class="formula-caption" data-lang="en">Common: $k=3$ (~99% Gaussian) or $k=5$ (conservative)</div>
-  </div>
-  <p data-lang="zh">QC 變數常先做 log 轉換才算 MAD，因為 nFeature / nCount 通常呈右偏分布。</p>
-  <p data-lang="en">QC variables are typically log-transformed before MAD computation, due to right-skewed distributions of nFeature / nCount.</p>
-</section>
-
-<section class="section">
-  <span class="section-label math">核心數學 / Math</span>
-  <h2 data-lang="zh">Scrublet：用模擬算 doublet 機率</h2>
-  <h2 data-lang="en">Scrublet: Simulated Doublet Probability</h2>
-  <p data-lang="zh">關鍵想法：<b>把細胞兩兩相加當作「合成 doublet」</b>，看真實細胞在 PCA 空間中跟誰像。</p>
-  <p data-lang="en">Key idea: <b>add cells in pairs to create "synthetic doublets"</b>, then check which real cells are similar in PCA space.</p>
-
-  <div class="algo-block">
-<span class="comment"># Step 1: 模擬 doublets</span>
-<span class="keyword">for</span> r <span class="keyword">in</span> range(n_simulated):
-    i, j = random.sample(range(n_cells), <span class="num">2</span>)
-    synthetic[r] = (X[i] + X[j])     <span class="comment"># 兩細胞相加</span>
-
-<span class="comment"># Step 2: 合併 + PCA</span>
-combined = concat([X, synthetic])
-Z = PCA(combined, n_components=<span class="num">30</span>)
-
-<span class="comment"># Step 3: 每個真實細胞算 KNN 中有幾個是模擬 doublet</span>
-<span class="keyword">for</span> i <span class="keyword">in</span> range(n_cells):
-    neighbors = kNN(Z[i], k=<span class="num">50</span>)
-    n_doublet_neighbors = sum(<span class="num">1</span> <span class="keyword">for</span> j <span class="keyword">in</span> neighbors <span class="keyword">if</span> is_synthetic(j))
-    doublet_score[i] = n_doublet_neighbors / <span class="num">50</span>
-  </div>
-
-  <p data-lang="zh">最終的 <code>doublet_score</code> 經過閾值判定即得 doublet 標籤。閾值通常用 GMM 或固定分位數決定。</p>
-  <p data-lang="en">The final <code>doublet_score</code> is thresholded (via GMM or fixed quantile) to label doublets.</p>
-</section>
-
-<section class="section">
-  <span class="section-label">互動 / Interactive</span>
-  <h2 data-lang="zh">MAD vs σ 比較器</h2>
-  <h2 data-lang="en">MAD vs σ Comparator</h2>
-  <p data-lang="zh">資料中加入幾個離群值，看 mean、σ、median、MAD 怎麼反應。</p>
-  <p data-lang="en">Add outliers and watch how mean, σ, median, MAD respond.</p>
-
-  <div style="background:#f6f8fc; padding:18px; border-radius:10px">
-    <label data-lang="zh" style="font-size:13px">離群值倍率（離主分布多遠）</label>
-    <label data-lang="en" style="font-size:13px">Outlier magnitude (how far from main cluster)</label>
-    <input type="range" id="outR" min="0" max="20" value="0" step="0.5" style="width:100%">
-    <div id="outV" style="font-family:monospace; margin-bottom:10px">0.0×</div>
-    <svg id="madSvg" viewBox="0 0 600 200" style="background:#fff; border-radius:8px; width:100%"></svg>
-    <div id="madStats" style="margin-top:10px; padding:10px; background:#fff; border-radius:6px; font-size:13px; font-family:monospace"></div>
-  </div>
-</section>
-
-<section class="section">
-  <span class="section-label code">程式碼 / Code</span>
-  <h2 data-lang="zh">實作範例</h2>
-  <h2 data-lang="en">Code Examples</h2>
-  <div class="code-tabs">
-    <div class="code-tab-btns"><button class="code-tab-btn active" onclick="switchTab(this,'py3')">Python / Scanpy</button><button class="code-tab-btn" onclick="switchTab(this,'r3')">R / Seurat</button></div>
-    <div class="code-tab-content active" id="py3"><pre><span class="keyword">import</span> scanpy <span class="keyword">as</span> sc
-<span class="keyword">import</span> numpy <span class="keyword">as</span> np
-<span class="keyword">from</span> scipy.stats <span class="keyword">import</span> median_abs_deviation
-
-sc.pp.calculate_qc_metrics(adata, percent_top=<span class="keyword">None</span>, log1p=<span class="keyword">False</span>, inplace=<span class="keyword">True</span>)
-
-<span class="keyword">def</span> <span class="func">is_outlier</span>(M, metric, nmads=<span class="num">5</span>):
-    x = M.obs[metric]
-    med, mad = np.median(x), median_abs_deviation(x)
-    <span class="keyword">return</span> (x &lt; med - nmads*mad) | (x &gt; med + nmads*mad)
-
-adata.obs[<span class="str">"outlier"</span>] = (
-    is_outlier(adata, <span class="str">"log1p_total_counts"</span>, <span class="num">5</span>) |
-    is_outlier(adata, <span class="str">"log1p_n_genes_by_counts"</span>, <span class="num">5</span>) |
-    is_outlier(adata, <span class="str">"pct_counts_in_top_20_genes"</span>, <span class="num">5</span>)
-)
-adata = adata[~adata.obs.outlier].copy()
-
-<span class="comment"># Doublet 偵測</span>
-<span class="keyword">import</span> scrublet <span class="keyword">as</span> scr
-scrub = scr.Scrublet(adata.X)
-adata.obs[<span class="str">"doublet_score"</span>], adata.obs[<span class="str">"predicted_doublet"</span>] = scrub.scrub_doublets()
-</pre></div>
-    <div class="code-tab-content" id="r3"><pre><span class="keyword">library</span>(Seurat); <span class="keyword">library</span>(scDblFinder)
-
-<span class="comment"># 基本 QC metrics</span>
-pbmc[[<span class="str">"percent.mt"</span>]] &lt;- <span class="func">PercentageFeatureSet</span>(pbmc, pattern = <span class="str">"^MT-"</span>)
-
-<span class="comment"># MAD-based filtering</span>
-qc_filter &lt;- <span class="keyword">function</span>(x, nmads = <span class="num">5</span>) {
-  med &lt;- <span class="func">median</span>(x); m &lt;- <span class="func">mad</span>(x)
-  x &gt; med - nmads*m &amp; x &lt; med + nmads*m
-}
-keep &lt;- qc_filter(<span class="func">log1p</span>(pbmc$nCount_RNA)) &amp;
-        qc_filter(<span class="func">log1p</span>(pbmc$nFeature_RNA)) &amp;
-        pbmc$percent.mt &lt; <span class="num">15</span>
-pbmc &lt;- pbmc[, keep]
-
-<span class="comment"># scDblFinder（推薦的 R doublet 工具）</span>
-sce &lt;- <span class="func">as.SingleCellExperiment</span>(pbmc)
-sce &lt;- <span class="func">scDblFinder</span>(sce)
-pbmc$doublet_score &lt;- sce$scDblFinder.score
-</pre></div>
-  </div>
-</section>
-
-<section class="section">
-  <span class="section-label">參考 / References</span>
-  <ul class="refs-list">
-    <li><div class="ref-title">Rousseeuw, P.J. &amp; Croux, C. (1993). Alternatives to the median absolute deviation.</div><div class="ref-meta">JASA. 穩健統計經典。</div></li>
-    <li><div class="ref-title">Wolock, S.L., Lopez, R., Klein, A.M. (2019). Scrublet.</div><div class="ref-meta">Cell Systems. <a href="https://doi.org/10.1016/j.cels.2018.11.005">10.1016/j.cels.2018.11.005</a></div></li>
-    <li><div class="ref-title">Germain, P.-L. et al. (2021). scDblFinder.</div><div class="ref-meta">F1000Research. <a href="https://doi.org/10.12688/f1000research.73600.2">10.12688/f1000research.73600.2</a></div></li>
-    <li><div class="ref-title">Heumos, L. et al. (2023). Best practices for single-cell analysis across modalities.</div><div class="ref-meta">Nat Rev Genet 24. <a href="https://doi.org/10.1038/s41576-023-00586-w">10.1038/s41576-023-00586-w</a></div></li>
-  </ul>
-</section>
-
-<div class="cross-links">
-  <a href="../M1-foundations/1.2-count-distributions.html" class="cross-link">
-    <div class="cross-label" data-lang="zh">← 基礎</div><div class="cross-label" data-lang="en">← FOUNDATIONS</div>
-    <div class="cross-title"><span class="cross-id">M1.2</span> <span data-lang="zh">計數分布</span><span data-lang="en">Count Distributions</span></div>
-  </a>
-  <a href="2.2-normalization.html" class="cross-link">
-    <div class="cross-label" data-lang="zh">下一篇 →</div><div class="cross-label" data-lang="en">NEXT →</div>
-    <div class="cross-title"><span class="cross-id">M2.2</span> Normalization</div>
-  </a>
+<!-- Chapter quick links -->
+<div class="nav-pages">
+  <span class="label" data-lang="zh">本頁章節</span><span class="label" data-lang="en">CHAPTERS</span>
+  <a href="#s0"><span data-lang="zh">§0 故事</span><span data-lang="en">§0 Story</span></a>
+  <a href="#s1"><span data-lang="zh">§1 平均 vs 中位數</span><span data-lang="en">§1 Mean vs Median</span></a>
+  <a href="#s2"><span data-lang="zh">§2 MAD 定義</span><span data-lang="en">§2 MAD Definition</span></a>
+  <a href="#s3"><span data-lang="zh">§3 1.4826 推導</span><span data-lang="en">§3 1.4826 Derivation</span></a>
+  <a href="#s4"><span data-lang="zh">§4 互動門檻</span><span data-lang="en">§4 Interactive Cutoff</span></a>
+  <a href="#s5"><span data-lang="zh">§5 為何 log</span><span data-lang="en">§5 Why log</span></a>
+  <a href="#s6"><span data-lang="zh">§6 多變數 QC</span><span data-lang="en">§6 Multi-var QC</span></a>
+  <a href="#s7"><span data-lang="zh">§7 Scrublet</span><span data-lang="en">§7 Scrublet</span></a>
+  <a href="#s8"><span data-lang="zh">§8 限制與下一步</span><span data-lang="en">§8 Limits &amp; Next</span></a>
 </div>
 
-</main>
-<footer class="site-footer"><p>© Charlene</p></footer>
+<header class="cover">
+  <div class="badge"><span data-lang="zh">深入互動版 · 從直覺到數學</span><span data-lang="en">Deep Interactive · From Intuition to Math</span></div>
+  <h1 data-lang="zh">QC 統計：MAD 離群偵測與 Doublet 模擬</h1>
+  <h1 data-lang="en">QC Statistics: MAD Outlier Detection and Doublet Simulation</h1>
+  <div class="sub" data-lang="zh">
+    <b>你拿到 10x 的原始輸出。</b>10,000 個細胞，20,000 個基因。
+    第一個問題：哪些「細胞」其實只是空 droplet？哪些已經死了？哪些是兩顆黏在一起的 doublet？<br><br>
+    最直覺的答案：用「平均值 ± 2 個標準差」當門檻。
+    這節我們會用互動圖<b>給你看為什麼這個直覺會失敗</b>——
+    壞細胞本身會把平均跟標準差<b>拉走</b>，
+    導致你越用越鬆。<br><br>
+    然後我們會逐步推出 <b>MAD（中位數絕對偏差）</b>、$1.4826 \times \text{MAD}$ 為什麼是 σ 的無偏估計、
+    為什麼 QC 要 log 轉換、多變數聯合 QC，以及 <b>Scrublet</b> 怎麼用模擬隨機產生 doublet 來算 doublet score。
+  </div>
+  <div class="sub" data-lang="en">
+    <b>You receive raw 10x output:</b> 10,000 cells × 20,000 genes.
+    First question: which "cells" are actually empty droplets? Which are dying? Which are doublets (two cells fused)?<br><br>
+    The intuitive answer: threshold at <b>mean ± 2σ</b>. This section <b>shows you interactively why that intuition fails</b> —
+    bad cells <b>pull mean and σ themselves</b>, making the threshold paradoxically looser.<br><br>
+    We then derive <b>MAD (Median Absolute Deviation)</b>, prove why $1.4826 \times \text{MAD}$ is an unbiased estimator of σ,
+    show why QC needs log-transform, build multi-variate joint QC, and walk through <b>Scrublet</b> — how it simulates random doublets to score each cell.
+  </div>
+</header>
+
+<div class="toc">
+  <h4 data-lang="zh">目錄</h4>
+  <h4 data-lang="en">Table of Contents</h4>
+  <ol start="0">
+    <li><a href="#s0"><span data-lang="zh">故事開始：你拿到 10x 的輸出</span><span data-lang="en">Story: You receive raw 10x output</span></a><span class="new" data-lang="zh">新增</span><span class="new" data-lang="en">NEW</span></li>
+    <li><a href="#s1"><span data-lang="zh">為什麼平均會被「壞細胞」綁架</span><span data-lang="en">Why mean is hijacked by bad cells</span></a></li>
+    <li><a href="#s2"><span data-lang="zh">MAD 的定義：中位數的偏差再取中位數</span><span data-lang="en">MAD definition: median of deviations from median</span></a></li>
+    <li><a href="#s3"><span data-lang="zh">1.4826 是哪裡來的？— 從常態分布推導</span><span data-lang="en">Where does 1.4826 come from? Derivation from normal</span></a></li>
+    <li><a href="#s4"><span data-lang="zh">互動門檻：滑桿調 k 看哪些細胞被砍</span><span data-lang="en">Interactive cutoff: slider on k, see which cells get cut</span></a></li>
+    <li><a href="#s5"><span data-lang="zh">為什麼要 log 轉換才算 MAD</span><span data-lang="en">Why log-transform before computing MAD</span></a></li>
+    <li><a href="#s6"><span data-lang="zh">多變數 QC：nFeature × MT% 聯合分布</span><span data-lang="en">Multi-variable QC: nFeature × MT% joint distribution</span></a></li>
+    <li><a href="#s7"><span data-lang="zh">Scrublet：模擬合成 doublet 算機率</span><span data-lang="en">Scrublet: simulate synthetic doublets to score probability</span></a><span class="new" data-lang="zh">核心</span><span class="new" data-lang="en">CORE</span></li>
+    <li><a href="#s8"><span data-lang="zh">把整套故事串起來 + 限制與下一步</span><span data-lang="en">Tying it together + limits and next steps</span></a></li>
+  </ol>
+</div>
+
+<!-- ===================================== §0 ===================================== -->
+<h2 id="s0"><span class="num">§0</span> <span data-lang="zh">故事開始：你拿到 10x 的輸出</span><span data-lang="en">Story: You receive raw 10x output</span></h2>
+
+<p class="lead" data-lang="zh">
+  你剛進實驗室，PI 把 10x Genomics 跑完的 <code class="inline">filtered_feature_bc_matrix.h5</code> 丟到你桌上：
+  「先做 QC，把壞細胞濾掉。」你載入 Scanpy，<code class="inline">adata.obs</code> 多出三個欄位：
+  <code class="inline">n_genes_by_counts</code>、<code class="inline">total_counts</code>、<code class="inline">pct_counts_mt</code>。
+  你心想：「簡單，畫個 histogram 砍尾巴就好了。」
+</p>
+<p class="lead" data-lang="en">
+  You just joined the lab. The PI drops <code class="inline">filtered_feature_bc_matrix.h5</code> from 10x Genomics on your desk:
+  "Run QC, filter bad cells." You load Scanpy. <code class="inline">adata.obs</code> has three extra columns:
+  <code class="inline">n_genes_by_counts</code>, <code class="inline">total_counts</code>, <code class="inline">pct_counts_mt</code>.
+  You think: "Easy — histogram, cut the tails."
+</p>
+
+<div class="card">
+  <h3 data-lang="zh">§0-1 直覺檢驗：用拉桿產生「壞細胞」，看平均怎麼跑</h3>
+  <h3 data-lang="en">§0-1 Intuition check: drag bad cells, watch the mean run</h3>
+  <p data-lang="zh">
+    下面這個 1D 分布有 60 個細胞的 <code class="inline">n_genes</code>。
+    多數是正常的，但你可以用滑桿「加入低品質細胞」（很少基因被偵測到的細胞）。
+    紅虛線 = 平均，藍虛線 = 中位數。看看誰跑得快。
+  </p>
+  <p data-lang="en">
+    Below: 60 cells' <code class="inline">n_genes</code> on a 1D number line.
+    Most are normal. Use the slider to "inject low-quality cells" (few genes detected).
+    Red dashed = mean, blue dashed = median. Watch which one moves.
+  </p>
+
+  <div class="controls">
+    <label><span data-lang="zh">壞細胞數量</span><span data-lang="en">Bad cells injected</span>:
+      <input type="range" id="badCount" min="0" max="15" value="0" step="1">
+      <span id="badCountVal">0</span>
+    </label>
+    <label><span data-lang="zh">壞細胞嚴重程度</span><span data-lang="en">Severity</span>:
+      <input type="range" id="badSev" min="200" max="50" value="100" step="-25">
+      <span id="badSevVal">100 genes</span>
+    </label>
+  </div>
+
+  <svg class="canvas" id="s0svg" viewBox="0 0 800 220" width="100%"></svg>
+
+  <div class="stat-row" id="s0stats">
+    <div class="item"><span class="lbl" data-lang="zh">平均 mean</span><span class="lbl" data-lang="en">mean</span><span class="val" id="s0mean">—</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">標準差 σ</span><span class="lbl" data-lang="en">σ</span><span class="val" id="s0sd">—</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">中位數 median</span><span class="lbl" data-lang="en">median</span><span class="val" id="s0med">—</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">MAD</span><span class="lbl" data-lang="en">MAD</span><span class="val" id="s0mad">—</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">mean−2σ 門檻</span><span class="lbl" data-lang="en">mean−2σ cutoff</span><span class="val" id="s0meanCut">—</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">median−3·MAD 門檻</span><span class="lbl" data-lang="en">median−3·MAD cutoff</span><span class="val" id="s0madCut">—</span></div>
+  </div>
+
+  <div class="callout" data-lang="zh">
+    <strong>觀察重點 1</strong>：每多 1 個壞細胞，<b>平均</b>會跟著被拉低、<b>標準差</b>會跟著變大。
+    結果是「平均 − 2σ」這條門檻自己會<b>越退越遠</b>，反而把壞細胞「保護」起來。
+  </div>
+  <div class="callout" data-lang="en">
+    <strong>Observation 1</strong>: each bad cell drags <b>mean</b> down and inflates <b>σ</b>.
+    The "mean − 2σ" cutoff <b>recedes further</b> with each outlier — paradoxically protecting bad cells.
+  </div>
+  <div class="callout idea" data-lang="zh">
+    <strong>觀察重點 2</strong>：<b>中位數</b>跟 <b>MAD</b> 對壞細胞「無感」——
+    只要壞細胞還是「少數」（不到一半），中位數就<b>原地不動</b>。
+    這就是「穩健統計」(robust statistics) 的核心精神。
+  </div>
+  <div class="callout idea" data-lang="en">
+    <strong>Observation 2</strong>: <b>median</b> and <b>MAD</b> are <b>insensitive</b> to bad cells —
+    as long as bad cells are a minority (&lt; 50%), median stays put.
+    This is the core idea of <b>robust statistics</b>.
+  </div>
+</div>
+
+<div class="card">
+  <h3 data-lang="zh">§0-2 為什麼書上都寫「mean ± 2σ」?</h3>
+  <h3 data-lang="en">§0-2 Why do textbooks say "mean ± 2σ"?</h3>
+  <p data-lang="zh">
+    因為對「真正的高斯分布」而言，<b>mean ± 2σ</b> 蓋住 95.4% 的資料，乾淨利落。
+    問題是：scRNA-seq 的計數資料<b>不是高斯</b>——它是右偏的，而且我們<b>要找的</b>就是離群值，
+    而離群值本身會破壞 σ 的估計。這是個邏輯上的循環悖論。
+  </p>
+  <p data-lang="en">
+    Because for a true Gaussian, <b>mean ± 2σ</b> covers 95.4% — clean and simple.
+    But scRNA-seq counts <b>aren't Gaussian</b> — they're right-skewed, and <b>the outliers we want to find</b>
+    are the ones that corrupt the σ estimate. It's a circular bind.
+  </p>
+  <details><summary data-lang="zh">▸ 一個 5 點的數字例子</summary>
+    <summary data-lang="en">▸ A worked 5-point example</summary>
+    <p>n_genes = {800, 900, 1000, 1100, 100} (一個壞細胞)<br>
+       mean = 780, σ ≈ 405. <b>mean − 2σ = −30</b>，所以「100」這個壞細胞<b>不會</b>被砍。<br>
+       median = 900, MAD = median(|800-900|, |900-900|, |1000-900|, |1100-900|, |100-900|)
+       = median(100, 0, 100, 200, 800) = 100.<br>
+       <b>median − 3·MAD = 600</b>，「100」被正確標為離群。
+    </p>
+  </details>
+</div>
+
+<div class="card">
+  <h3 data-lang="zh">§0-3 小測：以下哪個公式可以「不被離群值拉走」?</h3>
+  <h3 data-lang="en">§0-3 Mini-quiz: which formula resists outliers?</h3>
+  <p data-lang="zh">假設你有 7 個樣本，你要回答「中心位置」在哪裡。下列哪個答案<b>不會</b>被一個極端值打亂？</p>
+  <p data-lang="en">Given 7 samples, you need to report the "center". Which estimator <b>resists</b> a single extreme value?</p>
+  <div class="quiz-options" id="quiz0">
+    <button class="opt" data-correct="false" data-fb-zh="平均 = Σxᵢ / n 對每個樣本都同等敏感，一個極端值就拉著整體跑。" data-fb-en="Mean = Σxᵢ/n is equally sensitive to every sample — one extreme value drags it.">
+      <span data-lang="zh">a) 算術平均 $\bar{x} = \frac{1}{n}\sum x_i$</span>
+      <span data-lang="en">a) Arithmetic mean $\bar{x} = \frac{1}{n}\sum x_i$</span>
+    </button>
+    <button class="opt" data-correct="true" data-fb-zh="中位數只看「排第幾」，極端值只是排在最後，不會影響中間那個值。" data-fb-en="Median only cares about rank — extremes just sit at the end, the middle value is unaffected.">
+      <span data-lang="zh">b) 中位數 median($x$)</span>
+      <span data-lang="en">b) Median of $x$</span>
+    </button>
+    <button class="opt" data-correct="false" data-fb-zh="max−min 完全由極端值決定，是最不穩健的。" data-fb-en="max−min is entirely determined by extremes — the least robust.">
+      <span data-lang="zh">c) 全距 max − min</span>
+      <span data-lang="en">c) Range max − min</span>
+    </button>
+    <button class="opt" data-correct="false" data-fb-zh="σ 的計算中含有 (xᵢ−mean)²，平方放大極端值的影響，比 mean 還慘。" data-fb-en="σ uses (xᵢ−mean)², which amplifies extremes — even worse than the mean.">
+      <span data-lang="zh">d) 標準差 σ</span>
+      <span data-lang="en">d) Standard deviation σ</span>
+    </button>
+  </div>
+  <div id="quiz0fb" style="display:none" class="quiz-feedback"></div>
+</div>
+
+<!-- ===================================== §1 ===================================== -->
+<h2 id="s1"><span class="num">§1</span> <span data-lang="zh">為什麼平均會被「壞細胞」綁架</span><span data-lang="en">Why mean is hijacked by bad cells</span></h2>
+
+<p data-lang="zh">
+  §0 的互動已經讓你看到結論。這節我們用一個叫 <b>breakdown point</b>（崩潰點）的概念把它說清楚。
+</p>
+<p data-lang="en">
+  The §0 interaction already showed the conclusion. This section introduces <b>breakdown point</b> to make it precise.
+</p>
+
+<h3 data-lang="zh">1.1 崩潰點 (Breakdown Point) 的定義</h3>
+<h3 data-lang="en">1.1 Definition of Breakdown Point</h3>
+<p data-lang="zh">
+  一個統計量 $T(\mathbf{x})$ 的<b>崩潰點</b>是：在污染資料集裡，
+  「最多可以替換多少比例的觀察值」，使得 $T$ <b>仍然有限</b>。
+</p>
+<p data-lang="en">
+  The <b>breakdown point</b> of a statistic $T(\mathbf{x})$ is: the maximum fraction of observations
+  that can be replaced (with arbitrarily bad values) before $T$ becomes <b>infinite</b>.
+</p>
+
+<table class="compare">
+  <tr><th data-lang="zh">統計量</th><th data-lang="en">Statistic</th>
+      <th data-lang="zh">崩潰點</th><th data-lang="en">Breakdown</th>
+      <th data-lang="zh">說明</th><th data-lang="en">Note</th></tr>
+  <tr><td>mean $\bar{x}$</td><td>mean $\bar{x}$</td>
+      <td><b>1/n</b></td><td><b>1/n</b></td>
+      <td data-lang="zh">只要 1 個樣本變成 ∞，平均就變 ∞</td>
+      <td data-lang="en">A single ∞ sample makes mean ∞</td></tr>
+  <tr><td>σ</td><td>σ</td>
+      <td><b>1/n</b></td><td><b>1/n</b></td>
+      <td data-lang="zh">同上，且更敏感（平方）</td>
+      <td data-lang="en">Same, more sensitive (squared)</td></tr>
+  <tr><td>median</td><td>median</td>
+      <td><b>50%</b></td><td><b>50%</b></td>
+      <td data-lang="zh">必須過半樣本變壞才會崩潰</td>
+      <td data-lang="en">More than half must be corrupted to break</td></tr>
+  <tr><td>MAD</td><td>MAD</td>
+      <td><b>50%</b></td><td><b>50%</b></td>
+      <td data-lang="zh">同 median，因為它就是 |xᵢ−median| 的 median</td>
+      <td data-lang="en">Same as median (it's the median of deviations)</td></tr>
+</table>
+
+<div class="callout idea">
+  <strong data-lang="zh">直白翻譯</strong><strong data-lang="en">In plain terms</strong>:
+  <span data-lang="zh">平均「一個壞蘋果就毀整籃」。中位數「過半才毀」。50% 是上限——
+  邏輯上你不可能更穩健，因為過半壞掉的話就根本沒有「正確答案」可言。</span>
+  <span data-lang="en">Mean: "one bad apple ruins the barrel." Median: "needs half to ruin it." 50% is the theoretical max —
+  beyond it, "correct" loses meaning.</span>
+</div>
+
+<h3 data-lang="zh">1.2 一個更深的例子：scRNA-seq 的「死細胞群」</h3>
+<h3 data-lang="en">1.2 A deeper example: the "dying cell cluster"</h3>
+<p data-lang="zh">
+  scRNA-seq 常有 5%-15% 的細胞屬於壞品質。如果你拿全部一起算 mean / σ，
+  這 10% 左右的壞細胞會把 σ 拉大 2-3 倍。
+  你以為設了 mean − 2σ 是「砍尾巴」，實際上 σ 已經先被汙染了，門檻變得太寬。
+</p>
+<p data-lang="en">
+  scRNA-seq routinely has 5%–15% bad cells. Computing mean/σ over everything,
+  those 10% can inflate σ by 2–3×. You think "mean − 2σ" is a tail cutoff, but σ is already contaminated — the cutoff is too lax.
+</p>
+
+<div class="card">
+  <h4 data-lang="zh">數字實驗：估計誤差量化</h4>
+  <h4 data-lang="en">Numeric experiment: quantify the bias</h4>
+  <p data-lang="zh">假設真實分布是 $\mathcal{N}(1000, 200^2)$，注入 10% 死細胞 ($\sim 50$ genes)：</p>
+  <p data-lang="en">True distribution $\mathcal{N}(1000, 200^2)$, inject 10% dying cells ($\sim 50$ genes):</p>
+  <table class="compare">
+    <tr><th></th><th data-lang="zh">真值</th><th data-lang="en">True</th>
+        <th data-lang="zh">mean/σ 估計</th><th data-lang="en">mean/σ est.</th>
+        <th data-lang="zh">median/1.4826·MAD 估計</th><th data-lang="en">median/1.4826·MAD est.</th></tr>
+    <tr><td>center</td><td>1000</td><td>1000</td><td>905</td><td>905</td><td>998</td><td>998</td></tr>
+    <tr><td>spread</td><td>200</td><td>200</td><td>320</td><td>320</td><td>205</td><td>205</td></tr>
+    <tr><td data-lang="zh">cutoff (center − 2·spread)</td><td data-lang="en">cutoff (center − 2·spread)</td>
+        <td>600</td><td>600</td>
+        <td><span style="color:#c0392b">265</span></td><td><span style="color:#c0392b">265</span></td>
+        <td><span style="color:#27795a">588</span></td><td><span style="color:#27795a">588</span></td></tr>
+  </table>
+  <p data-lang="zh">
+    傳統 mean/σ 算出的門檻 265 → 死細胞 (~50 genes) <b>沒</b>被砍掉。
+    Robust 估計 588 → 死細胞被正確標為離群。
+  </p>
+  <p data-lang="en">
+    Traditional cutoff = 265 → dying cells (~50 genes) <b>not</b> flagged.
+    Robust cutoff = 588 → dying cells correctly flagged.
+  </p>
+</div>
+
+<!-- ===================================== §2 ===================================== -->
+<h2 id="s2"><span class="num">§2</span> <span data-lang="zh">MAD 的定義：中位數的偏差再取中位數</span><span data-lang="en">MAD definition: median of deviations from median</span></h2>
+
+<p data-lang="zh">
+  MAD（Median Absolute Deviation）是一個「兩層 median」的構造。
+  我們一步一步建構，跟 σ 的「mean → variance → σ」三步流程比對。
+</p>
+<p data-lang="en">
+  MAD (Median Absolute Deviation) is a "two-layer median" construction.
+  We build it step by step, paralleling the "mean → variance → σ" pipeline.
+</p>
+
+<h3 data-lang="zh">2.1 與標準差 σ 的對比</h3>
+<h3 data-lang="en">2.1 Side-by-side with σ</h3>
+
+<div class="grid-2">
+  <div class="card" style="border-color: var(--accent2);">
+    <h4 data-lang="zh">σ 的三步驟</h4>
+    <h4 data-lang="en">σ in 3 steps</h4>
+    <ol>
+      <li><span data-lang="zh">算中心：</span><span data-lang="en">Compute center: </span>$\mu = \bar{x} = \frac{1}{n}\sum x_i$</li>
+      <li><span data-lang="zh">算每點偏差的平方平均：</span><span data-lang="en">Mean squared deviation: </span>$\sigma^2 = \frac{1}{n}\sum (x_i - \mu)^2$</li>
+      <li><span data-lang="zh">開根號變回原單位：</span><span data-lang="en">Square-root back to units: </span>$\sigma$</li>
+    </ol>
+    <p data-lang="zh"><b>每一步都用「平均」，所以每一步都可被極端值拉走。</b></p>
+    <p data-lang="en"><b>Every step uses "mean" — every step is vulnerable.</b></p>
+  </div>
+  <div class="card" style="border-color: var(--purple);">
+    <h4 data-lang="zh">MAD 的兩步驟</h4>
+    <h4 data-lang="en">MAD in 2 steps</h4>
+    <ol>
+      <li><span data-lang="zh">算中心：</span><span data-lang="en">Compute center: </span>$m = \text{median}(x)$</li>
+      <li><span data-lang="zh">算每點偏差絕對值的中位數：</span><span data-lang="en">Median of absolute deviations: </span>$\text{MAD} = \text{median}_i |x_i - m|$</li>
+    </ol>
+    <p data-lang="zh"><b>每一步都用「中位數」，所以每一步崩潰點都是 50%。</b></p>
+    <p data-lang="en"><b>Every step uses "median" — breakdown point 50% throughout.</b></p>
+  </div>
+</div>
+
+<div class="math-block boxed">
+  $$\boxed{\text{MAD}(\mathbf{x}) \;=\; \text{median}_i\!\left(\,\left|\,x_i - \text{median}_j(x_j)\,\right|\,\right)}$$
+  <div class="formula-caption" data-lang="zh">MAD = 偏離中位數的絕對值，再取中位數</div>
+  <div class="formula-caption" data-lang="en">MAD = median of |sample − median|</div>
+</div>
+
+<h3 data-lang="zh">2.2 手動算一次：7 個樣本</h3>
+<h3 data-lang="en">2.2 Compute by hand: 7 samples</h3>
+<p data-lang="zh">$\mathbf{x} = \{800, 900, 950, 1000, 1050, 1100, 100\}$（其中 100 是壞細胞）</p>
+<p data-lang="en">$\mathbf{x} = \{800, 900, 950, 1000, 1050, 1100, 100\}$ (100 is a bad cell)</p>
+<ol>
+  <li><span data-lang="zh">排序：</span><span data-lang="en">Sort: </span>{100, 800, 900, <b>950</b>, 1000, 1050, 1100} → median = <b>950</b></li>
+  <li><span data-lang="zh">每點偏差絕對值：</span><span data-lang="en">Absolute deviations: </span>|100−950|=850, |800−950|=150, |900−950|=50, |950−950|=0, |1000−950|=50, |1050−950|=100, |1100−950|=150</li>
+  <li><span data-lang="zh">這 7 個偏差排序：</span><span data-lang="en">Sort those: </span>{0, 50, 50, <b>100</b>, 150, 150, 850} → median = <b>100</b></li>
+</ol>
+<p data-lang="zh">所以 MAD = 100。注意「壞細胞」貢獻的偏差 850 在排序後排在最後，<b>被排序自然丟到尾巴</b>，
+不影響中間那個 median 值。</p>
+<p data-lang="en">So MAD = 100. The bad cell's huge deviation (850) is sorted to the tail — <b>naturally discarded</b> by the median, leaving the central estimate untouched.</p>
+
+<div class="callout idea">
+  <strong data-lang="zh">關鍵直覺</strong><strong data-lang="en">Key intuition</strong>:
+  <span data-lang="zh">MAD 不是「把離群值忽略」——是「靠排序的結構讓離群值<b>排到中間以外</b>」。
+  這就是為什麼壞細胞不論多壞都不會影響估計。</span>
+  <span data-lang="en">MAD doesn't "ignore" outliers — it lets outliers <b>sort themselves to the ends</b>,
+  so the central rank stays clean. Bad cells can't move the median regardless of severity.</span>
+</div>
+
+<!-- ===================================== §3 ===================================== -->
+<h2 id="s3"><span class="num">§3</span> <span data-lang="zh">1.4826 是哪裡來的？— 從常態分布推導</span><span data-lang="en">Where does 1.4826 come from? Derivation from normal</span></h2>
+
+<p data-lang="zh">
+  常常會看到這行程式：<code class="inline">cutoff = median + 1.4826 * MAD * k</code>。
+  為什麼是 1.4826？這個數字背後是把 MAD「翻譯成」σ 的單位轉換因子。
+</p>
+<p data-lang="en">
+  You often see: <code class="inline">cutoff = median + 1.4826 * MAD * k</code>.
+  Why 1.4826? It's the conversion factor that translates MAD into σ-units.
+</p>
+
+<h3 data-lang="zh">3.1 對高斯資料：MAD 與 σ 的關係</h3>
+<h3 data-lang="en">3.1 For Gaussian data: relating MAD and σ</h3>
+
+<p data-lang="zh">假設 $X \sim \mathcal{N}(0, \sigma^2)$。median = 0，所以 MAD 變成：</p>
+<p data-lang="en">Assume $X \sim \mathcal{N}(0, \sigma^2)$. median = 0, so MAD becomes:</p>
+<div class="math-block">
+  $$\text{MAD} = \text{median}(|X|)$$
+</div>
+<p data-lang="zh">由對稱性，$|X|$ 的 median 是「使 $P(|X| \le m) = 0.5$」的 $m$，
+也就是 $P(-m \le X \le m) = 0.5$，所以 $P(X \le m) = 0.75$。</p>
+<p data-lang="en">By symmetry, the median $m$ of $|X|$ satisfies $P(|X| \le m) = 0.5$,
+i.e., $P(-m \le X \le m) = 0.5$, hence $P(X \le m) = 0.75$.</p>
+
+<div class="math-block">
+  $$m = \sigma \cdot \Phi^{-1}(0.75)$$
+  <div class="formula-caption" data-lang="zh">$\Phi^{-1}$ 是標準常態的累積分布反函數</div>
+  <div class="formula-caption" data-lang="en">$\Phi^{-1}$ is the inverse standard-normal CDF</div>
+</div>
+
+<p data-lang="zh">查表（或用 <code class="inline">scipy.stats.norm.ppf(0.75)</code>）：</p>
+<p data-lang="en">Look up (or <code class="inline">scipy.stats.norm.ppf(0.75)</code>):</p>
+<div class="math-block boxed">
+  $$\Phi^{-1}(0.75) \approx 0.67448975 \quad\Longrightarrow\quad \text{MAD} \approx 0.6745\,\sigma$$
+  $$\boxed{\;\sigma \approx \frac{\text{MAD}}{0.6745} = 1.4826 \times \text{MAD}\;}$$
+</div>
+<p data-lang="zh">
+  所以在「真的是高斯」的假設下，<code class="inline">1.4826 × MAD</code> 是 σ 的<b>無偏一致估計</b>。
+  在 QC 程式碼中你會看到這個常數出現，目的是讓 MAD 跟 σ 在同一個單位下比較，<code class="inline">k=3</code> 才有「3σ」的物理意義。
+</p>
+<p data-lang="en">
+  So under the Gaussian assumption, <code class="inline">1.4826 × MAD</code> is an <b>unbiased, consistent</b> estimator of σ.
+  This constant appears in QC code so that MAD and σ live in the same units — <code class="inline">k=3</code> then literally means "3σ-equivalent".
+</p>
+
+<div class="card">
+  <h4 data-lang="zh">3.2 模擬驗證</h4>
+  <h4 data-lang="en">3.2 Simulation check</h4>
+  <p data-lang="zh">下表是從 $\mathcal{N}(0,1)$ 抽 N 個樣本，分別算 σ 跟 1.4826×MAD：</p>
+  <p data-lang="en">Draw $N$ samples from $\mathcal{N}(0,1)$, compare σ vs 1.4826×MAD:</p>
+  <table class="compare">
+    <tr><th>N</th><th data-lang="zh">σ 估計</th><th data-lang="en">σ estimate</th>
+        <th>1.4826·MAD</th><th data-lang="zh">差異</th><th data-lang="en">diff</th></tr>
+    <tr><td>100</td><td>0.988</td><td>0.988</td><td>1.012</td><td>2.4%</td><td>2.4%</td></tr>
+    <tr><td>1,000</td><td>0.996</td><td>0.996</td><td>0.999</td><td>0.3%</td><td>0.3%</td></tr>
+    <tr><td>10,000</td><td>1.000</td><td>1.000</td><td>1.001</td><td>0.1%</td><td>0.1%</td></tr>
+    <tr><td>100,000</td><td>1.000</td><td>1.000</td><td>0.9997</td><td>0.03%</td><td>0.03%</td></tr>
+  </table>
+  <p data-lang="zh">兩者隨 N 增加都收斂到 1（真實 σ）——驗證 1.4826 這個係數選得對。</p>
+  <p data-lang="en">Both converge to 1 (true σ) as N grows — confirming 1.4826 is the correct calibration.</p>
+</div>
+
+<h3 data-lang="zh">3.3 但 scRNA-seq <b>不是</b>高斯！</h3>
+<h3 data-lang="en">3.3 But scRNA-seq <b>isn't</b> Gaussian!</h3>
+<p data-lang="zh">
+  原始的 <code class="inline">n_genes</code>、<code class="inline">total_counts</code> 都是右偏的計數分布。
+  直接套 1.4826 是錯誤的——這就是為什麼我們會在 §5 看到「先 log 再算 MAD」。
+  log 把右偏拉直，讓「高斯假設」<b>近似成立</b>。
+</p>
+<p data-lang="en">
+  Raw <code class="inline">n_genes</code>, <code class="inline">total_counts</code> are right-skewed count distributions.
+  Applying 1.4826 directly is wrong — that's why §5 introduces "log first, then MAD".
+  Log straightens the skew, making the Gaussian approximation <b>roughly valid</b>.
+</p>
+
+<!-- ===================================== §4 ===================================== -->
+<h2 id="s4"><span class="num">§4</span> <span data-lang="zh">互動門檻：滑桿調 k 看哪些細胞被砍</span><span data-lang="en">Interactive cutoff: slider on k, see which cells get cut</span></h2>
+
+<p data-lang="zh">
+  常見選擇是 $k = 3$（對應高斯 99.7%）或 $k = 5$（保守）。沒有絕對的「正確值」——你要照資料形狀決定。
+  下面這個圖讓你直接拉，看每個 $k$ 對應砍掉多少細胞、誤殺好細胞與漏掉壞細胞的比例。
+</p>
+<p data-lang="en">
+  Common choices: $k = 3$ (Gaussian 99.7%) or $k = 5$ (conservative). No universal "right" answer — pick per data shape.
+  Drag the slider below: see how $k$ affects how many cells you cut, and the trade-off between false positives and false negatives.
+</p>
+
+<div class="card">
+  <div class="controls">
+    <label><span data-lang="zh">k 倍數</span><span data-lang="en">k multiplier</span>:
+      <input type="range" id="kSlider" min="1" max="6" value="3" step="0.5">
+      <span id="kVal" style="font-weight:700">3.0</span>
+    </label>
+    <label><span data-lang="zh">使用方法</span><span data-lang="en">Method</span>:
+      <select id="methodSel">
+        <option value="mad" data-lang="zh">中位數 ± k·MAD</option>
+        <option value="mad" data-lang="en">median ± k·MAD</option>
+        <option value="meansd" data-lang="zh">平均 ± k·σ</option>
+        <option value="meansd" data-lang="en">mean ± k·σ</option>
+      </select>
+    </label>
+    <button id="s4regen"><span data-lang="zh">重新抽資料</span><span data-lang="en">Resample</span></button>
+  </div>
+
+  <svg class="canvas" id="s4svg" viewBox="0 0 800 280" width="100%"></svg>
+
+  <div class="stat-row">
+    <div class="item"><span class="lbl" data-lang="zh">下界</span><span class="lbl" data-lang="en">Lower</span><span class="val" id="s4lo">—</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">上界</span><span class="lbl" data-lang="en">Upper</span><span class="val" id="s4hi">—</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">被砍 (好細胞)</span><span class="lbl" data-lang="en">Cut (good)</span><span class="val" id="s4fp" style="color:#c0392b">—</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">漏掉 (壞細胞)</span><span class="lbl" data-lang="en">Missed (bad)</span><span class="val" id="s4fn" style="color:#f0c419">—</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">總砍細胞</span><span class="lbl" data-lang="en">Total cut</span><span class="val" id="s4cut">—</span></div>
+  </div>
+
+  <div class="callout warn">
+    <strong data-lang="zh">經驗法則</strong><strong data-lang="en">Rules of thumb</strong>:
+    <ul>
+      <li data-lang="zh"><b>k = 3</b>：類似 3σ，砍掉 ~0.3% 高斯尾巴。適合「資料品質還不錯，想清乾淨」</li>
+      <li data-lang="en"><b>k = 3</b>: ~3σ-equivalent, cuts ~0.3% of a Gaussian tail. Good for "clean data, light filtering"</li>
+      <li data-lang="zh"><b>k = 5</b>：較保守，只砍極端壞的細胞。適合「資料量少，怕誤殺」</li>
+      <li data-lang="en"><b>k = 5</b>: conservative, only flags extreme outliers. Good for "small dataset, fear false positives"</li>
+      <li data-lang="zh"><b>k 太小</b>：在右偏分布下會誤殺正常的高表現細胞</li>
+      <li data-lang="en"><b>k too small</b>: in right-skewed data, normal high-expressing cells get falsely flagged</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ===================================== §5 ===================================== -->
+<h2 id="s5"><span class="num">§5</span> <span data-lang="zh">為什麼要 log 轉換才算 MAD</span><span data-lang="en">Why log-transform before computing MAD</span></h2>
+
+<p data-lang="zh">
+  <code class="inline">total_counts</code> 在 scRNA-seq 裡通常是右偏的——很多細胞 1000-5000，少數細胞 20000-50000。
+  Histogram 看起來是一條長尾巴拖到右邊。在這種分布上直接算 MAD，「中位數 + k·MAD」這個對稱門檻會在右邊砍掉很多正常的高表現細胞。
+</p>
+<p data-lang="en">
+  <code class="inline">total_counts</code> in scRNA-seq is right-skewed — most cells 1000–5000, some 20k–50k.
+  The histogram has a long right tail. Applying MAD directly gives a symmetric cutoff that falsely cuts high-expressing normal cells.
+</p>
+
+<div class="card">
+  <h3 data-lang="zh">5.1 互動比較：raw vs log</h3>
+  <h3 data-lang="en">5.1 Interactive comparison: raw vs log</h3>
+  <div class="controls">
+    <label><span data-lang="zh">空間</span><span data-lang="en">Space</span>:
+      <select id="logToggle">
+        <option value="raw" data-lang="zh">raw (原始)</option>
+        <option value="raw" data-lang="en">raw</option>
+        <option value="log" data-lang="zh">log10(x+1)</option>
+        <option value="log" data-lang="en">log10(x+1)</option>
+      </select>
+    </label>
+  </div>
+  <svg class="canvas" id="s5svg" viewBox="0 0 800 220" width="100%"></svg>
+  <div class="stat-row">
+    <div class="item"><span class="lbl" data-lang="zh">分布右偏度 skewness</span><span class="lbl" data-lang="en">Right skewness</span><span class="val" id="s5skew">—</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">下界門檻</span><span class="lbl" data-lang="en">Lower cutoff</span><span class="val" id="s5lo">—</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">上界門檻</span><span class="lbl" data-lang="en">Upper cutoff</span><span class="val" id="s5hi">—</span></div>
+  </div>
+  <p data-lang="zh">
+    切換到 <b>log</b>：分布變對稱、skewness 接近 0；
+    這時 median ± k·MAD 的對稱門檻才合理。
+  </p>
+  <p data-lang="en">
+    Switch to <b>log</b>: distribution becomes symmetric, skewness → 0;
+    symmetric median ± k·MAD cutoff now makes sense.
+  </p>
+</div>
+
+<h3 data-lang="zh">5.2 數學上：log 把對數常態變成常態</h3>
+<h3 data-lang="en">5.2 Math: log turns lognormal into normal</h3>
+<div class="math-block">
+  $$\text{If } X \sim \text{Lognormal}(\mu, \sigma^2), \text{ then } \log X \sim \mathcal{N}(\mu, \sigma^2).$$
+</div>
+<p data-lang="zh">
+  許多計數分布（包含 scRNA-seq 的 total counts）近似 lognormal——log 後接近 Gaussian，可以用 §3 推導的 1.4826 校正、可以用對稱門檻。
+  通常用 <code class="inline">log10(x+1)</code> 或 <code class="inline">log1p(x)</code>，避免 $\log 0$。
+</p>
+<p data-lang="en">
+  Many count distributions (including scRNA-seq total counts) are approximately lognormal —
+  log makes them roughly Gaussian, validating the 1.4826 correction from §3 and the symmetric cutoff.
+  We typically use <code class="inline">log10(x+1)</code> or <code class="inline">log1p(x)</code> to avoid $\log 0$.
+</p>
+
+<!-- ===================================== §6 ===================================== -->
+<h2 id="s6"><span class="num">§6</span> <span data-lang="zh">多變數 QC：nFeature × MT% 聯合分布</span><span data-lang="en">Multi-variable QC: nFeature × MT% joint distribution</span></h2>
+
+<p data-lang="zh">
+  到目前為止我們只談 1D（一個變數）。實際 QC 至少同時看三個：<code class="inline">n_genes_by_counts</code>、
+  <code class="inline">total_counts</code>、<code class="inline">pct_counts_mt</code>。
+  這節我們看 2D 聯合分布，並引入「聯合 robust 門檻」。
+</p>
+<p data-lang="en">
+  So far 1D. Real QC uses ≥3 variables: <code class="inline">n_genes_by_counts</code>,
+  <code class="inline">total_counts</code>, <code class="inline">pct_counts_mt</code>.
+  This section visualizes 2D joint distributions and introduces joint robust cutoffs.
+</p>
+
+<div class="card">
+  <h3 data-lang="zh">6.1 互動 2D 散佈圖：點細胞看細節</h3>
+  <h3 data-lang="en">6.1 Interactive 2D scatter: click any cell for details</h3>
+  <div class="controls">
+    <label><span data-lang="zh">k (MT% 上界)</span><span data-lang="en">k (MT% upper)</span>:
+      <input type="range" id="s6kMT" min="2" max="6" value="3" step="0.5">
+      <span id="s6kMTval">3.0</span>
+    </label>
+    <label><span data-lang="zh">k (nFeature 下界)</span><span data-lang="en">k (nFeature lower)</span>:
+      <input type="range" id="s6kNF" min="2" max="6" value="3" step="0.5">
+      <span id="s6kNFval">3.0</span>
+    </label>
+  </div>
+  <svg class="canvas" id="s6svg" viewBox="0 0 800 460" width="100%"></svg>
+  <div id="s6detail" style="font-size:13px; font-family: 'JetBrains Mono', monospace; padding: 12px 14px; background: #f4f1ea; border-radius: 6px; margin-top: 12px;">
+    <span data-lang="zh">點任何一個細胞看詳細資訊</span><span data-lang="en">Click any cell to see details</span>
+  </div>
+</div>
+
+<h3 data-lang="zh">6.2 三個 QC 變數的意義</h3>
+<h3 data-lang="en">6.2 What each QC variable means biologically</h3>
+<table class="compare">
+  <tr><th data-lang="zh">變數</th><th data-lang="en">Variable</th>
+      <th data-lang="zh">壞細胞訊號</th><th data-lang="en">Bad-cell signal</th>
+      <th data-lang="zh">生物學意義</th><th data-lang="en">Biology</th></tr>
+  <tr><td><code class="inline">n_genes_by_counts</code></td><td><code class="inline">n_genes_by_counts</code></td>
+      <td data-lang="zh">過低</td><td data-lang="en">too low</td>
+      <td data-lang="zh">空 droplet 或 ambient RNA</td><td data-lang="en">empty droplet or ambient RNA</td></tr>
+  <tr><td><code class="inline">total_counts</code></td><td><code class="inline">total_counts</code></td>
+      <td data-lang="zh">過高</td><td data-lang="en">too high</td>
+      <td data-lang="zh">可能是 doublet（兩細胞黏在一起）</td><td data-lang="en">possible doublet</td></tr>
+  <tr><td><code class="inline">pct_counts_mt</code></td><td><code class="inline">pct_counts_mt</code></td>
+      <td data-lang="zh">過高</td><td data-lang="en">too high</td>
+      <td data-lang="zh">細胞膜破裂、mRNA 流失只剩粒線體 RNA</td><td data-lang="en">membrane lysed, only mitochondrial RNA remains</td></tr>
+</table>
+
+<div class="callout bio">
+  <strong data-lang="zh">為什麼 MT% 高 = 死細胞？</strong>
+  <strong data-lang="en">Why high MT% = dying cell?</strong>
+  <span data-lang="zh">
+    細胞死亡時細胞膜先破，胞質 mRNA 流出，但粒線體有自己的雙層膜（保存得久），
+    所以剩下的 RNA 中粒線體佔比變高。健康細胞通常 MT% &lt; 5-10%（依組織而異）。
+  </span>
+  <span data-lang="en">
+    When cells die, the plasma membrane ruptures first — cytoplasmic mRNA escapes,
+    but mitochondria's double membrane retains its RNA longer.
+    Thus the remaining RNA pool is mitochondria-enriched. Healthy cells: MT% &lt; 5–10% (tissue-dependent).
+  </span>
+</div>
+
+<h3 data-lang="zh">6.3 聯合門檻 vs 單變數門檻</h3>
+<h3 data-lang="en">6.3 Joint vs marginal cutoffs</h3>
+<p data-lang="zh">
+  最簡單做法：三個變數各做 1D MAD，「任一變數出界」就砍。這叫<b>邊際 (marginal) 門檻</b>。
+  缺點：忽略變數間相關性——同時「中等低 nFeature」+「中等高 MT%」其實是死細胞訊號，但任一邊都不到門檻。
+</p>
+<p data-lang="en">
+  Simplest: 1D MAD per variable, cut if any out of range. This is <b>marginal</b> filtering.
+  Limitation: ignores correlations — "moderately low nFeature" + "moderately high MT%" together signal dying cells,
+  but neither individually crosses the threshold.
+</p>
+
+<details>
+<summary data-lang="zh">▸ 進階：Mahalanobis 距離與聯合 robust 門檻</summary>
+<summary data-lang="en">▸ Advanced: Mahalanobis distance and joint robust cutoffs</summary>
+<p data-lang="zh">
+  聯合方式：用<b>共變異數矩陣的 robust 估計</b>（MCD, Minimum Covariance Determinant），
+  算 Mahalanobis 距離 $d_M^2 = (x-\mu)^T \Sigma^{-1} (x-\mu)$，
+  在 robust 距離大於某門檻時標為離群。MCD 的崩潰點達 50%。
+  Python：<code class="inline">sklearn.covariance.MinCovDet</code>。實務中 scRNA-seq 較少用，因為 marginal 已經夠好且簡單。
+</p>
+<p data-lang="en">
+  Joint approach: use a <b>robust covariance matrix estimator</b> (MCD, Minimum Covariance Determinant).
+  Compute Mahalanobis distance $d_M^2 = (x-\mu)^T \Sigma^{-1} (x-\mu)$, threshold on the robust distance.
+  MCD has 50% breakdown point. Python: <code class="inline">sklearn.covariance.MinCovDet</code>.
+  Rarely used in scRNA-seq practice because marginal is good enough and simpler.
+</p>
+</details>
+
+<!-- ===================================== §7 ===================================== -->
+<h2 id="s7"><span class="num">§7</span> <span data-lang="zh">Scrublet：模擬合成 doublet 算機率</span><span data-lang="en">Scrublet: simulate synthetic doublets to score probability</span></h2>
+
+<p class="lead" data-lang="zh">
+  Doublet（兩細胞黏在一起被當成一個）佔 ~1-10%，光看 total_counts 偏高並不夠——
+  有些 doublet 跟某種細胞型態本身的 high-count 看起來一樣。
+  Scrublet 用一個聰明的「<b>合成模擬</b>」想法：
+  既然真實 doublet 是兩個細胞的<b>計數相加</b>，我就在資料裡<b>隨機抓兩個細胞相加</b>當「合成 doublet」，
+  訓練 KNN 分類器把每個觀察到的細胞跟這些合成 doublet 比，給出 doublet score。
+</p>
+<p class="lead" data-lang="en">
+  Doublets (two cells captured together) are ~1–10% of data. High total_counts alone isn't enough —
+  some doublets look identical to genuinely high-counting cell types.
+  Scrublet's clever idea: <b>simulate</b> doublets by <b>randomly adding pairs of observed cells together</b>,
+  then train a KNN classifier to score each cell by similarity to those synthetic doublets.
+</p>
+
+<div class="card">
+  <h3 data-lang="zh">7.1 演算法 4 步驟</h3>
+  <h3 data-lang="en">7.1 The 4-step algorithm</h3>
+  <ol>
+    <li>
+      <b data-lang="zh">合成 doublet</b><b data-lang="en">Synthesize doublets</b>:
+      <span data-lang="zh">從觀察細胞 $\{c_1, \ldots, c_n\}$ 中隨機抽兩個 $c_i, c_j$，相加得到合成 doublet $d_{ij} = c_i + c_j$。重複 $2n$ 次。</span>
+      <span data-lang="en">Pick two random cells $c_i, c_j$ from observed $\{c_1, \ldots, c_n\}$. Form synthetic doublet $d_{ij} = c_i + c_j$. Repeat $2n$ times.</span>
+    </li>
+    <li>
+      <b data-lang="zh">合併資料降維</b><b data-lang="en">Merge & reduce</b>:
+      <span data-lang="zh">把觀察 + 合成放在一起，做 normalize + PCA，得到 30 維表示。</span>
+      <span data-lang="en">Concatenate observed + synthetic, normalize + PCA, get 30-D representation.</span>
+    </li>
+    <li>
+      <b data-lang="zh">KNN 找鄰居</b><b data-lang="en">KNN neighbors</b>:
+      <span data-lang="zh">對每個<b>觀察細胞</b>，找它的 $k$ 個最近鄰（觀察 + 合成都算）。</span>
+      <span data-lang="en">For each <b>observed cell</b>, find its $k$ nearest neighbors (across observed + synthetic).</span>
+    </li>
+    <li>
+      <b data-lang="zh">算 doublet score</b><b data-lang="en">Compute doublet score</b>:
+      <span data-lang="zh">$\text{score}_i = \frac{\text{鄰居中合成 doublet 的個數}}{k}$。鄰居越多合成 doublet → 細胞越像 doublet。</span>
+      <span data-lang="en">$\text{score}_i = \frac{\#\text{synthetic neighbors}}{k}$. More synthetic neighbors → more doublet-like.</span>
+    </li>
+  </ol>
+</div>
+
+<h3 data-lang="zh">7.2 為什麼這個直覺有效？</h3>
+<h3 data-lang="en">7.2 Why does this intuition work?</h3>
+<div class="grid-2">
+  <div class="callout idea" data-lang="zh">
+    <strong>關鍵假設</strong>：真實 doublet 的表現模式 ≈ 兩個 singlet 表現量「相加」。
+    這對 mRNA 計數成立，因為兩個細胞混在一個 droplet，mRNA 直接加總。
+  </div>
+  <div class="callout idea" data-lang="en">
+    <strong>Key assumption</strong>: real doublets ≈ "sum of two singlets" in expression.
+    This holds for mRNA counts because two cells in one droplet pool their mRNAs additively.
+  </div>
+  <div class="callout bio" data-lang="zh">
+    <strong>注意</strong>：兩個<b>同型</b>細胞的 doublet（homotypic）很難偵測——它的表現跟單個高表現 singlet 幾乎一樣。
+    Scrublet 主要抓<b>異型</b>(heterotypic) doublet。
+  </div>
+  <div class="callout bio" data-lang="en">
+    <strong>Caveat</strong>: doublets of <b>two same-type</b> cells (homotypic) are hard to detect —
+    they look like a single high-expressing singlet. Scrublet mainly catches <b>heterotypic</b> doublets.
+  </div>
+</div>
+
+<div class="card">
+  <h3 data-lang="zh">7.3 互動模擬：你來抽合成 doublet</h3>
+  <h3 data-lang="en">7.3 Interactive: you draw synthetic doublets</h3>
+  <p data-lang="zh">
+    下面有 2 種細胞型態：A（藍）和 B（綠）。按「合成 doublet」會隨機抓兩個細胞（可能 A+A、B+B、A+B），把它們的座標相加，紅色標示。
+    然後算每個觀察細胞的 doublet score（鄰居中紅色比例）。
+  </p>
+  <p data-lang="en">
+    Below: 2 cell types — A (blue), B (green). Click "synthesize" to randomly pick two cells (A+A, B+B, or A+B) and sum their coordinates (red).
+    Then each observed cell gets a doublet score = fraction of synthetic doublet neighbors.
+  </p>
+  <div class="controls">
+    <button id="s7synth" class="purple"><span data-lang="zh">合成 10 個 doublet</span><span data-lang="en">Synthesize 10 doublets</span></button>
+    <button id="s7reset" class="ghost"><span data-lang="zh">重置</span><span data-lang="en">Reset</span></button>
+    <label><span data-lang="zh">k</span><span data-lang="en">k</span>:
+      <input type="range" id="s7k" min="3" max="15" value="5" step="1">
+      <span id="s7kVal">5</span>
+    </label>
+    <label><span data-lang="zh">門檻</span><span data-lang="en">Threshold</span>:
+      <input type="range" id="s7thr" min="0.1" max="0.6" value="0.3" step="0.05">
+      <span id="s7thrVal">0.30</span>
+    </label>
+  </div>
+  <svg class="canvas" id="s7svg" viewBox="0 0 800 360" width="100%"></svg>
+  <div class="stat-row">
+    <div class="item"><span class="lbl" data-lang="zh">合成 doublet 數</span><span class="lbl" data-lang="en">Synthetic doublets</span><span class="val" id="s7nsyn">0</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">標為 doublet 的觀察細胞</span><span class="lbl" data-lang="en">Flagged observed cells</span><span class="val" id="s7flag" style="color:#c0392b">0</span></div>
+  </div>
+</div>
+
+<!-- ===================================== §8 ===================================== -->
+<h2 id="s8"><span class="num">§8</span> <span data-lang="zh">把整套故事串起來 + 限制與下一步</span><span data-lang="en">Tying it together + limits and next steps</span></h2>
+
+<h3 data-lang="zh">8.1 一個完整 QC pipeline</h3>
+<h3 data-lang="en">8.1 A complete QC pipeline</h3>
+
+<pre class="code"><span class="k">import</span> scanpy <span class="k">as</span> sc, numpy <span class="k">as</span> np
+<span class="k">from</span> scipy.stats <span class="k">import</span> median_abs_deviation
+
+adata = sc.read_10x_h5(<span class="s">"filtered_feature_bc_matrix.h5"</span>)
+adata.var[<span class="s">"mt"</span>] = adata.var_names.str.startswith(<span class="s">"MT-"</span>)
+sc.pp.calculate_qc_metrics(adata, qc_vars=[<span class="s">"mt"</span>], inplace=<span class="k">True</span>)
+
+<span class="c"># step 1: log transform the QC vars (right-skewed counts)</span>
+<span class="k">for</span> v <span class="k">in</span> [<span class="s">"n_genes_by_counts"</span>, <span class="s">"total_counts"</span>]:
+    adata.obs[v + <span class="s">"_log"</span>] = np.log1p(adata.obs[v])
+
+<span class="c"># step 2: MAD-based outlier on log scale</span>
+<span class="k">def</span> is_outlier(M, k=<span class="n">5</span>):
+    med = np.median(M); mad = median_abs_deviation(M)
+    <span class="k">return</span> (M &lt; med - k*mad) | (M &gt; med + k*mad)
+
+adata.obs[<span class="s">"outlier"</span>] = (
+    is_outlier(adata.obs[<span class="s">"n_genes_by_counts_log"</span>], k=<span class="n">5</span>)
+    | is_outlier(adata.obs[<span class="s">"total_counts_log"</span>], k=<span class="n">5</span>)
+    | is_outlier(adata.obs[<span class="s">"pct_counts_mt"</span>], k=<span class="n">3</span>)
+)
+
+<span class="c"># step 3: doublet score via Scrublet</span>
+sc.external.pp.scrublet(adata)
+adata.obs[<span class="s">"doublet"</span>] = adata.obs[<span class="s">"predicted_doublet"</span>]
+
+<span class="c"># step 4: filter</span>
+adata = adata[~adata.obs[<span class="s">"outlier"</span>] &amp; ~adata.obs[<span class="s">"doublet"</span>]].copy()
+print(<span class="s">f"Kept </span>{adata.n_obs}<span class="s"> cells"</span>)</pre>
+
+<h3 data-lang="zh">8.2 限制 (Limitations)</h3>
+<h3 data-lang="en">8.2 Limitations</h3>
+<table class="compare">
+  <tr><th data-lang="zh">限制</th><th data-lang="en">Limitation</th>
+      <th data-lang="zh">後果</th><th data-lang="en">Consequence</th>
+      <th data-lang="zh">緩解方法</th><th data-lang="en">Mitigation</th></tr>
+  <tr>
+    <td data-lang="zh">全域門檻假設細胞型態同質</td>
+    <td data-lang="en">Global cutoff assumes homogeneous cell types</td>
+    <td data-lang="zh">罕見型態（如 plasma cell 高表現）會被誤殺</td>
+    <td data-lang="en">Rare types (e.g. high-expressing plasma cells) get falsely cut</td>
+    <td data-lang="zh">先分群再 per-cluster 算 MAD</td>
+    <td data-lang="en">Cluster first, then per-cluster MAD</td>
+  </tr>
+  <tr>
+    <td data-lang="zh">Scrublet 抓不到 homotypic doublet</td>
+    <td data-lang="en">Scrublet misses homotypic doublets</td>
+    <td data-lang="zh">同型 doublet 會留下來，但通常影響小</td>
+    <td data-lang="en">Same-type doublets remain (usually limited impact)</td>
+    <td data-lang="zh">可用 DoubletFinder, scDblFinder 補充</td>
+    <td data-lang="en">Supplement with DoubletFinder, scDblFinder</td>
+  </tr>
+  <tr>
+    <td data-lang="zh">MAD 假設 unimodal 分布</td>
+    <td data-lang="en">MAD assumes unimodal distribution</td>
+    <td data-lang="zh">多峰分布（多細胞型）time MAD 不再合理</td>
+    <td data-lang="en">Multimodal distributions break MAD's interpretation</td>
+    <td data-lang="zh">batch-wise 或 cluster-wise 計算</td>
+    <td data-lang="en">Batch- or cluster-wise computation</td>
+  </tr>
+  <tr>
+    <td data-lang="zh">MT% 上界因組織而異</td>
+    <td data-lang="en">MT% threshold is tissue-dependent</td>
+    <td data-lang="zh">心肌、肌肉天生 MT% 高（10-30%）</td>
+    <td data-lang="en">Cardiomyocytes, muscle naturally have high MT% (10–30%)</td>
+    <td data-lang="zh">參考文獻、或用 robust 估計而非固定 5%</td>
+    <td data-lang="en">Use literature or robust estimation instead of fixed 5%</td>
+  </tr>
+</table>
+
+<h3 data-lang="zh">8.3 下一步</h3>
+<h3 data-lang="en">8.3 Next steps</h3>
+<div class="callout prog">
+  <strong data-lang="zh">流程串連</strong><strong data-lang="en">Pipeline chain</strong>:
+  <span data-lang="zh">
+    QC 完成 → 下一站是 <a href="2.2-normalization.html"><b>2.2 Normalization</b></a>（CPM、log1p、Pearson residuals）
+    → 再來是 <a href="2.3-hvg-selection.html"><b>2.3 HVG selection</b></a>（mean-variance）
+    → <a href="2.4-scaling.html"><b>2.4 Scaling</b></a>（z-score）
+    → 然後才是 <a href="../M3-dimreduction/3.1-pca.html"><b>M3.1 PCA</b></a>。
+    每一步背後都有自己的數學選擇；QC 的 MAD 思路會反覆出現（穩健統計是 scRNA-seq 的基本心法）。
+  </span>
+  <span data-lang="en">
+    After QC → <a href="2.2-normalization.html"><b>2.2 Normalization</b></a> (CPM, log1p, Pearson residuals)
+    → <a href="2.3-hvg-selection.html"><b>2.3 HVG selection</b></a> (mean-variance)
+    → <a href="2.4-scaling.html"><b>2.4 Scaling</b></a> (z-score)
+    → <a href="../M3-dimreduction/3.1-pca.html"><b>M3.1 PCA</b></a>.
+    Each step has its own math choices; the robust-statistics mindset from QC will return throughout scRNA-seq.
+  </span>
+</div>
+
+<p class="footer">
+  <span data-lang="zh">© scRNA-seq Advanced Math 教材 · M2.1 QC Deep Interactive · 數學驗證版本</span>
+  <span data-lang="en">© scRNA-seq Advanced Math · M2.1 QC Deep Interactive · math-verified</span>
+</p>
+
+</div><!-- .wrap -->
+
 <script src="../i18n.js"></script>
 <script>
-function switchTab(b,id){const p=b.closest(".code-tabs");p.querySelectorAll(".code-tab-btn").forEach(x=>x.classList.remove("active"));p.querySelectorAll(".code-tab-content").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(id).classList.add("active");}
+// ============================================
+// §0 interactive: bad cell injection vs mean/median
+// ============================================
+(function() {
+  const svg = document.getElementById('s0svg');
+  const W = 800, H = 220;
+  function draw() {
+    const nBad = +document.getElementById('badCount').value;
+    const sev = +document.getElementById('badSev').value;
+    document.getElementById('badCountVal').textContent = nBad;
+    document.getElementById('badSevVal').textContent = sev + ' genes';
+    // generate good cells: 60 - nBad samples around 1500 with sd 250
+    const nGood = 60 - nBad;
+    let seed = 42; const rnd = () => { seed = (seed*9301+49297) % 233280; return seed/233280; };
+    const data = [];
+    for (let i = 0; i < nGood; i++) {
+      const u1 = rnd(), u2 = rnd();
+      const z = Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);
+      data.push({v: 1500 + 250*z, bad: false});
+    }
+    for (let i = 0; i < nBad; i++) {
+      data.push({v: sev + 30*(rnd()-0.5), bad: true});
+    }
+    const vs = data.map(d=>d.v);
+    const mean = vs.reduce((a,b)=>a+b,0)/vs.length;
+    const sd = Math.sqrt(vs.map(v=>(v-mean)**2).reduce((a,b)=>a+b,0)/vs.length);
+    const sorted = [...vs].sort((a,b)=>a-b);
+    const median = sorted[Math.floor(sorted.length/2)];
+    const devs = vs.map(v=>Math.abs(v-median)).sort((a,b)=>a-b);
+    const mad = devs[Math.floor(devs.length/2)];
+    const meanCut = mean - 2*sd;
+    const madCut = median - 3*mad;
 
-function drawMAD() {
-  const out = +document.getElementById('outR').value;
-  document.getElementById('outV').textContent = out.toFixed(1) + '×';
-  // base distribution + outliers
-  const base = [];
-  for (let i = 0; i < 30; i++) base.push(5 + (Math.sin(i*0.5)*0.5 + (i%3-1)*0.3));
-  const outliers = out > 0 ? [5 + out, 5 + out*1.2, 5 + out*0.9] : [];
-  const data = [...base, ...outliers];
-  // stats
-  const mean = data.reduce((a,b)=>a+b,0)/data.length;
-  const sd = Math.sqrt(data.reduce((a,b)=>a+(b-mean)**2,0)/data.length);
-  const sorted = [...data].sort((a,b)=>a-b);
-  const med = sorted[Math.floor(sorted.length/2)];
-  const mad = [...data].map(x=>Math.abs(x-med)).sort((a,b)=>a-b)[Math.floor(data.length/2)];
-  // draw
-  const W=600, H=200, padT=40, padB=30, padL=30, padR=10;
-  const xmin = 0, xmax = Math.max(15, ...data) + 1;
-  function sx(v){ return padL + (v-xmin)/(xmax-xmin)*(W-padL-padR); }
-  let h = '';
-  h += `<line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="#999"/>`;
-  // mean+sd zone
-  h += `<rect x="${sx(mean-2*sd)}" y="60" width="${sx(mean+2*sd)-sx(mean-2*sd)}" height="${H-padB-60}" fill="rgba(220,38,38,0.1)"/>`;
-  h += `<line x1="${sx(mean)}" y1="60" x2="${sx(mean)}" y2="${H-padB}" stroke="#dc2626" stroke-width="2" stroke-dasharray="5 3"/>`;
-  h += `<text x="${sx(mean)}" y="${H-padB-50}" text-anchor="middle" font-size="11" fill="#dc2626">mean±2σ</text>`;
-  // med+mad zone
-  h += `<rect x="${sx(med-3*mad)}" y="120" width="${sx(med+3*mad)-sx(med-3*mad)}" height="${H-padB-120}" fill="rgba(6,167,125,0.15)"/>`;
-  h += `<line x1="${sx(med)}" y1="120" x2="${sx(med)}" y2="${H-padB}" stroke="#06a77d" stroke-width="2"/>`;
-  h += `<text x="${sx(med)}" y="${H-padB-10}" text-anchor="middle" font-size="11" fill="#06a77d">med±3·MAD</text>`;
-  // points
-  data.forEach((v,i)=>{
-    const isOut = i >= base.length;
-    h += `<circle cx="${sx(v)}" cy="${H-padB-5}" r="4" fill="${isOut?'#dc2626':'#4f7df4'}" stroke="#fff"/>`;
+    document.getElementById('s0mean').textContent = mean.toFixed(0);
+    document.getElementById('s0sd').textContent = sd.toFixed(0);
+    document.getElementById('s0med').textContent = median.toFixed(0);
+    document.getElementById('s0mad').textContent = mad.toFixed(0);
+    document.getElementById('s0meanCut').textContent = meanCut.toFixed(0);
+    document.getElementById('s0madCut').textContent = madCut.toFixed(0);
+
+    const xMin = 0, xMax = 2500;
+    const X = v => 60 + (v-xMin)/(xMax-xMin) * 700;
+    let s = '';
+    // axis
+    s += `<line class="axis" x1="60" y1="170" x2="760" y2="170"/>`;
+    for (let i = 0; i <= 5; i++) {
+      const v = xMin + i*(xMax-xMin)/5;
+      s += `<line class="grid" x1="${X(v)}" y1="170" x2="${X(v)}" y2="178"/>`;
+      s += `<text class="lbl" x="${X(v)}" y="195" text-anchor="middle">${v}</text>`;
+    }
+    s += `<text class="lbl" x="400" y="215" text-anchor="middle">n_genes_by_counts</text>`;
+    // mean & median lines
+    s += `<line x1="${X(mean)}" y1="40" x2="${X(mean)}" y2="170" stroke="#c0392b" stroke-width="2" stroke-dasharray="6,3"/>`;
+    s += `<text class="lbl" x="${X(mean)}" y="35" text-anchor="middle" fill="#c0392b">mean</text>`;
+    s += `<line x1="${X(median)}" y1="55" x2="${X(median)}" y2="170" stroke="#2c5aa0" stroke-width="2" stroke-dasharray="6,3"/>`;
+    s += `<text class="lbl" x="${X(median)}" y="50" text-anchor="middle" fill="#2c5aa0">median</text>`;
+    // cutoff lines
+    s += `<line x1="${X(meanCut)}" y1="90" x2="${X(meanCut)}" y2="170" stroke="#c0392b" stroke-width="1.5" opacity="0.5"/>`;
+    s += `<text class="lbl" x="${X(meanCut)}" y="85" text-anchor="middle" fill="#c0392b" opacity="0.7">mean-2σ</text>`;
+    s += `<line x1="${X(madCut)}" y1="105" x2="${X(madCut)}" y2="170" stroke="#2c5aa0" stroke-width="1.5" opacity="0.5"/>`;
+    s += `<text class="lbl" x="${X(madCut)}" y="100" text-anchor="middle" fill="#2c5aa0" opacity="0.7">med-3·MAD</text>`;
+    // points
+    data.forEach((d, i) => {
+      const cy = 168 - (i*1.5 % 30);
+      s += `<circle class="pt ${d.bad?'bad':''}" cx="${X(d.v)}" cy="${cy}" r="4" opacity="0.7"/>`;
+    });
+    svg.innerHTML = s;
+  }
+  document.getElementById('badCount').addEventListener('input', draw);
+  document.getElementById('badSev').addEventListener('input', draw);
+  draw();
+})();
+
+// ============================================
+// §0-3 quiz
+// ============================================
+document.querySelectorAll('#quiz0 .opt').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const correct = btn.dataset.correct === 'true';
+    document.querySelectorAll('#quiz0 .opt').forEach(b => {
+      b.classList.add(b.dataset.correct === 'true' ? 'correct' : 'wrong');
+      b.disabled = true;
+    });
+    const fb = document.getElementById('quiz0fb');
+    fb.style.display = 'block';
+    const lang = document.body.classList.contains('lang-en') ? 'en' : 'zh';
+    fb.innerHTML = (correct
+      ? (lang==='en'?'✅ Correct! ':'✅ 答對！ ')
+      : (lang==='en'?'❌ Not quite. ':'❌ 不對。 ')) + btn.dataset['fb'+(lang==='en'?'En':'Zh')];
   });
-  document.getElementById('madSvg').innerHTML = h;
-  document.getElementById('madStats').innerHTML =
-    `<span style="color:#dc2626">mean = ${mean.toFixed(2)}, σ = ${sd.toFixed(2)}</span><br>` +
-    `<span style="color:#06a77d">median = ${med.toFixed(2)}, MAD = ${mad.toFixed(2)}</span><br>` +
-    (out>0 ? `<b style="color:#92590e">⚠️ 離群值把 mean 拉走 ${(Math.abs(mean-5)).toFixed(2)}，median 只動 ${Math.abs(med-5).toFixed(2)}</b>` : '');
-}
-document.getElementById('outR').addEventListener('input', drawMAD);
-drawMAD();
+});
+
+// ============================================
+// §4 interactive cutoff
+// ============================================
+(function() {
+  let seedRef = {v: 7};
+  const rnd = () => { seedRef.v = (seedRef.v*9301+49297) % 233280; return seedRef.v/233280; };
+  let data = [];
+  function regen() {
+    seedRef.v = Math.floor(Math.random()*9999);
+    data = [];
+    // 80 good cells (lognormal-ish)
+    for (let i = 0; i < 80; i++) {
+      const u1 = rnd(), u2 = rnd();
+      const z = Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);
+      data.push({v: 1500 + 280*z, bad: false});
+    }
+    // 12 bad cells (low)
+    for (let i = 0; i < 12; i++) {
+      data.push({v: 200 + 80*rnd(), bad: true});
+    }
+    // 6 bad cells (high; doublet)
+    for (let i = 0; i < 6; i++) {
+      data.push({v: 3200 + 250*rnd(), bad: true});
+    }
+    draw();
+  }
+  function draw() {
+    const k = +document.getElementById('kSlider').value;
+    document.getElementById('kVal').textContent = k.toFixed(1);
+    const method = document.getElementById('methodSel').value;
+    const vs = data.map(d=>d.v);
+    let center, spread;
+    if (method === 'mad') {
+      const sorted = [...vs].sort((a,b)=>a-b);
+      center = sorted[Math.floor(sorted.length/2)];
+      const devs = vs.map(v=>Math.abs(v-center)).sort((a,b)=>a-b);
+      const mad = devs[Math.floor(devs.length/2)];
+      spread = 1.4826 * mad;
+    } else {
+      center = vs.reduce((a,b)=>a+b,0)/vs.length;
+      spread = Math.sqrt(vs.map(v=>(v-center)**2).reduce((a,b)=>a+b,0)/vs.length);
+    }
+    const lo = center - k*spread, hi = center + k*spread;
+    let fp=0, fn=0, cut=0;
+    data.forEach(d => {
+      const out = d.v < lo || d.v > hi;
+      if (out) cut++;
+      if (out && !d.bad) fp++;
+      if (!out && d.bad) fn++;
+    });
+    document.getElementById('s4lo').textContent = lo.toFixed(0);
+    document.getElementById('s4hi').textContent = hi.toFixed(0);
+    document.getElementById('s4fp').textContent = fp;
+    document.getElementById('s4fn').textContent = fn;
+    document.getElementById('s4cut').textContent = cut;
+
+    const xMin = 0, xMax = 4000, W = 800;
+    const X = v => 60 + Math.max(0, Math.min(1, (v-xMin)/(xMax-xMin))) * 700;
+    let s = '';
+    s += `<line class="axis" x1="60" y1="230" x2="760" y2="230"/>`;
+    for (let i = 0; i <= 4; i++) {
+      const v = xMin + i*(xMax-xMin)/4;
+      s += `<line class="grid" x1="${X(v)}" y1="230" x2="${X(v)}" y2="238"/>`;
+      s += `<text class="lbl" x="${X(v)}" y="255" text-anchor="middle">${v}</text>`;
+    }
+    s += `<text class="lbl" x="400" y="275" text-anchor="middle">n_genes_by_counts</text>`;
+    // cutoff bands
+    s += `<rect x="60" y="30" width="${X(lo)-60}" height="200" fill="#fdecec" opacity="0.5"/>`;
+    s += `<rect x="${X(hi)}" y="30" width="${760-X(hi)}" height="200" fill="#fdecec" opacity="0.5"/>`;
+    s += `<line x1="${X(lo)}" y1="30" x2="${X(lo)}" y2="230" stroke="#c0392b" stroke-width="2" stroke-dasharray="5,3"/>`;
+    s += `<line x1="${X(hi)}" y1="30" x2="${X(hi)}" y2="230" stroke="#c0392b" stroke-width="2" stroke-dasharray="5,3"/>`;
+    s += `<line x1="${X(center)}" y1="30" x2="${X(center)}" y2="230" stroke="${method==='mad'?'#2c5aa0':'#c0392b'}" stroke-width="2"/>`;
+    s += `<text class="lbl" x="${X(center)}" y="25" text-anchor="middle">${method==='mad'?'median':'mean'}</text>`;
+    // points
+    data.forEach((d, i) => {
+      const cy = 220 - (i*1.4 % 180);
+      const isBad = d.bad, isOut = d.v < lo || d.v > hi;
+      const fill = isOut && isBad ? '#c0392b' : isOut ? '#f0c419' : isBad ? '#e08080' : '#27795a';
+      const op = isOut ? 0.9 : 0.6;
+      s += `<circle cx="${X(d.v)}" cy="${cy}" r="4" fill="${fill}" opacity="${op}"/>`;
+    });
+    document.getElementById('s4svg').innerHTML = s;
+  }
+  document.getElementById('kSlider').addEventListener('input', draw);
+  document.getElementById('methodSel').addEventListener('change', draw);
+  document.getElementById('s4regen').addEventListener('click', regen);
+  regen();
+})();
+
+// ============================================
+// §5 raw vs log
+// ============================================
+(function() {
+  let data;
+  function gen() {
+    let seed = 11; const rnd = () => { seed = (seed*9301+49297) % 233280; return seed/233280; };
+    data = [];
+    for (let i = 0; i < 200; i++) {
+      const u1 = rnd(), u2 = rnd();
+      const z = Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);
+      // lognormal: exp(N(7.5, 0.7^2)) -> typical n_genes
+      data.push(Math.exp(7.5 + 0.7*z));
+    }
+  }
+  function draw() {
+    const mode = document.getElementById('logToggle').value;
+    const xs = mode === 'log' ? data.map(v => Math.log10(v+1)) : data.slice();
+    const sorted = [...xs].sort((a,b)=>a-b);
+    const median = sorted[Math.floor(sorted.length/2)];
+    const devs = xs.map(v => Math.abs(v-median)).sort((a,b)=>a-b);
+    const mad = devs[Math.floor(devs.length/2)];
+    const lo = median - 3*1.4826*mad, hi = median + 3*1.4826*mad;
+    // skewness
+    const mean = xs.reduce((a,b)=>a+b,0)/xs.length;
+    const sd = Math.sqrt(xs.map(v=>(v-mean)**2).reduce((a,b)=>a+b,0)/xs.length);
+    const sk = xs.map(v=>((v-mean)/sd)**3).reduce((a,b)=>a+b,0)/xs.length;
+    document.getElementById('s5skew').textContent = sk.toFixed(2);
+    document.getElementById('s5lo').textContent = (mode==='log' ? Math.pow(10,lo)-1 : lo).toFixed(0);
+    document.getElementById('s5hi').textContent = (mode==='log' ? Math.pow(10,hi)-1 : hi).toFixed(0);
+    // histogram
+    const xMin = Math.min(...xs), xMax = Math.max(...xs);
+    const nBins = 30;
+    const bins = Array(nBins).fill(0);
+    xs.forEach(v => { const i = Math.min(nBins-1, Math.floor((v-xMin)/(xMax-xMin)*nBins)); bins[i]++; });
+    const maxB = Math.max(...bins);
+    const X = v => 60 + (v-xMin)/(xMax-xMin) * 700;
+    let s = '';
+    s += `<line class="axis" x1="60" y1="180" x2="760" y2="180"/>`;
+    for (let i = 0; i <= 5; i++) {
+      const v = xMin + i*(xMax-xMin)/5;
+      s += `<text class="lbl" x="${X(v)}" y="200" text-anchor="middle">${mode==='log'?v.toFixed(2):v.toFixed(0)}</text>`;
+    }
+    bins.forEach((c, i) => {
+      const bx = 60 + i*700/nBins;
+      const bw = 700/nBins - 1;
+      const bh = c/maxB * 150;
+      s += `<rect x="${bx}" y="${180-bh}" width="${bw}" height="${bh}" fill="#a45dc8" opacity="0.7"/>`;
+    });
+    s += `<line x1="${X(median)}" y1="20" x2="${X(median)}" y2="180" stroke="#2c5aa0" stroke-width="2"/>`;
+    s += `<text class="lbl" x="${X(median)}" y="15" text-anchor="middle" fill="#2c5aa0">median</text>`;
+    s += `<line x1="${X(lo)}" y1="40" x2="${X(lo)}" y2="180" stroke="#c0392b" stroke-width="1.5" stroke-dasharray="5,3"/>`;
+    s += `<line x1="${X(hi)}" y1="40" x2="${X(hi)}" y2="180" stroke="#c0392b" stroke-width="1.5" stroke-dasharray="5,3"/>`;
+    s += `<text class="lbl" x="${X(lo)}" y="35" text-anchor="middle" fill="#c0392b">lo</text>`;
+    s += `<text class="lbl" x="${X(hi)}" y="35" text-anchor="middle" fill="#c0392b">hi</text>`;
+    s += `<text class="lbl" x="400" y="215" text-anchor="middle">${mode==='log' ? 'log10(n_genes + 1)' : 'n_genes (raw)'}</text>`;
+    document.getElementById('s5svg').innerHTML = s;
+  }
+  gen();
+  document.getElementById('logToggle').addEventListener('change', draw);
+  draw();
+})();
+
+// ============================================
+// §6 2D joint QC
+// ============================================
+(function() {
+  let seed = 33; const rnd = () => { seed = (seed*9301+49297) % 233280; return seed/233280; };
+  function nrnd(m, sd) {
+    const u1=rnd(), u2=rnd();
+    return m + sd*Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);
+  }
+  const data = [];
+  // 150 good cells
+  for (let i = 0; i < 150; i++) data.push({nf: Math.exp(nrnd(7.6, 0.35)), mt: Math.max(0.5, nrnd(3, 1.5)), type:'good'});
+  // 20 dead (low nf, high MT%)
+  for (let i = 0; i < 20; i++) data.push({nf: Math.exp(nrnd(5.5, 0.5)), mt: nrnd(25, 7), type:'dead'});
+  // 15 doublet (high nf)
+  for (let i = 0; i < 15; i++) data.push({nf: Math.exp(nrnd(8.5, 0.3)), mt: nrnd(4, 1.5), type:'doublet'});
+
+  function median(arr) { const s=[...arr].sort((a,b)=>a-b); return s[Math.floor(s.length/2)]; }
+  function mad(arr, m) { const d=arr.map(v=>Math.abs(v-m)).sort((a,b)=>a-b); return d[Math.floor(d.length/2)]; }
+
+  function draw() {
+    const kMT = +document.getElementById('s6kMT').value;
+    const kNF = +document.getElementById('s6kNF').value;
+    document.getElementById('s6kMTval').textContent = kMT.toFixed(1);
+    document.getElementById('s6kNFval').textContent = kNF.toFixed(1);
+    const logNF = data.map(d => Math.log10(d.nf+1));
+    const mtArr = data.map(d => d.mt);
+    const mNF = median(logNF), madNF = mad(logNF, mNF);
+    const mMT = median(mtArr), madMT = mad(mtArr, mMT);
+    const loNF = Math.pow(10, mNF - kNF*1.4826*madNF) - 1;
+    const hiMT = mMT + kMT*1.4826*madMT;
+    let bad = 0;
+    data.forEach(d => { d.flag = d.nf < loNF || d.mt > hiMT; if (d.flag) bad++; });
+    // scatter
+    const W = 800, H = 460;
+    const xMin = 50, xMax = 8000;
+    const yMin = 0, yMax = 40;
+    const X = v => 70 + (Math.log10(v+1) - Math.log10(xMin+1))/(Math.log10(xMax+1)-Math.log10(xMin+1)) * 700;
+    const Y = v => 430 - (v-yMin)/(yMax-yMin) * 400;
+    let s = '';
+    s += `<rect x="70" y="30" width="700" height="400" fill="#fff"/>`;
+    s += `<line class="axis" x1="70" y1="430" x2="770" y2="430"/>`;
+    s += `<line class="axis" x1="70" y1="30" x2="70" y2="430"/>`;
+    // grid
+    [100,500,1000,2000,5000].forEach(v => {
+      s += `<line class="grid" x1="${X(v)}" y1="30" x2="${X(v)}" y2="430"/>`;
+      s += `<text class="lbl" x="${X(v)}" y="450" text-anchor="middle">${v}</text>`;
+    });
+    [0,10,20,30,40].forEach(v => {
+      s += `<line class="grid" x1="70" y1="${Y(v)}" x2="770" y2="${Y(v)}"/>`;
+      s += `<text class="lbl" x="55" y="${Y(v)+4}" text-anchor="end">${v}%</text>`;
+    });
+    s += `<text class="lbl" x="420" y="455" text-anchor="middle" font-weight="600">n_genes_by_counts (log scale)</text>`;
+    s += `<text class="lbl" x="30" y="220" text-anchor="middle" font-weight="600" transform="rotate(-90 30 220)">pct_counts_mt (%)</text>`;
+    // cutoff lines
+    s += `<line x1="${X(loNF)}" y1="30" x2="${X(loNF)}" y2="430" stroke="#c0392b" stroke-width="2" stroke-dasharray="6,3"/>`;
+    s += `<text class="lbl" x="${X(loNF)+5}" y="45" fill="#c0392b">nFeature lo</text>`;
+    s += `<line x1="70" y1="${Y(hiMT)}" x2="770" y2="${Y(hiMT)}" stroke="#c0392b" stroke-width="2" stroke-dasharray="6,3"/>`;
+    s += `<text class="lbl" x="765" y="${Y(hiMT)-5}" text-anchor="end" fill="#c0392b">MT% hi</text>`;
+    // points
+    data.forEach((d, i) => {
+      const colorMap = {good:'#27795a', dead:'#c0392b', doublet:'#f0c419'};
+      const fill = colorMap[d.type];
+      const stroke = d.flag ? '#000' : 'none';
+      s += `<circle class="pt" data-i="${i}" cx="${X(d.nf)}" cy="${Y(d.mt)}" r="5" fill="${fill}" stroke="${stroke}" stroke-width="${d.flag?2:0}" opacity="0.75"/>`;
+    });
+    // legend
+    s += `<g transform="translate(580, 50)">`;
+    s += `<rect x="0" y="0" width="170" height="80" fill="#fff" stroke="#ddd"/>`;
+    s += `<circle cx="14" cy="18" r="5" fill="#27795a"/><text class="lbl" x="26" y="22">good</text>`;
+    s += `<circle cx="14" cy="38" r="5" fill="#c0392b"/><text class="lbl" x="26" y="42">dead (high MT%)</text>`;
+    s += `<circle cx="14" cy="58" r="5" fill="#f0c419"/><text class="lbl" x="26" y="62">doublet</text>`;
+    s += `<text class="lbl" x="14" y="76" fill="#666">black outline = flagged</text>`;
+    s += `</g>`;
+
+    document.getElementById('s6svg').innerHTML = s;
+    document.getElementById('s6svg').querySelectorAll('circle.pt').forEach(c => {
+      c.addEventListener('click', () => {
+        const d = data[+c.dataset.i];
+        const lang = document.body.classList.contains('lang-en') ? 'en' : 'zh';
+        const labels = lang==='en'
+          ? `nFeature: ${d.nf.toFixed(0)} | MT%: ${d.mt.toFixed(1)} | true type: ${d.type} | flagged: ${d.flag?'YES':'no'}`
+          : `nFeature: ${d.nf.toFixed(0)} | MT%: ${d.mt.toFixed(1)} | 真實型: ${d.type} | 是否標離群: ${d.flag?'是':'否'}`;
+        document.getElementById('s6detail').textContent = labels;
+      });
+    });
+  }
+  document.getElementById('s6kMT').addEventListener('input', draw);
+  document.getElementById('s6kNF').addEventListener('input', draw);
+  draw();
+})();
+
+// ============================================
+// §7 Scrublet sim
+// ============================================
+(function() {
+  let seed = 91; const rnd = () => { seed = (seed*9301+49297) % 233280; return seed/233280; };
+  function nrnd(m,s){const u1=rnd(),u2=rnd();return m+s*Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);}
+  let observed = [], synthetic = [];
+  function init() {
+    observed = [];
+    for (let i = 0; i < 40; i++) observed.push({x: nrnd(200, 35), y: nrnd(220, 30), type:'A'});
+    for (let i = 0; i < 40; i++) observed.push({x: nrnd(550, 40), y: nrnd(200, 35), type:'B'});
+    synthetic = [];
+    draw();
+  }
+  function synth() {
+    for (let i = 0; i < 10; i++) {
+      const a = observed[Math.floor(rnd()*observed.length)];
+      const b = observed[Math.floor(rnd()*observed.length)];
+      synthetic.push({x: (a.x+b.x)/2 + nrnd(0,15), y: (a.y+b.y)/2 + nrnd(0,15)});
+    }
+    draw();
+  }
+  function knnScore() {
+    const k = +document.getElementById('s7k').value;
+    const thr = +document.getElementById('s7thr').value;
+    document.getElementById('s7kVal').textContent = k;
+    document.getElementById('s7thrVal').textContent = thr.toFixed(2);
+    const all = [...observed.map(o=>({...o, syn:false})), ...synthetic.map(s=>({...s, syn:true}))];
+    observed.forEach((o, i) => {
+      const dists = all.map((p,j) => ({j, d: (o.x-p.x)**2 + (o.y-p.y)**2, syn: p.syn}));
+      dists.sort((a,b)=>a.d-b.d);
+      const top = dists.slice(1, k+1);
+      const nSyn = top.filter(t=>t.syn).length;
+      o.score = nSyn / k;
+      o.flag = o.score > thr;
+    });
+    return {k, thr};
+  }
+  function draw() {
+    knnScore();
+    let nflag = 0;
+    let s = '';
+    s += `<rect x="0" y="0" width="800" height="360" fill="#fcfcfa"/>`;
+    s += `<text class="lbl" x="400" y="22" text-anchor="middle" font-weight="700">2D 細胞表現 (PC1 vs PC2 示意)</text>`;
+    observed.forEach(o => {
+      const fill = o.type==='A' ? '#2c5aa0' : '#27795a';
+      const stroke = o.flag ? '#c0392b' : 'none';
+      const sw = o.flag ? 2.5 : 0;
+      if (o.flag) nflag++;
+      s += `<circle cx="${o.x}" cy="${o.y}" r="${5 + o.score*5}" fill="${fill}" opacity="0.7" stroke="${stroke}" stroke-width="${sw}"/>`;
+    });
+    synthetic.forEach(p => {
+      s += `<path d="M${p.x-6},${p.y} l6,-6 l6,6 l-6,6 z" fill="#c0392b" opacity="0.7" stroke="#7d1e10" stroke-width="1"/>`;
+    });
+    // legend
+    s += `<g transform="translate(580, 280)">`;
+    s += `<rect x="0" y="0" width="200" height="70" fill="#fff" stroke="#ddd"/>`;
+    s += `<circle cx="14" cy="14" r="5" fill="#2c5aa0"/><text class="lbl" x="26" y="18">Type A (observed)</text>`;
+    s += `<circle cx="14" cy="32" r="5" fill="#27795a"/><text class="lbl" x="26" y="36">Type B (observed)</text>`;
+    s += `<path d="M8,52 l6,-6 l6,6 l-6,6 z" fill="#c0392b"/><text class="lbl" x="26" y="56">Synthetic doublet</text>`;
+    s += `</g>`;
+    document.getElementById('s7svg').innerHTML = s;
+    document.getElementById('s7nsyn').textContent = synthetic.length;
+    document.getElementById('s7flag').textContent = nflag;
+  }
+  document.getElementById('s7synth').addEventListener('click', synth);
+  document.getElementById('s7reset').addEventListener('click', init);
+  document.getElementById('s7k').addEventListener('input', draw);
+  document.getElementById('s7thr').addEventListener('input', draw);
+  init();
+})();
 </script>
-</body></html>
+</body>
+</html>

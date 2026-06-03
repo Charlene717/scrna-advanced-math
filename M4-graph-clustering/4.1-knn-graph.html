@@ -1,106 +1,824 @@
 <!DOCTYPE html>
-<html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>4.1 KNN Graph &amp; HNSW — scRNA-seq Advanced Math</title><link rel="stylesheet" href="../styles.css">
-<script>MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] } };</script>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>4.1 KNN Graph + HNSW — Deep Interactive</title>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
-</head><body>
+<style>
+  :root {
+    --bg: #fafaf7; --fg: #1a1a1a; --muted: #666;
+    --accent: #c0392b; --accent2: #2c5aa0;
+    --green: #27795a; --purple: #8e44ad; --yellow: #f0c419;
+    --pink: #db2777;
+    --card: #ffffff; --border: #e0e0d8; --code: #f4f1ea;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Helvetica Neue", "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif; background: var(--bg); color: var(--fg); line-height: 1.75; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 40px 28px 120px; }
+  header.cover { margin: 20px 0 60px; padding: 52px 40px;
+    background: linear-gradient(135deg, #500724 0%, #be185d 55%, #f9a8d4 100%);
+    color: #fff; border-radius: 16px; box-shadow: 0 14px 40px rgba(80,7,36,0.18); }
+  header.cover h1 { margin: 0 0 14px; font-size: 36px; }
+  header.cover .sub { font-size: 17px; opacity: 0.92; line-height: 1.65; }
+  header.cover .badge { display: inline-block; background: rgba(255,255,255,0.18);
+    padding: 4px 12px; border-radius: 20px; font-size: 13px; margin-bottom: 16px; }
+  h2 { margin-top: 70px; padding-bottom: 8px; border-bottom: 3px solid var(--pink);
+    font-size: 26px; display: flex; align-items: baseline; gap: 12px; }
+  h2 .num { color: var(--pink); font-weight: 800; font-size: 20px; }
+  h3 { margin-top: 36px; font-size: 19px; color: var(--accent2); }
+  h4 { margin-top: 22px; font-size: 16px; color: var(--accent); }
+  p { margin: 14px 0; }
+  .lead { font-size: 17px; color: #2a2a2a; }
+  .callout { background: #fff8e6; border-left: 4px solid var(--yellow); padding: 14px 18px; border-radius: 6px; margin: 22px 0; }
+  .callout.idea { background: #eaf4ff; border-left-color: var(--accent2); }
+  .callout.warn { background: #fdecec; border-left-color: var(--accent); }
+  .callout.bio  { background: #effaf3; border-left-color: var(--green); }
+  .callout.prog { background: #fdf2f8; border-left-color: var(--pink); }
+  .card { background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px 26px; margin: 26px 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+  .card h3 { margin-top: 0; }
+  .controls { display: flex; flex-wrap: wrap; gap: 14px 22px;
+    align-items: center; margin: 14px 0; padding: 12px 16px;
+    background: #f4f1ea; border-radius: 8px; font-size: 14px; }
+  .controls label { display: flex; align-items: center; gap: 8px; }
+  button { background: var(--pink); color: #fff; border: 0;
+    padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 14px;
+    font-family: inherit; }
+  button:hover { background: #9d174d; }
+  button.ghost { background: #fff; color: var(--pink); border: 1px solid var(--pink); }
+  input[type="range"] { width: 180px; vertical-align: middle; }
+  svg.canvas { background: #fcfcfa; border: 1px solid var(--border); border-radius: 8px; display: block; }
+  svg.canvas .axis { stroke: #bbb; stroke-width: 1; }
+  svg.canvas .grid { stroke: #ececea; stroke-width: 0.5; }
+  svg.canvas text.lbl { font-size: 12px; fill: #333; }
+  .stat-row { display: flex; flex-wrap: wrap; gap: 22px; margin: 14px 0; font-size: 14px; }
+  .stat-row .item { display: flex; flex-direction: column; }
+  .stat-row .item .lbl { color: var(--muted); font-size: 12px; }
+  .stat-row .item .val { font-family: "JetBrains Mono", monospace; font-size: 18px; }
+  details { margin: 16px 0; }
+  details summary { cursor: pointer; font-weight: 600; color: var(--accent2); padding: 6px 0; }
+  .toc { background: #fff; border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 28px; margin: 30px 0; }
+  .toc h4 { margin: 0 0 10px; color: var(--pink); }
+  .toc ol { margin: 6px 0; padding-left: 24px; line-height: 1.9; }
+  .toc a { color: var(--accent2); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .toc .new { background: var(--pink); color: #fff; font-size: 11px;
+    padding: 1px 8px; border-radius: 10px; margin-left: 6px; }
+  code.inline { background: var(--code); padding: 2px 6px; border-radius: 4px;
+    font-size: 13px; font-family: "JetBrains Mono", "Consolas", monospace; }
+  pre.code { background: #1e1e1e; color: #dcdcdc;
+    padding: 14px 18px; border-radius: 8px; overflow-x: auto; font-size: 13px;
+    font-family: "JetBrains Mono", "Consolas", monospace; line-height: 1.55; }
+  pre.code .k { color: #569cd6; }
+  pre.code .s { color: #ce9178; }
+  pre.code .c { color: #6a9955; }
+  pre.code .n { color: #b5cea8; }
+  table.compare { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.compare th, table.compare td { border: 1px solid var(--border); padding: 8px 12px; }
+  table.compare th { background: #f4f1ea; text-align: left; }
+  .math-block { background: #fff; border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 18px; margin: 18px 0; }
+  .math-block.boxed { border: 2px solid var(--pink); background: #fdf2f8; }
+  .formula-caption { font-size: 12.5px; color: var(--muted); text-align: center; margin-top: 6px; }
+  .footer { text-align: center; color: var(--muted); margin-top: 80px; font-size: 13px; }
+  .top-nav { background: #500724; color: #fff; padding: 14px 28px;
+    position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(80,7,36,0.25); }
+  .top-nav-inner { max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; gap: 28px; }
+  .top-nav-brand { color: #fff; text-decoration: none;
+    font-weight: 700; font-size: 17px;
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .top-nav-brand .badge-math { background: #db2777; color: #fff;
+    padding: 3px 9px; border-radius: 4px; font-size: 11px; }
+  .top-nav-links { list-style: none; margin: 0; padding: 0;
+    display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+  .top-nav-links a { color: #fbcfe8; text-decoration: none;
+    padding: 6px 11px; border-radius: 6px; font-size: 13px; font-weight: 500;
+    transition: 0.2s; }
+  .top-nav-links a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .top-nav-links a.active { background: #db2777; color: #fff; }
+  .top-nav-links li.dropdown { position: relative; }
+  .top-nav-links li.dropdown > a::after { content: ' ▾';
+    font-size: 10px; opacity: 0.7; margin-left: 3px;
+    display: inline-block; transition: transform 0.2s; }
+  .top-nav-links li.dropdown:hover > a::after,
+  .top-nav-links li.dropdown.open > a::after { transform: rotate(180deg); }
+  .top-nav-links .dropdown-menu { display: none; position: absolute; top: 100%; left: 0;
+    background: #6b1042; border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px; padding: 6px 0; min-width: 230px;
+    list-style: none; z-index: 200;
+    box-shadow: 0 8px 28px rgba(80,7,36,0.5); margin: 6px 0 0; }
+  .top-nav-links li.dropdown:hover > .dropdown-menu,
+  .top-nav-links li.dropdown.open > .dropdown-menu { display: block; }
+  .top-nav-links .dropdown-menu li { display: block; }
+  .top-nav-links .dropdown-menu li a { display: block; padding: 9px 18px;
+    border-radius: 0; font-size: 13px; white-space: nowrap; color: #fbcfe8; }
+  .top-nav-links .dropdown-menu li a:hover { background: rgba(219,39,119,0.3); color: #fff; }
+  .top-nav-links .dropdown-menu li a.active-sub { background: #db2777; color: #fff; font-weight: 700; }
+  .top-nav-links .dropdown-menu .sub-label { font-size: 10px; color: #f472b6;
+    letter-spacing: 1px; padding: 4px 18px 2px; text-transform: uppercase; }
+  .lang-switch { display: flex; gap: 4px;
+    background: rgba(255,255,255,0.08); padding: 4px; border-radius: 6px; flex-shrink: 0; }
+  .lang-switch button { background: transparent; border: 0; color: #fbcfe8;
+    font-size: 12px; font-weight: 700; padding: 5px 10px;
+    border-radius: 4px; cursor: pointer; font-family: inherit; }
+  .lang-switch button.active { background: #db2777; color: #fff; }
+  .nav-pages { display: flex; gap: 8px; margin: 24px 0; padding: 14px;
+    background: #6b1042; border-radius: 10px; align-items: center; flex-wrap: wrap; }
+  .nav-pages a { color: #fbcfe8; text-decoration: none;
+    padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600;
+    transition: 0.2s; }
+  .nav-pages a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .nav-pages .label { color: #f472b6; font-size: 11px;
+    letter-spacing: 1px; font-weight: 700; margin-right: 8px; }
+  [data-lang="en"] { display: none; }
+  body.lang-en [data-lang="zh"] { display: none; }
+  body.lang-en [data-lang="en"] { display: initial; }
+  body.lang-en h1[data-lang="en"], body.lang-en h2[data-lang="en"],
+  body.lang-en h3[data-lang="en"], body.lang-en h4[data-lang="en"],
+  body.lang-en p[data-lang="en"], body.lang-en div[data-lang="en"],
+  body.lang-en ol[data-lang="en"], body.lang-en ul[data-lang="en"] { display: block; }
+  body.lang-en li[data-lang="en"] { display: list-item; }
+  body.lang-en span[data-lang="en"] { display: inline; }
+  body.lang-en tspan[data-lang="en"] { display: inline; }
+</style>
+</head>
+<body>
+
 <nav class="top-nav"><div class="top-nav-inner">
-  <a href="../index.html" class="top-nav-brand"><span>🧬</span><span data-lang="zh">scRNA-seq 進階數學</span><span data-lang="en">scRNA-seq Advanced Math</span><span class="badge-math">MATH</span></a>
-  <ul class="top-nav-links"><li><a href="../index.html#M1">M1</a></li><li><a href="../index.html#M2">M2</a></li><li><a href="../index.html#M3">M3</a></li><li><a href="../index.html#M4" class="active">M4</a></li><li><a href="../index.html#M5">M5</a></li><li><a href="../index.html#M6">M6</a></li><li><a href="../index.html" data-lang="zh">🏠 回首頁</a><span data-lang="en">🏠 Home</span></li></ul>
-  <div class="lang-switch"><button data-lang-btn="zh" class="active">中文</button><button data-lang-btn="en">EN</button></div>
-</div></nav>
-<header class="page-hero"><div class="page-hero-inner">
-  <div class="page-badge">M4.1 · GRAPH &amp; CLUSTERING</div>
-  <h1 data-lang="zh">KNN graph 與 HNSW 加速</h1><h1 data-lang="en">KNN Graph &amp; HNSW</h1>
-  <p class="subtitle" data-lang="zh">在 30 維、100 萬個細胞中找 15 個近鄰要花多久？HNSW 怎麼把 O(n²) 降到 O(n log n)？</p>
-  <p class="subtitle" data-lang="en">Finding 15-NN among 1M cells in 30D. How HNSW reduces O(n²) to O(n log n).</p>
-</div></header>
-
-<main class="content-wrap">
-
-<section class="section">
-  <span class="section-label intuition">直覺 / Intuition</span>
-  <div data-lang="zh"><p>分群、UMAP、Pseudotime 全部都要 KNN graph。但暴力法（每對細胞算距離）對 100 萬細胞要算 $5 \times 10^{11}$ 對——大概要算到天荒地老。</p>
-    <p>所以實務上用「近似」演算法：<b>HNSW (Hierarchical Navigable Small World)</b>。</p></div>
-  <div data-lang="en"><p>Clustering, UMAP, pseudotime all need KNN. Brute force on 1M cells is $5 \times 10^{11}$ pairs. We use approximate algorithms — <b>HNSW</b>.</p></div>
-</section>
-
-<section class="section">
-  <span class="section-label math">核心數學 / Math</span>
-  <h3 data-lang="zh">KNN graph 定義</h3><h3 data-lang="en">KNN graph definition</h3>
-  <div class="math-block">$$\mathcal{N}_k(i) = \arg\min_{S \subset V, |S|=k} \sum_{j \in S} \|x_i - x_j\|$$</div>
-  <p data-lang="zh">「鄰居」可以是有向（i→j 表示 j 是 i 的近鄰）或無向（mutual KNN）。Seurat 用 mutual + Jaccard 加權，Scanpy 用 UMAP 風格的 fuzzy 加權。</p>
-  <p data-lang="en">Edges can be directed (j is i's neighbor) or mutual (mNN). Seurat uses mutual + Jaccard; Scanpy uses UMAP-style fuzzy weights.</p>
-
-  <h3>HNSW <span data-lang="zh">的兩個核心想法</span><span data-lang="en">two core ideas</span></h3>
-  <ol data-lang="zh">
-    <li><b>Navigable Small World</b>：每個節點有少數「長程連結」+ 多數「短程連結」。從任何點都能 $O(\log n)$ 跳到目標。</li>
-    <li><b>Hierarchy</b>：建多層圖。上層稀疏，搜尋從上層開始「粗找」，逐層下沉「細找」。</li>
-  </ol>
-  <ol data-lang="en">
-    <li><b>Navigable Small World</b>: few long edges + many short edges → reach any target in $O(\log n)$.</li>
-    <li><b>Hierarchy</b>: multi-layer graph. Sparse top for coarse search, descend for refinement.</li>
-  </ol>
-
-  <h3 data-lang="zh">搜尋複雜度</h3><h3 data-lang="en">Search complexity</h3>
-  <div class="math-block">$$T_{\text{search}} = O(\log n)$$</div>
-  <p data-lang="zh">建構成本 $O(n \log n)$，記憶體 $O(n \cdot M)$（$M$ = 每節點連結數，典型 16）。</p>
-  <p data-lang="en">Build: $O(n \log n)$. Memory: $O(n \cdot M)$ ($M$ ≈ 16 connections per node).</p>
-
-  <h3 data-lang="zh">Jaccard 邊權重（Seurat）</h3><h3 data-lang="en">Jaccard edge weights (Seurat)</h3>
-  <div class="math-block">$$w_{ij} = \frac{|\mathcal{N}_k(i) \cap \mathcal{N}_k(j)|}{|\mathcal{N}_k(i) \cup \mathcal{N}_k(j)|}$$</div>
-  <p data-lang="zh">兩個細胞「共同鄰居」越多權重越大。比單純距離更穩健。</p>
-  <p data-lang="en">More shared neighbors → higher weight. More robust than raw distance.</p>
-</section>
-
-<section class="section">
-  <span class="section-label algo">演算法 / Algorithm</span>
-  <div class="algo-block">
-<span class="comment"># HNSW Search</span>
-<span class="keyword">def</span> <span class="func">search_knn</span>(q, k):
-    ep = entry_point          <span class="comment"># 最上層的進入點</span>
-    <span class="keyword">for</span> level <span class="keyword">in</span> reversed(range(<span class="num">1</span>, max_level)):
-        ep = greedy_search(q, ep, level)   <span class="comment"># 在該層找最近的</span>
-    <span class="keyword">return</span> beam_search(q, ep, level=<span class="num">0</span>, k=k)
-  </div>
-</section>
-
-<section class="section">
-  <span class="section-label code">程式碼 / Code</span>
-  <div class="code-tabs"><div class="code-tab-btns"><button class="code-tab-btn active" onclick="switchTab(this,'py10')">Python</button><button class="code-tab-btn" onclick="switchTab(this,'r10')">R</button></div>
-    <div class="code-tab-content active" id="py10"><pre><span class="comment"># Scanpy 預設用 PyNNDescent (基於 NN-descent)，可選 hnswlib</span>
-sc.pp.neighbors(adata, n_neighbors=<span class="num">15</span>, n_pcs=<span class="num">30</span>, method=<span class="str">"umap"</span>)
-adata.obsp[<span class="str">"connectivities"</span>]   <span class="comment"># 稀疏圖</span>
-
-<span class="comment"># 直接用 hnswlib</span>
-<span class="keyword">import</span> hnswlib
-p = hnswlib.Index(space=<span class="str">"l2"</span>, dim=<span class="num">30</span>)
-p.init_index(max_elements=<span class="num">1000000</span>, ef_construction=<span class="num">200</span>, M=<span class="num">16</span>)
-p.add_items(adata.obsm[<span class="str">"X_pca"</span>])
-labels, distances = p.knn_query(adata.obsm[<span class="str">"X_pca"</span>], k=<span class="num">15</span>)
-</pre></div>
-    <div class="code-tab-content" id="r10"><pre>pbmc &lt;- <span class="func">FindNeighbors</span>(pbmc, dims = <span class="num">1</span>:<span class="num">30</span>, k.param = <span class="num">15</span>,
-                       annoy.metric = <span class="str">"euclidean"</span>)
-<span class="comment"># Seurat 用 Annoy (Spotify) 或 RcppHNSW</span>
-</pre></div>
-  </div>
-</section>
-
-<section class="section">
-  <span class="section-label">參考 / References</span>
-  <ul class="refs-list">
-    <li><div class="ref-title">Malkov, Y.A. &amp; Yashunin, D.A. (2018). Efficient and Robust Approximate Nearest Neighbor Search Using Hierarchical Navigable Small World Graphs.</div><div class="ref-meta">IEEE TPAMI. <a href="https://doi.org/10.1109/TPAMI.2018.2889473">10.1109/TPAMI.2018.2889473</a></div></li>
-    <li><div class="ref-title">Dong, W., Charikar, M., Li, K. (2011). NN-Descent.</div><div class="ref-meta">WWW. PyNNDescent 基礎。</div></li>
+  <a href="../index.html" class="top-nav-brand">
+    <span>🧬</span>
+    <span data-lang="zh">scRNA-seq 進階數學</span>
+    <span data-lang="en">scRNA-seq Advanced Math</span>
+    <span class="badge-math">MATH</span>
+  </a>
+  <ul class="top-nav-links">
+    <li class="dropdown"><a href="../index.html#M1">M1</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">基礎 / FOUNDATIONS</li>
+        <li><a href="../M1-foundations/1.1-sparse-matrix.html">1.1 稀疏矩陣</a></li>
+        <li><a href="../M1-foundations/1.2-count-distributions.html">1.2 計數分布</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M2">M2</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">前處理 / PREPROCESSING</li>
+        <li><a href="../M2-preprocessing/2.1-qc-statistics.html">2.1 QC 統計</a></li>
+        <li><a href="../M2-preprocessing/2.2-normalization.html">2.2 Normalization</a></li>
+        <li><a href="../M2-preprocessing/2.3-hvg-selection.html">2.3 HVG 選擇</a></li>
+        <li><a href="../M2-preprocessing/2.4-scaling.html">2.4 Scaling</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M3">M3</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">降維 / DIM. REDUCTION</li>
+        <li><a href="../M3-dimreduction/3.1-pca.html">3.1 PCA</a></li>
+        <li><a href="../M3-dimreduction/3.2-tsne.html">3.2 t-SNE</a></li>
+        <li><a href="../M3-dimreduction/3.3-umap.html">3.3 UMAP</a></li>
+        <li><a href="../M3-dimreduction/3.4-diffusion-map.html">3.4 Diffusion Maps</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M4" class="active">M4</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">圖與聚類 / GRAPH &amp; CLUSTERING</li>
+        <li><a href="4.1-knn-graph.html" class="active-sub">4.1 KNN Graph + HNSW ⭐ (本頁)</a></li>
+        <li><a href="4.2-louvain-leiden.html">4.2 Louvain &amp; Leiden</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M5">M5</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">統計推論 / STATS</li>
+        <li><a href="../M5-statistics/5.1-de-tests.html">5.1 DE 檢定</a></li>
+        <li><a href="../M5-statistics/5.2-multiple-testing.html">5.2 多重檢定 / FDR</a></li>
+        <li><a href="../M5-statistics/5.3-classifier.html">5.3 細胞分類器</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M6">M6</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">進階 / ADVANCED</li>
+        <li><a href="../M6-advanced/6.1-integration.html">6.1 Integration</a></li>
+        <li><a href="../M6-advanced/6.2-pseudotime.html">6.2 Pseudotime</a></li>
+        <li><a href="../M6-advanced/6.3-cellchat.html">6.3 CellChat</a></li>
+      </ul></li>
+    <li><a href="../index.html"><span data-lang="zh">🏠 回首頁</span><span data-lang="en">🏠 Home</span></a></li>
   </ul>
-</section>
+  <div class="lang-switch">
+    <button data-lang-btn="zh" class="active">中文</button>
+    <button data-lang-btn="en">EN</button>
+  </div>
+</div></nav>
 
-<div class="cross-links">
-  <a href="../PCA/PCA_互動教材.html" class="cross-link"><div class="cross-label" data-lang="zh">← 降維 PCA</div><div class="cross-label" data-lang="en">← PCA</div><div class="cross-title"><span class="cross-id">M3.1</span> PCA</div></a>
-  <a href="4.2-louvain-leiden.html" class="cross-link"><div class="cross-label" data-lang="zh">下一篇 →</div><div class="cross-label" data-lang="en">NEXT →</div><div class="cross-title"><span class="cross-id">M4.2</span> Leiden</div></a>
+<div class="wrap">
+
+<div class="nav-pages">
+  <span class="label" data-lang="zh">本頁章節</span><span class="label" data-lang="en">CHAPTERS</span>
+  <a href="#s0"><span data-lang="zh">§0 故事</span><span data-lang="en">§0 Story</span></a>
+  <a href="#s1"><span data-lang="zh">§1 KNN 直覺</span><span data-lang="en">§1 KNN intuition</span></a>
+  <a href="#s2"><span data-lang="zh">§2 複雜度</span><span data-lang="en">§2 Complexity</span></a>
+  <a href="#s3"><span data-lang="zh">§3 互動 KNN</span><span data-lang="en">§3 Interactive KNN</span></a>
+  <a href="#s4"><span data-lang="zh">§4 HNSW</span><span data-lang="en">§4 HNSW</span></a>
+  <a href="#s5"><span data-lang="zh">§5 ANN 對比</span><span data-lang="en">§5 ANN compare</span></a>
+  <a href="#s6"><span data-lang="zh">§6 PCA 前提</span><span data-lang="en">§6 PCA prereq</span></a>
+  <a href="#s7"><span data-lang="zh">§7 Connectivity</span><span data-lang="en">§7 Connectivity</span></a>
+  <a href="#s8"><span data-lang="zh">§8 限制</span><span data-lang="en">§8 Limits</span></a>
 </div>
 
-</main>
-<footer class="site-footer"><p>© Charlene</p></footer>
+<header class="cover">
+  <div class="badge"><span data-lang="zh">深入互動版 · 從直覺到數學</span><span data-lang="en">Deep Interactive · From Intuition to Math</span></div>
+  <h1 data-lang="zh">KNN Graph：從 brute-force 到 HNSW</h1>
+  <h1 data-lang="en">KNN Graph: from brute-force to HNSW</h1>
+  <div class="sub" data-lang="zh">
+    PCA 完成後，scanpy 下一步 <code class="inline">sc.pp.neighbors</code> 在你不知不覺中做了一件大事：
+    為 10,000 個細胞建立<b>近鄰圖</b>。
+    若用 brute-force 算每對距離，10k cells 要 <b>50,000,000 次浮點運算</b>；
+    1M cells 直接 <b>5,000,000,000,000 次</b>，跑不完。<br><br>
+    這節從 KNN 圖的<b>定義</b>出發，理解為什麼 brute-force 行不通，
+    然後逐步建構 <b>HNSW（Hierarchical Navigable Small World）</b>——
+    一個能在 $O(\log n)$ 時間找近鄰的圖資料結構。
+    最後解釋 Jaccard 邊權重、scanpy 的 connectivities 矩陣為什麼是 PCA 之後 + clustering 之前的關鍵橋樑。
+  </div>
+  <div class="sub" data-lang="en">
+    After PCA, Scanpy's <code class="inline">sc.pp.neighbors</code> silently does a heavy job:
+    build a <b>nearest-neighbor graph</b> over your 10k cells.
+    Brute-force: 10k cells → <b>50M pairwise distances</b>; 1M cells → <b>5 trillion</b> — infeasible.<br><br>
+    We start from KNN graph definition, see why brute-force fails,
+    then build up <b>HNSW (Hierarchical Navigable Small World)</b> —
+    a graph data structure that finds neighbors in $O(\log n)$.
+    Finally, Jaccard edge weights and Scanpy's connectivities matrix — the bridge between PCA and clustering.
+  </div>
+</header>
+
+<div class="toc">
+  <h4 data-lang="zh">目錄</h4>
+  <h4 data-lang="en">Table of Contents</h4>
+  <ol start="0">
+    <li><a href="#s0"><span data-lang="zh">故事：5 千萬 vs 5 兆對距離</span><span data-lang="en">Story: 50M vs 5T distances</span></a><span class="new" data-lang="zh">新增</span><span class="new" data-lang="en">NEW</span></li>
+    <li><a href="#s1"><span data-lang="zh">KNN 圖的直覺與定義</span><span data-lang="en">KNN graph intuition & definition</span></a></li>
+    <li><a href="#s2"><span data-lang="zh">複雜度：brute vs ANN</span><span data-lang="en">Complexity: brute vs ANN</span></a></li>
+    <li><a href="#s3"><span data-lang="zh">互動：拉 k 看圖結構變化</span><span data-lang="en">Interactive: vary k</span></a></li>
+    <li><a href="#s4"><span data-lang="zh">HNSW 多層導航結構</span><span data-lang="en">HNSW multi-layer structure</span></a><span class="new" data-lang="zh">核心</span><span class="new" data-lang="en">CORE</span></li>
+    <li><a href="#s5"><span data-lang="zh">ANN 方法對比：HNSW vs Annoy vs NN-descent</span><span data-lang="en">ANN comparison</span></a></li>
+    <li><a href="#s6"><span data-lang="zh">為什麼要先 PCA 再算 KNN？</span><span data-lang="en">Why PCA before KNN?</span></a></li>
+    <li><a href="#s7"><span data-lang="zh">Jaccard 邊權重 + connectivities 矩陣</span><span data-lang="en">Jaccard edges + connectivities</span></a></li>
+    <li><a href="#s8"><span data-lang="zh">限制與下一步</span><span data-lang="en">Limits & next</span></a></li>
+  </ol>
+</div>
+
+<h2 id="s0"><span class="num">§0</span> <span data-lang="zh">故事：5 千萬 vs 5 兆對距離</span><span data-lang="en">Story: 50M vs 5T distances</span></h2>
+
+<p class="lead" data-lang="zh">
+  PCA 之後你有 10,000 個細胞 × 30 維的 PCA 嵌入。下一步要找「每個細胞最近的 15 個鄰居」（建 KNN graph）。最直接做法：
+</p>
+<p class="lead" data-lang="en">
+  After PCA, you have 10,000 cells × 30-D embedding. Next: find each cell's 15 nearest neighbors (build KNN graph). Naive way:
+</p>
+
+<pre class="code"><span class="c"># Brute-force: 算每兩個細胞的距離</span>
+<span class="k">for</span> i <span class="k">in range</span>(n):
+    <span class="k">for</span> j <span class="k">in range</span>(n):
+        d[i,j] = np.linalg.norm(X[i] - X[j])</pre>
+
+<p data-lang="zh">複雜度 $O(n^2 d)$。對 10k cells × 30 維 = 30 億次運算。實測 ~30 秒。
+但 100k cells = 3000 秒（50 分鐘）。1M cells = $O(n^2 d) = 3 \times 10^{13}$ → <b>不可行</b>。</p>
+<p data-lang="en">Complexity $O(n^2 d)$. For 10k cells × 30-D = 3 billion ops, ~30 sec. But 100k = 50 min, 1M = $3 \times 10^{13}$ → <b>infeasible</b>.</p>
+
+<div class="card">
+  <h3 data-lang="zh">§0-1 互動：scaling 表</h3>
+  <h3 data-lang="en">§0-1 Interactive scaling table</h3>
+  <p data-lang="zh">拉 $n$ 看不同細胞數的時間估計：</p>
+  <p data-lang="en">Drag $n$, see time estimates:</p>
+  <div class="controls">
+    <label>$n$ (cells):
+      <input type="range" id="s0n" min="1000" max="1000000" value="10000" step="1000"><span id="s0nVal">10,000</span>
+    </label>
+  </div>
+  <div class="stat-row">
+    <div class="item"><span class="lbl" data-lang="zh">brute-force 運算</span><span class="lbl" data-lang="en">brute-force ops</span><span class="val" id="s0brute">—</span></div>
+    <div class="item" style="color:#c0392b"><span class="lbl">brute time</span><span class="lbl">brute time</span><span class="val" id="s0brutet">—</span></div>
+    <div class="item" style="color:#27795a"><span class="lbl">HNSW ops (O(n log n))</span><span class="lbl">HNSW ops (O(n log n))</span><span class="val" id="s0hnsw">—</span></div>
+    <div class="item" style="color:#27795a"><span class="lbl">HNSW time</span><span class="lbl">HNSW time</span><span class="val" id="s0hnswt">—</span></div>
+  </div>
+  <div class="callout idea">
+    <strong data-lang="zh">第一個 aha</strong><strong data-lang="en">First aha</strong>:
+    <span data-lang="zh">brute-force 是 $O(n^2)$ — 細胞翻倍 → 時間 4 倍。HNSW 是 $O(n \log n)$ — 細胞翻倍 → 時間只 2.1 倍。1M cells 的差距 ≈ <b>50,000 倍</b>。</span>
+    <span data-lang="en">brute-force is $O(n^2)$ — 2× cells → 4× time. HNSW is $O(n \log n)$ — 2× cells → 2.1× time. At 1M cells, gap ≈ <b>50,000×</b>.</span>
+  </div>
+</div>
+
+<h2 id="s1"><span class="num">§1</span> <span data-lang="zh">KNN 圖的直覺與定義</span><span data-lang="en">KNN graph intuition & definition</span></h2>
+
+<p data-lang="zh">給定資料 $\{x_1, \ldots, x_n\} \in \mathbb{R}^d$ 跟整數 $k$，<b>KNN graph</b> 是個有向圖：
+每個點 $x_i$ 連到它「最近的 $k$ 個」鄰居 $\mathcal{N}_k(i)$。</p>
+<p data-lang="en">Given data $\{x_1, \ldots, x_n\} \in \mathbb{R}^d$ and integer $k$, the <b>KNN graph</b> is a directed graph:
+each point $x_i$ links to its $k$ nearest neighbors $\mathcal{N}_k(i)$.</p>
+
+<div class="math-block boxed">
+  $$\mathcal{N}_k(i) = \arg\min_{S \subset \{1,\ldots,n\} \setminus \{i\}, \; |S|=k} \; \sum_{j \in S} d(x_i, x_j)$$
+  <div class="formula-caption" data-lang="zh">點 $i$ 的 $k$ 個最近鄰</div>
+  <div class="formula-caption" data-lang="en">$k$ nearest neighbors of point $i$</div>
+</div>
+
+<h3 data-lang="zh">1.1 KNN graph 為何是 scRNA 的「橋」？</h3>
+<h3 data-lang="en">1.1 Why KNN is the "bridge" in scRNA</h3>
+
+<p data-lang="zh">scRNA 流程：PCA (給 PC 嵌入) → <b>KNN graph</b> → UMAP / Leiden。KNN 把連續的 PC 空間轉成<b>離散圖結構</b>，
+讓後續的 graph-based clustering / embedding 直接吃「圖」這個更穩定的中介物。</p>
+<p data-lang="en">scRNA pipeline: PCA (PC embedding) → <b>KNN graph</b> → UMAP / Leiden. KNN turns continuous PC space into <b>discrete graph structure</b>,
+giving downstream graph-based methods a more stable intermediate representation.</p>
+
+<h3 data-lang="zh">1.2 距離度量的選擇</h3>
+<h3 data-lang="en">1.2 Distance choices</h3>
+<table class="compare">
+  <tr><th data-lang="zh">度量</th><th data-lang="en">Metric</th>
+      <th data-lang="zh">公式</th><th data-lang="en">Formula</th>
+      <th data-lang="zh">何時用</th><th data-lang="en">When to use</th></tr>
+  <tr><td>Euclidean L2</td><td>Euclidean L2</td>
+      <td>$\sqrt{\sum_i (x_i - y_i)^2}$</td><td>$\sqrt{\sum_i (x_i - y_i)^2}$</td>
+      <td data-lang="zh">PCA 後預設</td><td data-lang="en">default after PCA</td></tr>
+  <tr><td>Cosine</td><td>Cosine</td>
+      <td>$1 - \frac{x \cdot y}{\|x\|\|y\|}$</td>
+      <td>$1 - \frac{x \cdot y}{\|x\|\|y\|}$</td>
+      <td data-lang="zh">看「方向」不看「長度」</td>
+      <td data-lang="en">orientation, not magnitude</td></tr>
+  <tr><td>Manhattan L1</td><td>Manhattan L1</td>
+      <td>$\sum_i |x_i - y_i|$</td>
+      <td>$\sum_i |x_i - y_i|$</td>
+      <td data-lang="zh">對 outlier 較 robust</td>
+      <td data-lang="en">more robust to outliers</td></tr>
+</table>
+
+<h2 id="s2"><span class="num">§2</span> <span data-lang="zh">複雜度：brute vs ANN</span><span data-lang="en">Complexity: brute vs ANN</span></h2>
+
+<p data-lang="zh">brute-force 算完整 distance matrix $D \in \mathbb{R}^{n \times n}$ 才 sort：</p>
+<p data-lang="en">brute-force computes full distance matrix $D \in \mathbb{R}^{n \times n}$, then sorts:</p>
+
+<div class="math-block">
+  $$T_{\text{brute}} = O(n^2 d) + O(n^2 \log k) = O(n^2 d)$$
+  <div class="formula-caption" data-lang="zh">計算距離主導，sort top-k 只是常數成本</div>
+  <div class="formula-caption" data-lang="en">Distance compute dominates; sort top-k is constant cost</div>
+</div>
+
+<p data-lang="zh">而 <b>Approximate Nearest Neighbors (ANN)</b> 用空間結構（樹、圖、雜湊）避免算每對距離：</p>
+<p data-lang="en"><b>Approximate Nearest Neighbors (ANN)</b> use spatial structures (trees, graphs, hashing) to avoid every pairwise distance:</p>
+
+<table class="compare">
+  <tr><th data-lang="zh">方法</th><th data-lang="en">Method</th>
+      <th data-lang="zh">建構</th><th data-lang="en">Build</th>
+      <th data-lang="zh">搜尋</th><th data-lang="en">Search</th>
+      <th data-lang="zh">記憶體</th><th data-lang="en">Memory</th></tr>
+  <tr><td>brute</td><td>brute</td>
+      <td>$O(1)$</td><td>$O(1)$</td>
+      <td>$O(n^2 d)$</td><td>$O(n^2 d)$</td>
+      <td>$O(nd)$</td><td>$O(nd)$</td></tr>
+  <tr><td>KD-tree</td><td>KD-tree</td>
+      <td>$O(n \log n)$</td><td>$O(n \log n)$</td>
+      <td data-lang="zh">$O(d \log n)$（低維 OK，d&gt;20 退化）</td>
+      <td data-lang="en">$O(d \log n)$ (OK for low-d, degrades when d&gt;20)</td>
+      <td>$O(nd)$</td><td>$O(nd)$</td></tr>
+  <tr><td>Annoy (隨機投影)</td><td>Annoy (random projection)</td>
+      <td>$O(n \log n)$</td><td>$O(n \log n)$</td>
+      <td>$O(\log n)$</td><td>$O(\log n)$</td>
+      <td>$O(nT \log n)$</td><td>$O(nT \log n)$</td></tr>
+  <tr style="background:#fdf2f8;"><td><b>HNSW</b></td><td><b>HNSW</b></td>
+      <td>$O(n \log n)$</td><td>$O(n \log n)$</td>
+      <td><b>$O(\log n)$</b></td><td><b>$O(\log n)$</b></td>
+      <td>$O(nM)$</td><td>$O(nM)$</td></tr>
+</table>
+
+<div class="callout warn">
+  <strong data-lang="zh">維度詛咒</strong><strong data-lang="en">Curse of dimensionality</strong>:
+  <span data-lang="zh">KD-tree 在 $d &gt; 20$ 時搜尋退化成 $O(n)$，幾乎不比 brute 快。HNSW 跟 Annoy 改用「圖」或「隨機投影」結構，對高維還是 $O(\log n)$。
+  scRNA 通常用 30-50 個 PC，已經太高，所以 KD-tree 不適合。</span>
+  <span data-lang="en">KD-tree degrades to $O(n)$ when $d &gt; 20$, barely better than brute. HNSW and Annoy use graph or random-projection structures, keeping $O(\log n)$ at high d.
+  scRNA typically uses 30–50 PCs — too high for KD-tree.</span>
+</div>
+
+<h2 id="s3"><span class="num">§3</span> <span data-lang="zh">互動：拉 k 看圖結構變化</span><span data-lang="en">Interactive: vary k</span></h2>
+
+<div class="card">
+  <p data-lang="zh">下方 100 個 2D 細胞（3 個細胞型態）。拉 k 看 KNN 圖怎麼變：太小 → 圖斷裂；太大 → 跨型態連線出現。</p>
+  <p data-lang="en">100 2D cells (3 cell types). Vary k: too small → disconnected; too large → cross-type edges appear.</p>
+  <div class="controls">
+    <label>k:
+      <input type="range" id="s3k" min="2" max="30" value="8" step="1"><span id="s3kVal">8</span>
+    </label>
+    <button id="s3regen"><span data-lang="zh">重新生成</span><span data-lang="en">Regenerate</span></button>
+    <label><input type="checkbox" id="s3show"> <span data-lang="zh">顯示「壞邊」（跨型態）</span><span data-lang="en">Show "bad edges" (cross-type)</span></label>
+  </div>
+  <svg class="canvas" id="s3svg" viewBox="0 0 800 480" width="100%"></svg>
+  <div class="stat-row">
+    <div class="item"><span class="lbl" data-lang="zh">邊數</span><span class="lbl" data-lang="en">Edges</span><span class="val" id="s3edges">—</span></div>
+    <div class="item" style="color:#c0392b"><span class="lbl" data-lang="zh">跨型態邊</span><span class="lbl" data-lang="en">cross-type edges</span><span class="val" id="s3bad">—</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">平均度</span><span class="lbl" data-lang="en">avg degree</span><span class="val" id="s3deg">—</span></div>
+  </div>
+  <div class="callout idea">
+    <strong data-lang="zh">經驗法則</strong><strong data-lang="en">Rules of thumb</strong>:
+    <span data-lang="zh">scanpy 預設 k = 15。少於 5 → 圖太碎、clustering 找不到結構；多於 50 → 跨型態邊太多、cluster 邊界模糊。</span>
+    <span data-lang="en">Scanpy default k = 15. Below 5 → graph too sparse, clustering misses structure; above 50 → too many cross-type edges, fuzzy boundaries.</span>
+  </div>
+</div>
+
+<h2 id="s4"><span class="num">§4</span> <span data-lang="zh">HNSW 多層導航結構</span><span data-lang="en">HNSW multi-layer structure</span></h2>
+
+<p data-lang="zh">
+  HNSW（Malkov & Yashunin 2018）結合兩個天才想法：
+</p>
+<p data-lang="en">
+  HNSW (Malkov & Yashunin 2018) combines two brilliant ideas:
+</p>
+
+<ol>
+  <li><span data-lang="zh"><b>Navigable Small World</b>：圖上每點有少數「長距離邊」+ 多數「短距離邊」。從任意點出發，用 greedy 搜尋可以 $O(\log n)$ 跳到目標附近。</span>
+      <span data-lang="en"><b>Navigable Small World</b>: each node has few "long edges" + many "short edges". From anywhere, greedy search reaches target neighborhood in $O(\log n)$.</span></li>
+  <li><span data-lang="zh"><b>Hierarchy</b>：建多層圖。上層稀疏（少節點、長邊）做「粗找」；下層密集（全節點、短邊）做「細找」。新節點以幾何分布 $P(\text{level}) = (1-\frac{1}{\ln M})^{\text{level}}$ 隨機決定要存在到第幾層。</span>
+      <span data-lang="en"><b>Hierarchy</b>: multi-layer graph. Top sparse (few nodes, long edges) for "coarse search"; bottom dense (all nodes, short edges) for "refinement". Each new node's max layer drawn from geometric: $P(\text{level}) = (1-\frac{1}{\ln M})^{\text{level}}$.</span></li>
+</ol>
+
+<h3 data-lang="zh">4.1 HNSW 搜尋演算法</h3>
+<h3 data-lang="en">4.1 HNSW search algorithm</h3>
+
+<pre class="code"><span class="k">def</span> search_knn(q, k):
+    ep = entry_point             <span class="c"># 從最上層的進入點開始</span>
+    <span class="k">for</span> level <span class="k">in</span> reversed(range(<span class="n">1</span>, max_level)):
+        ep = greedy_search(q, ep, level)   <span class="c"># 在該層找「最近的單一節點」</span>
+    <span class="k">return</span> beam_search(q, ep, level=<span class="n">0</span>, k=k)  <span class="c"># 最底層用 beam search 找 top-k</span></pre>
+
+<h3 data-lang="zh">4.2 互動：3 層 HNSW 視覺化</h3>
+<h3 data-lang="en">4.2 Interactive: 3-layer HNSW</h3>
+
+<div class="card">
+  <p data-lang="zh">下方是個簡化 3 層 HNSW：上層 4 個進入點、中層 12 個、底層 50 個全部節點。<b>按「搜尋」</b>看 query 點如何從上層下降到底層找最近 5 個鄰居。</p>
+  <p data-lang="en">A simplified 3-layer HNSW: top 4 entries, middle 12, bottom 50 (all nodes). <b>Click "Search"</b> to see how a query descends layers to find 5 nearest neighbors.</p>
+  <div class="controls">
+    <button id="s4search"><span data-lang="zh">搜尋</span><span data-lang="en">Search</span></button>
+    <button id="s4regen" class="ghost"><span data-lang="zh">重新生成 query</span><span data-lang="en">New query</span></button>
+  </div>
+  <svg class="canvas" id="s4svg" viewBox="0 0 800 460" width="100%"></svg>
+  <div class="stat-row">
+    <div class="item"><span class="lbl" data-lang="zh">層 2 走訪步數</span><span class="lbl" data-lang="en">Layer 2 steps</span><span class="val" id="s4steps2">0</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">層 1 走訪步數</span><span class="lbl" data-lang="en">Layer 1 steps</span><span class="val" id="s4steps1">0</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">層 0 走訪步數</span><span class="lbl" data-lang="en">Layer 0 steps</span><span class="val" id="s4steps0">0</span></div>
+    <div class="item" style="color:#c0392b"><span class="lbl" data-lang="zh">總距離計算數</span><span class="lbl" data-lang="en">Total distance ops</span><span class="val" id="s4total">0</span></div>
+  </div>
+  <div class="callout idea">
+    <strong data-lang="zh">關鍵直覺</strong><strong data-lang="en">Key intuition</strong>:
+    <span data-lang="zh">上層「長邊」讓你<b>快速跳到正確區域</b>。下層「短邊」讓你在區域內精細搜尋。兩者結合就是 $O(\log n)$。
+    對 1M cells，brute 算 1 兆次、HNSW 只算 ~20 次，<b>速度差 500 億倍</b>。</span>
+    <span data-lang="en">Top "long edges" <b>jump quickly to the right region</b>. Bottom "short edges" refine within it. Together = $O(\log n)$.
+    For 1M cells, brute does 1T ops; HNSW does ~20 — <b>50 billion× speedup</b>.</span>
+  </div>
+</div>
+
+<h2 id="s5"><span class="num">§5</span> <span data-lang="zh">ANN 方法對比：HNSW vs Annoy vs NN-descent</span><span data-lang="en">ANN comparison</span></h2>
+
+<table class="compare">
+  <tr><th></th><th>HNSW</th><th>HNSW</th>
+      <th>Annoy</th><th>Annoy</th>
+      <th>NN-descent (PyNNDescent)</th><th>NN-descent (PyNNDescent)</th></tr>
+  <tr><td data-lang="zh">核心想法</td><td data-lang="en">Core idea</td>
+      <td data-lang="zh">多層 small-world 圖</td><td data-lang="en">multi-layer small-world graph</td>
+      <td data-lang="zh">隨機投影森林</td><td data-lang="en">random projection forest</td>
+      <td data-lang="zh">迭代改進每點的 KNN 估計</td><td data-lang="en">iteratively improve KNN estimate</td></tr>
+  <tr><td data-lang="zh">搜尋速度</td><td data-lang="en">Search</td>
+      <td><b>最快</b></td><td><b>fastest</b></td>
+      <td data-lang="zh">快</td><td data-lang="en">fast</td>
+      <td data-lang="zh">中等</td><td data-lang="en">medium</td></tr>
+  <tr><td data-lang="zh">記憶體</td><td data-lang="en">Memory</td>
+      <td>$O(nM)$ ~ 64 bytes/cell</td><td>$O(nM)$ ~ 64 bytes/cell</td>
+      <td data-lang="zh">較大（多顆樹）</td><td data-lang="en">larger (many trees)</td>
+      <td>$O(nk)$ 小</td><td>$O(nk)$ small</td></tr>
+  <tr><td data-lang="zh">支援增量加</td><td data-lang="en">Incremental add</td>
+      <td>✅</td><td>✅</td>
+      <td>❌ <span data-lang="zh">要重建</span><span data-lang="en">requires rebuild</span></td>
+      <td>❌ <span data-lang="zh">要重建</span><span data-lang="en">requires rebuild</span></td>
+      <td>❌</td><td>❌</td></tr>
+  <tr><td data-lang="zh">scanpy 預設</td><td data-lang="en">Scanpy default</td>
+      <td data-lang="zh">via hnswlib (可選)</td><td data-lang="en">via hnswlib (optional)</td>
+      <td data-lang="zh">否</td><td data-lang="en">no</td>
+      <td><b>✅</b> (PyNNDescent)</td><td><b>✅</b> (PyNNDescent)</td></tr>
+  <tr><td>Seurat</td><td>Seurat</td>
+      <td>RcppHNSW</td><td>RcppHNSW</td>
+      <td><b>Annoy</b></td><td><b>Annoy</b></td>
+      <td>—</td><td>—</td></tr>
+</table>
+
+<h2 id="s6"><span class="num">§6</span> <span data-lang="zh">為什麼要先 PCA 再算 KNN？</span><span data-lang="en">Why PCA before KNN?</span></h2>
+
+<p data-lang="zh">直接在 20,000 維基因空間上算 KNN 為何不可行？三個原因：</p>
+<p data-lang="en">Why not run KNN directly on 20,000-D gene space? Three reasons:</p>
+
+<ol>
+  <li><span data-lang="zh"><b>計算成本</b>：20k 維的歐氏距離算一次就 20k 次乘加。在 30 維 PC 空間只要 30 次。<b>差 ~700 倍</b></span>
+      <span data-lang="en"><b>Compute cost</b>: one 20k-D Euclidean = 20k mul-adds. In 30-D PC space = 30. <b>700× difference</b></span></li>
+  <li><span data-lang="zh"><b>維度詛咒</b>：高維下幾乎所有點距離都很相似（距離集中現象），KNN 喪失區分能力</span>
+      <span data-lang="en"><b>Curse of dimensionality</b>: in high-d, all pairwise distances become similar (distance concentration), KNN loses discriminative power</span></li>
+  <li><span data-lang="zh"><b>雜訊壓縮</b>：PCA 保留前 30-50 PC 已經抓住生物結構，剩下的維度多為技術雜訊；先 PCA 等於先「去噪」</span>
+      <span data-lang="en"><b>Denoise</b>: PCA's first 30–50 PCs capture biological structure; remaining dimensions are mostly noise. PCA-first = denoising</span></li>
+</ol>
+
+<details>
+<summary data-lang="zh">▸ 距離集中現象的數學</summary>
+<summary data-lang="en">▸ Math of distance concentration</summary>
+<p data-lang="zh">對 i.i.d. 來自單位球的隨機點 $x_i$，在維度 $d \to \infty$ 時：</p>
+<p data-lang="en">For i.i.d. random points $x_i$ on a unit ball, as dim $d \to \infty$:</p>
+<div class="math-block">
+  $$\frac{\max_j \|x_i - x_j\| - \min_j \|x_i - x_j\|}{\min_j \|x_i - x_j\|} \xrightarrow{d \to \infty} 0$$
+</div>
+<p data-lang="zh">即「最遠跟最近的距離比」趨近 1，KNN 就喪失意義。先 PCA 把 $d$ 從 20000 降到 30 是關鍵。</p>
+<p data-lang="en">"Farthest-to-nearest distance ratio" → 1, KNN becomes meaningless. PCA-first drops $d$ from 20000 to 30 — critical.</p>
+</details>
+
+<h2 id="s7"><span class="num">§7</span> <span data-lang="zh">Jaccard 邊權重 + connectivities 矩陣</span><span data-lang="en">Jaccard edges + connectivities</span></h2>
+
+<p data-lang="zh">原始 KNN 圖是 0/1 binary（鄰居或不是）。Seurat 用 <b>Jaccard 相似度</b>給邊加權重：</p>
+<p data-lang="en">Raw KNN graph is binary (neighbor or not). Seurat reweights edges by <b>Jaccard similarity</b>:</p>
+
+<div class="math-block boxed">
+  $$w_{ij} = \frac{|\mathcal{N}_k(i) \cap \mathcal{N}_k(j)|}{|\mathcal{N}_k(i) \cup \mathcal{N}_k(j)|}$$
+  <div class="formula-caption" data-lang="zh">兩細胞共同鄰居越多權重越大</div>
+  <div class="formula-caption" data-lang="en">more shared neighbors → higher weight</div>
+</div>
+
+<p data-lang="zh">為什麼用 Jaccard 而不用原始距離？</p>
+<p data-lang="en">Why Jaccard instead of raw distance?</p>
+
+<div class="callout idea">
+  <strong data-lang="zh">直覺</strong><strong data-lang="en">Intuition</strong>:
+  <span data-lang="zh">兩細胞「共享朋友」說明它們同個社群。雜訊或不穩定的「直接距離」不重要，<b>結構性的同社群</b>才重要。
+  這也讓邊權重對 PCA 後的尺度變化更穩健。</span>
+  <span data-lang="en">Two cells "sharing friends" means they belong to the same community. Noisy direct distance matters less; <b>structural co-membership</b> matters more.
+  This also makes edge weights robust to PCA-scale shifts.</span>
+</div>
+
+<h3 data-lang="zh">7.1 scanpy 的 connectivities 矩陣</h3>
+<h3 data-lang="en">7.1 Scanpy's connectivities matrix</h3>
+
+<p data-lang="zh">scanpy 用 UMAP 的「fuzzy simplicial set」加權，跟 Jaccard 相關但更精細。實質上是一個對稱稀疏矩陣 $C \in \mathbb{R}^{n \times n}$：</p>
+<p data-lang="en">Scanpy uses UMAP's "fuzzy simplicial set" weighting — related to Jaccard but finer. Effectively a symmetric sparse matrix $C \in \mathbb{R}^{n \times n}$:</p>
+
+<pre class="code">sc.pp.neighbors(adata, n_neighbors=<span class="n">15</span>, n_pcs=<span class="n">30</span>)
+adata.obsp[<span class="s">"distances"</span>]        <span class="c"># sparse: raw KNN distances</span>
+adata.obsp[<span class="s">"connectivities"</span>]   <span class="c"># sparse: weighted edges (用於 UMAP / Leiden)</span></pre>
+
+<h2 id="s8"><span class="num">§8</span> <span data-lang="zh">限制與下一步</span><span data-lang="en">Limits & next</span></h2>
+
+<table class="compare">
+  <tr><th data-lang="zh">限制</th><th data-lang="en">Limitation</th>
+      <th data-lang="zh">後果</th><th data-lang="en">Consequence</th>
+      <th data-lang="zh">緩解</th><th data-lang="en">Mitigation</th></tr>
+  <tr>
+    <td data-lang="zh">HNSW 是近似搜尋</td>
+    <td data-lang="en">HNSW is approximate</td>
+    <td data-lang="zh">少數鄰居可能不是真正 top-k</td>
+    <td data-lang="en">some neighbors may not be true top-k</td>
+    <td data-lang="zh">提高 ef_construction / ef_search</td>
+    <td data-lang="en">increase ef_construction / ef_search</td>
+  </tr>
+  <tr>
+    <td data-lang="zh">k 是 hyperparameter</td>
+    <td data-lang="en">k is a hyperparameter</td>
+    <td data-lang="zh">不同 k 影響 cluster 結果</td>
+    <td data-lang="en">different k → different clusters</td>
+    <td data-lang="zh">benchmark：k = 10-30 通常穩定</td>
+    <td data-lang="en">benchmark: k = 10–30 usually robust</td>
+  </tr>
+  <tr>
+    <td data-lang="zh">維度過高（&gt; 50）效能退化</td>
+    <td data-lang="en">degrades at very high d (&gt; 50)</td>
+    <td data-lang="zh">PC 太多會慢且失準</td>
+    <td data-lang="en">too many PCs → slower, less accurate</td>
+    <td data-lang="zh">elbow plot 選 PC 數</td>
+    <td data-lang="en">elbow plot to choose n_pcs</td>
+  </tr>
+  <tr>
+    <td data-lang="zh">batch effect 干擾鄰居</td>
+    <td data-lang="en">batch effect contaminates neighbors</td>
+    <td data-lang="zh">不同 batch 細胞被當不同型</td>
+    <td data-lang="en">different batches mistaken for different types</td>
+    <td data-lang="zh">Harmony / BBKNN 先校正</td>
+    <td data-lang="en">Harmony / BBKNN first</td>
+  </tr>
+</table>
+
+<div class="callout prog">
+  <strong data-lang="zh">下一步</strong><strong data-lang="en">Next</strong>:
+  <span data-lang="zh">有了 KNN graph，就可以做 <a href="4.2-louvain-leiden.html"><b>4.2 Louvain / Leiden clustering</b></a>（圖分群）跟 <a href="../M3-dimreduction/3.3-umap.html"><b>UMAP</b></a>（圖嵌入到 2D）。</span>
+  <span data-lang="en">With KNN graph: <a href="4.2-louvain-leiden.html"><b>4.2 Louvain / Leiden clustering</b></a> (graph partition) and <a href="../M3-dimreduction/3.3-umap.html"><b>UMAP</b></a> (graph → 2D embedding).</span>
+</div>
+
+<p class="footer">
+  <span data-lang="zh">© scRNA-seq Advanced Math · M4.1 KNN + HNSW Deep Interactive</span>
+  <span data-lang="en">© scRNA-seq Advanced Math · M4.1 KNN + HNSW Deep Interactive</span>
+</p>
+
+</div>
+
 <script src="../i18n.js"></script>
-<script>function switchTab(b,id){const p=b.closest(".code-tabs");p.querySelectorAll(".code-tab-btn").forEach(x=>x.classList.remove("active"));p.querySelectorAll(".code-tab-content").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(id).classList.add("active");}</script>
-</body></html>
+<script>
+// ===== §0 scaling =====
+(function(){
+  function fmt(n) {
+    if (n >= 1e12) return (n/1e12).toFixed(2) + ' T';
+    if (n >= 1e9) return (n/1e9).toFixed(2) + ' B';
+    if (n >= 1e6) return (n/1e6).toFixed(2) + ' M';
+    if (n >= 1e3) return (n/1e3).toFixed(1) + ' K';
+    return n.toFixed(0);
+  }
+  function fmtT(sec) {
+    if (sec < 1) return (sec*1000).toFixed(1) + ' ms';
+    if (sec < 60) return sec.toFixed(1) + ' s';
+    if (sec < 3600) return (sec/60).toFixed(1) + ' min';
+    if (sec < 86400) return (sec/3600).toFixed(1) + ' hr';
+    return (sec/86400).toFixed(1) + ' day';
+  }
+  function draw(){
+    const n = +document.getElementById('s0n').value;
+    document.getElementById('s0nVal').textContent = n.toLocaleString();
+    const d = 30;
+    const bruteOps = n*n*d;
+    const bruteTime = bruteOps / 1e10;
+    const hnswOps = n * Math.log2(n) * d * 30;
+    const hnswTime = hnswOps / 1e10;
+    document.getElementById('s0brute').textContent = fmt(bruteOps);
+    document.getElementById('s0brutet').textContent = fmtT(bruteTime);
+    document.getElementById('s0hnsw').textContent = fmt(hnswOps);
+    document.getElementById('s0hnswt').textContent = fmtT(hnswTime);
+  }
+  document.getElementById('s0n').addEventListener('input', draw);
+  draw();
+})();
+
+// ===== §3 KNN interactive =====
+(function(){
+  let seed = 13;
+  const rnd = () => { seed = (seed*9301+49297)%233280; return seed/233280; };
+  function nrnd(m,s){ const u1=rnd(),u2=rnd(); return m+s*Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2); }
+  let cells;
+  function gen() {
+    cells = [];
+    const centers = [[200, 200], [550, 180], [380, 380]];
+    centers.forEach((c, t) => {
+      for (let i = 0; i < 33; i++) {
+        cells.push({x: nrnd(c[0], 40), y: nrnd(c[1], 35), type: t});
+      }
+    });
+  }
+  function draw(){
+    const k = +document.getElementById('s3k').value;
+    const showBad = document.getElementById('s3show').checked;
+    document.getElementById('s3kVal').textContent = k;
+    // compute KNN
+    const edges = [];
+    cells.forEach((c, i) => {
+      const dists = cells.map((c2, j) => ({j, d: i===j ? Infinity : (c.x-c2.x)**2 + (c.y-c2.y)**2}));
+      dists.sort((a,b)=>a.d-b.d);
+      dists.slice(0, k).forEach(nb => edges.push({i, j: nb.j, bad: cells[i].type !== cells[nb.j].type}));
+    });
+    let bad = edges.filter(e => e.bad).length;
+    document.getElementById('s3edges').textContent = edges.length;
+    document.getElementById('s3bad').textContent = bad;
+    document.getElementById('s3deg').textContent = (edges.length / cells.length).toFixed(1);
+    let s = '';
+    s += `<rect x="0" y="0" width="800" height="480" fill="#fcfcfa"/>`;
+    edges.forEach(e => {
+      if (e.bad && !showBad) return;
+      const c1 = cells[e.i], c2 = cells[e.j];
+      const color = e.bad ? '#c0392b' : '#bbb';
+      const op = e.bad ? 0.5 : 0.3;
+      s += `<line x1="${c1.x}" y1="${c1.y}" x2="${c2.x}" y2="${c2.y}" stroke="${color}" stroke-width="1" opacity="${op}"/>`;
+    });
+    const colors = ['#2c5aa0', '#27795a', '#db2777'];
+    cells.forEach(c => {
+      s += `<circle cx="${c.x}" cy="${c.y}" r="5" fill="${colors[c.type]}" opacity="0.85"/>`;
+    });
+    document.getElementById('s3svg').innerHTML = s;
+  }
+  document.getElementById('s3k').addEventListener('input', draw);
+  document.getElementById('s3show').addEventListener('change', draw);
+  document.getElementById('s3regen').addEventListener('click', () => { seed = Math.floor(Math.random()*9999); gen(); draw(); });
+  gen(); draw();
+})();
+
+// ===== §4 HNSW animation =====
+(function(){
+  let seed = 47;
+  const rnd = () => { seed = (seed*9301+49297)%233280; return seed/233280; };
+  let nodes, query, steps2, steps1, steps0;
+  function gen() {
+    nodes = [];
+    // 50 random nodes
+    for (let i = 0; i < 50; i++) {
+      const layer = i < 4 ? 2 : (i < 16 ? 1 : 0);
+      nodes.push({x: 100 + rnd()*600, y: 60 + rnd()*340, layer: i < 4 ? 2 : (i < 16 ? 1 : 0), id: i});
+    }
+    query = {x: 100 + rnd()*600, y: 60 + rnd()*340};
+    steps2 = []; steps1 = []; steps0 = [];
+  }
+  function dist(a, b) { return Math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2); }
+  function greedy(currentNode, candidates, target, path) {
+    let cur = currentNode;
+    path.push(cur);
+    let dops = 0;
+    for (let iter = 0; iter < 20; iter++) {
+      const cands = candidates.filter(c => c.id !== cur.id);
+      let best = cur;
+      let bestD = dist(cur, target);
+      cands.forEach(c => {
+        const d = dist(c, target);
+        dops++;
+        if (d < bestD - 0.1) { best = c; bestD = d; }
+      });
+      if (best.id === cur.id) break;
+      cur = best;
+      path.push(cur);
+    }
+    return {final: cur, ops: dops};
+  }
+  function search() {
+    const top = nodes.filter(n => n.layer === 2);
+    const mid = nodes.filter(n => n.layer >= 1);
+    const all = nodes;
+    steps2 = []; steps1 = []; steps0 = [];
+    let total = 0;
+    // Layer 2: start from random top, greedy to nearest
+    let cur = top[Math.floor(rnd()*top.length)];
+    const r2 = greedy(cur, top, query, steps2);
+    cur = r2.final; total += r2.ops;
+    // Layer 1
+    const r1 = greedy(cur, mid, query, steps1);
+    cur = r1.final; total += r1.ops;
+    // Layer 0
+    const r0 = greedy(cur, all, query, steps0);
+    total += r0.ops;
+    document.getElementById('s4steps2').textContent = steps2.length;
+    document.getElementById('s4steps1').textContent = steps1.length;
+    document.getElementById('s4steps0').textContent = steps0.length;
+    document.getElementById('s4total').textContent = total;
+    draw();
+  }
+  function draw() {
+    let s = '';
+    s += `<rect x="0" y="0" width="800" height="460" fill="#fcfcfa"/>`;
+    // layer separators
+    s += `<text class="lbl" x="20" y="50" font-weight="700" fill="#9d174d">Layer 2 (top, ${nodes.filter(n=>n.layer===2).length} nodes)</text>`;
+    s += `<text class="lbl" x="20" y="180" font-weight="700" fill="#9d174d">Layer 1 (mid, ${nodes.filter(n=>n.layer>=1).length} nodes)</text>`;
+    s += `<text class="lbl" x="20" y="310" font-weight="700" fill="#9d174d">Layer 0 (bottom, all ${nodes.length} nodes)</text>`;
+    s += `<line x1="20" y1="140" x2="780" y2="140" stroke="#ddd" stroke-dasharray="3,3"/>`;
+    s += `<line x1="20" y1="270" x2="780" y2="270" stroke="#ddd" stroke-dasharray="3,3"/>`;
+    // nodes
+    function placeY(n, off) { return off + n.y * 0.25; }
+    function drawLayer(filter, yoff) {
+      const lyr = nodes.filter(filter);
+      // edges (random connect to a few)
+      lyr.forEach((n, i) => {
+        for (let k = 0; k < Math.min(3, lyr.length-1); k++) {
+          const nb = lyr[(i + 1 + k) % lyr.length];
+          s += `<line x1="${n.x}" y1="${placeY(n, yoff)}" x2="${nb.x}" y2="${placeY(nb, yoff)}" stroke="#ddd" stroke-width="0.5"/>`;
+        }
+      });
+      lyr.forEach(n => {
+        s += `<circle cx="${n.x}" cy="${placeY(n, yoff)}" r="3" fill="#888"/>`;
+      });
+    }
+    drawLayer(n => n.layer === 2, 55);
+    drawLayer(n => n.layer >= 1, 175);
+    drawLayer(n => true, 305);
+    // path on each layer
+    function drawPath(path, yoff, color) {
+      for (let i = 0; i < path.length-1; i++) {
+        const p1 = path[i], p2 = path[i+1];
+        s += `<line x1="${p1.x}" y1="${placeY(p1, yoff)}" x2="${p2.x}" y2="${placeY(p2, yoff)}" stroke="${color}" stroke-width="3" opacity="0.85"/>`;
+        s += `<circle cx="${p2.x}" cy="${placeY(p2, yoff)}" r="5" fill="${color}"/>`;
+      }
+      if (path.length > 0) {
+        s += `<circle cx="${path[0].x}" cy="${placeY(path[0], yoff)}" r="6" fill="${color}" stroke="#fff" stroke-width="2"/>`;
+      }
+    }
+    drawPath(steps2, 55, '#db2777');
+    drawPath(steps1, 175, '#db2777');
+    drawPath(steps0, 305, '#db2777');
+    // query (on bottom only, conceptually)
+    s += `<circle cx="${query.x}" cy="${placeY(query, 55)}" r="7" fill="none" stroke="#f0c419" stroke-width="3"/>`;
+    s += `<circle cx="${query.x}" cy="${placeY(query, 175)}" r="7" fill="none" stroke="#f0c419" stroke-width="3"/>`;
+    s += `<circle cx="${query.x}" cy="${placeY(query, 305)}" r="9" fill="#f0c419" stroke="#000" stroke-width="2"/>`;
+    s += `<text class="lbl" x="${query.x+12}" y="${placeY(query, 305)+5}" fill="#7a5400" font-weight="700">query</text>`;
+    // legend
+    s += `<g transform="translate(580, 410)">`;
+    s += `<rect x="0" y="0" width="200" height="40" fill="#fff" stroke="#ddd"/>`;
+    s += `<circle cx="14" cy="14" r="5" fill="#888"/><text class="lbl" x="26" y="18">node</text>`;
+    s += `<circle cx="100" cy="14" r="6" fill="#f0c419" stroke="#000" stroke-width="1"/><text class="lbl" x="112" y="18">query</text>`;
+    s += `<line x1="14" y1="32" x2="34" y2="32" stroke="#db2777" stroke-width="3"/><text class="lbl" x="40" y="36">search path</text>`;
+    s += `</g>`;
+    document.getElementById('s4svg').innerHTML = s;
+  }
+  document.getElementById('s4search').addEventListener('click', search);
+  document.getElementById('s4regen').addEventListener('click', () => { seed = Math.floor(Math.random()*9999); gen(); draw(); });
+  gen(); draw();
+})();
+</script>
+</body>
+</html>

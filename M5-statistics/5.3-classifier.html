@@ -1,105 +1,620 @@
 <!DOCTYPE html>
-<html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>5.3 Cell Type Classifier — scRNA-seq Advanced Math</title><link rel="stylesheet" href="../styles.css">
-<script>MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] } };</script>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>5.3 細胞分類器：CellTypist / scNym / 邏輯回歸 — Deep Interactive</title>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
-</head><body>
+<style>
+  :root {
+    --bg: #fafaf7; --fg: #1a1a1a; --muted: #666;
+    --accent: #c0392b; --accent2: #2c5aa0;
+    --green: #27795a; --purple: #8e44ad; --yellow: #f0c419;
+    --violet: #7c3aed;
+    --card: #ffffff; --border: #e0e0d8; --code: #f4f1ea;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Helvetica Neue", "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif; background: var(--bg); color: var(--fg); line-height: 1.75; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 40px 28px 120px; }
+  header.cover { margin: 20px 0 60px; padding: 52px 40px;
+    background: linear-gradient(135deg, #2e1065 0%, #7c3aed 55%, #c4b5fd 100%);
+    color: #fff; border-radius: 16px; box-shadow: 0 14px 40px rgba(46,16,101,0.18); }
+  header.cover h1 { margin: 0 0 14px; font-size: 36px; }
+  header.cover .sub { font-size: 17px; opacity: 0.92; line-height: 1.65; }
+  header.cover .badge { display: inline-block; background: rgba(255,255,255,0.18);
+    padding: 4px 12px; border-radius: 20px; font-size: 13px; margin-bottom: 16px; }
+  h2 { margin-top: 70px; padding-bottom: 8px; border-bottom: 3px solid var(--violet);
+    font-size: 26px; display: flex; align-items: baseline; gap: 12px; }
+  h2 .num { color: var(--violet); font-weight: 800; font-size: 20px; }
+  h3 { margin-top: 36px; font-size: 19px; color: var(--accent2); }
+  h4 { margin-top: 22px; font-size: 16px; color: var(--accent); }
+  p { margin: 14px 0; }
+  .lead { font-size: 17px; color: #2a2a2a; }
+  .callout { background: #fff8e6; border-left: 4px solid var(--yellow); padding: 14px 18px; border-radius: 6px; margin: 22px 0; }
+  .callout.idea { background: #eaf4ff; border-left-color: var(--accent2); }
+  .callout.warn { background: #fdecec; border-left-color: var(--accent); }
+  .callout.bio  { background: #effaf3; border-left-color: var(--green); }
+  .callout.prog { background: #ede9fe; border-left-color: var(--violet); }
+  .card { background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px 26px; margin: 26px 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+  .card h3 { margin-top: 0; }
+  .controls { display: flex; flex-wrap: wrap; gap: 14px 22px;
+    align-items: center; margin: 14px 0; padding: 12px 16px;
+    background: #f4f1ea; border-radius: 8px; font-size: 14px; }
+  .controls label { display: flex; align-items: center; gap: 8px; }
+  button { background: var(--violet); color: #fff; border: 0;
+    padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 14px;
+    font-family: inherit; }
+  button:hover { background: #5b21b6; }
+  button.ghost { background: #fff; color: var(--violet); border: 1px solid var(--violet); }
+  input[type="range"] { width: 180px; vertical-align: middle; }
+  svg.canvas { background: #fcfcfa; border: 1px solid var(--border); border-radius: 8px; display: block; }
+  svg.canvas .axis { stroke: #bbb; stroke-width: 1; }
+  svg.canvas .grid { stroke: #ececea; stroke-width: 0.5; }
+  svg.canvas text.lbl { font-size: 12px; fill: #333; }
+  .stat-row { display: flex; flex-wrap: wrap; gap: 22px; margin: 14px 0; font-size: 14px; }
+  .stat-row .item { display: flex; flex-direction: column; }
+  .stat-row .item .lbl { color: var(--muted); font-size: 12px; }
+  .stat-row .item .val { font-family: "JetBrains Mono", monospace; font-size: 18px; }
+  details { margin: 16px 0; }
+  details summary { cursor: pointer; font-weight: 600; color: var(--accent2); padding: 6px 0; }
+  .toc { background: #fff; border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 28px; margin: 30px 0; }
+  .toc h4 { margin: 0 0 10px; color: var(--violet); }
+  .toc ol { margin: 6px 0; padding-left: 24px; line-height: 1.9; }
+  .toc a { color: var(--accent2); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .toc .new { background: var(--violet); color: #fff; font-size: 11px;
+    padding: 1px 8px; border-radius: 10px; margin-left: 6px; }
+  code.inline { background: var(--code); padding: 2px 6px; border-radius: 4px;
+    font-size: 13px; font-family: "JetBrains Mono", "Consolas", monospace; }
+  pre.code { background: #1e1e1e; color: #dcdcdc;
+    padding: 14px 18px; border-radius: 8px; overflow-x: auto; font-size: 13px;
+    font-family: "JetBrains Mono", "Consolas", monospace; line-height: 1.55; }
+  pre.code .k { color: #569cd6; }
+  pre.code .s { color: #ce9178; }
+  pre.code .c { color: #6a9955; }
+  pre.code .n { color: #b5cea8; }
+  table.compare { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.compare th, table.compare td { border: 1px solid var(--border); padding: 8px 12px; }
+  table.compare th { background: #f4f1ea; text-align: left; }
+  .math-block { background: #fff; border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 18px; margin: 18px 0; }
+  .math-block.boxed { border: 2px solid var(--violet); background: #ede9fe; }
+  .formula-caption { font-size: 12.5px; color: var(--muted); text-align: center; margin-top: 6px; }
+  .footer { text-align: center; color: var(--muted); margin-top: 80px; font-size: 13px; }
+  .top-nav { background: #2e1065; color: #fff; padding: 14px 28px;
+    position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(46,16,101,0.25); }
+  .top-nav-inner { max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; gap: 28px; }
+  .top-nav-brand { color: #fff; text-decoration: none;
+    font-weight: 700; font-size: 17px;
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .top-nav-brand .badge-math { background: #7c3aed; color: #fff;
+    padding: 3px 9px; border-radius: 4px; font-size: 11px; }
+  .top-nav-links { list-style: none; margin: 0; padding: 0;
+    display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+  .top-nav-links a { color: #ddd6fe; text-decoration: none;
+    padding: 6px 11px; border-radius: 6px; font-size: 13px; font-weight: 500;
+    transition: 0.2s; }
+  .top-nav-links a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .top-nav-links a.active { background: #7c3aed; color: #fff; }
+  .top-nav-links li.dropdown { position: relative; }
+  .top-nav-links li.dropdown > a::after { content: ' ▾';
+    font-size: 10px; opacity: 0.7; margin-left: 3px;
+    display: inline-block; transition: transform 0.2s; }
+  .top-nav-links li.dropdown:hover > a::after,
+  .top-nav-links li.dropdown.open > a::after { transform: rotate(180deg); }
+  .top-nav-links .dropdown-menu { display: none; position: absolute; top: 100%; left: 0;
+    background: #432490; border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px; padding: 6px 0; min-width: 230px;
+    list-style: none; z-index: 200;
+    box-shadow: 0 8px 28px rgba(46,16,101,0.5); margin: 6px 0 0; }
+  .top-nav-links li.dropdown:hover > .dropdown-menu,
+  .top-nav-links li.dropdown.open > .dropdown-menu { display: block; }
+  .top-nav-links .dropdown-menu li { display: block; }
+  .top-nav-links .dropdown-menu li a { display: block; padding: 9px 18px;
+    border-radius: 0; font-size: 13px; white-space: nowrap; color: #ddd6fe; }
+  .top-nav-links .dropdown-menu li a:hover { background: rgba(124,58,237,0.3); color: #fff; }
+  .top-nav-links .dropdown-menu li a.active-sub { background: #7c3aed; color: #fff; font-weight: 700; }
+  .top-nav-links .dropdown-menu .sub-label { font-size: 10px; color: #a78bfa;
+    letter-spacing: 1px; padding: 4px 18px 2px; text-transform: uppercase; }
+  .lang-switch { display: flex; gap: 4px;
+    background: rgba(255,255,255,0.08); padding: 4px; border-radius: 6px; flex-shrink: 0; }
+  .lang-switch button { background: transparent; border: 0; color: #ddd6fe;
+    font-size: 12px; font-weight: 700; padding: 5px 10px;
+    border-radius: 4px; cursor: pointer; font-family: inherit; }
+  .lang-switch button.active { background: #7c3aed; color: #fff; }
+  .nav-pages { display: flex; gap: 8px; margin: 24px 0; padding: 14px;
+    background: #432490; border-radius: 10px; align-items: center; flex-wrap: wrap; }
+  .nav-pages a { color: #ddd6fe; text-decoration: none;
+    padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600;
+    transition: 0.2s; }
+  .nav-pages a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .nav-pages .label { color: #a78bfa; font-size: 11px;
+    letter-spacing: 1px; font-weight: 700; margin-right: 8px; }
+  [data-lang="en"] { display: none; }
+  body.lang-en [data-lang="zh"] { display: none; }
+  body.lang-en [data-lang="en"] { display: initial; }
+  body.lang-en h1[data-lang="en"], body.lang-en h2[data-lang="en"],
+  body.lang-en h3[data-lang="en"], body.lang-en h4[data-lang="en"],
+  body.lang-en p[data-lang="en"], body.lang-en div[data-lang="en"],
+  body.lang-en ol[data-lang="en"], body.lang-en ul[data-lang="en"] { display: block; }
+  body.lang-en li[data-lang="en"] { display: list-item; }
+  body.lang-en span[data-lang="en"] { display: inline; }
+  body.lang-en tspan[data-lang="en"] { display: inline; }
+</style>
+</head>
+<body>
+
 <nav class="top-nav"><div class="top-nav-inner">
-  <a href="../index.html" class="top-nav-brand"><span>🧬</span><span data-lang="zh">scRNA-seq 進階數學</span><span data-lang="en">scRNA-seq Advanced Math</span><span class="badge-math">MATH</span></a>
-  <ul class="top-nav-links"><li><a href="../index.html#M1">M1</a></li><li><a href="../index.html#M2">M2</a></li><li><a href="../index.html#M3">M3</a></li><li><a href="../index.html#M4">M4</a></li><li><a href="../index.html#M5" class="active">M5</a></li><li><a href="../index.html#M6">M6</a></li><li><a href="../index.html" data-lang="zh">🏠 回首頁</a><span data-lang="en">🏠 Home</span></li></ul>
-  <div class="lang-switch"><button data-lang-btn="zh" class="active">中文</button><button data-lang-btn="en">EN</button></div>
-</div></nav>
-<header class="page-hero"><div class="page-hero-inner">
-  <div class="page-badge">M5.3 · STATISTICAL INFERENCE</div>
-  <h1 data-lang="zh">細胞型態分類器</h1><h1 data-lang="en">Cell Type Classifiers</h1>
-  <p class="subtitle" data-lang="zh">怎麼從「reference 資料集」變成可用的分類器？SingleR、CellTypist、scANVI 的數學原理。</p>
-  <p class="subtitle" data-lang="en">Turning reference datasets into classifiers. The math of SingleR, CellTypist, scANVI.</p>
-</div></header>
-
-<main class="content-wrap">
-
-<section class="section">
-  <span class="section-label intuition">直覺 / Intuition</span>
-  <div data-lang="zh"><p>Annotation 有兩條路：(1) marker-based（手工挑 marker genes 評分）；(2) reference-based（用標好的 atlas 訓練分類器）。後者是現代主流。</p></div>
-  <div data-lang="en"><p>Two routes: (1) marker-based (score curated markers); (2) reference-based (train classifier from annotated atlas). The latter is modern default.</p></div>
-</section>
-
-<section class="section">
-  <span class="section-label math">核心數學 / Math</span>
-  <h3>① SingleR <span data-lang="zh">— Spearman 相關性</span><span data-lang="en">— Spearman correlation</span></h3>
-  <p data-lang="zh">把 query 細胞與 reference 中每個細胞型態的「典型表現量」算 Spearman 相關，最高分為分類。然後用「fine-tuning」迭代縮小候選集。</p>
-  <p data-lang="en">Spearman correlation between query cell and "typical expression" of each reference cell type. Highest score wins. Iterative fine-tuning refines candidates.</p>
-  <div class="math-block">$$\hat{c}(q) = \arg\max_c \, \rho_{\text{Spearman}}(q, \bar{r}_c)$$</div>
-
-  <h3>② CellTypist <span data-lang="zh">— 邏輯回歸 + SGD</span></h3>
-  <p data-lang="zh">每個細胞型態訓練一個 one-vs-rest 邏輯回歸：</p>
-  <p data-lang="en">One-vs-rest logistic regression per cell type:</p>
-  <div class="math-block">
-  $$P(y = c \mid \mathbf{x}) = \sigma(\mathbf{w}_c^\top \mathbf{x} + b_c), \quad \sigma(z) = \frac{1}{1+e^{-z}}$$
-  $$\hat{c}(\mathbf{x}) = \arg\max_c P(y = c \mid \mathbf{x})$$
-  </div>
-  <p data-lang="zh">參數用 L2 正則化 SGD 訓練，可處理百萬細胞 atlas。</p>
-  <p data-lang="en">Trained with L2-regularized SGD, scales to million-cell atlases.</p>
-
-  <h3>③ scANVI <span data-lang="zh">— 半監督 VAE</span><span data-lang="en">— semi-supervised VAE</span></h3>
-  <p data-lang="zh">擴展 scVI（M6 會用到的深度模型）讓<b>未標註細胞也參與訓練</b>。核心是 ELBO 加上分類損失：</p>
-  <p data-lang="en">Extends scVI to use unlabeled cells. ELBO with classification term:</p>
-  <div class="math-block">
-  $$\mathcal{L} = \underbrace{\mathbb{E}_{q(z|x)}[\log p(x|z)] - \text{KL}(q(z|x) \| p(z))}_{\text{ELBO}} + \alpha \cdot \mathbb{E}[\log p(y|z)]$$
-  </div>
-  <p data-lang="zh">$z$ = 潛在表示（拿掉 batch effect 後）、$y$ = 細胞型態標籤。對於未標註細胞只用 ELBO 那部分。</p>
-  <p data-lang="en">$z$ = latent representation (batch-corrected); $y$ = cell type. Unlabeled cells only contribute to ELBO.</p>
-</section>
-
-<section class="section">
-  <span class="section-label">比較 / Comparison</span>
-  <table class="compare-table">
-    <tr><th></th><th>SingleR</th><th>CellTypist</th><th>scANVI</th></tr>
-    <tr><td data-lang="zh">模型</td><td data-lang="en">Model</td><td>Spearman相關</td><td>Logistic regression</td><td>半監督 VAE</td></tr>
-    <tr><td data-lang="zh">速度</td><td data-lang="en">Speed</td><td class="meh">中</td><td class="good">快（GPU）</td><td class="bad">慢（訓練）</td></tr>
-    <tr><td data-lang="zh">處理 batch</td><td data-lang="en">Batch handling</td><td class="bad">需先校正</td><td class="meh">部分</td><td class="good">內建</td></tr>
-    <tr><td data-lang="zh">罕見細胞</td><td data-lang="en">Rare types</td><td class="good">好</td><td class="meh">中</td><td class="meh">中</td></tr>
-    <tr><td data-lang="zh">未知細胞偵測</td><td data-lang="en">Unknown detection</td><td class="meh">delta score</td><td class="good">probability</td><td class="good">model uncertainty</td></tr>
-  </table>
-</section>
-
-<section class="section">
-  <span class="section-label code">程式碼 / Code</span>
-  <div class="code-tabs"><div class="code-tab-btns"><button class="code-tab-btn active" onclick="switchTab(this,'py14')">Python</button><button class="code-tab-btn" onclick="switchTab(this,'r14')">R</button></div>
-    <div class="code-tab-content active" id="py14"><pre><span class="keyword">import</span> celltypist
-predictions = celltypist.annotate(adata, model=<span class="str">"Immune_All_Low.pkl"</span>)
-adata.obs[<span class="str">"celltypist"</span>] = predictions.predicted_labels
-
-<span class="comment"># scANVI</span>
-<span class="keyword">import</span> scvi
-scvi.model.SCANVI.setup_anndata(adata, labels_key=<span class="str">"cell_type"</span>, unlabeled_category=<span class="str">"Unknown"</span>)
-model = scvi.model.SCANVI(adata)
-model.train()
-</pre></div>
-    <div class="code-tab-content" id="r14"><pre><span class="keyword">library</span>(SingleR); <span class="keyword">library</span>(celldex)
-ref &lt;- <span class="func">HumanPrimaryCellAtlasData</span>()
-pred &lt;- <span class="func">SingleR</span>(test = <span class="func">as.SingleCellExperiment</span>(pbmc), ref = ref, labels = ref$label.main)
-pbmc$cell_type &lt;- pred$labels
-</pre></div>
-  </div>
-</section>
-
-<section class="section">
-  <span class="section-label">參考 / References</span>
-  <ul class="refs-list">
-    <li><div class="ref-title">Aran, D. et al. (2019). SingleR.</div><div class="ref-meta">Nat Immunol 20. <a href="https://doi.org/10.1038/s41590-018-0276-y">10.1038/s41590-018-0276-y</a></div></li>
-    <li><div class="ref-title">Domínguez Conde, C. et al. (2022). Cross-tissue immune cell analysis (CellTypist).</div><div class="ref-meta">Science 376. <a href="https://doi.org/10.1126/science.abl5197">10.1126/science.abl5197</a></div></li>
-    <li><div class="ref-title">Xu, C. et al. (2021). scANVI.</div><div class="ref-meta">Mol Syst Biol 17. <a href="https://doi.org/10.15252/msb.20209620">10.15252/msb.20209620</a></div></li>
+  <a href="../index.html" class="top-nav-brand">
+    <span>🧬</span>
+    <span data-lang="zh">scRNA-seq 進階數學</span>
+    <span data-lang="en">scRNA-seq Advanced Math</span>
+    <span class="badge-math">MATH</span>
+  </a>
+  <ul class="top-nav-links">
+    <li class="dropdown"><a href="../index.html#M1">M1</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">基礎 / FOUNDATIONS</li>
+        <li><a href="../M1-foundations/1.1-sparse-matrix.html">1.1 稀疏矩陣</a></li>
+        <li><a href="../M1-foundations/1.2-count-distributions.html">1.2 計數分布</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M2">M2</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">前處理 / PREPROCESSING</li>
+        <li><a href="../M2-preprocessing/2.1-qc-statistics.html">2.1 QC 統計</a></li>
+        <li><a href="../M2-preprocessing/2.2-normalization.html">2.2 Normalization</a></li>
+        <li><a href="../M2-preprocessing/2.3-hvg-selection.html">2.3 HVG 選擇</a></li>
+        <li><a href="../M2-preprocessing/2.4-scaling.html">2.4 Scaling</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M3">M3</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">降維 / DIM. REDUCTION</li>
+        <li><a href="../M3-dimreduction/3.1-pca.html">3.1 PCA</a></li>
+        <li><a href="../M3-dimreduction/3.2-tsne.html">3.2 t-SNE</a></li>
+        <li><a href="../M3-dimreduction/3.3-umap.html">3.3 UMAP</a></li>
+        <li><a href="../M3-dimreduction/3.4-diffusion-map.html">3.4 Diffusion Maps</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M4">M4</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">圖與聚類 / GRAPH &amp; CLUSTERING</li>
+        <li><a href="../M4-graph-clustering/4.1-knn-graph.html">4.1 KNN Graph + HNSW</a></li>
+        <li><a href="../M4-graph-clustering/4.2-louvain-leiden.html">4.2 Louvain &amp; Leiden</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M5" class="active">M5</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">統計推論 / STATS</li>
+        <li><a href="5.1-de-tests.html">5.1 DE 檢定</a></li>
+        <li><a href="5.2-multiple-testing.html">5.2 多重檢定 / FDR</a></li>
+        <li><a href="5.3-classifier.html" class="active-sub">5.3 細胞分類器 ⭐ (本頁)</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M6">M6</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">進階 / ADVANCED</li>
+        <li><a href="../M6-advanced/6.1-integration.html">6.1 Integration</a></li>
+        <li><a href="../M6-advanced/6.2-pseudotime.html">6.2 Pseudotime</a></li>
+        <li><a href="../M6-advanced/6.3-cellchat.html">6.3 CellChat</a></li>
+      </ul></li>
+    <li><a href="../index.html"><span data-lang="zh">🏠 回首頁</span><span data-lang="en">🏠 Home</span></a></li>
   </ul>
-</section>
+  <div class="lang-switch">
+    <button data-lang-btn="zh" class="active">中文</button>
+    <button data-lang-btn="en">EN</button>
+  </div>
+</div></nav>
 
-<div class="cross-links">
-  <a href="5.2-multiple-testing.html" class="cross-link"><div class="cross-label" data-lang="zh">← 上一篇</div><div class="cross-label" data-lang="en">← PREV</div><div class="cross-title"><span class="cross-id">M5.2</span> FDR</div></a>
-  <a href="../M6-advanced/6.1-integration.html" class="cross-link"><div class="cross-label" data-lang="zh">進階 →</div><div class="cross-label" data-lang="en">ADVANCED →</div><div class="cross-title"><span class="cross-id">M6.1</span> Integration</div></a>
+<div class="wrap">
+
+<div class="nav-pages">
+  <span class="label" data-lang="zh">本頁章節</span><span class="label" data-lang="en">CHAPTERS</span>
+  <a href="#s0"><span data-lang="zh">§0 故事</span><span data-lang="en">§0 Story</span></a>
+  <a href="#s1"><span data-lang="zh">§1 marker vs ref</span><span data-lang="en">§1 marker vs ref</span></a>
+  <a href="#s2"><span data-lang="zh">§2 邏輯回歸</span><span data-lang="en">§2 logistic regression</span></a>
+  <a href="#s3"><span data-lang="zh">§3 互動 softmax</span><span data-lang="en">§3 softmax interactive</span></a>
+  <a href="#s4"><span data-lang="zh">§4 CellTypist</span><span data-lang="en">§4 CellTypist</span></a>
+  <a href="#s5"><span data-lang="zh">§5 scNym</span><span data-lang="en">§5 scNym</span></a>
+  <a href="#s6"><span data-lang="zh">§6 confidence</span><span data-lang="en">§6 confidence</span></a>
+  <a href="#s7"><span data-lang="zh">§7 限制</span><span data-lang="en">§7 Limits</span></a>
 </div>
 
-</main>
-<footer class="site-footer"><p>© Charlene</p></footer>
+<header class="cover">
+  <div class="badge"><span data-lang="zh">深入互動版 · 從直覺到數學</span><span data-lang="en">Deep Interactive · From Intuition to Math</span></div>
+  <h1 data-lang="zh">細胞分類器：自動 annotate 細胞型態</h1>
+  <h1 data-lang="en">Cell Classifier: automated cell-type annotation</h1>
+  <div class="sub" data-lang="zh">
+    Leiden 給你 10 個 cluster，DE 給你每群的 marker gene list。但「cluster 3 高表現 CD3D」這個事實本身<b>不會自動告訴你那是 T 細胞</b>——
+    你還是要查 marker → 細胞型態對應表，手動 label。<br><br>
+    這節介紹自動 annotation 工具：
+    從<b>邏輯回歸 + softmax</b> 的數學基礎開始，理解 CellTypist 怎麼用「reference + 邏輯回歸」極快 annotate；
+    scNym 怎麼用半監督學習 transfer 跨資料；
+    最後談 confidence score 跟「reject option」（拒絕標籤）的設計。
+  </div>
+  <div class="sub" data-lang="en">
+    Leiden gives 10 clusters; DE gives marker gene lists. But "cluster 3 has high CD3D" <b>doesn't automatically say it's T cells</b> —
+    you still need a marker → cell-type lookup, manually.<br><br>
+    Automated annotation tools:
+    starting from <b>logistic regression + softmax</b> math, how CellTypist uses "reference + logistic regression" for fast annotation;
+    scNym's semi-supervised transfer across datasets;
+    finally confidence scores and "reject option" (refusing to label).
+  </div>
+</header>
+
+<div class="toc">
+  <h4 data-lang="zh">目錄</h4>
+  <h4 data-lang="en">Table of Contents</h4>
+  <ol start="0">
+    <li><a href="#s0"><span data-lang="zh">故事：從 marker 到 cell type</span><span data-lang="en">Story: from marker to cell type</span></a><span class="new" data-lang="zh">新增</span><span class="new" data-lang="en">NEW</span></li>
+    <li><a href="#s1"><span data-lang="zh">marker-based vs reference-based 對比</span><span data-lang="en">marker-based vs reference-based</span></a></li>
+    <li><a href="#s2"><span data-lang="zh">邏輯回歸與 softmax 數學</span><span data-lang="en">Logistic regression & softmax math</span></a></li>
+    <li><a href="#s3"><span data-lang="zh">互動：softmax 多類分類</span><span data-lang="en">Interactive softmax</span></a><span class="new" data-lang="zh">核心</span><span class="new" data-lang="en">CORE</span></li>
+    <li><a href="#s4"><span data-lang="zh">CellTypist 訓練流程</span><span data-lang="en">CellTypist training pipeline</span></a></li>
+    <li><a href="#s5"><span data-lang="zh">scNym 半監督學習</span><span data-lang="en">scNym semi-supervised</span></a></li>
+    <li><a href="#s6"><span data-lang="zh">Confidence 與 reject option</span><span data-lang="en">Confidence & reject option</span></a></li>
+    <li><a href="#s7"><span data-lang="zh">限制與下一步</span><span data-lang="en">Limits & next</span></a></li>
+  </ol>
+</div>
+
+<h2 id="s0"><span class="num">§0</span> <span data-lang="zh">故事：從 marker 到 cell type</span><span data-lang="en">Story: from marker to cell type</span></h2>
+
+<p class="lead" data-lang="zh">
+  DE 完成後，你有 <code class="inline">cluster_3_markers = ["CD3D", "CD3E", "CD8A", "GZMB", "IL2RB", ...]</code>。
+  人工 annotate：「CD3D + CD8A → CD8+ T 細胞」。
+  問題：10 個 cluster × 20 個 top marker = 200 個 gene 要人工查。
+  資料變大後（200 個 cluster？）這完全做不完。
+</p>
+<p class="lead" data-lang="en">
+  After DE: <code class="inline">cluster_3_markers = ["CD3D", "CD3E", "CD8A", "GZMB", "IL2RB", ...]</code>.
+  Manual: "CD3D + CD8A → CD8+ T cell".
+  Problem: 10 clusters × 20 markers = 200 genes to look up. With 200 clusters, infeasible.
+</p>
+
+<div class="card">
+  <h3 data-lang="zh">§0-1 自動 annotation 的兩條路</h3>
+  <h3 data-lang="en">§0-1 Two paths to automated annotation</h3>
+  <table class="compare">
+    <tr><th></th>
+        <th data-lang="zh">marker-based</th>
+        <th data-lang="en">marker-based</th>
+        <th data-lang="zh">reference-based</th>
+        <th data-lang="en">reference-based</th></tr>
+    <tr><td data-lang="zh">輸入</td><td data-lang="en">Input</td>
+        <td data-lang="zh">marker gene database</td>
+        <td data-lang="en">marker gene database</td>
+        <td data-lang="zh">已 annotate 的細胞 dataset</td>
+        <td data-lang="en">previously annotated dataset</td></tr>
+    <tr><td data-lang="zh">代表工具</td><td data-lang="en">Tools</td>
+        <td>SCSA, scCATCH</td><td>SCSA, scCATCH</td>
+        <td><b>CellTypist, scNym, Azimuth</b></td><td><b>CellTypist, scNym, Azimuth</b></td></tr>
+    <tr><td data-lang="zh">優點</td><td data-lang="en">Pros</td>
+        <td data-lang="zh">直覺、可解釋</td><td data-lang="en">interpretable</td>
+        <td data-lang="zh">準確、能處理 subtypes</td><td data-lang="en">accurate, handles subtypes</td></tr>
+    <tr><td data-lang="zh">缺點</td><td data-lang="en">Cons</td>
+        <td data-lang="zh">marker 不完整、難分 subtypes</td>
+        <td data-lang="en">incomplete markers, weak subtypes</td>
+        <td data-lang="zh">依賴 reference 品質、跨平台漂移</td>
+        <td data-lang="en">depends on reference quality, cross-platform drift</td></tr>
+  </table>
+</div>
+
+<h2 id="s1"><span class="num">§1</span> <span data-lang="zh">marker-based vs reference-based 對比</span><span data-lang="en">marker-based vs reference-based</span></h2>
+
+<h3 data-lang="zh">1.1 marker-based 的計分方式</h3>
+<h3 data-lang="en">1.1 marker-based scoring</h3>
+
+<p data-lang="zh">SCSA 等工具用一個簡單分數：</p>
+<p data-lang="en">SCSA-style tools use a simple score:</p>
+
+<div class="math-block">
+  $$\text{score}(c, t) = \sum_{g \in \mathcal{M}_t} \mathbb{1}\{g \in \mathcal{M}_c\}$$
+  <div class="formula-caption" data-lang="zh">$\mathcal{M}_c$ = cluster $c$ 的 top marker；$\mathcal{M}_t$ = cell type $t$ 的已知 marker</div>
+  <div class="formula-caption" data-lang="en">$\mathcal{M}_c$ = cluster $c$'s top markers; $\mathcal{M}_t$ = cell type $t$'s known markers</div>
+</div>
+
+<p data-lang="zh">挑「分數最高的細胞型態」當答案。簡單但問題不少：marker 重疊（CD8+ T 跟 NK 都表現 GZMB）、未知 subtype 沒對應。</p>
+<p data-lang="en">Pick the highest-scoring cell type. Simple but problematic: marker overlap (CD8+ T and NK both express GZMB), unknown subtypes have no entry.</p>
+
+<h3 data-lang="zh">1.2 reference-based 的優勢</h3>
+<h3 data-lang="en">1.2 reference-based advantages</h3>
+
+<div class="callout idea">
+  <strong data-lang="zh">關鍵</strong><strong data-lang="en">Key</strong>:
+  <span data-lang="zh">用<b>全表現量向量</b>當特徵（不只 top marker），用機器學習把 query 細胞投影到「已知細胞型態」space。
+  能利用 <b>weak signals</b>（很多個基因各微小差）跟<b>連續特徵</b>（不只 binary）。</span>
+  <span data-lang="en">Use <b>full expression vector</b> as features (not just top markers), ML maps query cells to "known cell-type" space.
+  Leverages <b>weak signals</b> (many genes each contributing slightly) and <b>continuous features</b>.</span>
+</div>
+
+<h2 id="s2"><span class="num">§2</span> <span data-lang="zh">邏輯回歸與 softmax 數學</span><span data-lang="en">Logistic regression & softmax math</span></h2>
+
+<p data-lang="zh">CellTypist 用<b>多類邏輯回歸</b>（multinomial logistic regression）。每個細胞型態 $t$ 有一個權重向量 $\mathbf{w}_t \in \mathbb{R}^d$（每個 gene 一個 weight）。
+給細胞表現量 $\mathbf{x}$，分類為 $t$ 的機率：</p>
+<p data-lang="en">CellTypist uses <b>multinomial logistic regression</b>. Each cell type $t$ has weight vector $\mathbf{w}_t \in \mathbb{R}^d$ (one per gene).
+Given expression $\mathbf{x}$, probability of class $t$:</p>
+
+<div class="math-block boxed">
+  $$P(y = t \,|\, \mathbf{x}) = \frac{\exp(\mathbf{w}_t^\top \mathbf{x} + b_t)}{\sum_{t'} \exp(\mathbf{w}_{t'}^\top \mathbf{x} + b_{t'})}$$
+  <div class="formula-caption" data-lang="zh">分子 = 細胞型態 $t$ 的「score」、分母 normalize 使機率加總 = 1</div>
+  <div class="formula-caption" data-lang="en">numerator = cell type $t$'s score, denominator normalizes to sum 1</div>
+</div>
+
+<h3 data-lang="zh">2.1 訓練：最大化 likelihood</h3>
+<h3 data-lang="en">2.1 Training: maximize likelihood</h3>
+
+<div class="math-block">
+  $$\mathcal{L} = -\sum_i \log P(y_i \,|\, \mathbf{x}_i) + \lambda \sum_t \|\mathbf{w}_t\|_1$$
+  <div class="formula-caption" data-lang="zh">cross-entropy loss + L1 正則化（讓 $\mathbf{w}_t$ 稀疏，自動選 marker）</div>
+  <div class="formula-caption" data-lang="en">cross-entropy + L1 reg (sparse $\mathbf{w}_t$, auto-selects markers)</div>
+</div>
+
+<p data-lang="zh"><b>關鍵</b>：L1 正則讓每個細胞型態 $t$ 的 $\mathbf{w}_t$ 變稀疏——
+只剩~50-200 個 gene 有非零權重。<b>非零權重的 gene 就是這個型態的學到的 marker</b>，可解釋。</p>
+<p data-lang="en"><b>Key</b>: L1 regularization makes $\mathbf{w}_t$ sparse —
+only ~50–200 non-zero genes per cell type. <b>Non-zero genes are the learned markers</b>, interpretable.</p>
+
+<h2 id="s3"><span class="num">§3</span> <span data-lang="zh">互動：softmax 多類分類</span><span data-lang="en">Interactive softmax</span></h2>
+
+<div class="card">
+  <p data-lang="zh">假設你有一個新 query 細胞跟 4 種已知細胞型態。每型有一個 score（你拉滑桿改變）。softmax 把 score 轉成機率。觀察：</p>
+  <p data-lang="en">A query cell vs 4 known cell types. Each type has a score (drag sliders). Softmax converts scores → probabilities. Observe:</p>
+  <ul>
+    <li data-lang="zh">最高 score 對應最高機率（贏家）</li>
+    <li data-lang="en">highest score → highest probability (winner)</li>
+    <li data-lang="zh">score 之間「差距」越大，最高機率越接近 1（信心強）</li>
+    <li data-lang="en">larger score gaps → winner probability closer to 1 (confident)</li>
+    <li data-lang="zh">score 都很接近 → 機率分散（不確定）</li>
+    <li data-lang="en">close scores → spread probability (uncertain)</li>
+  </ul>
+  <div class="controls">
+    <label>CD8+ T: <input type="range" id="s3a" min="-3" max="5" value="2" step="0.1"><span id="s3aVal">2.0</span></label>
+    <label>CD4+ T: <input type="range" id="s3b" min="-3" max="5" value="0.5" step="0.1"><span id="s3bVal">0.5</span></label>
+    <label>NK: <input type="range" id="s3c" min="-3" max="5" value="1" step="0.1"><span id="s3cVal">1.0</span></label>
+    <label>B cell: <input type="range" id="s3d" min="-3" max="5" value="-1" step="0.1"><span id="s3dVal">-1.0</span></label>
+  </div>
+  <svg class="canvas" id="s3svg" viewBox="0 0 800 320" width="100%"></svg>
+  <div class="stat-row">
+    <div class="item"><span class="lbl" data-lang="zh">最高機率細胞型態</span><span class="lbl" data-lang="en">Top class</span><span class="val" id="s3top">—</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">最高機率</span><span class="lbl" data-lang="en">Max probability</span><span class="val" id="s3max">—</span></div>
+    <div class="item"><span class="lbl">entropy</span><span class="lbl">entropy</span><span class="val" id="s3ent">—</span></div>
+  </div>
+  <p data-lang="zh"><b>Entropy</b> 是「不確定性」指標：值越大表越不確定（多型態同分）；接近 0 表示某型態獨贏。</p>
+  <p data-lang="en"><b>Entropy</b> measures uncertainty: higher = less certain (multiple classes tied); near 0 = one class dominates.</p>
+</div>
+
+<h2 id="s4"><span class="num">§4</span> <span data-lang="zh">CellTypist 訓練流程</span><span data-lang="en">CellTypist training pipeline</span></h2>
+
+<p data-lang="zh">
+  CellTypist（Domínguez Conde et al. 2022）是個訓練好的 logistic regression model 庫，覆蓋 30+ 預訓練模型（免疫、腦、發育...）。
+</p>
+<p data-lang="en">
+  CellTypist (Domínguez Conde et al. 2022) is a library of pretrained logistic regression models covering 30+ tissues (immune, brain, development...).
+</p>
+
+<h3 data-lang="zh">4.1 訓練 5 步</h3>
+<h3 data-lang="en">4.1 5-step training</h3>
+
+<ol>
+  <li><span data-lang="zh">收集已 annotate 的 reference data（如 Human Cell Atlas）</span>
+      <span data-lang="en">Collect annotated reference (e.g., Human Cell Atlas)</span></li>
+  <li><span data-lang="zh">log1p normalize</span><span data-lang="en">log1p normalize</span></li>
+  <li><span data-lang="zh">SGD 訓練 multinomial logistic regression with L1</span>
+      <span data-lang="en">SGD-train multinomial logistic regression with L1</span></li>
+  <li><span data-lang="zh">over-clustering：把每個訓練 cluster 再分小，捕捉 subtypes</span>
+      <span data-lang="en">over-clustering: re-cluster within each training cluster to capture subtypes</span></li>
+  <li><span data-lang="zh">輸出每細胞型態的稀疏權重向量</span>
+      <span data-lang="en">Output sparse weight vector per cell type</span></li>
+</ol>
+
+<h3 data-lang="zh">4.2 使用</h3>
+<h3 data-lang="en">4.2 Usage</h3>
+
+<pre class="code"><span class="k">import</span> celltypist
+
+<span class="c"># load pretrained model (immune cells, low-resolution)</span>
+model = celltypist.models.Model.load(<span class="s">"Immune_All_Low.pkl"</span>)
+
+<span class="c"># predict on your data (must be log1p-normalized)</span>
+predictions = celltypist.annotate(adata, model=model, majority_voting=<span class="k">True</span>)
+adata = predictions.to_adata()
+
+<span class="c"># adata.obs["predicted_labels"] 即為細胞型態</span>
+<span class="c"># adata.obs["majority_voting"] 是 cluster-level 投票結果（更穩定）</span></pre>
+
+<div class="callout idea">
+  <strong data-lang="zh">majority voting 的妙處</strong><strong data-lang="en">Beauty of majority voting</strong>:
+  <span data-lang="zh">單細胞層級的預測有噪音；用 cluster 內多數票讓<b>整個 cluster 拿同一個 label</b>，跟 Leiden 的天然 cluster 結構對齊。</span>
+  <span data-lang="en">Single-cell predictions are noisy; cluster-wise majority voting gives the <b>whole cluster one label</b>, aligning with Leiden's natural structure.</span>
+</div>
+
+<h2 id="s5"><span class="num">§5</span> <span data-lang="zh">scNym 半監督學習</span><span data-lang="en">scNym semi-supervised</span></h2>
+
+<p data-lang="zh">
+  CellTypist 是純 supervised：只用 labeled reference 訓練。
+  問題：你的 query data 可能跟 reference <b>不同 batch / 不同平台 / 不同物種</b>——
+  domain shift 讓 supervised 模型表現變差。<br><br>
+  scNym（Kimmel & Kelley 2021）用<b>半監督</b>：在訓練時同時看「labeled reference + unlabeled query」，
+  用 <b>MixUp</b> 跟 <b>對抗訓練</b> 讓模型對 domain shift 穩健。
+</p>
+<p data-lang="en">
+  CellTypist is purely supervised: trained on labeled reference only.
+  Problem: your query may differ from reference in <b>batch / platform / species</b> —
+  domain shift degrades supervised models.<br><br>
+  scNym (Kimmel & Kelley 2021) is <b>semi-supervised</b>: trains on "labeled reference + unlabeled query" together,
+  using <b>MixUp</b> and <b>adversarial training</b> for domain robustness.
+</p>
+
+<h3 data-lang="zh">5.1 核心想法</h3>
+<h3 data-lang="en">5.1 Core idea</h3>
+
+<table class="compare">
+  <tr><th></th><th>CellTypist</th><th>CellTypist</th><th>scNym</th><th>scNym</th></tr>
+  <tr><td data-lang="zh">訓練資料</td><td data-lang="en">Training data</td>
+      <td data-lang="zh">labeled reference</td><td data-lang="en">labeled reference</td>
+      <td data-lang="zh">labeled reference + unlabeled query</td><td data-lang="en">labeled reference + unlabeled query</td></tr>
+  <tr><td data-lang="zh">模型</td><td data-lang="en">Model</td>
+      <td data-lang="zh">linear (logistic reg)</td><td data-lang="en">linear (logistic reg)</td>
+      <td data-lang="zh">deep neural net</td><td data-lang="en">deep neural net</td></tr>
+  <tr><td data-lang="zh">域適應</td><td data-lang="en">Domain adaptation</td>
+      <td>❌</td><td>❌</td>
+      <td>✅ (adversarial)</td><td>✅ (adversarial)</td></tr>
+  <tr><td data-lang="zh">速度</td><td data-lang="en">Speed</td>
+      <td data-lang="zh">很快</td><td data-lang="en">very fast</td>
+      <td data-lang="zh">需訓練（中等）</td><td data-lang="en">requires training (medium)</td></tr>
+</table>
+
+<h2 id="s6"><span class="num">§6</span> <span data-lang="zh">Confidence 與 reject option</span><span data-lang="en">Confidence & reject option</span></h2>
+
+<p data-lang="zh">
+  Softmax 給每個細胞一個機率分布。但「最高機率 = 0.3」跟「最高機率 = 0.95」差很多——前者其實是「不知道」，後者才是「有信心」。
+  好的分類器應該<b>拒絕回答 (reject option)</b> 當信心不足。
+</p>
+<p data-lang="en">
+  Softmax gives a probability distribution per cell. "max prob = 0.3" vs "max prob = 0.95" differ greatly —
+  the former is really "don't know", the latter "confident". A good classifier should <b>refuse to answer (reject option)</b> when uncertain.
+</p>
+
+<h3 data-lang="zh">6.1 兩種信心指標</h3>
+<h3 data-lang="en">6.1 Two confidence metrics</h3>
+
+<div class="math-block">
+  $$\text{max-prob} = \max_t P(y = t \,|\, \mathbf{x})$$
+  $$\text{entropy} = -\sum_t P(y = t \,|\, \mathbf{x}) \log P(y = t \,|\, \mathbf{x})$$
+</div>
+
+<p data-lang="zh">CellTypist 預設用 max-prob。當細胞 max-prob &lt; threshold（如 0.5），標為 <code class="inline">"Unassigned"</code>。</p>
+<p data-lang="en">CellTypist defaults to max-prob. When max-prob &lt; threshold (e.g., 0.5), label as <code class="inline">"Unassigned"</code>.</p>
+
+<h3 data-lang="zh">6.2 為什麼有 Unassigned 是好事</h3>
+<h3 data-lang="en">6.2 Why "Unassigned" is good</h3>
+
+<div class="callout bio">
+  <strong data-lang="zh">兩種「不確定」情境</strong><strong data-lang="en">Two "uncertain" scenarios</strong>:
+  <span data-lang="zh">(1) 罕見或新細胞型態（reference 沒有）；(2) Doublet / 過渡細胞（兩種型態之間）。兩種都應該被標 Unassigned 而不是強塞一個答案。</span>
+  <span data-lang="en">(1) rare or novel cell types (not in reference); (2) doublets / transitional cells (between types). Both should be flagged "Unassigned" rather than force-labeled.</span>
+</div>
+
+<h2 id="s7"><span class="num">§7</span> <span data-lang="zh">限制與下一步</span><span data-lang="en">Limits & next</span></h2>
+
+<h3 data-lang="zh">7.1 方法選擇</h3>
+<h3 data-lang="en">7.1 Method choice</h3>
+
+<table class="compare">
+  <tr><th data-lang="zh">情境</th><th data-lang="en">Scenario</th>
+      <th data-lang="zh">推薦</th><th data-lang="en">Recommended</th></tr>
+  <tr><td data-lang="zh">通用、快速</td><td data-lang="en">General, fast</td>
+      <td><b>CellTypist</b></td><td><b>CellTypist</b></td></tr>
+  <tr><td data-lang="zh">跨 batch / 跨物種</td><td data-lang="en">Cross-batch / cross-species</td>
+      <td>scNym, SingleR + Harmony</td><td>scNym, SingleR + Harmony</td></tr>
+  <tr><td data-lang="zh">免疫專精</td><td data-lang="en">Immune-focused</td>
+      <td>Azimuth (Seurat)</td><td>Azimuth (Seurat)</td></tr>
+  <tr><td data-lang="zh">無 reference</td><td data-lang="en">No reference</td>
+      <td>SCSA, scCATCH (marker-based)</td><td>SCSA, scCATCH (marker-based)</td></tr>
+</table>
+
+<h3 data-lang="zh">7.2 限制</h3>
+<h3 data-lang="en">7.2 Limitations</h3>
+<table class="compare">
+  <tr><th data-lang="zh">限制</th><th data-lang="en">Limitation</th>
+      <th data-lang="zh">後果</th><th data-lang="en">Consequence</th>
+      <th data-lang="zh">緩解</th><th data-lang="en">Mitigation</th></tr>
+  <tr>
+    <td data-lang="zh">reference 限制標籤空間</td>
+    <td data-lang="en">reference limits label space</td>
+    <td data-lang="zh">新型態強塞舊標籤</td>
+    <td data-lang="en">novel types forced into old labels</td>
+    <td data-lang="zh">設信心閾值 + 標 Unassigned</td>
+    <td data-lang="en">set confidence threshold + Unassigned</td>
+  </tr>
+  <tr>
+    <td data-lang="zh">技術變異被當生物</td>
+    <td data-lang="en">tech variation as biology</td>
+    <td data-lang="zh">batch effect 影響預測</td>
+    <td data-lang="en">batch effects bias predictions</td>
+    <td data-lang="zh">先 Harmony / scVI 後再 annotate</td>
+    <td data-lang="en">Harmony / scVI before annotating</td>
+  </tr>
+  <tr>
+    <td data-lang="zh">深層 subtype 不夠</td>
+    <td data-lang="en">deep subtypes lacking</td>
+    <td data-lang="zh">如 CD8+ T memory vs effector 分不開</td>
+    <td data-lang="en">CD8 memory vs effector hard to separate</td>
+    <td data-lang="zh">用高解析度 reference (Immune_All_High)</td>
+    <td data-lang="en">use high-res reference</td>
+  </tr>
+</table>
+
+<div class="callout prog">
+  <strong data-lang="zh">下一步</strong><strong data-lang="en">Next</strong>:
+  <span data-lang="zh">細胞 annotate 完成 → <a href="../M6-advanced/6.1-integration.html"><b>M6.1 Integration</b></a> 整合多 batch → <a href="../M6-advanced/6.2-pseudotime.html"><b>M6.2 Pseudotime</b></a> 排軌跡 → <a href="../M6-advanced/6.3-cellchat.html"><b>M6.3 CellChat</b></a> 找細胞間通訊。</span>
+  <span data-lang="en">After annotation → <a href="../M6-advanced/6.1-integration.html"><b>M6.1 Integration</b></a> → <a href="../M6-advanced/6.2-pseudotime.html"><b>M6.2 Pseudotime</b></a> → <a href="../M6-advanced/6.3-cellchat.html"><b>M6.3 CellChat</b></a>.</span>
+</div>
+
+<p class="footer">
+  <span data-lang="zh">© scRNA-seq Advanced Math · M5.3 Classifier Deep Interactive</span>
+  <span data-lang="en">© scRNA-seq Advanced Math · M5.3 Classifier Deep Interactive</span>
+</p>
+
+</div>
+
 <script src="../i18n.js"></script>
-<script>function switchTab(b,id){const p=b.closest(".code-tabs");p.querySelectorAll(".code-tab-btn").forEach(x=>x.classList.remove("active"));p.querySelectorAll(".code-tab-content").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(id).classList.add("active");}</script>
-</body></html>
+<script>
+// ===== §3 softmax interactive =====
+(function() {
+  const types = [
+    {name: 'CD8+ T', id: 'a', color: '#c0392b'},
+    {name: 'CD4+ T', id: 'b', color: '#2c5aa0'},
+    {name: 'NK', id: 'c', color: '#27795a'},
+    {name: 'B cell', id: 'd', color: '#f0c419'}
+  ];
+  function draw() {
+    const scores = types.map(t => +document.getElementById('s3' + t.id).value);
+    scores.forEach((sc, i) => document.getElementById('s3' + types[i].id + 'Val').textContent = sc.toFixed(1));
+    // softmax
+    const mx = Math.max(...scores);
+    const exps = scores.map(s => Math.exp(s - mx));
+    const sumE = exps.reduce((a,b)=>a+b, 0);
+    const probs = exps.map(e => e / sumE);
+    // entropy
+    let H = 0;
+    probs.forEach(p => { if (p > 1e-9) H -= p * Math.log(p); });
+    // max
+    let maxI = 0, maxP = probs[0];
+    probs.forEach((p, i) => { if (p > maxP) { maxP = p; maxI = i; } });
+    document.getElementById('s3top').textContent = types[maxI].name;
+    document.getElementById('s3max').textContent = (maxP*100).toFixed(1) + '%';
+    document.getElementById('s3ent').textContent = H.toFixed(3);
+    // draw bars
+    let s = '';
+    s += `<text class="lbl" x="200" y="25" text-anchor="middle" font-weight="700">Score</text>`;
+    s += `<text class="lbl" x="600" y="25" text-anchor="middle" font-weight="700">Softmax probability</text>`;
+    const sMax = Math.max(...scores.map(Math.abs), 0.5);
+    types.forEach((t, i) => {
+      const y0 = 50 + i*55;
+      // score bar
+      const sw = Math.abs(scores[i]/sMax) * 140;
+      const sx = scores[i] >= 0 ? 200 : 200 - sw;
+      s += `<line x1="200" y1="${y0}" x2="200" y2="${y0+30}" stroke="#888" stroke-width="1"/>`;
+      s += `<rect x="${sx}" y="${y0}" width="${sw}" height="30" fill="${t.color}" opacity="0.85"/>`;
+      s += `<text class="lbl" x="${scores[i] >= 0 ? sx + sw + 5 : sx - 5}" y="${y0+20}" text-anchor="${scores[i] >= 0 ? 'start' : 'end'}" font-family="monospace">${scores[i].toFixed(1)}</text>`;
+      s += `<text class="lbl" x="60" y="${y0+20}" font-weight="700" fill="${t.color}">${t.name}</text>`;
+      // prob bar
+      const pw = probs[i] * 200;
+      s += `<rect x="450" y="${y0}" width="${pw}" height="30" fill="${t.color}" opacity="0.85"/>`;
+      s += `<text class="lbl" x="${450 + pw + 5}" y="${y0+20}" font-family="monospace" font-weight="700">${(probs[i]*100).toFixed(1)}%</text>`;
+    });
+    document.getElementById('s3svg').innerHTML = s;
+  }
+  ['a','b','c','d'].forEach(id => document.getElementById('s3' + id).addEventListener('input', draw));
+  draw();
+})();
+</script>
+</body>
+</html>

@@ -1,90 +1,628 @@
 <!DOCTYPE html>
-<html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>2.4 Scaling — scRNA-seq Advanced Math</title><link rel="stylesheet" href="../styles.css">
-<script>MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] } };</script>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>2.4 Scaling：z-score 與 regress-out — Deep Interactive</title>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
-</head><body>
+<style>
+  :root {
+    --bg: #fafaf7; --fg: #1a1a1a; --muted: #666;
+    --accent: #c0392b; --accent2: #2c5aa0;
+    --green: #27795a; --purple: #8e44ad; --yellow: #f0c419;
+    --teal: #0d9488;
+    --card: #ffffff; --border: #e0e0d8; --code: #f4f1ea;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Helvetica Neue", "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif; background: var(--bg); color: var(--fg); line-height: 1.75; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 40px 28px 120px; }
+  header.cover { margin: 20px 0 60px; padding: 52px 40px;
+    background: linear-gradient(135deg, #0a3d3a 0%, #0d9488 55%, #5eead4 100%);
+    color: #fff; border-radius: 16px; box-shadow: 0 14px 40px rgba(10,61,58,0.18); }
+  header.cover h1 { margin: 0 0 14px; font-size: 36px; }
+  header.cover .sub { font-size: 17px; opacity: 0.92; line-height: 1.65; }
+  header.cover .badge { display: inline-block; background: rgba(255,255,255,0.18);
+    padding: 4px 12px; border-radius: 20px; font-size: 13px; margin-bottom: 16px; }
+  h2 { margin-top: 70px; padding-bottom: 8px; border-bottom: 3px solid var(--teal);
+    font-size: 26px; display: flex; align-items: baseline; gap: 12px; }
+  h2 .num { color: var(--teal); font-weight: 800; font-size: 20px; }
+  h3 { margin-top: 36px; font-size: 19px; color: var(--accent2); }
+  h4 { margin-top: 22px; font-size: 16px; color: var(--accent); }
+  p { margin: 14px 0; }
+  .lead { font-size: 17px; color: #2a2a2a; }
+  .callout { background: #fff8e6; border-left: 4px solid var(--yellow); padding: 14px 18px; border-radius: 6px; margin: 22px 0; }
+  .callout.idea { background: #eaf4ff; border-left-color: var(--accent2); }
+  .callout.warn { background: #fdecec; border-left-color: var(--accent); }
+  .callout.bio  { background: #effaf3; border-left-color: var(--green); }
+  .callout.prog { background: #e0f7f5; border-left-color: var(--teal); }
+  .card { background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px 26px; margin: 26px 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+  .card h3 { margin-top: 0; }
+  .controls { display: flex; flex-wrap: wrap; gap: 14px 22px;
+    align-items: center; margin: 14px 0; padding: 12px 16px;
+    background: #f4f1ea; border-radius: 8px; font-size: 14px; }
+  .controls label { display: flex; align-items: center; gap: 8px; }
+  button { background: var(--teal); color: #fff; border: 0;
+    padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 14px;
+    font-family: inherit; }
+  button:hover { background: #0a6c64; }
+  button.ghost { background: #fff; color: var(--teal); border: 1px solid var(--teal); }
+  input[type="range"] { width: 180px; vertical-align: middle; }
+  svg.canvas { background: #fcfcfa; border: 1px solid var(--border); border-radius: 8px; display: block; }
+  svg.canvas .axis { stroke: #bbb; stroke-width: 1; }
+  svg.canvas .grid { stroke: #ececea; stroke-width: 0.5; }
+  svg.canvas text.lbl { font-size: 12px; fill: #333; }
+  .stat-row { display: flex; flex-wrap: wrap; gap: 22px; margin: 14px 0; font-size: 14px; }
+  .stat-row .item { display: flex; flex-direction: column; }
+  .stat-row .item .lbl { color: var(--muted); font-size: 12px; }
+  .stat-row .item .val { font-family: "JetBrains Mono", monospace; font-size: 18px; }
+  details { margin: 16px 0; }
+  details summary { cursor: pointer; font-weight: 600; color: var(--accent2); padding: 6px 0; }
+  .toc { background: #fff; border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 28px; margin: 30px 0; }
+  .toc h4 { margin: 0 0 10px; color: var(--teal); }
+  .toc ol { margin: 6px 0; padding-left: 24px; line-height: 1.9; }
+  .toc a { color: var(--accent2); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .toc .new { background: var(--teal); color: #fff; font-size: 11px;
+    padding: 1px 8px; border-radius: 10px; margin-left: 6px; }
+  code.inline { background: var(--code); padding: 2px 6px; border-radius: 4px;
+    font-size: 13px; font-family: "JetBrains Mono", "Consolas", monospace; }
+  pre.code { background: #1e1e1e; color: #dcdcdc;
+    padding: 14px 18px; border-radius: 8px; overflow-x: auto; font-size: 13px;
+    font-family: "JetBrains Mono", "Consolas", monospace; line-height: 1.55; }
+  pre.code .k { color: #569cd6; }
+  pre.code .s { color: #ce9178; }
+  pre.code .c { color: #6a9955; }
+  pre.code .n { color: #b5cea8; }
+  table.compare { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.compare th, table.compare td { border: 1px solid var(--border); padding: 8px 12px; }
+  table.compare th { background: #f4f1ea; text-align: left; }
+  .math-block { background: #fff; border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 18px; margin: 18px 0; }
+  .math-block.boxed { border: 2px solid var(--teal); background: #e0f7f5; }
+  .formula-caption { font-size: 12.5px; color: var(--muted); text-align: center; margin-top: 6px; }
+  .footer { text-align: center; color: var(--muted); margin-top: 80px; font-size: 13px; }
+  .top-nav { background: #0a3d3a; color: #fff; padding: 14px 28px;
+    position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(10,61,58,0.25); }
+  .top-nav-inner { max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; gap: 28px; }
+  .top-nav-brand { color: #fff; text-decoration: none;
+    font-weight: 700; font-size: 17px;
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .top-nav-brand .badge-math { background: #5eead4; color: #0a3d3a;
+    padding: 3px 9px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+  .top-nav-links { list-style: none; margin: 0; padding: 0;
+    display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+  .top-nav-links a { color: #99f6e4; text-decoration: none;
+    padding: 6px 11px; border-radius: 6px; font-size: 13px; font-weight: 500;
+    transition: 0.2s; }
+  .top-nav-links a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .top-nav-links a.active { background: #0d9488; color: #fff; }
+  .top-nav-links li.dropdown { position: relative; }
+  .top-nav-links li.dropdown > a::after { content: ' ▾';
+    font-size: 10px; opacity: 0.7; margin-left: 3px;
+    display: inline-block; transition: transform 0.2s; }
+  .top-nav-links li.dropdown:hover > a::after,
+  .top-nav-links li.dropdown.open > a::after { transform: rotate(180deg); }
+  .top-nav-links .dropdown-menu { display: none; position: absolute; top: 100%; left: 0;
+    background: #14524d; border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px; padding: 6px 0; min-width: 230px;
+    list-style: none; z-index: 200;
+    box-shadow: 0 8px 28px rgba(10,61,58,0.5); margin: 6px 0 0; }
+  .top-nav-links li.dropdown:hover > .dropdown-menu,
+  .top-nav-links li.dropdown.open > .dropdown-menu { display: block; }
+  .top-nav-links .dropdown-menu li { display: block; }
+  .top-nav-links .dropdown-menu li a { display: block; padding: 9px 18px;
+    border-radius: 0; font-size: 13px; white-space: nowrap; color: #99f6e4; }
+  .top-nav-links .dropdown-menu li a:hover { background: rgba(13,148,136,0.3); color: #fff; }
+  .top-nav-links .dropdown-menu li a.active-sub { background: #0d9488; color: #fff; font-weight: 700; }
+  .top-nav-links .dropdown-menu .sub-label { font-size: 10px; color: #5eead4;
+    letter-spacing: 1px; padding: 4px 18px 2px; text-transform: uppercase; }
+  .lang-switch { display: flex; gap: 4px;
+    background: rgba(255,255,255,0.08); padding: 4px; border-radius: 6px; flex-shrink: 0; }
+  .lang-switch button { background: transparent; border: 0; color: #99f6e4;
+    font-size: 12px; font-weight: 700; padding: 5px 10px;
+    border-radius: 4px; cursor: pointer; font-family: inherit; }
+  .lang-switch button.active { background: #0d9488; color: #fff; }
+  .nav-pages { display: flex; gap: 8px; margin: 24px 0; padding: 14px;
+    background: #14524d; border-radius: 10px; align-items: center; flex-wrap: wrap; }
+  .nav-pages a { color: #99f6e4; text-decoration: none;
+    padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600;
+    transition: 0.2s; }
+  .nav-pages a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .nav-pages .label { color: #5eead4; font-size: 11px;
+    letter-spacing: 1px; font-weight: 700; margin-right: 8px; }
+  [data-lang="en"] { display: none; }
+  body.lang-en [data-lang="zh"] { display: none; }
+  body.lang-en [data-lang="en"] { display: initial; }
+  body.lang-en h1[data-lang="en"], body.lang-en h2[data-lang="en"],
+  body.lang-en h3[data-lang="en"], body.lang-en h4[data-lang="en"],
+  body.lang-en p[data-lang="en"], body.lang-en div[data-lang="en"],
+  body.lang-en ol[data-lang="en"], body.lang-en ul[data-lang="en"] { display: block; }
+  body.lang-en li[data-lang="en"] { display: list-item; }
+  body.lang-en span[data-lang="en"] { display: inline; }
+  body.lang-en tspan[data-lang="en"] { display: inline; }
+</style>
+</head>
+<body>
+
 <nav class="top-nav"><div class="top-nav-inner">
-  <a href="../index.html" class="top-nav-brand"><span>🧬</span><span data-lang="zh">scRNA-seq 進階數學</span><span data-lang="en">scRNA-seq Advanced Math</span><span class="badge-math">MATH</span></a>
-  <ul class="top-nav-links"><li><a href="../index.html#M1">M1</a></li><li><a href="../index.html#M2" class="active">M2</a></li><li><a href="../index.html#M3">M3</a></li><li><a href="../index.html#M4">M4</a></li><li><a href="../index.html#M5">M5</a></li><li><a href="../index.html#M6">M6</a></li><li><a href="../index.html" data-lang="zh">🏠 回首頁</a><span data-lang="en">🏠 Home</span></li></ul>
-  <div class="lang-switch"><button data-lang-btn="zh" class="active">中文</button><button data-lang-btn="en">EN</button></div>
-</div></nav>
-<header class="page-hero"><div class="page-hero-inner">
-  <div class="page-badge">M2.4 · PREPROCESSING</div>
-  <h1 data-lang="zh">Scaling 的高斯假設</h1><h1 data-lang="en">Scaling &amp; the Gaussian Assumption</h1>
-  <p class="subtitle" data-lang="zh">PCA 為什麼需要 z-score？對計數資料 scale 會破壞什麼？SCTransform 為什麼可以省略 scale？</p>
-  <p class="subtitle" data-lang="en">Why PCA needs z-score. What scaling destroys in count data. Why SCTransform can skip scaling.</p>
-</div></header>
-
-<main class="content-wrap">
-<section class="section">
-  <span class="section-label intuition">直覺 / Intuition</span>
-  <h2 data-lang="zh">PCA 不會「自動」處理單位差異</h2><h2 data-lang="en">PCA does not handle scale differences</h2>
-  <div data-lang="zh"><p>PCA 找變異最大的方向。若 Gene A 平均 1000、Gene B 平均 10，PC1 必定被 Gene A 主宰——因為它的數值絕對值大。但「數值大」≠「資訊多」。</p>
-    <p>解法：讓每個基因有<b>相同的「方差預算」</b>，這就是 z-score：</p></div>
-  <div data-lang="en"><p>PCA finds maximum-variance directions. If Gene A averages 1000 and Gene B averages 10, PC1 will be dominated by Gene A — but "large value" ≠ "informative". Solution: give every gene the same variance budget.</p></div>
-</section>
-
-<section class="section">
-  <span class="section-label math">核心數學 / Math</span>
-  <div class="math-block">
-  $$z_{ij} = \frac{x_{ij} - \mu_j}{\sigma_j}, \quad \mu_j = \frac{1}{n}\sum_i x_{ij}, \quad \sigma_j = \sqrt{\frac{1}{n-1}\sum_i (x_{ij}-\mu_j)^2}$$
-  </div>
-  <p data-lang="zh">每個基因（欄）變成 mean=0、var=1。等於：「每個維度被『重新校準』成同樣的尺度」。</p>
-  <p data-lang="en">Each gene (column) → mean=0, var=1. Every dimension is rescaled to identical magnitude.</p>
-
-  <div class="callout callout-warn">
-    <strong data-lang="zh">⚠️ Scale 是雙刃劍</strong><strong data-lang="en">⚠️ Scaling is double-edged</strong>
-    <p data-lang="zh"><b>放大噪音</b>：低表現基因的 σ 很小，scale 後反而把「微小的隨機波動」放大。<br>
-    <b>破壞計數本質</b>：對 0/1/2 這種離散計數做 z-score 之後，0 變成負值——「沒表現」變成「比平均低」，意義轉變。</p>
-    <p data-lang="en"><b>Amplifies noise</b>: σ of low-expression genes is tiny, so random fluctuations get magnified.<br>
-    <b>Destroys count nature</b>: z-scoring 0/1/2 discrete counts turns "not expressed" into "below average", changing meaning.</p>
-  </div>
-
-  <h3 data-lang="zh">SCTransform 為什麼可以省略 scale？</h3><h3 data-lang="en">Why can SCTransform skip scaling?</h3>
-  <p data-lang="zh">SCTransform 的 Pearson residuals 已經是 $(x - \hat\mu) / \sqrt{\hat\mu + \hat\mu^2/\hat\theta}$——
-  本質上已經是 z-score（分子減均值、分母除標準差），只是用 NB 模型算的而非樣本估計。所以後續可<b>直接</b> PCA、不需另外 scale。</p>
-  <p data-lang="en">SCTransform's Pearson residuals are already $(x - \hat\mu) / \sqrt{\hat\mu + \hat\mu^2/\hat\theta}$ — essentially z-scores computed from NB model, not sample statistics. Can go directly to PCA without re-scaling.</p>
-
-  <h3 data-lang="zh">回歸出 unwanted variation</h3><h3 data-lang="en">Regressing out unwanted variation</h3>
-  <p data-lang="zh">Seurat 的 <code>ScaleData(vars.to.regress=...)</code> 在 scale 同時做線性回歸：</p>
-  <div class="math-block">$$z_{ij} = \text{residual of } x_{ij} \sim \beta_0 + \beta_1 \cdot \text{nCount}_i + \beta_2 \cdot \text{MT\%}_i + \ldots$$</div>
-  <p data-lang="zh">用線性模型「扣掉」這些混淆變數的影響。注意：這假設它們的影響是<b>線性</b>的——對 nCount 不一定成立。</p>
-  <p data-lang="en">Linear model removes confounder effects. Assumes linearity, which may not hold for nCount.</p>
-</section>
-
-<section class="section">
-  <span class="section-label code">程式碼 / Code</span>
-  <div class="code-tabs"><div class="code-tab-btns"><button class="code-tab-btn active" onclick="switchTab(this,'py6')">Python</button><button class="code-tab-btn" onclick="switchTab(this,'r6')">R</button></div>
-    <div class="code-tab-content active" id="py6"><pre>sc.pp.scale(adata, max_value=<span class="num">10</span>)    <span class="comment"># clip extreme values</span>
-
-<span class="comment"># 回歸 out 混淆變數</span>
-sc.pp.regress_out(adata, [<span class="str">"total_counts"</span>, <span class="str">"pct_counts_mt"</span>])
-sc.pp.scale(adata, max_value=<span class="num">10</span>)
-</pre></div>
-    <div class="code-tab-content" id="r6"><pre>pbmc &lt;- <span class="func">ScaleData</span>(pbmc, vars.to.regress = <span class="func">c</span>(<span class="str">"nCount_RNA"</span>, <span class="str">"percent.mt"</span>))
-
-<span class="comment"># SCTransform 已內建，這步可省略</span>
-pbmc &lt;- <span class="func">SCTransform</span>(pbmc, vars.to.regress = <span class="str">"percent.mt"</span>)
-</pre></div>
-  </div>
-</section>
-
-<section class="section">
-  <span class="section-label">參考 / References</span>
-  <ul class="refs-list">
-    <li><div class="ref-title">Stuart, T. et al. (2019). Seurat v3.</div><div class="ref-meta">Cell 177. <a href="https://doi.org/10.1016/j.cell.2019.05.031">10.1016/j.cell.2019.05.031</a></div></li>
-    <li><div class="ref-title">Choudhary, S. &amp; Satija, R. (2022). Comparison and evaluation of statistical error models for scRNA-seq.</div><div class="ref-meta">Genome Biology 23. <a href="https://doi.org/10.1186/s13059-021-02584-9">10.1186/s13059-021-02584-9</a></div></li>
+  <a href="../index.html" class="top-nav-brand">
+    <span>🧬</span>
+    <span data-lang="zh">scRNA-seq 進階數學</span>
+    <span data-lang="en">scRNA-seq Advanced Math</span>
+    <span class="badge-math">MATH</span>
+  </a>
+  <ul class="top-nav-links">
+    <li class="dropdown"><a href="../index.html#M1">M1</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">基礎 / FOUNDATIONS</li>
+        <li><a href="../M1-foundations/1.1-sparse-matrix.html">1.1 稀疏矩陣 / Sparse Matrix</a></li>
+        <li><a href="../M1-foundations/1.2-count-distributions.html">1.2 計數分布 / Count Distributions</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M2" class="active">M2</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">前處理 / PREPROCESSING</li>
+        <li><a href="2.1-qc-statistics.html">2.1 QC 統計</a></li>
+        <li><a href="2.2-normalization.html">2.2 Normalization</a></li>
+        <li><a href="2.3-hvg-selection.html">2.3 HVG 選擇</a></li>
+        <li><a href="2.4-scaling.html" class="active-sub">2.4 Scaling ⭐ (本頁)</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M3">M3</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">降維 / DIM. REDUCTION</li>
+        <li><a href="../M3-dimreduction/3.1-pca.html">3.1 PCA</a></li>
+        <li><a href="../M3-dimreduction/3.2-tsne.html">3.2 t-SNE</a></li>
+        <li><a href="../M3-dimreduction/3.3-umap.html">3.3 UMAP</a></li>
+        <li><a href="../M3-dimreduction/3.4-diffusion-map.html">3.4 Diffusion Maps</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M4">M4</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">圖與聚類 / GRAPH &amp; CLUSTERING</li>
+        <li><a href="../M4-graph-clustering/4.1-knn-graph.html">4.1 KNN Graph + HNSW</a></li>
+        <li><a href="../M4-graph-clustering/4.2-louvain-leiden.html">4.2 Louvain &amp; Leiden</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M5">M5</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">統計推論 / STATS</li>
+        <li><a href="../M5-statistics/5.1-de-tests.html">5.1 DE 檢定</a></li>
+        <li><a href="../M5-statistics/5.2-multiple-testing.html">5.2 多重檢定 / FDR</a></li>
+        <li><a href="../M5-statistics/5.3-classifier.html">5.3 細胞分類器</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M6">M6</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">進階 / ADVANCED</li>
+        <li><a href="../M6-advanced/6.1-integration.html">6.1 Integration</a></li>
+        <li><a href="../M6-advanced/6.2-pseudotime.html">6.2 Pseudotime</a></li>
+        <li><a href="../M6-advanced/6.3-cellchat.html">6.3 CellChat</a></li>
+      </ul></li>
+    <li><a href="../index.html"><span data-lang="zh">🏠 回首頁</span><span data-lang="en">🏠 Home</span></a></li>
   </ul>
-</section>
+  <div class="lang-switch">
+    <button data-lang-btn="zh" class="active">中文</button>
+    <button data-lang-btn="en">EN</button>
+  </div>
+</div></nav>
 
-<div class="cross-links">
-  <a href="2.3-hvg-selection.html" class="cross-link"><div class="cross-label" data-lang="zh">← 上一篇</div><div class="cross-label" data-lang="en">← PREV</div><div class="cross-title"><span class="cross-id">M2.3</span> HVG</div></a>
-  <a href="../PCA/PCA_互動教材.html" class="cross-link"><div class="cross-label" data-lang="zh">降維 →</div><div class="cross-label" data-lang="en">DIM. REDUCTION →</div><div class="cross-title"><span class="cross-id">M3.1</span> PCA ⭐</div></a>
+<div class="wrap">
+
+<div class="nav-pages">
+  <span class="label" data-lang="zh">本頁章節</span><span class="label" data-lang="en">CHAPTERS</span>
+  <a href="#s0"><span data-lang="zh">§0 故事</span><span data-lang="en">§0 Story</span></a>
+  <a href="#s1"><span data-lang="zh">§1 中心化幾何</span><span data-lang="en">§1 Centering geometry</span></a>
+  <a href="#s2"><span data-lang="zh">§2 z-score</span><span data-lang="en">§2 z-score</span></a>
+  <a href="#s3"><span data-lang="zh">§3 互動 PCA</span><span data-lang="en">§3 Interactive PCA</span></a>
+  <a href="#s4"><span data-lang="zh">§4 為何 unit var</span><span data-lang="en">§4 Why unit variance</span></a>
+  <a href="#s5"><span data-lang="zh">§5 regress-out</span><span data-lang="en">§5 regress-out</span></a>
+  <a href="#s6"><span data-lang="zh">§6 ComBat / Harmony</span><span data-lang="en">§6 ComBat / Harmony</span></a>
+  <a href="#s7"><span data-lang="zh">§7 串起</span><span data-lang="en">§7 Wrap-up</span></a>
 </div>
 
-</main>
-<footer class="site-footer"><p>© Charlene</p></footer>
+<header class="cover">
+  <div class="badge"><span data-lang="zh">深入互動版 · 從直覺到數學</span><span data-lang="en">Deep Interactive · From Intuition to Math</span></div>
+  <h1 data-lang="zh">Scaling：z-score 與 regress-out</h1>
+  <h1 data-lang="en">Scaling: z-score and regress-out</h1>
+  <div class="sub" data-lang="zh">
+    PCA 在尋找「最大變異方向」時，<b>絕對量級大的基因會壟斷答案</b>。
+    一個高表現但變異一般的基因，原本 σ ≈ 5；另一個重要 marker 但變異稍微小一點，σ ≈ 1。
+    PCA 看絕對 σ，第一個會被當主軸——但你真正想要的方向其實在第二個。<br><br>
+    Scaling = z-score 把所有 HVG 拉成「σ = 1」，PCA 才能<b>公平比較</b>。
+    這節用幾何互動圖解釋：先中心化（拉到原點）、再除以 σ。
+    最後談 regress-out 怎麼從輸入中移除已知干擾（總 counts、MT%）。
+  </div>
+  <div class="sub" data-lang="en">
+    PCA finds "maximum variance direction" — but <b>genes with larger absolute magnitudes hijack the answer</b>.
+    A highly-expressed but moderately-variable gene might have σ ≈ 5; an important marker with slightly smaller σ ≈ 1.
+    PCA picks the first as principal axis — but you actually want the second.<br><br>
+    Scaling = z-score brings all HVGs to σ = 1, so PCA can <b>compare fairly</b>.
+    This section explains the geometry: first center (pull to origin), then divide by σ.
+    Finally, regress-out removes known nuisances (total counts, MT%) from input.
+  </div>
+</header>
+
+<div class="toc">
+  <h4 data-lang="zh">目錄</h4>
+  <h4 data-lang="en">Table of Contents</h4>
+  <ol start="0">
+    <li><a href="#s0"><span data-lang="zh">故事：兩個基因的量級不同會發生什麼</span><span data-lang="en">Story: what if two genes have different scales</span></a><span class="new" data-lang="zh">新增</span><span class="new" data-lang="en">NEW</span></li>
+    <li><a href="#s1"><span data-lang="zh">中心化的幾何意義</span><span data-lang="en">Geometry of centering</span></a></li>
+    <li><a href="#s2"><span data-lang="zh">z-score 的數學</span><span data-lang="en">z-score math</span></a></li>
+    <li><a href="#s3"><span data-lang="zh">互動：拉 scaling 看 PCA 怎麼改變</span><span data-lang="en">Interactive: scaling vs PCA result</span></a><span class="new" data-lang="zh">核心</span><span class="new" data-lang="en">CORE</span></li>
+    <li><a href="#s4"><span data-lang="zh">為什麼要 unit variance</span><span data-lang="en">Why unit variance</span></a></li>
+    <li><a href="#s5"><span data-lang="zh">regress-out：移除已知干擾</span><span data-lang="en">regress-out: remove known confounders</span></a></li>
+    <li><a href="#s6"><span data-lang="zh">與 ComBat / Harmony 的對應</span><span data-lang="en">Connection to ComBat / Harmony</span></a></li>
+    <li><a href="#s7"><span data-lang="zh">串起 + 限制</span><span data-lang="en">Wrap-up + limits</span></a></li>
+  </ol>
+</div>
+
+<h2 id="s0"><span class="num">§0</span> <span data-lang="zh">故事：兩個基因的量級不同會發生什麼</span><span data-lang="en">Story: what if two genes have different scales</span></h2>
+
+<p class="lead" data-lang="zh">
+  想像 2D 空間：每個細胞由 2 個基因表達定位，
+  Gene1（高表現家管基因，σ=5）跟 Gene2（細胞型態 marker，σ=1）。
+  你會發現點雲是個<b>扁長的橢圓</b>——水平方向長 5 倍。
+</p>
+<p class="lead" data-lang="en">
+  Imagine 2D space: each cell positioned by 2 genes,
+  Gene1 (high-expression housekeeping, σ=5) and Gene2 (cell-type marker, σ=1).
+  The point cloud is a <b>stretched ellipse</b> — 5× longer horizontally.
+</p>
+
+<div class="card">
+  <h3 data-lang="zh">§0-1 不 scaling 的 PCA</h3>
+  <h3 data-lang="en">§0-1 PCA without scaling</h3>
+  <p data-lang="zh">PC1 找到的方向會是「橢圓的長軸」——也就是<b>水平</b>方向（Gene1 主導）。
+    可是 Gene1 是 housekeeping、根本不分細胞型態；真正帶資訊的 Gene2 卻被忽略。</p>
+  <p data-lang="en">PC1 picks the "ellipse's major axis" = <b>horizontal</b> (Gene1-dominated).
+    But Gene1 is housekeeping — useless for cell types. Informative Gene2 is ignored.</p>
+
+  <h3 data-lang="zh">§0-2 Scaling 後的 PCA</h3>
+  <h3 data-lang="en">§0-2 PCA after scaling</h3>
+  <p data-lang="zh">把兩個基因都拉成 σ=1 後，點雲變成<b>近似圓形</b>，PCA 看到的「最大變異」變成<b>真正的細胞型態方向</b>。</p>
+  <p data-lang="en">After scaling both to σ=1, the cloud becomes roughly <b>circular</b>; PCA's max variance is now the <b>true cell-type direction</b>.</p>
+
+  <div class="callout idea">
+    <strong data-lang="zh">第一個 aha</strong><strong data-lang="en">First aha</strong>:
+    <span data-lang="zh">PCA 不能直接看「原本的 σ」，因為 σ 大不代表有資訊。Scaling 強制讓所有 gene 在 PCA 眼裡是「平等的」，PCA 才會找<b>結構</b>而不是<b>尺度</b>。</span>
+    <span data-lang="en">PCA can't take "raw σ" at face value — large σ ≠ informative. Scaling forces equality, so PCA finds <b>structure</b>, not <b>scale</b>.</span>
+  </div>
+</div>
+
+<h2 id="s1"><span class="num">§1</span> <span data-lang="zh">中心化的幾何意義</span><span data-lang="en">Geometry of centering</span></h2>
+
+<p data-lang="zh">Scaling 分兩步：中心化（centering）和 unit variance。我們先看中心化。</p>
+<p data-lang="en">Scaling has two steps: centering and unit variance. First centering.</p>
+
+<h3 data-lang="zh">1.1 數學上</h3>
+<h3 data-lang="en">1.1 Math</h3>
+
+<div class="math-block">
+  $$x'_{ij} = x_{ij} - \bar{x}_j, \quad \text{where } \bar{x}_j = \frac{1}{n} \sum_i x_{ij}$$
+  <div class="formula-caption" data-lang="zh">每個基因減掉它自己的 cell-mean</div>
+  <div class="formula-caption" data-lang="en">subtract each gene's own cell-mean</div>
+</div>
+
+<h3 data-lang="zh">1.2 為什麼 PCA 需要中心化?</h3>
+<h3 data-lang="en">1.2 Why does PCA need centering?</h3>
+
+<p data-lang="zh">PCA 的核心是「<b>共變異數矩陣</b>」$C = \frac{1}{n-1} X^T X$，
+這個公式只有在<b>中心化（mean = 0）</b>後才正確計算到變異。
+如果不中心化、直接做 SVD/eigen，<b>第一個 PC 會指向資料的「整體平均位置」</b>，而非變異方向。</p>
+<p data-lang="en">PCA's core is the <b>covariance matrix</b> $C = \frac{1}{n-1} X^T X$, valid only after <b>centering (mean = 0)</b>.
+Without centering, the first PC points to "overall mean position" rather than variance direction.</p>
+
+<div class="callout warn">
+  <strong data-lang="zh">注意</strong><strong data-lang="en">Note</strong>:
+  <span data-lang="zh">中心化 ≠ scaling。中心化只是「拉到原點」；scaling 還包含「除以 σ」。Scanpy <code class="inline">sc.pp.scale</code> 預設兩步都做。</span>
+  <span data-lang="en">centering ≠ scaling. Centering only "pulls to origin"; scaling also "divides by σ". Scanpy's <code class="inline">sc.pp.scale</code> defaults to both.</span>
+</div>
+
+<h2 id="s2"><span class="num">§2</span> <span data-lang="zh">z-score 的數學</span><span data-lang="en">z-score math</span></h2>
+
+<div class="math-block boxed">
+  $$z_{ij} = \frac{x_{ij} - \bar{x}_j}{\sigma_j}, \quad \sigma_j = \sqrt{\frac{1}{n-1} \sum_i (x_{ij} - \bar{x}_j)^2}$$
+  <div class="formula-caption" data-lang="zh">每個基因 z-score 標準化：mean = 0，σ = 1</div>
+  <div class="formula-caption" data-lang="en">z-score per gene: mean = 0, σ = 1</div>
+</div>
+
+<h3 data-lang="zh">2.1 性質</h3>
+<h3 data-lang="en">2.1 Properties</h3>
+<ul>
+  <li><span data-lang="zh">每個 gene 都變成 mean 0、σ 1。</span><span data-lang="en">Each gene now has mean 0, σ 1.</span></li>
+  <li><span data-lang="zh">細胞間「比較」變成「比較 z 值」——z = 2 表示「比此基因平均高 2σ」。</span><span data-lang="en">Cell comparison = comparing z-values. z = 2 means "2σ above this gene's mean".</span></li>
+  <li><span data-lang="zh">所有基因現在<b>單位一致</b>，PCA 公平比較。</span><span data-lang="en">All genes share the same unit — fair PCA.</span></li>
+</ul>
+
+<h3 data-lang="zh">2.2 為什麼還要 clip?</h3>
+<h3 data-lang="en">2.2 Why also clip?</h3>
+<p data-lang="zh">Scanpy 預設 <code class="inline">sc.pp.scale(adata, max_value=10)</code>——意思是把 z &gt; 10 的「離群細胞-基因組合」clip 在 10。
+為什麼？因為 scRNA-seq 偶爾會出現「極端高」的 outlier（單一細胞單一基因 count = 1000），z 可能高達 50+，這會讓 PCA 被這一個點主導。</p>
+<p data-lang="en">Scanpy defaults <code class="inline">sc.pp.scale(adata, max_value=10)</code> — clip z &gt; 10 at 10.
+Why? scRNA-seq occasionally has extreme outliers (single cell + gene count = 1000), z can hit 50+, hijacking PCA.</p>
+
+<h2 id="s3"><span class="num">§3</span> <span data-lang="zh">互動：拉 scaling 看 PCA 怎麼改變</span><span data-lang="en">Interactive: scaling vs PCA result</span></h2>
+
+<div class="card">
+  <p data-lang="zh">下方 2D 散佈圖：兩個基因（Gene1: σ 大、Gene2: σ 小）。拉滑桿改變兩基因的 σ 比例，紅線是 PCA 找的 PC1 方向。觀察：</p>
+  <p data-lang="en">2D scatter: Gene1 (large σ) and Gene2 (small σ). Drag σ ratio. Red arrow = PC1. Observe:</p>
+  <ul>
+    <li data-lang="zh"><b>不 scale</b>：PC1 跟著「σ 較大」的軸走</li>
+    <li data-lang="en"><b>without scaling</b>: PC1 follows the "larger σ" axis</li>
+    <li data-lang="zh"><b>scale 後</b>：PC1 永遠指向「真正的結構方向」（這裡 = 兩細胞群的差異）</li>
+    <li data-lang="en"><b>with scaling</b>: PC1 always points to the "true structural direction" (here: 2-cluster separation)</li>
+  </ul>
+  <div class="controls">
+    <label><span data-lang="zh">Gene1 的 σ</span><span data-lang="en">Gene1 σ</span>:
+      <input type="range" id="s3sigma" min="1" max="10" value="5" step="0.5"><span id="s3sigmaVal">5.0</span>
+    </label>
+    <label><span data-lang="zh">是否 scale</span><span data-lang="en">Scaling</span>:
+      <select id="s3scale">
+        <option value="no" data-lang="zh">不 scale</option>
+        <option value="no" data-lang="en">no</option>
+        <option value="yes" data-lang="zh">scale</option>
+        <option value="yes" data-lang="en">yes</option>
+      </select>
+    </label>
+  </div>
+  <svg class="canvas" id="s3svg" viewBox="0 0 800 460" width="100%"></svg>
+  <div class="stat-row">
+    <div class="item"><span class="lbl">PC1 angle</span><span class="lbl">PC1 angle</span><span class="val" id="s3angle">—</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">PC1 解釋變異</span><span class="lbl" data-lang="en">PC1 explained var</span><span class="val" id="s3var">—</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">PC1 抓到細胞型態?</span><span class="lbl" data-lang="en">PC1 captures cell type?</span><span class="val" id="s3hits">—</span></div>
+  </div>
+</div>
+
+<h2 id="s4"><span class="num">§4</span> <span data-lang="zh">為什麼要 unit variance</span><span data-lang="en">Why unit variance</span></h2>
+
+<p data-lang="zh">中心化是為了讓「PCA 的數學公式正確」；unit variance（除以 σ）是為了讓「<b>不同單位的特徵公平比較</b>」。</p>
+<p data-lang="en">Centering is for "correct PCA math"; unit variance is for "<b>fair comparison across different-scale features</b>".</p>
+
+<h3 data-lang="zh">4.1 一個極端例子</h3>
+<h3 data-lang="en">4.1 An extreme example</h3>
+<p data-lang="zh">假設你的 HVG 包含 GAPDH（高表現家管，count 平均 100）和 CD3D（marker，count 平均 5）。
+log normalize 後：GAPDH 變異 σ ≈ 1.5，CD3D 變異 σ ≈ 0.5。
+不 scale 時，PCA 會把 GAPDH 當主軸（σ 大 3 倍 → 變異大 9 倍）；scale 後，CD3D 跟 GAPDH 在 PCA 眼裡同等重要，PCA 開始找「細胞型態之間的差異」。</p>
+<p data-lang="en">Suppose HVGs include GAPDH (housekeeping, mean count 100) and CD3D (marker, mean count 5).
+After log normalize: GAPDH σ ≈ 1.5, CD3D σ ≈ 0.5.
+Without scaling, PCA prioritizes GAPDH (σ 3× → var 9×); after scaling, they're equally weighted, PCA finds cell-type structure.</p>
+
+<details>
+<summary data-lang="zh">▸ 進階：什麼時候<b>不</b>應該 scale?</summary>
+<summary data-lang="en">▸ Advanced: when <b>not</b> to scale?</summary>
+<p data-lang="zh">
+  Pearson residuals（5.2 章）已經把所有 gene variance 統一到 1，不需再 scale。
+  Scanpy 的 <code class="inline">sc.experimental.pp.normalize_pearson_residuals</code> 之後可以直接 PCA。
+</p>
+<p data-lang="en">
+  Pearson residuals (§5.2) already normalize variance to 1 — no further scaling needed.
+  After <code class="inline">sc.experimental.pp.normalize_pearson_residuals</code>, go directly to PCA.
+</p>
+</details>
+
+<h2 id="s5"><span class="num">§5</span> <span data-lang="zh">regress-out：移除已知干擾</span><span data-lang="en">regress-out: remove known confounders</span></h2>
+
+<p data-lang="zh">
+  即使做了 QC + normalization，每個細胞還是有「殘留的 total_counts 差異」、「MT% 差異」、「cell cycle 階段」這些「<b>已知</b>的干擾變數」。
+  Regress-out 對每個 gene 做迴歸：</p>
+<p data-lang="en">
+  Even after QC + normalize, each cell still has "residual total_counts variation", "MT% variation", "cell cycle phase" — known confounders.
+  Regress-out fits per-gene regression:
+</p>
+
+<div class="math-block boxed">
+  $$x_{ij} = \alpha_j + \beta_j \cdot c_i + \varepsilon_{ij}, \quad \text{output: } \varepsilon_{ij} = x_{ij} - \alpha_j - \beta_j \cdot c_i$$
+  <div class="formula-caption" data-lang="zh">$c_i$ 是 confounder（如 total_counts），output 就是 residual</div>
+  <div class="formula-caption" data-lang="en">$c_i$ is the confounder (e.g., total_counts), output is the residual</div>
+</div>
+
+<h3 data-lang="zh">5.1 兩個常用 confounders</h3>
+<h3 data-lang="en">5.1 Two common confounders</h3>
+
+<table class="compare">
+  <tr><th>confounder</th><th>confounder</th>
+      <th data-lang="zh">解決什麼</th><th data-lang="en">Solves what</th></tr>
+  <tr><td><code class="inline">total_counts</code></td><td><code class="inline">total_counts</code></td>
+      <td data-lang="zh">normalize 後仍殘留的 depth 差異</td>
+      <td data-lang="en">residual depth variation after normalize</td></tr>
+  <tr><td><code class="inline">pct_counts_mt</code></td><td><code class="inline">pct_counts_mt</code></td>
+      <td data-lang="zh">細胞健康度的次要影響</td>
+      <td data-lang="en">subtle cell-health effects</td></tr>
+  <tr><td>S_score, G2M_score</td><td>S_score, G2M_score</td>
+      <td data-lang="zh">細胞週期階段引入的變異</td>
+      <td data-lang="en">cell-cycle phase variation</td></tr>
+</table>
+
+<div class="callout warn">
+  <strong data-lang="zh">慎用</strong><strong data-lang="en">Use cautiously</strong>:
+  <span data-lang="zh">如果 confounder 跟生物訊號相關（例如某細胞型態本身高 MT%），regress-out 會把<b>真實生物訊號也吸掉</b>。</span>
+  <span data-lang="en">If confounder correlates with biology (e.g., a cell type with truly high MT%), regress-out <b>also strips real biology</b>.</span>
+</div>
+
+<h2 id="s6"><span class="num">§6</span> <span data-lang="zh">與 ComBat / Harmony 的對應</span><span data-lang="en">Connection to ComBat / Harmony</span></h2>
+
+<p data-lang="zh">Regress-out 處理「<b>每細胞的連續 confounder</b>」（如 total_counts）。ComBat / Harmony 處理「<b>批次效應</b>」（離散的批次標籤）。三者本質是「<b>從 PCA 看到的方向中移除已知雜訊</b>」這個任務的不同變形：</p>
+<p data-lang="en">Regress-out handles <b>per-cell continuous confounders</b> (e.g., total_counts). ComBat/Harmony handle <b>batch effects</b> (discrete batch labels). All three solve "<b>remove known noise from PCA directions</b>" in different forms:</p>
+
+<table class="compare">
+  <tr><th data-lang="zh">方法</th><th data-lang="en">Method</th>
+      <th data-lang="zh">針對</th><th data-lang="en">Target</th>
+      <th data-lang="zh">何時用</th><th data-lang="en">When to use</th></tr>
+  <tr><td>regress-out</td><td>regress-out</td>
+      <td data-lang="zh">連續 confounder</td><td data-lang="en">continuous</td>
+      <td data-lang="zh">total_counts, MT%, cell cycle</td>
+      <td data-lang="en">total_counts, MT%, cell cycle</td></tr>
+  <tr><td>ComBat</td><td>ComBat</td>
+      <td data-lang="zh">離散 batch</td><td data-lang="en">discrete batch</td>
+      <td data-lang="zh">多個 lab、多次實驗</td>
+      <td data-lang="en">multi-lab, multi-experiment</td></tr>
+  <tr><td>Harmony</td><td>Harmony</td>
+      <td data-lang="zh">PCA 空間中校正 batch</td><td data-lang="en">batch correction in PCA space</td>
+      <td data-lang="zh">大資料、流程中段</td>
+      <td data-lang="en">large data, mid-pipeline</td></tr>
+</table>
+
+<h2 id="s7"><span class="num">§7</span> <span data-lang="zh">串起 + 限制</span><span data-lang="en">Wrap-up + limits</span></h2>
+
+<pre class="code"><span class="k">import</span> scanpy <span class="k">as</span> sc
+
+<span class="c"># after HVG selection ...</span>
+
+<span class="c"># Option A: regress-out before scale</span>
+sc.pp.regress_out(adata, [<span class="s">"total_counts"</span>, <span class="s">"pct_counts_mt"</span>])
+
+<span class="c"># Then z-score + clip at 10</span>
+sc.pp.scale(adata, max_value=<span class="n">10</span>)
+
+<span class="c"># Now PCA on a "clean" matrix</span>
+sc.tl.pca(adata, n_comps=<span class="n">50</span>)
+
+<span class="c"># Optional: batch correction in PCA space</span>
+<span class="k">import</span> scanpy.external <span class="k">as</span> sce
+sce.pp.harmony_integrate(adata, key=<span class="s">"sample"</span>)</pre>
+
+<h3 data-lang="zh">7.1 限制</h3>
+<h3 data-lang="en">7.1 Limitations</h3>
+<table class="compare">
+  <tr><th data-lang="zh">限制</th><th data-lang="en">Limitation</th>
+      <th data-lang="zh">後果</th><th data-lang="en">Consequence</th>
+      <th data-lang="zh">緩解</th><th data-lang="en">Mitigation</th></tr>
+  <tr>
+    <td data-lang="zh">scaling 把所有 σ 拉成 1，可能放大噪音</td>
+    <td data-lang="en">scaling forces σ=1, can amplify noise</td>
+    <td data-lang="zh">低變異基因被「升等」，PCA 看到雜訊</td>
+    <td data-lang="en">low-variance genes get "promoted", PCA sees noise</td>
+    <td data-lang="zh">先 HVG 篩選後再 scale</td>
+    <td data-lang="en">HVG-filter before scaling</td>
+  </tr>
+  <tr>
+    <td data-lang="zh">regress-out 是線性的，無法移除非線性 confounder</td>
+    <td data-lang="en">regress-out is linear, can't remove nonlinear confounders</td>
+    <td data-lang="zh">複雜批次效應殘留</td>
+    <td data-lang="en">complex batch effects remain</td>
+    <td data-lang="zh">用 Harmony / scVI / scANVI</td>
+    <td data-lang="en">use Harmony / scVI / scANVI</td>
+  </tr>
+  <tr>
+    <td data-lang="zh">scaling 是 dense matrix（記憶體膨脹）</td>
+    <td data-lang="en">scaled matrix becomes dense</td>
+    <td data-lang="zh">大資料時記憶體不夠</td>
+    <td data-lang="en">RAM issues on large data</td>
+    <td data-lang="zh">隨 PCA 用 lazy scaling, partial_fit</td>
+    <td data-lang="en">use lazy scaling, partial_fit with PCA</td>
+  </tr>
+</table>
+
+<div class="callout prog">
+  <strong data-lang="zh">下一步</strong><strong data-lang="en">Next</strong>:
+  <span data-lang="zh">Scaling 完成 → <a href="../M3-dimreduction/3.1-pca.html"><b>M3.1 PCA</b></a> 終於可以執行，PCA 找的方向才會是<b>真正的細胞型態方向</b>。</span>
+  <span data-lang="en">After scaling → <a href="../M3-dimreduction/3.1-pca.html"><b>M3.1 PCA</b></a> finally runs, finding <b>true cell-type directions</b>.</span>
+</div>
+
+<p class="footer">
+  <span data-lang="zh">© scRNA-seq Advanced Math · M2.4 Scaling Deep Interactive</span>
+  <span data-lang="en">© scRNA-seq Advanced Math · M2.4 Scaling Deep Interactive</span>
+</p>
+
+</div>
+
 <script src="../i18n.js"></script>
-<script>function switchTab(b,id){const p=b.closest(".code-tabs");p.querySelectorAll(".code-tab-btn").forEach(x=>x.classList.remove("active"));p.querySelectorAll(".code-tab-content").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(id).classList.add("active");}</script>
-</body></html>
+<script>
+// ===== §3 PCA interactive =====
+(function(){
+  let seed = 31;
+  const rnd = ()=>{seed=(seed*9301+49297)%233280;return seed/233280;};
+  function nrnd(m,s){const u1=rnd(),u2=rnd();return m+s*Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);}
+  // two clusters separated mainly on Gene2 (true biological signal)
+  let pts = [];
+  function gen(){
+    seed = 31; pts = [];
+    for (let i = 0; i < 50; i++) pts.push({g1: nrnd(0, 1), g2: nrnd(-1, 0.5), cluster:'A'});
+    for (let i = 0; i < 50; i++) pts.push({g1: nrnd(0, 1), g2: nrnd(1, 0.5), cluster:'B'});
+  }
+  gen();
+  function draw(){
+    const sg1 = +document.getElementById('s3sigma').value;
+    const doScale = document.getElementById('s3scale').value;
+    document.getElementById('s3sigmaVal').textContent = sg1.toFixed(1);
+    const xy = pts.map(p => ({x: p.g1 * sg1, y: p.g2, cluster: p.cluster}));
+    // center
+    const mx = xy.reduce((a,b)=>a+b.x,0)/xy.length;
+    const my = xy.reduce((a,b)=>a+b.y,0)/xy.length;
+    let pts2 = xy.map(p => ({x: p.x-mx, y: p.y-my, cluster: p.cluster}));
+    let sx = Math.sqrt(pts2.map(p=>p.x*p.x).reduce((a,b)=>a+b,0)/pts2.length);
+    let sy = Math.sqrt(pts2.map(p=>p.y*p.y).reduce((a,b)=>a+b,0)/pts2.length);
+    if (doScale === 'yes') {
+      pts2 = pts2.map(p => ({x: p.x/sx, y: p.y/sy, cluster: p.cluster}));
+      sx = 1; sy = 1;
+    }
+    // covariance matrix
+    const cxx = pts2.map(p=>p.x*p.x).reduce((a,b)=>a+b,0)/pts2.length;
+    const cyy = pts2.map(p=>p.y*p.y).reduce((a,b)=>a+b,0)/pts2.length;
+    const cxy = pts2.map(p=>p.x*p.y).reduce((a,b)=>a+b,0)/pts2.length;
+    // eigen of 2x2
+    const tr = cxx + cyy, det = cxx*cyy - cxy*cxy;
+    const disc = Math.sqrt(tr*tr/4 - det);
+    const l1 = tr/2 + disc, l2 = tr/2 - disc;
+    let v1x, v1y;
+    if (Math.abs(cxy) > 1e-9) { v1x = cxy; v1y = l1 - cxx; }
+    else { v1x = 1; v1y = 0; }
+    const norm = Math.sqrt(v1x*v1x + v1y*v1y);
+    v1x /= norm; v1y /= norm;
+    const angle = Math.atan2(v1y, v1x) * 180 / Math.PI;
+    const expVar = l1 / (l1 + l2);
+    // check if PC1 captures cluster axis (g2 direction)
+    // cluster vector = (0, 1) → cos angle with PC1
+    const cosWithY = Math.abs(v1y);
+    const hits = cosWithY > 0.7 ? '✅' : '❌';
+    document.getElementById('s3angle').textContent = angle.toFixed(1) + '°';
+    document.getElementById('s3var').textContent = (expVar*100).toFixed(1) + '%';
+    document.getElementById('s3hits').textContent = hits;
+    // draw
+    const W = 800, H = 460;
+    const xs = pts2.map(p=>p.x), ys = pts2.map(p=>p.y);
+    const xMin = Math.min(...xs)*1.1, xMax = Math.max(...xs)*1.1;
+    const yMin = Math.min(...ys)*1.1, yMax = Math.max(...ys)*1.1;
+    const X = x => 70 + (x-xMin)/(xMax-xMin) * 700;
+    const Y = y => 420 - (y-yMin)/(yMax-yMin) * 380;
+    let s = '';
+    s += `<line class="axis" x1="70" y1="420" x2="770" y2="420"/>`;
+    s += `<line class="axis" x1="70" y1="40" x2="70" y2="420"/>`;
+    s += `<text class="lbl" x="420" y="445" text-anchor="middle" font-weight="700">Gene1 (centered${doScale==='yes'?', scaled':''})</text>`;
+    s += `<text class="lbl" x="30" y="230" text-anchor="middle" font-weight="700" transform="rotate(-90 30 230)">Gene2 (centered${doScale==='yes'?', scaled':''})</text>`;
+    // points
+    pts2.forEach(p => {
+      const fill = p.cluster === 'A' ? '#2c5aa0' : '#27795a';
+      s += `<circle cx="${X(p.x)}" cy="${Y(p.y)}" r="4" fill="${fill}" opacity="0.7"/>`;
+    });
+    // PC1 arrow (from center)
+    const cx = X(0), cy = Y(0);
+    const len = Math.min(300, Math.max(xMax-xMin, yMax-yMin) * 40);
+    const dx = v1x * len, dy = -v1y * len; // SVG y inverted
+    s += `<defs><marker id="arr" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><polygon points="0 0, 10 3, 0 6" fill="#c0392b"/></marker></defs>`;
+    s += `<line x1="${cx}" y1="${cy}" x2="${cx+dx}" y2="${cy+dy}" stroke="#c0392b" stroke-width="3" marker-end="url(#arr)"/>`;
+    s += `<line x1="${cx}" y1="${cy}" x2="${cx-dx}" y2="${cy-dy}" stroke="#c0392b" stroke-width="3" opacity="0.4"/>`;
+    s += `<text class="lbl" x="${cx+dx+10}" y="${cy+dy}" fill="#c0392b" font-weight="700">PC1</text>`;
+    // legend
+    s += `<g transform="translate(580, 50)">`;
+    s += `<rect x="0" y="0" width="180" height="70" fill="#fff" stroke="#ddd"/>`;
+    s += `<circle cx="14" cy="14" r="5" fill="#2c5aa0"/><text class="lbl" x="26" y="18">Cell type A</text>`;
+    s += `<circle cx="14" cy="34" r="5" fill="#27795a"/><text class="lbl" x="26" y="38">Cell type B</text>`;
+    s += `<line x1="6" y1="56" x2="26" y2="56" stroke="#c0392b" stroke-width="3"/><text class="lbl" x="32" y="60">PC1 direction</text>`;
+    s += `</g>`;
+    document.getElementById('s3svg').innerHTML = s;
+  }
+  document.getElementById('s3sigma').addEventListener('input', draw);
+  document.getElementById('s3scale').addEventListener('change', draw);
+  draw();
+})();
+</script>
+</body>
+</html>

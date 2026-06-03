@@ -1,125 +1,707 @@
 <!DOCTYPE html>
-<html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>6.1 Integration · Harmony — scRNA-seq Advanced Math</title><link rel="stylesheet" href="../styles.css">
-<script>MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] } };</script>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>6.1 Integration：Harmony / BBKNN / scVI — Deep Interactive</title>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
-</head><body>
+<style>
+  :root {
+    --bg: #fafaf7; --fg: #1a1a1a; --muted: #666;
+    --accent: #c0392b; --accent2: #2c5aa0;
+    --green: #27795a; --purple: #8e44ad; --yellow: #f0c419;
+    --emerald: #047857;
+    --card: #ffffff; --border: #e0e0d8; --code: #f4f1ea;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Helvetica Neue", "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif; background: var(--bg); color: var(--fg); line-height: 1.75; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 40px 28px 120px; }
+  header.cover { margin: 20px 0 60px; padding: 52px 40px;
+    background: linear-gradient(135deg, #022c22 0%, #047857 55%, #6ee7b7 100%);
+    color: #fff; border-radius: 16px; box-shadow: 0 14px 40px rgba(2,44,34,0.18); }
+  header.cover h1 { margin: 0 0 14px; font-size: 36px; }
+  header.cover .sub { font-size: 17px; opacity: 0.92; line-height: 1.65; }
+  header.cover .badge { display: inline-block; background: rgba(255,255,255,0.18);
+    padding: 4px 12px; border-radius: 20px; font-size: 13px; margin-bottom: 16px; }
+  h2 { margin-top: 70px; padding-bottom: 8px; border-bottom: 3px solid var(--emerald);
+    font-size: 26px; display: flex; align-items: baseline; gap: 12px; }
+  h2 .num { color: var(--emerald); font-weight: 800; font-size: 20px; }
+  h3 { margin-top: 36px; font-size: 19px; color: var(--accent2); }
+  h4 { margin-top: 22px; font-size: 16px; color: var(--accent); }
+  p { margin: 14px 0; }
+  .lead { font-size: 17px; color: #2a2a2a; }
+  .callout { background: #fff8e6; border-left: 4px solid var(--yellow); padding: 14px 18px; border-radius: 6px; margin: 22px 0; }
+  .callout.idea { background: #eaf4ff; border-left-color: var(--accent2); }
+  .callout.warn { background: #fdecec; border-left-color: var(--accent); }
+  .callout.bio  { background: #effaf3; border-left-color: var(--green); }
+  .callout.prog { background: #d1fae5; border-left-color: var(--emerald); }
+  .card { background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px 26px; margin: 26px 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+  .card h3 { margin-top: 0; }
+  .controls { display: flex; flex-wrap: wrap; gap: 14px 22px;
+    align-items: center; margin: 14px 0; padding: 12px 16px;
+    background: #f4f1ea; border-radius: 8px; font-size: 14px; }
+  .controls label { display: flex; align-items: center; gap: 8px; }
+  button { background: var(--emerald); color: #fff; border: 0;
+    padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 14px;
+    font-family: inherit; }
+  button:hover { background: #064e3b; }
+  button.ghost { background: #fff; color: var(--emerald); border: 1px solid var(--emerald); }
+  input[type="range"] { width: 180px; vertical-align: middle; }
+  svg.canvas { background: #fcfcfa; border: 1px solid var(--border); border-radius: 8px; display: block; }
+  svg.canvas .axis { stroke: #bbb; stroke-width: 1; }
+  svg.canvas .grid { stroke: #ececea; stroke-width: 0.5; }
+  svg.canvas text.lbl { font-size: 12px; fill: #333; }
+  .stat-row { display: flex; flex-wrap: wrap; gap: 22px; margin: 14px 0; font-size: 14px; }
+  .stat-row .item { display: flex; flex-direction: column; }
+  .stat-row .item .lbl { color: var(--muted); font-size: 12px; }
+  .stat-row .item .val { font-family: "JetBrains Mono", monospace; font-size: 18px; }
+  details { margin: 16px 0; }
+  details summary { cursor: pointer; font-weight: 600; color: var(--accent2); padding: 6px 0; }
+  .toc { background: #fff; border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 28px; margin: 30px 0; }
+  .toc h4 { margin: 0 0 10px; color: var(--emerald); }
+  .toc ol { margin: 6px 0; padding-left: 24px; line-height: 1.9; }
+  .toc a { color: var(--accent2); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .toc .new { background: var(--emerald); color: #fff; font-size: 11px;
+    padding: 1px 8px; border-radius: 10px; margin-left: 6px; }
+  code.inline { background: var(--code); padding: 2px 6px; border-radius: 4px;
+    font-size: 13px; font-family: "JetBrains Mono", "Consolas", monospace; }
+  pre.code { background: #1e1e1e; color: #dcdcdc;
+    padding: 14px 18px; border-radius: 8px; overflow-x: auto; font-size: 13px;
+    font-family: "JetBrains Mono", "Consolas", monospace; line-height: 1.55; }
+  pre.code .k { color: #569cd6; }
+  pre.code .s { color: #ce9178; }
+  pre.code .c { color: #6a9955; }
+  pre.code .n { color: #b5cea8; }
+  table.compare { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.compare th, table.compare td { border: 1px solid var(--border); padding: 8px 12px; }
+  table.compare th { background: #f4f1ea; text-align: left; }
+  .math-block { background: #fff; border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 18px; margin: 18px 0; }
+  .math-block.boxed { border: 2px solid var(--emerald); background: #d1fae5; }
+  .formula-caption { font-size: 12.5px; color: var(--muted); text-align: center; margin-top: 6px; }
+  .footer { text-align: center; color: var(--muted); margin-top: 80px; font-size: 13px; }
+  .top-nav { background: #022c22; color: #fff; padding: 14px 28px;
+    position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(2,44,34,0.25); }
+  .top-nav-inner { max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; gap: 28px; }
+  .top-nav-brand { color: #fff; text-decoration: none;
+    font-weight: 700; font-size: 17px;
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .top-nav-brand .badge-math { background: #047857; color: #fff;
+    padding: 3px 9px; border-radius: 4px; font-size: 11px; }
+  .top-nav-links { list-style: none; margin: 0; padding: 0;
+    display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+  .top-nav-links a { color: #a7f3d0; text-decoration: none;
+    padding: 6px 11px; border-radius: 6px; font-size: 13px; font-weight: 500;
+    transition: 0.2s; }
+  .top-nav-links a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .top-nav-links a.active { background: #047857; color: #fff; }
+  .top-nav-links li.dropdown { position: relative; }
+  .top-nav-links li.dropdown > a::after { content: ' ▾';
+    font-size: 10px; opacity: 0.7; margin-left: 3px;
+    display: inline-block; transition: transform 0.2s; }
+  .top-nav-links li.dropdown:hover > a::after,
+  .top-nav-links li.dropdown.open > a::after { transform: rotate(180deg); }
+  .top-nav-links .dropdown-menu { display: none; position: absolute; top: 100%; left: 0;
+    background: #064e3b; border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px; padding: 6px 0; min-width: 230px;
+    list-style: none; z-index: 200;
+    box-shadow: 0 8px 28px rgba(2,44,34,0.5); margin: 6px 0 0; }
+  .top-nav-links li.dropdown:hover > .dropdown-menu,
+  .top-nav-links li.dropdown.open > .dropdown-menu { display: block; }
+  .top-nav-links .dropdown-menu li { display: block; }
+  .top-nav-links .dropdown-menu li a { display: block; padding: 9px 18px;
+    border-radius: 0; font-size: 13px; white-space: nowrap; color: #a7f3d0; }
+  .top-nav-links .dropdown-menu li a:hover { background: rgba(4,120,87,0.3); color: #fff; }
+  .top-nav-links .dropdown-menu li a.active-sub { background: #047857; color: #fff; font-weight: 700; }
+  .top-nav-links .dropdown-menu .sub-label { font-size: 10px; color: #6ee7b7;
+    letter-spacing: 1px; padding: 4px 18px 2px; text-transform: uppercase; }
+  .lang-switch { display: flex; gap: 4px;
+    background: rgba(255,255,255,0.08); padding: 4px; border-radius: 6px; flex-shrink: 0; }
+  .lang-switch button { background: transparent; border: 0; color: #a7f3d0;
+    font-size: 12px; font-weight: 700; padding: 5px 10px;
+    border-radius: 4px; cursor: pointer; font-family: inherit; }
+  .lang-switch button.active { background: #047857; color: #fff; }
+  .nav-pages { display: flex; gap: 8px; margin: 24px 0; padding: 14px;
+    background: #064e3b; border-radius: 10px; align-items: center; flex-wrap: wrap; }
+  .nav-pages a { color: #a7f3d0; text-decoration: none;
+    padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600;
+    transition: 0.2s; }
+  .nav-pages a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .nav-pages .label { color: #6ee7b7; font-size: 11px;
+    letter-spacing: 1px; font-weight: 700; margin-right: 8px; }
+  [data-lang="en"] { display: none; }
+  body.lang-en [data-lang="zh"] { display: none; }
+  body.lang-en [data-lang="en"] { display: initial; }
+  body.lang-en h1[data-lang="en"], body.lang-en h2[data-lang="en"],
+  body.lang-en h3[data-lang="en"], body.lang-en h4[data-lang="en"],
+  body.lang-en p[data-lang="en"], body.lang-en div[data-lang="en"],
+  body.lang-en ol[data-lang="en"], body.lang-en ul[data-lang="en"] { display: block; }
+  body.lang-en li[data-lang="en"] { display: list-item; }
+  body.lang-en span[data-lang="en"] { display: inline; }
+  body.lang-en tspan[data-lang="en"] { display: inline; }
+</style>
+</head>
+<body>
+
 <nav class="top-nav"><div class="top-nav-inner">
-  <a href="../index.html" class="top-nav-brand"><span>🧬</span><span data-lang="zh">scRNA-seq 進階數學</span><span data-lang="en">scRNA-seq Advanced Math</span><span class="badge-math">MATH</span></a>
-  <ul class="top-nav-links"><li><a href="../index.html#M1">M1</a></li><li><a href="../index.html#M2">M2</a></li><li><a href="../index.html#M3">M3</a></li><li><a href="../index.html#M4">M4</a></li><li><a href="../index.html#M5">M5</a></li><li><a href="../index.html#M6" class="active">M6</a></li><li><a href="../index.html" data-lang="zh">🏠 回首頁</a><span data-lang="en">🏠 Home</span></li></ul>
-  <div class="lang-switch"><button data-lang-btn="zh" class="active">中文</button><button data-lang-btn="en">EN</button></div>
-</div></nav>
-<header class="page-hero"><div class="page-hero-inner">
-  <div class="page-badge">M6.1 · ADVANCED</div>
-  <h1 data-lang="zh">Integration · Harmony</h1><h1 data-lang="en">Integration · Harmony</h1>
-  <p class="subtitle" data-lang="zh">為什麼 batch effect 可以在 PCA 空間用「軟分群 + 偏移修正」消除？CCA、MNN、Harmony 的數學。</p>
-  <p class="subtitle" data-lang="en">Why batch effects can be removed in PCA space via "soft clustering + shift correction". The math of CCA, MNN, Harmony.</p>
-</div></header>
-
-<main class="content-wrap">
-
-<section class="section">
-  <span class="section-label intuition">直覺 / Intuition</span>
-  <div data-lang="zh"><p>不同批次/平台/個體做的 scRNA-seq 會產生「<b>同細胞型態被分成兩堆</b>」的人為效應（batch effect）。整合（integration）就是要消除這個。</p>
-    <p>核心想法：<b>在低維空間裡，找到「同一細胞型態的不同 batch 細胞」，把它們拉在一起</b>。三大方法用不同數學工具達成這件事。</p></div>
-  <div data-lang="en"><p>Different batches/platforms/donors create artifact "<b>same cell type split into two clouds</b>". Integration removes this. Idea: in low-D, find same-type cells across batches and align them.</p></div>
-</section>
-
-<section class="section">
-  <span class="section-label math">核心數學 / Math</span>
-  <h3>① CCA (Canonical Correlation Analysis) <span data-lang="zh">— Seurat v2/v3</span></h3>
-  <p data-lang="zh">找兩個 batch 投影方向 $\mathbf{u}, \mathbf{v}$，最大化兩 batch 的「典型相關」：</p>
-  <p data-lang="en">Find projection directions $\mathbf{u}, \mathbf{v}$ maximizing canonical correlation:</p>
-  <div class="math-block">$$\max_{\mathbf{u}, \mathbf{v}} \frac{\mathbf{u}^\top \mathbf{X}_1^\top \mathbf{X}_2 \mathbf{v}}{\sqrt{(\mathbf{u}^\top \mathbf{X}_1^\top \mathbf{X}_1 \mathbf{u})(\mathbf{v}^\top \mathbf{X}_2^\top \mathbf{X}_2 \mathbf{v})}}$$</div>
-  <p data-lang="zh">CCA 找出「兩 batch 共有的變異方向」（生物訊號），忽略 batch 專屬變異。</p>
-  <p data-lang="en">CCA finds shared variation (biology), ignores batch-specific variation.</p>
-
-  <h3>② MNN (Mutual Nearest Neighbors) <span data-lang="zh">— Haghverdi 2018</span></h3>
-  <div class="math-block">$$\text{MNN}(i, j) \iff i \in \mathcal{N}_k^{(B_2)}(j) \,\wedge\, j \in \mathcal{N}_k^{(B_1)}(i)$$</div>
-  <p data-lang="zh">細胞 $i$（batch 1）跟細胞 $j$（batch 2）<b>互相</b>是對方的 KNN——它們很可能是同細胞型態。<br>
-  從 MNN 對計算「校正向量」：$\mathbf{c}_i = \frac{1}{|M_i|}\sum_{j \in M_i} (\mathbf{x}_j - \mathbf{x}_i)$，把 batch 1 拉向 batch 2。</p>
-  <p data-lang="en">Cells $i$ (batch 1) and $j$ (batch 2) are <b>mutually</b> KNN — likely same cell type. Compute correction vectors $\mathbf{c}_i = \frac{1}{|M_i|}\sum_{j \in M_i} (\mathbf{x}_j - \mathbf{x}_i)$.</p>
-
-  <h3>③ Harmony <span data-lang="zh">— Korsunsky 2019</span></h3>
-  <p data-lang="zh">在 PCA 空間迭代執行兩步：</p>
-  <p data-lang="en">Iterate two steps in PCA space:</p>
-
-  <div class="algo-block">
-<span class="step"># Step 1: soft clustering (modified k-means)</span>
-maximize Σ_k Σ_i R_{ik} · ⟨z_i, μ_k⟩
-       - σ Σ_i,k R_{ik} log R_{ik}              <span class="comment"># entropy regularization</span>
-       + θ Σ_b Σ_k R_{ik} · I(b_i = b)           <span class="comment"># diversity penalty</span>
-
-<span class="step"># Step 2: linear correction</span>
-<span class="keyword">for each</span> cluster k:
-    <span class="keyword">for each</span> batch b:
-        β_{k,b} = mean_{i ∈ k, batch b}(z_i) - mean_{i ∈ k}(z_i)
-        z_i ← z_i - R_{ik} · β_{k,b_i}     <span class="comment"># 對每個細胞做加權偏移</span>
-
-<span class="comment"># 迭代到收斂</span>
-  </div>
-
-  <p data-lang="zh"><b>關鍵巧思</b>：「diversity penalty」項 $\theta \sum_b R_{ik} \cdot I(b_i = b)$ 懲罰「某一 cluster 只屬於某一 batch」——強迫每個 cluster 內 batch 比例接近全局比例。<br>
-  Harmony 的整個算法都是<b>線性</b>的，速度極快（百萬細胞分鐘級）。</p>
-  <p data-lang="en"><b>Key trick</b>: diversity penalty $\theta \sum_b R_{ik} \cdot I(b_i = b)$ punishes "cluster dominated by one batch", forcing batch ratios to match global. Entire algorithm linear, very fast.</p>
-
-  <div class="callout callout-deep">
-    <strong data-lang="zh">📊 BBKNN — 圖層級整合</strong><strong data-lang="en">📊 BBKNN — graph-level integration</strong>
-    <p data-lang="zh">不修改 PCA 座標，而是<b>修改 KNN graph</b>：對每個細胞，<b>從每個 batch 各選 $k_{\text{batch}}$ 個近鄰</b>，強迫圖跨 batch 連結。最簡單最快的整合方法。</p>
-    <p data-lang="en">Doesn't modify PCA coords; instead modifies KNN graph: pick $k_{\text{batch}}$ nearest neighbors <b>per batch</b> for each cell. Forces cross-batch connections.</p>
-  </div>
-</section>
-
-<section class="section">
-  <span class="section-label">比較 / Comparison</span>
-  <table class="compare-table">
-    <tr><th></th><th>Seurat CCA</th><th>MNN</th><th>Harmony</th><th>BBKNN</th></tr>
-    <tr><td data-lang="zh">速度</td><td data-lang="en">Speed</td><td class="bad">慢</td><td class="meh">中</td><td class="good">快</td><td class="good">最快</td></tr>
-    <tr><td data-lang="zh">記憶體</td><td data-lang="en">Memory</td><td class="bad">高</td><td class="meh">中</td><td class="good">低</td><td class="good">低</td></tr>
-    <tr><td data-lang="zh">過度校正風險</td><td data-lang="en">Over-correction</td><td class="meh">中</td><td class="meh">中</td><td class="good">θ 可調</td><td class="meh">中</td></tr>
-    <tr><td data-lang="zh">百萬細胞</td><td data-lang="en">Million cells</td><td class="bad">不行</td><td class="meh">勉強</td><td class="good">可</td><td class="good">可</td></tr>
-  </table>
-</section>
-
-<section class="section">
-  <span class="section-label code">程式碼 / Code</span>
-  <div class="code-tabs"><div class="code-tab-btns"><button class="code-tab-btn active" onclick="switchTab(this,'py15')">Python</button><button class="code-tab-btn" onclick="switchTab(this,'r15')">R</button></div>
-    <div class="code-tab-content active" id="py15"><pre><span class="keyword">import</span> scanpy.external <span class="keyword">as</span> sce
-sce.pp.harmony_integrate(adata, key=<span class="str">"batch"</span>)
-sc.pp.neighbors(adata, use_rep=<span class="str">"X_pca_harmony"</span>)
-
-<span class="comment"># BBKNN</span>
-sce.pp.bbknn(adata, batch_key=<span class="str">"batch"</span>)
-</pre></div>
-    <div class="code-tab-content" id="r15"><pre><span class="keyword">library</span>(harmony)
-pbmc &lt;- <span class="func">RunHarmony</span>(pbmc, group.by.vars = <span class="str">"batch"</span>)
-pbmc &lt;- <span class="func">FindNeighbors</span>(pbmc, reduction = <span class="str">"harmony"</span>, dims = <span class="num">1</span>:<span class="num">30</span>)
-
-<span class="comment"># Seurat CCA-based</span>
-list &lt;- <span class="func">SplitObject</span>(pbmc, split.by = <span class="str">"batch"</span>)
-anchors &lt;- <span class="func">FindIntegrationAnchors</span>(list, dims = <span class="num">1</span>:<span class="num">30</span>)
-integrated &lt;- <span class="func">IntegrateData</span>(anchors)
-</pre></div>
-  </div>
-</section>
-
-<section class="section">
-  <span class="section-label">參考 / References</span>
-  <ul class="refs-list">
-    <li><div class="ref-title">Korsunsky, I. et al. (2019). Fast, sensitive and accurate integration of single-cell data with Harmony.</div><div class="ref-meta">Nat Methods 16. <a href="https://doi.org/10.1038/s41592-019-0619-0">10.1038/s41592-019-0619-0</a></div></li>
-    <li><div class="ref-title">Haghverdi, L., Lun, A.T.L., Morgan, M.D., Marioni, J.C. (2018). Batch effects in scRNA-seq corrected by MNN.</div><div class="ref-meta">Nat Biotech 36. <a href="https://doi.org/10.1038/nbt.4091">10.1038/nbt.4091</a></div></li>
-    <li><div class="ref-title">Polański, K. et al. (2019). BBKNN.</div><div class="ref-meta">Bioinformatics. <a href="https://doi.org/10.1093/bioinformatics/btz625">10.1093/bioinformatics/btz625</a></div></li>
-    <li><div class="ref-title">Luecken, M.D. et al. (2022). Benchmarking atlas-level integration.</div><div class="ref-meta">Nat Methods 19. <a href="https://doi.org/10.1038/s41592-021-01336-8">10.1038/s41592-021-01336-8</a></div></li>
+  <a href="../index.html" class="top-nav-brand">
+    <span>🧬</span>
+    <span data-lang="zh">scRNA-seq 進階數學</span>
+    <span data-lang="en">scRNA-seq Advanced Math</span>
+    <span class="badge-math">MATH</span>
+  </a>
+  <ul class="top-nav-links">
+    <li class="dropdown"><a href="../index.html#M1">M1</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">基礎 / FOUNDATIONS</li>
+        <li><a href="../M1-foundations/1.1-sparse-matrix.html">1.1 稀疏矩陣</a></li>
+        <li><a href="../M1-foundations/1.2-count-distributions.html">1.2 計數分布</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M2">M2</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">前處理 / PREPROCESSING</li>
+        <li><a href="../M2-preprocessing/2.1-qc-statistics.html">2.1 QC 統計</a></li>
+        <li><a href="../M2-preprocessing/2.2-normalization.html">2.2 Normalization</a></li>
+        <li><a href="../M2-preprocessing/2.3-hvg-selection.html">2.3 HVG 選擇</a></li>
+        <li><a href="../M2-preprocessing/2.4-scaling.html">2.4 Scaling</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M3">M3</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">降維 / DIM. REDUCTION</li>
+        <li><a href="../M3-dimreduction/3.1-pca.html">3.1 PCA</a></li>
+        <li><a href="../M3-dimreduction/3.2-tsne.html">3.2 t-SNE</a></li>
+        <li><a href="../M3-dimreduction/3.3-umap.html">3.3 UMAP</a></li>
+        <li><a href="../M3-dimreduction/3.4-diffusion-map.html">3.4 Diffusion Maps</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M4">M4</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">圖與聚類 / GRAPH &amp; CLUSTERING</li>
+        <li><a href="../M4-graph-clustering/4.1-knn-graph.html">4.1 KNN Graph + HNSW</a></li>
+        <li><a href="../M4-graph-clustering/4.2-louvain-leiden.html">4.2 Louvain &amp; Leiden</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M5">M5</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">統計推論 / STATS</li>
+        <li><a href="../M5-statistics/5.1-de-tests.html">5.1 DE 檢定</a></li>
+        <li><a href="../M5-statistics/5.2-multiple-testing.html">5.2 多重檢定 / FDR</a></li>
+        <li><a href="../M5-statistics/5.3-classifier.html">5.3 細胞分類器</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M6" class="active">M6</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">進階 / ADVANCED</li>
+        <li><a href="6.1-integration.html" class="active-sub">6.1 Integration ⭐ (本頁)</a></li>
+        <li><a href="6.2-pseudotime.html">6.2 Pseudotime</a></li>
+        <li><a href="6.3-cellchat.html">6.3 CellChat</a></li>
+      </ul></li>
+    <li><a href="../index.html"><span data-lang="zh">🏠 回首頁</span><span data-lang="en">🏠 Home</span></a></li>
   </ul>
-</section>
+  <div class="lang-switch">
+    <button data-lang-btn="zh" class="active">中文</button>
+    <button data-lang-btn="en">EN</button>
+  </div>
+</div></nav>
 
-<div class="cross-links">
-  <a href="../M5-statistics/5.3-classifier.html" class="cross-link"><div class="cross-label" data-lang="zh">← 上一篇</div><div class="cross-label" data-lang="en">← PREV</div><div class="cross-title"><span class="cross-id">M5.3</span> Classifier</div></a>
-  <a href="6.2-pseudotime.html" class="cross-link"><div class="cross-label" data-lang="zh">下一篇 →</div><div class="cross-label" data-lang="en">NEXT →</div><div class="cross-title"><span class="cross-id">M6.2</span> Pseudotime</div></a>
+<div class="wrap">
+
+<div class="nav-pages">
+  <span class="label" data-lang="zh">本頁章節</span><span class="label" data-lang="en">CHAPTERS</span>
+  <a href="#s0"><span data-lang="zh">§0 故事</span><span data-lang="en">§0 Story</span></a>
+  <a href="#s1"><span data-lang="zh">§1 batch effect</span><span data-lang="en">§1 batch effect</span></a>
+  <a href="#s2"><span data-lang="zh">§2 Harmony 數學</span><span data-lang="en">§2 Harmony math</span></a>
+  <a href="#s3"><span data-lang="zh">§3 互動 Harmony</span><span data-lang="en">§3 Harmony interactive</span></a>
+  <a href="#s4"><span data-lang="zh">§4 BBKNN</span><span data-lang="en">§4 BBKNN</span></a>
+  <a href="#s5"><span data-lang="zh">§5 scVI</span><span data-lang="en">§5 scVI</span></a>
+  <a href="#s6"><span data-lang="zh">§6 三方法對比</span><span data-lang="en">§6 3-method compare</span></a>
+  <a href="#s7"><span data-lang="zh">§7 評估指標</span><span data-lang="en">§7 Metrics</span></a>
+  <a href="#s8"><span data-lang="zh">§8 限制</span><span data-lang="en">§8 Limits</span></a>
 </div>
 
-</main>
-<footer class="site-footer"><p>© Charlene</p></footer>
+<header class="cover">
+  <div class="badge"><span data-lang="zh">深入互動版 · 從直覺到數學</span><span data-lang="en">Deep Interactive · From Intuition to Math</span></div>
+  <h1 data-lang="zh">Integration：把多個 batch 整合在一起</h1>
+  <h1 data-lang="en">Integration: combining multiple batches</h1>
+  <div class="sub" data-lang="zh">
+    你有兩份 10x 資料：lab A 的 5,000 個細胞、lab B 的 8,000 個。
+    生物上它們是<b>同樣的組織型態</b>（都是 PBMC），但跑 PCA + UMAP 你會看到<b>細胞按 batch 分開</b>，
+    而不是按細胞型態分開——技術變異把生物訊號蓋掉了。<br><br>
+    本節從這個 batch effect 的具體現象出發，介紹三種主流校正方法：
+    <b>Harmony</b>（PC 空間迭代軟分群校正）、
+    <b>BBKNN</b>（跨 batch KNN 圖修補）、
+    <b>scVI</b>（變分自動編碼器 + batch covariate）。
+    最後談 kBET / LISI 等評估指標跟過度校正的風險。
+  </div>
+  <div class="sub" data-lang="en">
+    You have two 10x datasets: lab A's 5,000 cells, lab B's 8,000.
+    Biologically they're <b>the same tissue</b> (both PBMC), but PCA + UMAP shows cells <b>splitting by batch, not by cell type</b> —
+    technical variation has masked the biological signal.<br><br>
+    Starting from concrete batch effect phenomena, we cover three mainstream methods:
+    <b>Harmony</b> (PC-space iterative soft-cluster correction),
+    <b>BBKNN</b> (cross-batch KNN graph patching),
+    <b>scVI</b> (variational autoencoder + batch covariate).
+    Finally kBET / LISI evaluation metrics and over-correction risks.
+  </div>
+</header>
+
+<div class="toc">
+  <h4 data-lang="zh">目錄</h4>
+  <h4 data-lang="en">Table of Contents</h4>
+  <ol start="0">
+    <li><a href="#s0"><span data-lang="zh">故事：UMAP 為什麼按 batch 分？</span><span data-lang="en">Story: why does UMAP split by batch?</span></a><span class="new" data-lang="zh">新增</span><span class="new" data-lang="en">NEW</span></li>
+    <li><a href="#s1"><span data-lang="zh">Batch effect 的視覺直覺</span><span data-lang="en">Batch effect visual intuition</span></a></li>
+    <li><a href="#s2"><span data-lang="zh">Harmony 的迭代校正數學</span><span data-lang="en">Harmony iterative math</span></a><span class="new" data-lang="zh">核心</span><span class="new" data-lang="en">CORE</span></li>
+    <li><a href="#s3"><span data-lang="zh">互動：Harmony 步驟導覽</span><span data-lang="en">Interactive Harmony walkthrough</span></a></li>
+    <li><a href="#s4"><span data-lang="zh">BBKNN：跨 batch 鄰居修補</span><span data-lang="en">BBKNN: cross-batch neighbor patching</span></a></li>
+    <li><a href="#s5"><span data-lang="zh">scVI：變分自動編碼器</span><span data-lang="en">scVI: variational autoencoder</span></a></li>
+    <li><a href="#s6"><span data-lang="zh">三方法對比</span><span data-lang="en">Three-method comparison</span></a></li>
+    <li><a href="#s7"><span data-lang="zh">評估指標：kBET / LISI</span><span data-lang="en">Metrics: kBET / LISI</span></a></li>
+    <li><a href="#s8"><span data-lang="zh">限制與下一步</span><span data-lang="en">Limits & next</span></a></li>
+  </ol>
+</div>
+
+<h2 id="s0"><span class="num">§0</span> <span data-lang="zh">故事：UMAP 為什麼按 batch 分？</span><span data-lang="en">Story: why does UMAP split by batch?</span></h2>
+
+<p class="lead" data-lang="zh">
+  Lab A 用 10x v3 跑 5,000 PBMC、Lab B 用 10x v2 跑 8,000 PBMC。兩邊都有 T cell、B cell、monocytes。
+  合併矩陣、做 PCA、UMAP。
+  <b>理想</b>：UMAP 上 T cell 都聚一起、B cell 都聚一起、monocyte 都聚一起。
+  <b>實際</b>：Lab A 的 T cell + Lab A 的 B cell 一團，Lab B 的 T cell + Lab B 的 B cell 另一團——<b>按 batch 分</b>。
+</p>
+<p class="lead" data-lang="en">
+  Lab A: 5,000 PBMC with 10x v3. Lab B: 8,000 PBMC with 10x v2. Both have T cells, B cells, monocytes.
+  Combine matrices, PCA, UMAP.
+  <b>Ideal</b>: T cells together, B cells together, monocytes together.
+  <b>Reality</b>: Lab A's T + B in one blob, Lab B's T + B in another — <b>splits by batch</b>.
+</p>
+
+<div class="card">
+  <h3 data-lang="zh">§0-1 視覺對比：校正前 vs 後</h3>
+  <h3 data-lang="en">§0-1 Before vs after correction</h3>
+  <svg class="canvas" id="s0svg" viewBox="0 0 800 380" width="100%"></svg>
+  <div class="callout warn">
+    <strong data-lang="zh">問題</strong><strong data-lang="en">Problem</strong>:
+    <span data-lang="zh">PC1 不再代表「最大生物變異方向」，而是「lab A vs lab B 的方向」。下游 clustering / DE 全錯。</span>
+    <span data-lang="en">PC1 no longer captures "max biological variation", just "lab A vs lab B direction". Downstream clustering / DE all wrong.</span>
+  </div>
+</div>
+
+<h2 id="s1"><span class="num">§1</span> <span data-lang="zh">Batch effect 的視覺直覺</span><span data-lang="en">Batch effect visual intuition</span></h2>
+
+<h3 data-lang="zh">1.1 為什麼會有 batch effect？</h3>
+<h3 data-lang="en">1.1 Why does batch effect exist?</h3>
+
+<table class="compare">
+  <tr><th data-lang="zh">來源</th><th data-lang="en">Source</th>
+      <th data-lang="zh">說明</th><th data-lang="en">Explanation</th></tr>
+  <tr><td data-lang="zh">化學版本</td><td data-lang="en">Chemistry version</td>
+      <td>10x v2 vs v3 <span data-lang="zh">捕捉效率不同</span><span data-lang="en">different capture rates</span></td>
+      <td>10x v2 vs v3</td></tr>
+  <tr><td data-lang="zh">技術員</td><td data-lang="en">Operator</td>
+      <td data-lang="zh">處理速度、清洗手法</td><td data-lang="en">processing speed, washing technique</td></tr>
+  <tr><td data-lang="zh">日期</td><td data-lang="en">Date</td>
+      <td data-lang="zh">試劑批次、儀器漂移</td><td data-lang="en">reagent lot, instrument drift</td></tr>
+  <tr><td data-lang="zh">物種 / 個體</td><td data-lang="en">Species / donor</td>
+      <td data-lang="zh">遺傳變異</td><td data-lang="en">genetic variation</td></tr>
+</table>
+
+<h3 data-lang="zh">1.2 校正的目標</h3>
+<h3 data-lang="en">1.2 Correction goal</h3>
+
+<div class="callout idea">
+  <strong data-lang="zh">關鍵權衡</strong><strong data-lang="en">Key trade-off</strong>:
+  <span data-lang="zh"><b>移除 batch 訊號</b>但 <b>保留生物訊號</b>。過度校正會把真的生物差異也磨掉。</span>
+  <span data-lang="en"><b>Remove batch signal</b> but <b>preserve biological signal</b>. Over-correction erases real biology.</span>
+</div>
+
+<h2 id="s2"><span class="num">§2</span> <span data-lang="zh">Harmony 的迭代校正數學</span><span data-lang="en">Harmony iterative math</span></h2>
+
+<p data-lang="zh">
+  Harmony（Korsunsky et al. 2019）在 <b>PC 空間</b>校正（不動原始 count matrix）。三步驟反覆迭代：
+</p>
+<p data-lang="en">
+  Harmony (Korsunsky et al. 2019) operates in <b>PC space</b> (doesn't modify raw counts). Iterates 3 steps:
+</p>
+
+<h3 data-lang="zh">2.1 三步驟</h3>
+<h3 data-lang="en">2.1 Three steps</h3>
+
+<ol>
+  <li><span data-lang="zh"><b>軟分群</b>：對 PC embedding 做 fuzzy k-means，每細胞 $i$ 得 cluster 機率 $R_{ik}$。</span>
+      <span data-lang="en"><b>Soft clustering</b>: fuzzy k-means on PCs, cell $i$ gets cluster probabilities $R_{ik}$.</span></li>
+  <li><span data-lang="zh"><b>計算校正</b>：每 cluster 算「各 batch 的中心位置」，計算<b>把每 batch 拉回 cluster centroid</b> 需要的位移向量。</span>
+      <span data-lang="en"><b>Compute correction</b>: per cluster, find each batch's centroid, compute displacement vector to <b>pull each batch back to cluster centroid</b>.</span></li>
+  <li><span data-lang="zh"><b>更新 embedding</b>：每細胞按其 $R_{ik}$ 加權套用位移，得到校正後 PCA。</span>
+      <span data-lang="en"><b>Update embedding</b>: each cell applies displacements weighted by $R_{ik}$, gets corrected PCs.</span></li>
+</ol>
+
+<div class="math-block boxed">
+  $$\hat{Z}_i = Z_i - \sum_k R_{ik} \sum_b \frac{n_{kb}}{n_k} (\mu_{kb} - \mu_k)$$
+  <div class="formula-caption" data-lang="zh">$Z_i$ = 細胞 $i$ 的 PC、$\mu_{kb}$ = cluster $k$ batch $b$ 中心、$\mu_k$ = cluster 中心、$n_{kb}$ = 該 cluster 該 batch 細胞數</div>
+  <div class="formula-caption" data-lang="en">$Z_i$ = cell $i$'s PCs, $\mu_{kb}$ = cluster $k$ batch $b$ centroid, $\mu_k$ = cluster centroid</div>
+</div>
+
+<h3 data-lang="zh">2.2 為什麼有效？</h3>
+<h3 data-lang="en">2.2 Why does it work?</h3>
+
+<p data-lang="zh">校正向量大小由「<b>不同 batch 偏離 cluster 中心多遠</b>」決定。若某 cluster 在 batch A、B 中心一樣 → 零位移。
+若 batch A 在 cluster 中心右邊、batch B 在左邊 → 把 A 推左、B 推右，<b>讓兩 batch 合在中心</b>。
+迭代直到偏移 &lt; ε（通常 10 次以內收斂）。</p>
+<p data-lang="en">Correction magnitude depends on <b>how far each batch deviates from cluster centroid</b>. If batch A and B centroids coincide → zero shift.
+If A is right of centroid, B is left → push A left, B right, <b>merging both at centroid</b>.
+Iterate until shifts &lt; ε (typically converges in &lt; 10 iters).</p>
+
+<h2 id="s3"><span class="num">§3</span> <span data-lang="zh">互動：Harmony 步驟導覽</span><span data-lang="en">Interactive Harmony walkthrough</span></h2>
+
+<div class="card">
+  <p data-lang="zh">下方有兩 batch 各 50 個細胞、每 batch 有 2 個 cell type。原始 PC space 中 batch 分明顯。按「下一步」看 Harmony 怎麼迭代校正：</p>
+  <p data-lang="en">2 batches × 50 cells, 2 cell types each. Batches visibly split in raw PCs. Click "Next" to watch Harmony iterate:</p>
+  <div class="controls">
+    <button id="s3next"><span data-lang="zh">下一步</span><span data-lang="en">Next iteration</span></button>
+    <button id="s3auto" class="ghost"><span data-lang="zh">自動跑完</span><span data-lang="en">Auto-run</span></button>
+    <button id="s3reset" class="ghost"><span data-lang="zh">重置</span><span data-lang="en">Reset</span></button>
+    <span><span data-lang="zh">迭代</span><span data-lang="en">Iter</span>: <b id="s3iter">0</b></span>
+  </div>
+  <svg class="canvas" id="s3svg" viewBox="0 0 800 460" width="100%"></svg>
+  <div class="stat-row">
+    <div class="item"><span class="lbl" data-lang="zh">batch 平均距離</span><span class="lbl" data-lang="en">batch centroid distance</span><span class="val" id="s3dist">—</span></div>
+    <div class="item" style="color:#27795a"><span class="lbl" data-lang="zh">已減少</span><span class="lbl" data-lang="en">Reduced by</span><span class="val" id="s3red">—</span></div>
+  </div>
+</div>
+
+<h2 id="s4"><span class="num">§4</span> <span data-lang="zh">BBKNN：跨 batch 鄰居修補</span><span data-lang="en">BBKNN: cross-batch neighbor patching</span></h2>
+
+<p data-lang="zh">
+  BBKNN（Polański et al. 2020）不改變 PC 座標，改的是 <b>KNN graph</b>：
+  對每個細胞 $i$，限制它在 <b>每個 batch 中各找 k 個鄰居</b>，而非全域 k 個。
+</p>
+<p data-lang="en">
+  BBKNN (Polański et al. 2020) doesn't change PCs — it modifies the <b>KNN graph</b>:
+  for each cell $i$, find <b>k neighbors in each batch separately</b>, not globally.
+</p>
+
+<h3 data-lang="zh">4.1 為什麼簡單但有效</h3>
+<h3 data-lang="en">4.1 Why simple yet effective</h3>
+
+<div class="callout idea">
+  <strong data-lang="zh">直覺</strong><strong data-lang="en">Intuition</strong>:
+  <span data-lang="zh">如果你<b>強迫每細胞至少有 k 個鄰居來自每個 batch</b>，那 KNN 圖會<b>必然連通</b>兩 batch。
+  下游 Leiden / UMAP 看到的是合在一起的圖。對 batch effect 小但不為零的情境特別有效。</span>
+  <span data-lang="en">If you <b>force each cell to have k neighbors from every batch</b>, the KNN graph <b>must connect</b> across batches.
+  Downstream Leiden / UMAP sees a unified graph. Especially effective when batch effects are small but non-zero.</span>
+</div>
+
+<pre class="code"><span class="k">import</span> bbknn
+
+bbknn.bbknn(adata, batch_key=<span class="s">"sample"</span>, neighbors_within_batch=<span class="n">3</span>, n_pcs=<span class="n">30</span>)
+<span class="c"># 接下來 sc.tl.leiden() / sc.tl.umap() 用的就是 BBKNN graph</span></pre>
+
+<h2 id="s5"><span class="num">§5</span> <span data-lang="zh">scVI：變分自動編碼器</span><span data-lang="en">scVI: variational autoencoder</span></h2>
+
+<p data-lang="zh">
+  scVI（Lopez et al. 2018）用<b>深度生成模型</b>。把每細胞 count 編碼成 latent vector $\mathbf{z}_i$，再 decode 回 NB 參數。
+  關鍵：encoder 跟 decoder 都<b>條件在 batch label $s_i$ 上</b>。
+</p>
+<p data-lang="en">
+  scVI (Lopez et al. 2018) uses a <b>deep generative model</b>. Each cell's counts encoded to latent $\mathbf{z}_i$, decoded back to NB params.
+  Key: both encoder and decoder <b>condition on batch label $s_i$</b>.
+</p>
+
+<div class="math-block">
+  $$\mathbf{z}_i = f_\text{enc}(\mathbf{x}_i, s_i), \quad \mathbf{x}_i \sim \text{NB}(f_\text{dec}(\mathbf{z}_i, s_i), \theta)$$
+  <div class="formula-caption" data-lang="zh">latent space $\mathbf{z}_i$ 不含 batch 資訊（被條件移除）</div>
+  <div class="formula-caption" data-lang="en">latent $\mathbf{z}_i$ is batch-free (removed via conditioning)</div>
+</div>
+
+<p data-lang="zh">訓練後，<b>所有細胞在同一個 latent space</b> 比較，下游用 $\mathbf{z}$ 取代 PCA。</p>
+<p data-lang="en">After training, <b>all cells share one latent space</b>; downstream uses $\mathbf{z}$ instead of PCA.</p>
+
+<h3 data-lang="zh">5.1 scVI 的優勢</h3>
+<h3 data-lang="en">5.1 scVI's advantages</h3>
+
+<ul>
+  <li data-lang="zh">處理非線性 batch effect（Harmony 是線性）</li>
+  <li data-lang="en">handles nonlinear batch effects (Harmony is linear)</li>
+  <li data-lang="zh">直接在 count level 工作（不需 PCA 預處理）</li>
+  <li data-lang="en">works at count level (no PCA preprocessing needed)</li>
+  <li data-lang="zh">擴展性：100 萬細胞可行</li>
+  <li data-lang="en">scales: 1M cells feasible</li>
+  <li data-lang="zh">延伸 scANVI 可半監督</li>
+  <li data-lang="en">scANVI extension is semi-supervised</li>
+</ul>
+
+<h2 id="s6"><span class="num">§6</span> <span data-lang="zh">三方法對比</span><span data-lang="en">Three-method comparison</span></h2>
+
+<table class="compare">
+  <tr><th></th><th>Harmony</th><th>Harmony</th><th>BBKNN</th><th>BBKNN</th><th>scVI</th><th>scVI</th></tr>
+  <tr><td data-lang="zh">輸入</td><td data-lang="en">Input</td>
+      <td>PCs</td><td>PCs</td>
+      <td>PCs</td><td>PCs</td>
+      <td data-lang="zh">原始 counts</td><td data-lang="en">raw counts</td></tr>
+  <tr><td data-lang="zh">輸出</td><td data-lang="en">Output</td>
+      <td data-lang="zh">校正後 PCs</td><td data-lang="en">corrected PCs</td>
+      <td data-lang="zh">KNN graph</td><td data-lang="en">KNN graph</td>
+      <td>latent z</td><td>latent z</td></tr>
+  <tr><td data-lang="zh">線性?</td><td data-lang="en">Linear?</td>
+      <td>✅</td><td>✅</td>
+      <td>—</td><td>—</td>
+      <td>❌</td><td>❌</td></tr>
+  <tr><td data-lang="zh">速度</td><td data-lang="en">Speed</td>
+      <td data-lang="zh">很快</td><td data-lang="en">very fast</td>
+      <td data-lang="zh">很快</td><td data-lang="en">very fast</td>
+      <td data-lang="zh">慢（需訓練）</td><td data-lang="en">slow (training)</td></tr>
+  <tr><td data-lang="zh">擴展性</td><td data-lang="en">Scalability</td>
+      <td>~ 100k cells</td><td>~ 100k cells</td>
+      <td>~ 100k cells</td><td>~ 100k cells</td>
+      <td><b>1M+ cells</b></td><td><b>1M+ cells</b></td></tr>
+  <tr><td data-lang="zh">推薦情境</td><td data-lang="en">Best for</td>
+      <td data-lang="zh">快速首選</td><td data-lang="en">fast default</td>
+      <td data-lang="zh">小 batch effect、保留結構</td><td data-lang="en">small batch effect, preserve structure</td>
+      <td data-lang="zh">大資料、複雜 batch、多模態</td><td data-lang="en">large data, complex batch, multimodal</td></tr>
+</table>
+
+<h2 id="s7"><span class="num">§7</span> <span data-lang="zh">評估指標：kBET / LISI</span><span data-lang="en">Metrics: kBET / LISI</span></h2>
+
+<p data-lang="zh">校正後怎麼知道夠好？兩個常用指標：</p>
+<p data-lang="en">How to know correction is good enough? Two common metrics:</p>
+
+<h3 data-lang="zh">7.1 kBET (k-nearest neighbor Batch Effect Test)</h3>
+<h3 data-lang="en">7.1 kBET</h3>
+
+<div class="math-block">
+  $$\text{kBET}_i: \chi^2 \text{ test on whether } \mathcal{N}_k(i) \text{ has expected batch composition}$$
+</div>
+
+<p data-lang="zh">對每細胞檢驗其 k 個鄰居的 batch 分布是否符合<b>整體 batch 比例</b>。理想：每細胞鄰居中 batch 比例 ≈ 全域比例 → kBET 通過率高。</p>
+<p data-lang="en">Per-cell test: are the k neighbors' batches distributed like the <b>overall batch proportions</b>? Ideal: yes → high kBET pass rate.</p>
+
+<h3 data-lang="zh">7.2 LISI (Local Inverse Simpson Index)</h3>
+<h3 data-lang="en">7.2 LISI</h3>
+
+<div class="math-block">
+  $$\text{iLISI}_i = \frac{1}{\sum_b p_{ib}^2}, \quad p_{ib} = \frac{|\mathcal{N}_k(i) \cap \text{batch } b|}{k}$$
+</div>
+
+<p data-lang="zh">iLISI（integration LISI）越接近 batch 數越好（鄰居完全混合）。
+cLISI（cell-type LISI）越接近 1 越好（鄰居都是同型態）。<b>理想：iLISI 高、cLISI 低</b>。</p>
+<p data-lang="en">iLISI (integration LISI) → batch count = perfectly mixed. cLISI (cell-type LISI) → 1 = neighbors are same type. <b>Ideal: high iLISI, low cLISI</b>.</p>
+
+<div class="callout warn">
+  <strong data-lang="zh">過度校正的訊號</strong><strong data-lang="en">Over-correction signal</strong>:
+  <span data-lang="zh">cLISI 上升（不同型態混在一起）就是過度校正——把生物差異也磨掉了。</span>
+  <span data-lang="en">cLISI rising (different types mix together) = over-correction — biological differences erased.</span>
+</div>
+
+<h2 id="s8"><span class="num">§8</span> <span data-lang="zh">限制與下一步</span><span data-lang="en">Limits & next</span></h2>
+
+<h3 data-lang="zh">8.1 方法選擇</h3>
+<h3 data-lang="en">8.1 Method choice</h3>
+
+<table class="compare">
+  <tr><th data-lang="zh">情境</th><th data-lang="en">Scenario</th>
+      <th data-lang="zh">推薦</th><th data-lang="en">Recommended</th></tr>
+  <tr><td data-lang="zh">通用、首選</td><td data-lang="en">General default</td>
+      <td><b>Harmony</b></td><td><b>Harmony</b></td></tr>
+  <tr><td data-lang="zh">小 batch effect、想保留結構</td><td data-lang="en">Small batch effect, preserve structure</td>
+      <td>BBKNN</td><td>BBKNN</td></tr>
+  <tr><td data-lang="zh">大資料 / 多 batch / 多模態</td><td data-lang="en">Large data / many batches / multimodal</td>
+      <td><b>scVI</b></td><td><b>scVI</b></td></tr>
+  <tr><td data-lang="zh">含標籤資訊（semi-supervised）</td><td data-lang="en">With labels (semi-supervised)</td>
+      <td>scANVI</td><td>scANVI</td></tr>
+</table>
+
+<pre class="code"><span class="c"># Harmony</span>
+<span class="k">import</span> scanpy.external <span class="k">as</span> sce
+sce.pp.harmony_integrate(adata, key=<span class="s">"sample"</span>)
+adata.obsm[<span class="s">"X_pca_harmony"</span>]
+
+<span class="c"># BBKNN</span>
+sce.pp.bbknn(adata, batch_key=<span class="s">"sample"</span>)
+
+<span class="c"># scVI</span>
+<span class="k">import</span> scvi
+scvi.model.SCVI.setup_anndata(adata, batch_key=<span class="s">"sample"</span>)
+model = scvi.model.SCVI(adata)
+model.train()
+adata.obsm[<span class="s">"X_scVI"</span>] = model.get_latent_representation()</pre>
+
+<h3 data-lang="zh">8.2 限制</h3>
+<h3 data-lang="en">8.2 Limitations</h3>
+<table class="compare">
+  <tr><th data-lang="zh">限制</th><th data-lang="en">Limitation</th>
+      <th data-lang="zh">後果</th><th data-lang="en">Consequence</th>
+      <th data-lang="zh">緩解</th><th data-lang="en">Mitigation</th></tr>
+  <tr>
+    <td data-lang="zh">過度校正</td>
+    <td data-lang="en">Over-correction</td>
+    <td data-lang="zh">不同細胞型態被合在一起</td>
+    <td data-lang="en">different cell types merged</td>
+    <td data-lang="zh">監控 cLISI、降低 θ（Harmony）</td>
+    <td data-lang="en">monitor cLISI, lower θ (Harmony)</td>
+  </tr>
+  <tr>
+    <td data-lang="zh">batch 跟 cell type confound</td>
+    <td data-lang="en">batch confounded with cell type</td>
+    <td data-lang="zh">某 batch 缺某型 → 校正會誤把該型搬走</td>
+    <td data-lang="en">if batch lacks a type → correction relocates it</td>
+    <td data-lang="zh">scANVI 用 label 資訊穩定</td>
+    <td data-lang="en">scANVI uses labels for stability</td>
+  </tr>
+  <tr>
+    <td data-lang="zh">scVI 需訓練時間</td>
+    <td data-lang="en">scVI training time</td>
+    <td data-lang="zh">小資料 (~10k cells) 用 Harmony 已夠</td>
+    <td data-lang="en">small data: Harmony already enough</td>
+    <td data-lang="zh">先 Harmony，效果不夠再 scVI</td>
+    <td data-lang="en">try Harmony first, scVI if needed</td>
+  </tr>
+</table>
+
+<div class="callout prog">
+  <strong data-lang="zh">下一步</strong><strong data-lang="en">Next</strong>:
+  <span data-lang="zh">整合完成 → <a href="6.2-pseudotime.html"><b>6.2 Pseudotime</b></a> 排細胞分化軌跡 → <a href="6.3-cellchat.html"><b>6.3 CellChat</b></a> 找細胞間通訊。</span>
+  <span data-lang="en">After integration → <a href="6.2-pseudotime.html"><b>6.2 Pseudotime</b></a> → <a href="6.3-cellchat.html"><b>6.3 CellChat</b></a>.</span>
+</div>
+
+<p class="footer">
+  <span data-lang="zh">© scRNA-seq Advanced Math · M6.1 Integration Deep Interactive</span>
+  <span data-lang="en">© scRNA-seq Advanced Math · M6.1 Integration Deep Interactive</span>
+</p>
+
+</div>
+
 <script src="../i18n.js"></script>
-<script>function switchTab(b,id){const p=b.closest(".code-tabs");p.querySelectorAll(".code-tab-btn").forEach(x=>x.classList.remove("active"));p.querySelectorAll(".code-tab-content").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(id).classList.add("active");}</script>
-</body></html>
+<script>
+// ===== §0 before/after =====
+(function() {
+  let seed = 5;
+  const rnd = () => { seed = (seed*9301+49297)%233280; return seed/233280; };
+  function nrnd(m,s){const u1=rnd(),u2=rnd();return m+s*Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);}
+  // 4 groups: (batch, celltype)
+  const before = [], after = [];
+  for (let i = 0; i < 30; i++) before.push({x: nrnd(140, 25), y: nrnd(100, 20), b: 0, t: 0}); // batch0 type0
+  for (let i = 0; i < 30; i++) before.push({x: nrnd(200, 25), y: nrnd(180, 20), b: 0, t: 1}); // batch0 type1
+  for (let i = 0; i < 30; i++) before.push({x: nrnd(370, 25), y: nrnd(100, 20), b: 1, t: 0}); // batch1 type0
+  for (let i = 0; i < 30; i++) before.push({x: nrnd(430, 25), y: nrnd(180, 20), b: 1, t: 1}); // batch1 type1
+  // after: by type
+  for (let i = 0; i < 30; i++) after.push({x: nrnd(600, 25), y: nrnd(100, 22), b: 0, t: 0});
+  for (let i = 0; i < 30; i++) after.push({x: nrnd(680, 25), y: nrnd(180, 22), b: 0, t: 1});
+  for (let i = 0; i < 30; i++) after.push({x: nrnd(605, 28), y: nrnd(105, 20), b: 1, t: 0});
+  for (let i = 0; i < 30; i++) after.push({x: nrnd(675, 25), y: nrnd(175, 18), b: 1, t: 1});
+  let s = '';
+  s += `<text class="lbl" x="270" y="25" text-anchor="middle" font-weight="700">Before (split by batch)</text>`;
+  s += `<text class="lbl" x="640" y="25" text-anchor="middle" font-weight="700">After Harmony (split by cell type)</text>`;
+  s += `<rect x="20" y="40" width="500" height="280" fill="#fff" stroke="#ddd"/>`;
+  s += `<rect x="540" y="40" width="240" height="280" fill="#fff" stroke="#ddd"/>`;
+  const batchCol = ['#2c5aa0', '#c0392b'];
+  const typeShape = (t, cx, cy, color) => t === 0 ? `<circle cx="${cx}" cy="${cy}" r="5" fill="${color}" opacity="0.7"/>` : `<path d="M${cx-5},${cy} l5,-5 l5,5 l-5,5 z" fill="${color}" opacity="0.7"/>`;
+  before.forEach(p => { s += typeShape(p.t, p.x, p.y, batchCol[p.b]); });
+  after.forEach(p => { s += typeShape(p.t, p.x, p.y, batchCol[p.b]); });
+  s += `<g transform="translate(40, 335)">`;
+  s += `<circle cx="14" cy="14" r="5" fill="#2c5aa0"/><text class="lbl" x="26" y="18">batch A</text>`;
+  s += `<circle cx="14" cy="34" r="5" fill="#c0392b"/><text class="lbl" x="26" y="38">batch B</text>`;
+  s += `<circle cx="200" cy="14" r="5" fill="#666"/><text class="lbl" x="212" y="18">cell type 1</text>`;
+  s += `<path d="M195,29 l5,-5 l5,5 l-5,5 z" fill="#666"/><text class="lbl" x="212" y="38">cell type 2</text>`;
+  s += `</g>`;
+  document.getElementById('s0svg').innerHTML = s;
+})();
+
+// ===== §3 Harmony iteration =====
+(function() {
+  let seed = 7;
+  const rnd = () => { seed = (seed*9301+49297)%233280; return seed/233280; };
+  function nrnd(m,s){const u1=rnd(),u2=rnd();return m+s*Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);}
+  let cells, iter, initDist;
+  function gen() {
+    seed = 7;
+    cells = [];
+    // batch 0 type 0
+    for (let i = 0; i < 25; i++) cells.push({x: nrnd(220, 30), y: nrnd(180, 30), b: 0, t: 0, ox: 0, oy: 0});
+    // batch 0 type 1
+    for (let i = 0; i < 25; i++) cells.push({x: nrnd(300, 30), y: nrnd(280, 30), b: 0, t: 1});
+    // batch 1 type 0
+    for (let i = 0; i < 25; i++) cells.push({x: nrnd(450, 30), y: nrnd(180, 30), b: 1, t: 0});
+    // batch 1 type 1
+    for (let i = 0; i < 25; i++) cells.push({x: nrnd(540, 30), y: nrnd(280, 30), b: 1, t: 1});
+    cells.forEach(c => { c.ox = c.x; c.oy = c.y; });
+    iter = 0;
+    initDist = computeBatchDist();
+  }
+  function computeBatchDist() {
+    // by cluster (use ground-truth type as cluster proxy)
+    let total = 0, n = 0;
+    [0, 1].forEach(t => {
+      const c0 = cells.filter(c => c.t === t && c.b === 0);
+      const c1 = cells.filter(c => c.t === t && c.b === 1);
+      const m0 = {x: c0.reduce((a,b)=>a+b.x,0)/c0.length, y: c0.reduce((a,b)=>a+b.y,0)/c0.length};
+      const m1 = {x: c1.reduce((a,b)=>a+b.x,0)/c1.length, y: c1.reduce((a,b)=>a+b.y,0)/c1.length};
+      total += Math.sqrt((m0.x-m1.x)**2 + (m0.y-m1.y)**2);
+      n++;
+    });
+    return total / n;
+  }
+  function step() {
+    // for each cluster (= type), move batches toward centroid
+    [0, 1].forEach(t => {
+      const cluster = cells.filter(c => c.t === t);
+      const cx = cluster.reduce((a,b)=>a+b.x,0)/cluster.length;
+      const cy = cluster.reduce((a,b)=>a+b.y,0)/cluster.length;
+      [0, 1].forEach(b => {
+        const sub = cluster.filter(c => c.b === b);
+        if (sub.length === 0) return;
+        const mx = sub.reduce((a,b)=>a+b.x,0)/sub.length;
+        const my = sub.reduce((a,b)=>a+b.y,0)/sub.length;
+        const dx = (cx - mx) * 0.5, dy = (cy - my) * 0.5;
+        sub.forEach(c => { c.x += dx; c.y += dy; });
+      });
+    });
+    iter++;
+    draw();
+  }
+  function draw() {
+    document.getElementById('s3iter').textContent = iter;
+    const d = computeBatchDist();
+    document.getElementById('s3dist').textContent = d.toFixed(1);
+    document.getElementById('s3red').textContent = ((1 - d/initDist)*100).toFixed(0) + '%';
+    let s = '';
+    s += `<rect x="0" y="0" width="800" height="460" fill="#fcfcfa"/>`;
+    const batchCol = ['#2c5aa0', '#c0392b'];
+    cells.forEach(c => {
+      const shape = c.t === 0
+        ? `<circle cx="${c.x}" cy="${c.y}" r="6" fill="${batchCol[c.b]}" opacity="0.8"/>`
+        : `<path d="M${c.x-6},${c.y} l6,-6 l6,6 l-6,6 z" fill="${batchCol[c.b]}" opacity="0.8"/>`;
+      s += shape;
+    });
+    s += `<g transform="translate(580, 380)">`;
+    s += `<rect x="0" y="0" width="200" height="70" fill="#fff" stroke="#ddd"/>`;
+    s += `<circle cx="14" cy="14" r="5" fill="#2c5aa0"/><text class="lbl" x="26" y="18">batch A</text>`;
+    s += `<circle cx="14" cy="34" r="5" fill="#c0392b"/><text class="lbl" x="26" y="38">batch B</text>`;
+    s += `<text class="lbl" x="14" y="58">○ type 1, ◇ type 2</text>`;
+    s += `</g>`;
+    document.getElementById('s3svg').innerHTML = s;
+  }
+  function reset() { gen(); draw(); }
+  document.getElementById('s3next').addEventListener('click', step);
+  document.getElementById('s3reset').addEventListener('click', reset);
+  document.getElementById('s3auto').addEventListener('click', () => {
+    let i = 0;
+    function tick() {
+      step();
+      if (++i < 8) setTimeout(tick, 250);
+    }
+    tick();
+  });
+  reset();
+})();
+</script>
+</body>
+</html>

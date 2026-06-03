@@ -1,113 +1,913 @@
 <!DOCTYPE html>
-<html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>4.2 Louvain &amp; Leiden — scRNA-seq Advanced Math</title><link rel="stylesheet" href="../styles.css">
-<script>MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] } };</script>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>4.2 Louvain & Leiden — Deep Interactive</title>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
-</head><body>
+<style>
+  :root {
+    --bg: #fafaf7; --fg: #1a1a1a; --muted: #666;
+    --accent: #c0392b; --accent2: #2c5aa0;
+    --green: #27795a; --purple: #8e44ad; --yellow: #f0c419;
+    --rose: #be123c;
+    --card: #ffffff; --border: #e0e0d8; --code: #f4f1ea;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Helvetica Neue", "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif; background: var(--bg); color: var(--fg); line-height: 1.75; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 40px 28px 120px; }
+  header.cover { margin: 20px 0 60px; padding: 52px 40px;
+    background: linear-gradient(135deg, #4c0519 0%, #be123c 55%, #fb7185 100%);
+    color: #fff; border-radius: 16px; box-shadow: 0 14px 40px rgba(76,5,25,0.18); }
+  header.cover h1 { margin: 0 0 14px; font-size: 36px; }
+  header.cover .sub { font-size: 17px; opacity: 0.92; line-height: 1.65; }
+  header.cover .badge { display: inline-block; background: rgba(255,255,255,0.18);
+    padding: 4px 12px; border-radius: 20px; font-size: 13px; margin-bottom: 16px; }
+  h2 { margin-top: 70px; padding-bottom: 8px; border-bottom: 3px solid var(--rose);
+    font-size: 26px; display: flex; align-items: baseline; gap: 12px; }
+  h2 .num { color: var(--rose); font-weight: 800; font-size: 20px; }
+  h3 { margin-top: 36px; font-size: 19px; color: var(--accent2); }
+  h4 { margin-top: 22px; font-size: 16px; color: var(--accent); }
+  p { margin: 14px 0; }
+  .lead { font-size: 17px; color: #2a2a2a; }
+  .callout { background: #fff8e6; border-left: 4px solid var(--yellow); padding: 14px 18px; border-radius: 6px; margin: 22px 0; }
+  .callout.idea { background: #eaf4ff; border-left-color: var(--accent2); }
+  .callout.warn { background: #fdecec; border-left-color: var(--accent); }
+  .callout.bio  { background: #effaf3; border-left-color: var(--green); }
+  .callout.prog { background: #ffe4e6; border-left-color: var(--rose); }
+  .card { background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px 26px; margin: 26px 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+  .card h3 { margin-top: 0; }
+  .controls { display: flex; flex-wrap: wrap; gap: 14px 22px;
+    align-items: center; margin: 14px 0; padding: 12px 16px;
+    background: #f4f1ea; border-radius: 8px; font-size: 14px; }
+  .controls label { display: flex; align-items: center; gap: 8px; }
+  button { background: var(--rose); color: #fff; border: 0;
+    padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 14px;
+    font-family: inherit; }
+  button:hover { background: #881337; }
+  button.ghost { background: #fff; color: var(--rose); border: 1px solid var(--rose); }
+  input[type="range"] { width: 180px; vertical-align: middle; }
+  svg.canvas { background: #fcfcfa; border: 1px solid var(--border); border-radius: 8px; display: block; }
+  svg.canvas .axis { stroke: #bbb; stroke-width: 1; }
+  svg.canvas .grid { stroke: #ececea; stroke-width: 0.5; }
+  svg.canvas text.lbl { font-size: 12px; fill: #333; }
+  .stat-row { display: flex; flex-wrap: wrap; gap: 22px; margin: 14px 0; font-size: 14px; }
+  .stat-row .item { display: flex; flex-direction: column; }
+  .stat-row .item .lbl { color: var(--muted); font-size: 12px; }
+  .stat-row .item .val { font-family: "JetBrains Mono", monospace; font-size: 18px; }
+  details { margin: 16px 0; }
+  details summary { cursor: pointer; font-weight: 600; color: var(--accent2); padding: 6px 0; }
+  .toc { background: #fff; border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 28px; margin: 30px 0; }
+  .toc h4 { margin: 0 0 10px; color: var(--rose); }
+  .toc ol { margin: 6px 0; padding-left: 24px; line-height: 1.9; }
+  .toc a { color: var(--accent2); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .toc .new { background: var(--rose); color: #fff; font-size: 11px;
+    padding: 1px 8px; border-radius: 10px; margin-left: 6px; }
+  code.inline { background: var(--code); padding: 2px 6px; border-radius: 4px;
+    font-size: 13px; font-family: "JetBrains Mono", "Consolas", monospace; }
+  pre.code { background: #1e1e1e; color: #dcdcdc;
+    padding: 14px 18px; border-radius: 8px; overflow-x: auto; font-size: 13px;
+    font-family: "JetBrains Mono", "Consolas", monospace; line-height: 1.55; }
+  pre.code .k { color: #569cd6; }
+  pre.code .s { color: #ce9178; }
+  pre.code .c { color: #6a9955; }
+  pre.code .n { color: #b5cea8; }
+  table.compare { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.compare th, table.compare td { border: 1px solid var(--border); padding: 8px 12px; }
+  table.compare th { background: #f4f1ea; text-align: left; }
+  .math-block { background: #fff; border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 18px; margin: 18px 0; }
+  .math-block.boxed { border: 2px solid var(--rose); background: #ffe4e6; }
+  .formula-caption { font-size: 12.5px; color: var(--muted); text-align: center; margin-top: 6px; }
+  .footer { text-align: center; color: var(--muted); margin-top: 80px; font-size: 13px; }
+  .top-nav { background: #4c0519; color: #fff; padding: 14px 28px;
+    position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(76,5,25,0.25); }
+  .top-nav-inner { max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; gap: 28px; }
+  .top-nav-brand { color: #fff; text-decoration: none;
+    font-weight: 700; font-size: 17px;
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .top-nav-brand .badge-math { background: #be123c; color: #fff;
+    padding: 3px 9px; border-radius: 4px; font-size: 11px; }
+  .top-nav-links { list-style: none; margin: 0; padding: 0;
+    display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+  .top-nav-links a { color: #fecdd3; text-decoration: none;
+    padding: 6px 11px; border-radius: 6px; font-size: 13px; font-weight: 500;
+    transition: 0.2s; }
+  .top-nav-links a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .top-nav-links a.active { background: #be123c; color: #fff; }
+  .top-nav-links li.dropdown { position: relative; }
+  .top-nav-links li.dropdown > a::after { content: ' ▾';
+    font-size: 10px; opacity: 0.7; margin-left: 3px;
+    display: inline-block; transition: transform 0.2s; }
+  .top-nav-links li.dropdown:hover > a::after,
+  .top-nav-links li.dropdown.open > a::after { transform: rotate(180deg); }
+  .top-nav-links .dropdown-menu { display: none; position: absolute; top: 100%; left: 0;
+    background: #65142e; border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px; padding: 6px 0; min-width: 230px;
+    list-style: none; z-index: 200;
+    box-shadow: 0 8px 28px rgba(76,5,25,0.5); margin: 6px 0 0; }
+  .top-nav-links li.dropdown:hover > .dropdown-menu,
+  .top-nav-links li.dropdown.open > .dropdown-menu { display: block; }
+  .top-nav-links .dropdown-menu li { display: block; }
+  .top-nav-links .dropdown-menu li a { display: block; padding: 9px 18px;
+    border-radius: 0; font-size: 13px; white-space: nowrap; color: #fecdd3; }
+  .top-nav-links .dropdown-menu li a:hover { background: rgba(190,18,60,0.3); color: #fff; }
+  .top-nav-links .dropdown-menu li a.active-sub { background: #be123c; color: #fff; font-weight: 700; }
+  .top-nav-links .dropdown-menu .sub-label { font-size: 10px; color: #fda4af;
+    letter-spacing: 1px; padding: 4px 18px 2px; text-transform: uppercase; }
+  .lang-switch { display: flex; gap: 4px;
+    background: rgba(255,255,255,0.08); padding: 4px; border-radius: 6px; flex-shrink: 0; }
+  .lang-switch button { background: transparent; border: 0; color: #fecdd3;
+    font-size: 12px; font-weight: 700; padding: 5px 10px;
+    border-radius: 4px; cursor: pointer; font-family: inherit; }
+  .lang-switch button.active { background: #be123c; color: #fff; }
+  .nav-pages { display: flex; gap: 8px; margin: 24px 0; padding: 14px;
+    background: #65142e; border-radius: 10px; align-items: center; flex-wrap: wrap; }
+  .nav-pages a { color: #fecdd3; text-decoration: none;
+    padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600;
+    transition: 0.2s; }
+  .nav-pages a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .nav-pages .label { color: #fda4af; font-size: 11px;
+    letter-spacing: 1px; font-weight: 700; margin-right: 8px; }
+  [data-lang="en"] { display: none; }
+  body.lang-en [data-lang="zh"] { display: none; }
+  body.lang-en [data-lang="en"] { display: initial; }
+  body.lang-en h1[data-lang="en"], body.lang-en h2[data-lang="en"],
+  body.lang-en h3[data-lang="en"], body.lang-en h4[data-lang="en"],
+  body.lang-en p[data-lang="en"], body.lang-en div[data-lang="en"],
+  body.lang-en ol[data-lang="en"], body.lang-en ul[data-lang="en"] { display: block; }
+  body.lang-en li[data-lang="en"] { display: list-item; }
+  body.lang-en span[data-lang="en"] { display: inline; }
+  body.lang-en tspan[data-lang="en"] { display: inline; }
+</style>
+</head>
+<body>
+
 <nav class="top-nav"><div class="top-nav-inner">
-  <a href="../index.html" class="top-nav-brand"><span>🧬</span><span data-lang="zh">scRNA-seq 進階數學</span><span data-lang="en">scRNA-seq Advanced Math</span><span class="badge-math">MATH</span></a>
-  <ul class="top-nav-links"><li><a href="../index.html#M1">M1</a></li><li><a href="../index.html#M2">M2</a></li><li><a href="../index.html#M3">M3</a></li><li><a href="../index.html#M4" class="active">M4</a></li><li><a href="../index.html#M5">M5</a></li><li><a href="../index.html#M6">M6</a></li><li><a href="../index.html" data-lang="zh">🏠 回首頁</a><span data-lang="en">🏠 Home</span></li></ul>
-  <div class="lang-switch"><button data-lang-btn="zh" class="active">中文</button><button data-lang-btn="en">EN</button></div>
+  <a href="../index.html" class="top-nav-brand">
+    <span>🧬</span>
+    <span data-lang="zh">scRNA-seq 進階數學</span>
+    <span data-lang="en">scRNA-seq Advanced Math</span>
+    <span class="badge-math">MATH</span>
+  </a>
+  <ul class="top-nav-links">
+    <li class="dropdown"><a href="../index.html#M1">M1</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">基礎 / FOUNDATIONS</li>
+        <li><a href="../M1-foundations/1.1-sparse-matrix.html">1.1 稀疏矩陣</a></li>
+        <li><a href="../M1-foundations/1.2-count-distributions.html">1.2 計數分布</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M2">M2</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">前處理 / PREPROCESSING</li>
+        <li><a href="../M2-preprocessing/2.1-qc-statistics.html">2.1 QC 統計</a></li>
+        <li><a href="../M2-preprocessing/2.2-normalization.html">2.2 Normalization</a></li>
+        <li><a href="../M2-preprocessing/2.3-hvg-selection.html">2.3 HVG 選擇</a></li>
+        <li><a href="../M2-preprocessing/2.4-scaling.html">2.4 Scaling</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M3">M3</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">降維 / DIM. REDUCTION</li>
+        <li><a href="../M3-dimreduction/3.1-pca.html">3.1 PCA</a></li>
+        <li><a href="../M3-dimreduction/3.2-tsne.html">3.2 t-SNE</a></li>
+        <li><a href="../M3-dimreduction/3.3-umap.html">3.3 UMAP</a></li>
+        <li><a href="../M3-dimreduction/3.4-diffusion-map.html">3.4 Diffusion Maps</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M4" class="active">M4</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">圖與聚類 / GRAPH &amp; CLUSTERING</li>
+        <li><a href="4.1-knn-graph.html">4.1 KNN Graph + HNSW</a></li>
+        <li><a href="4.2-louvain-leiden.html" class="active-sub">4.2 Louvain &amp; Leiden ⭐ (本頁)</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M5">M5</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">統計推論 / STATS</li>
+        <li><a href="../M5-statistics/5.1-de-tests.html">5.1 DE 檢定</a></li>
+        <li><a href="../M5-statistics/5.2-multiple-testing.html">5.2 多重檢定 / FDR</a></li>
+        <li><a href="../M5-statistics/5.3-classifier.html">5.3 細胞分類器</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M6">M6</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">進階 / ADVANCED</li>
+        <li><a href="../M6-advanced/6.1-integration.html">6.1 Integration</a></li>
+        <li><a href="../M6-advanced/6.2-pseudotime.html">6.2 Pseudotime</a></li>
+        <li><a href="../M6-advanced/6.3-cellchat.html">6.3 CellChat</a></li>
+      </ul></li>
+    <li><a href="../index.html"><span data-lang="zh">🏠 回首頁</span><span data-lang="en">🏠 Home</span></a></li>
+  </ul>
+  <div class="lang-switch">
+    <button data-lang-btn="zh" class="active">中文</button>
+    <button data-lang-btn="en">EN</button>
+  </div>
 </div></nav>
-<header class="page-hero"><div class="page-hero-inner">
-  <div class="page-badge">M4.2 · GRAPH &amp; CLUSTERING</div>
-  <h1 data-lang="zh">Louvain 與 Leiden 演算法</h1><h1 as data-lang="en">Louvain &amp; Leiden</h1>
-  <p class="subtitle" data-lang="zh">Modularity 在優化什麼？Louvain 的「斷裂群」問題與 Leiden 如何修。resolution 參數的數學意義。</p>
-  <p class="subtitle" data-lang="en">What modularity optimizes. Louvain's "disconnected community" bug and Leiden's fix. The math of resolution.</p>
-</div></header>
 
-<main class="content-wrap">
+<div class="wrap">
 
-<section class="section">
-  <span class="section-label intuition">直覺 / Intuition</span>
-  <div data-lang="zh"><p>「好的分群」= 群內連接多、群外連接少。<b>Modularity</b> 把這件事量化成一個數字，讓我們可以「優化它」。</p></div>
-  <div data-lang="en"><p>"Good clustering" = many within-edges, few between-edges. <b>Modularity</b> quantifies this for optimization.</p></div>
-</section>
-
-<section class="section">
-  <span class="section-label math">核心數學 / Math</span>
-  <h3>Modularity</h3>
-  <div class="math-block">
-  $$Q = \frac{1}{2m} \sum_{i,j} \left[ A_{ij} - \gamma \frac{k_i k_j}{2m} \right] \delta(c_i, c_j)$$
-  <div class="formula-caption" data-lang="zh">$A_{ij}$ = 邊權重；$k_i$ = 節點度數；$m$ = 邊總權重；$\gamma$ = resolution；$\delta(c_i, c_j)=1$ 若同群</div>
-  <div class="formula-caption" data-lang="en">$A_{ij}$ = edge weight; $k_i$ = degree; $m$ = total weight; $\gamma$ = resolution; $\delta=1$ if same cluster</div>
-  </div>
-  <p data-lang="zh"><b>解讀</b>：「實際邊權重」− 「在隨機圖中的期望邊權重」。Q 越大表示分群越「不像隨機」。</p>
-  <p data-lang="en"><b>Interpretation</b>: "actual edge weight" minus "expected in random graph". Larger Q = clustering further from random.</p>
-
-  <h3 data-lang="zh">resolution 參數 γ</h3><h3 data-lang="en">Resolution parameter γ</h3>
-  <ul data-lang="zh">
-    <li>$\gamma > 1$：對「隨機期望」加重——只接受很顯著的群 → <b>較多、較小的群</b></li>
-    <li>$\gamma < 1$：放寬期望 → <b>較少、較大的群</b></li>
-    <li>$\gamma = 1$：原始 Newman-Girvan modularity</li>
-  </ul>
-  <ul data-lang="en">
-    <li>$\gamma > 1$: stricter random penalty → more, smaller clusters</li>
-    <li>$\gamma < 1$: relaxed → fewer, larger clusters</li>
-    <li>$\gamma = 1$: original Newman-Girvan</li>
-  </ul>
-  <p data-lang="zh">scRNA-seq 常用 0.5–1.5，但「正確 resolution」需要生物學判斷。</p>
-  <p data-lang="en">scRNA-seq typical range 0.5–1.5; "correct" choice requires biological judgment.</p>
-
-  <h3>Louvain <span data-lang="zh">演算法</span><span data-lang="en">algorithm</span></h3>
-  <div class="algo-block">
-<span class="comment"># Two-phase iterative</span>
-<span class="keyword">while</span> Q improves:
-    <span class="step"># Phase 1: local moving</span>
-    <span class="keyword">for</span> v <span class="keyword">in</span> nodes (random order):
-        c* = argmax ΔQ(move v <span class="keyword">to</span> c)
-        assign v <span class="keyword">to</span> c*
-    <span class="step"># Phase 2: aggregation</span>
-    contract each community <span class="keyword">to</span> a single super-node
-    new edges = sum of inter-community weights
-  </div>
-
-  <div class="callout callout-warn">
-    <strong data-lang="zh">⚠️ Louvain 的 bug：斷裂群</strong>
-    <strong data-lang="en">⚠️ Louvain bug: disconnected communities</strong>
-    <p data-lang="zh">Phase 1 可能讓「群 c 中的關鍵節點」移走，剩下的節點被分成兩個<b>實際斷開</b>的子圖——但 Louvain 不會察覺！這在 scRNA-seq 大數據集很常見。</p>
-    <p data-lang="en">Phase 1 may remove a "bridge node", leaving a community split into <b>actually disconnected</b> subgraphs — Louvain doesn't notice! Common in large scRNA-seq data.</p>
-  </div>
-
-  <h3>Leiden <span data-lang="zh">的修正</span><span data-lang="en">fix</span></h3>
-  <p data-lang="zh">在 Phase 1 與 Phase 2 之間插入 <b>refinement phase</b>：把每個群拆成「保證連通」的子群，再聚合。</p>
-  <p data-lang="en">Insert a <b>refinement phase</b> between Phase 1 and 2: split each community into guaranteed-connected sub-communities before aggregating.</p>
-  <p data-lang="zh">Traag et al. 2019 證明 Leiden 保證：(1) 所有群連通；(2) 每個節點都「最佳對應」其群。<b>現在所有主流 scRNA-seq 工具預設都是 Leiden</b>。</p>
-  <p data-lang="en">Traag et al. (2019) prove: (1) all communities connected; (2) every node "optimally assigned". <b>All modern tools default to Leiden now</b>.</p>
-</section>
-
-<section class="section">
-  <span class="section-label code">程式碼 / Code</span>
-  <div class="code-tabs"><div class="code-tab-btns"><button class="code-tab-btn active" onclick="switchTab(this,'py11')">Python</button><button class="code-tab-btn" onclick="switchTab(this,'r11')">R</button></div>
-    <div class="code-tab-content active" id="py11"><pre>sc.tl.leiden(adata, resolution=<span class="num">1.0</span>, random_state=<span class="num">42</span>)
-sc.pl.umap(adata, color=<span class="str">"leiden"</span>)
-
-<span class="comment"># 試多種 resolution</span>
-<span class="keyword">for</span> r <span class="keyword">in</span> [<span class="num">0.5</span>, <span class="num">0.8</span>, <span class="num">1.0</span>, <span class="num">1.5</span>]:
-    sc.tl.leiden(adata, resolution=r, key_added=<span class="str">f"leiden_r{r}"</span>)
-</pre></div>
-    <div class="code-tab-content" id="r11"><pre>pbmc &lt;- <span class="func">FindClusters</span>(pbmc, resolution = <span class="num">0.5</span>, algorithm = <span class="num">4</span>)
-<span class="comment"># algorithm = 4 是 Leiden；預設 1 是 Louvain</span>
-</pre></div>
-  </div>
-</section>
-
-<section class="section">
-  <span class="section-label">參考 / References</span>
-  <ul class="refs-list">
-    <li><div class="ref-title">Newman, M.E.J. (2006). Modularity and community structure in networks.</div><div class="ref-meta">PNAS 103. <a href="https://doi.org/10.1073/pnas.0601602103">10.1073/pnas.0601602103</a></div></li>
-    <li><div class="ref-title">Blondel, V.D. et al. (2008). Fast unfolding of communities in large networks.</div><div class="ref-meta">J Stat Mech. Louvain 原始論文。</div></li>
-    <li><div class="ref-title">Traag, V.A., Waltman, L., van Eck, N.J. (2019). From Louvain to Leiden.</div><div class="ref-meta">Sci Reports 9. <a href="https://doi.org/10.1038/s41598-019-41695-z">10.1038/s41598-019-41695-z</a></div></li>
-  </ul>
-</section>
-
-<div class="cross-links">
-  <a href="4.1-knn-graph.html" class="cross-link"><div class="cross-label" data-lang="zh">← 上一篇</div><div class="cross-label" data-lang="en">← PREV</div><div class="cross-title"><span class="cross-id">M4.1</span> KNN graph</div></a>
-  <a href="../M5-statistics/5.1-de-tests.html" class="cross-link"><div class="cross-label" data-lang="zh">下一個模塊 →</div><div class="cross-label" data-lang="en">NEXT MODULE →</div><div class="cross-title"><span class="cross-id">M5.1</span> DE Tests</div></a>
+<div class="nav-pages">
+  <span class="label" data-lang="zh">本頁章節</span><span class="label" data-lang="en">CHAPTERS</span>
+  <a href="#s0"><span data-lang="zh">§0 故事</span><span data-lang="en">§0 Story</span></a>
+  <a href="#s1"><span data-lang="zh">§1 Modularity</span><span data-lang="en">§1 Modularity</span></a>
+  <a href="#s2"><span data-lang="zh">§2 互動 Q</span><span data-lang="en">§2 Interactive Q</span></a>
+  <a href="#s3"><span data-lang="zh">§3 Louvain</span><span data-lang="en">§3 Louvain</span></a>
+  <a href="#s4"><span data-lang="zh">§4 互動 Louvain</span><span data-lang="en">§4 Louvain demo</span></a>
+  <a href="#s5"><span data-lang="zh">§5 斷裂群</span><span data-lang="en">§5 Disconnected</span></a>
+  <a href="#s6"><span data-lang="zh">§6 Leiden 修正</span><span data-lang="en">§6 Leiden fix</span></a>
+  <a href="#s7"><span data-lang="zh">§7 Resolution</span><span data-lang="en">§7 Resolution</span></a>
+  <a href="#s8"><span data-lang="zh">§8 限制</span><span data-lang="en">§8 Limits</span></a>
 </div>
 
-</main>
-<footer class="site-footer"><p>© Charlene</p></footer>
+<header class="cover">
+  <div class="badge"><span data-lang="zh">深入互動版 · 從直覺到數學</span><span data-lang="en">Deep Interactive · From Intuition to Math</span></div>
+  <h1 data-lang="zh">Louvain & Leiden：把 KNN 圖切成細胞型態</h1>
+  <h1 data-lang="en">Louvain & Leiden: cutting KNN graph into cell types</h1>
+  <div class="sub" data-lang="zh">
+    有了 KNN graph，下一步是「<b>分群</b>」——把細胞分成 cluster，每個 cluster 對應一個細胞型態。
+    但「分群」這個詞模糊不清——同一張圖可以切出 5 群、10 群、20 群都「合理」。
+    我們需要一個<b>量化目標</b>來定義什麼是「好的分群」。<br><br>
+    答案是 <b>modularity Q</b>：衡量「群內邊比預期多多少」。
+    Louvain 演算法用 greedy 兩階段最大化 Q；
+    Leiden 修正 Louvain 會產生<b>斷裂群</b>的 bug。
+    這節從 modularity 公式出發，用互動模擬看 Louvain 怎麼跑、Leiden 為什麼更穩。
+  </div>
+  <div class="sub" data-lang="en">
+    With KNN graph, next step: <b>cluster</b> cells, each cluster = a cell type.
+    But "cluster" is ambiguous — same graph can yield 5, 10, or 20 "reasonable" clusters.
+    We need a <b>quantitative objective</b> for "good clustering".<br><br>
+    Answer: <b>modularity Q</b> — "how many more within-cluster edges than expected".
+    Louvain greedily maximizes Q in two phases;
+    Leiden patches Louvain's <b>disconnected community</b> bug.
+    This section derives modularity, simulates Louvain interactively, and shows why Leiden is more reliable.
+  </div>
+</header>
+
+<div class="toc">
+  <h4 data-lang="zh">目錄</h4>
+  <h4 data-lang="en">Table of Contents</h4>
+  <ol start="0">
+    <li><a href="#s0"><span data-lang="zh">故事：什麼叫「好的分群」？</span><span data-lang="en">Story: what is "good" clustering?</span></a><span class="new" data-lang="zh">新增</span><span class="new" data-lang="en">NEW</span></li>
+    <li><a href="#s1"><span data-lang="zh">Modularity Q 的數學</span><span data-lang="en">Modularity Q math</span></a></li>
+    <li><a href="#s2"><span data-lang="zh">互動：手動分群看 Q 變化</span><span data-lang="en">Interactive: manually cluster, watch Q</span></a></li>
+    <li><a href="#s3"><span data-lang="zh">Louvain 兩階段演算法</span><span data-lang="en">Louvain two-phase algorithm</span></a></li>
+    <li><a href="#s4"><span data-lang="zh">互動：Louvain 步驟導覽</span><span data-lang="en">Interactive: Louvain step-by-step</span></a><span class="new" data-lang="zh">核心</span><span class="new" data-lang="en">CORE</span></li>
+    <li><a href="#s5"><span data-lang="zh">Louvain 的斷裂群 bug</span><span data-lang="en">Louvain's disconnected community bug</span></a></li>
+    <li><a href="#s6"><span data-lang="zh">Leiden 三階段修正</span><span data-lang="en">Leiden's 3-phase fix</span></a></li>
+    <li><a href="#s7"><span data-lang="zh">Resolution γ 與群數量</span><span data-lang="en">Resolution γ vs # clusters</span></a></li>
+    <li><a href="#s8"><span data-lang="zh">限制 + 下一步</span><span data-lang="en">Limits + next</span></a></li>
+  </ol>
+</div>
+
+<h2 id="s0"><span class="num">§0</span> <span data-lang="zh">故事：什麼叫「好的分群」？</span><span data-lang="en">Story: what is "good" clustering?</span></h2>
+
+<p class="lead" data-lang="zh">
+  你拿到 KNN graph：10,000 個細胞 + 邊。同樣這張圖，你可以切成：
+</p>
+<p class="lead" data-lang="en">
+  You have a KNN graph: 10,000 cells + edges. Same graph, multiple partitions:
+</p>
+
+<ul>
+  <li data-lang="zh"><b>1 群</b>：所有細胞在一起 — 沒分群</li>
+  <li data-lang="en"><b>1 group</b>: all cells together — no partition</li>
+  <li data-lang="zh"><b>10,000 群</b>：每細胞自己一群 — 等於沒分</li>
+  <li data-lang="en"><b>10,000 groups</b>: each cell alone — equivalent to no partition</li>
+  <li data-lang="zh"><b>2 群、5 群、15 群</b>...都「看起來」合理</li>
+  <li data-lang="en"><b>2, 5, 15 groups</b>... all "look" reasonable</li>
+</ul>
+
+<p data-lang="zh">怎麼挑「正確」的分群？我們需要一個<b>客觀分數</b>。Newman & Girvan (2004) 提出 <b>modularity Q</b>：</p>
+<p data-lang="en">How to pick the "right" partition? We need an <b>objective score</b>. Newman & Girvan (2004) proposed <b>modularity Q</b>:</p>
+
+<div class="callout idea">
+  <strong data-lang="zh">直覺定義</strong><strong data-lang="en">Intuitive definition</strong>:
+  <span data-lang="zh">Q = (群內邊比例) − (如果是隨機圖會有的群內邊比例)。Q 越大，分群「越像有結構」。</span>
+  <span data-lang="en">Q = (within-cluster edge fraction) − (random-graph baseline). Higher Q → more "structured" partition.</span>
+</div>
+
+<h2 id="s1"><span class="num">§1</span> <span data-lang="zh">Modularity Q 的數學</span><span data-lang="en">Modularity Q math</span></h2>
+
+<div class="math-block boxed">
+  $$Q = \frac{1}{2m} \sum_{i,j} \left[ A_{ij} - \frac{k_i k_j}{2m} \right] \delta(c_i, c_j)$$
+  <div class="formula-caption" data-lang="zh">$A_{ij}$ = 鄰接矩陣、$k_i$ = 點 $i$ 的度、$m$ = 總邊數、$\delta(c_i, c_j)$ = 1 若 $i, j$ 同 cluster 否則 0</div>
+  <div class="formula-caption" data-lang="en">$A_{ij}$ = adjacency, $k_i$ = degree of $i$, $m$ = # edges, $\delta(c_i, c_j)$ = 1 if same cluster else 0</div>
+</div>
+
+<h3 data-lang="zh">1.1 拆解每一項的意義</h3>
+<h3 data-lang="en">1.1 Decompose each term</h3>
+
+<table class="compare">
+  <tr><th data-lang="zh">項</th><th data-lang="en">Term</th>
+      <th data-lang="zh">意義</th><th data-lang="en">Meaning</th></tr>
+  <tr><td>$A_{ij}$</td><td>$A_{ij}$</td>
+      <td data-lang="zh">實際 $i, j$ 之間是否有邊</td>
+      <td data-lang="en">actual edge between $i, j$</td></tr>
+  <tr><td>$\frac{k_i k_j}{2m}$</td><td>$\frac{k_i k_j}{2m}$</td>
+      <td data-lang="zh">隨機圖（保留 degree）期望的邊數</td>
+      <td data-lang="en">expected edges in random graph (degree-preserving)</td></tr>
+  <tr><td>$A_{ij} - \frac{k_i k_j}{2m}$</td><td>$A_{ij} - \frac{k_i k_j}{2m}$</td>
+      <td data-lang="zh">「比預期多的邊」</td>
+      <td data-lang="en">"excess edges over expectation"</td></tr>
+  <tr><td>$\delta(c_i, c_j)$</td><td>$\delta(c_i, c_j)$</td>
+      <td data-lang="zh">只算「同 cluster」的對</td>
+      <td data-lang="en">only count "same cluster" pairs</td></tr>
+  <tr><td>$\frac{1}{2m} \sum$</td><td>$\frac{1}{2m} \sum$</td>
+      <td data-lang="zh">標準化到 [-1, 1] 之間</td>
+      <td data-lang="en">normalize to [-1, 1]</td></tr>
+</table>
+
+<h3 data-lang="zh">1.2 Q 的範圍跟解讀</h3>
+<h3 data-lang="en">1.2 Q range and interpretation</h3>
+
+<table class="compare">
+  <tr><th>Q</th><th>Q</th><th data-lang="zh">解讀</th><th data-lang="en">Meaning</th></tr>
+  <tr><td>~ 0</td><td>~ 0</td>
+      <td data-lang="zh">分群跟隨機差不多</td>
+      <td data-lang="en">partition no better than random</td></tr>
+  <tr><td>0.3 - 0.7</td><td>0.3 - 0.7</td>
+      <td data-lang="zh">有明顯社群結構（scRNA 典型範圍）</td>
+      <td data-lang="en">strong community structure (typical scRNA)</td></tr>
+  <tr><td>&gt; 0.7</td><td>&gt; 0.7</td>
+      <td data-lang="zh">非常分明的社群</td>
+      <td data-lang="en">very pronounced communities</td></tr>
+</table>
+
+<h2 id="s2"><span class="num">§2</span> <span data-lang="zh">互動：手動分群看 Q 變化</span><span data-lang="en">Interactive: manually cluster, watch Q</span></h2>
+
+<div class="card">
+  <p data-lang="zh">下方一張小圖（12 節點、明顯 3 群）。<b>點任何節點切換它的 cluster</b>（在 3 色之間循環），看 Q 怎麼變。
+    比較直覺答案 (3 群 = 高 Q) vs 隨機答案 (Q ≈ 0)。</p>
+  <p data-lang="en">A small graph (12 nodes, 3 clear groups). <b>Click any node to cycle its cluster</b> (3 colors), watch Q.
+    Compare intuitive answer (3 groups = high Q) vs random (Q ≈ 0).</p>
+  <div class="controls">
+    <button id="s2reset"><span data-lang="zh">重設成「全 1 群」</span><span data-lang="en">Reset to "all 1 group"</span></button>
+    <button id="s2optimal" class="ghost"><span data-lang="zh">展示最佳分群</span><span data-lang="en">Show optimal</span></button>
+    <button id="s2random" class="ghost"><span data-lang="zh">隨機分群</span><span data-lang="en">Random</span></button>
+  </div>
+  <svg class="canvas" id="s2svg" viewBox="0 0 800 400" width="100%"></svg>
+  <div class="stat-row">
+    <div class="item"><span class="lbl">m (edges)</span><span class="lbl">m (edges)</span><span class="val" id="s2m">—</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">群數</span><span class="lbl" data-lang="en">clusters</span><span class="val" id="s2nc">—</span></div>
+    <div class="item" style="color:#be123c"><span class="lbl">Q (modularity)</span><span class="lbl">Q</span><span class="val" id="s2q">—</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">內部邊</span><span class="lbl" data-lang="en">intra-edges</span><span class="val" id="s2intra">—</span></div>
+  </div>
+</div>
+
+<h2 id="s3"><span class="num">§3</span> <span data-lang="zh">Louvain 兩階段演算法</span><span data-lang="en">Louvain two-phase algorithm</span></h2>
+
+<p data-lang="zh">Blondel et al. (2008) 的 Louvain 用 greedy 找局部最佳 Q：</p>
+<p data-lang="en">Blondel et al. (2008) Louvain greedily finds local-optimal Q:</p>
+
+<h3 data-lang="zh">3.1 Phase 1：節點重指派</h3>
+<h3 data-lang="en">3.1 Phase 1: node reassignment</h3>
+
+<ol>
+  <li><span data-lang="zh">每個節點各自一群</span><span data-lang="en">Each node starts in its own community</span></li>
+  <li><span data-lang="zh">隨機順序走訪每個節點 $i$</span><span data-lang="en">Visit each node $i$ in random order</span></li>
+  <li><span data-lang="zh">試把 $i$ 移到鄰居 $j$ 所屬的 community，算 ΔQ</span><span data-lang="en">Try moving $i$ to each neighbor $j$'s community, compute ΔQ</span></li>
+  <li><span data-lang="zh">把 $i$ 移到讓 ΔQ 最大的群（若沒提升就留原處）</span><span data-lang="en">Move $i$ to whichever maximizes ΔQ (or stay if no improvement)</span></li>
+  <li><span data-lang="zh">重複直到沒節點要移動</span><span data-lang="en">Repeat until no node moves</span></li>
+</ol>
+
+<h3 data-lang="zh">3.2 Phase 2：圖收縮</h3>
+<h3 data-lang="en">3.2 Phase 2: graph contraction</h3>
+
+<ol>
+  <li><span data-lang="zh">把每個 community 視為「超節點」，得到新圖</span><span data-lang="en">Each community becomes a "super-node", forming new graph</span></li>
+  <li><span data-lang="zh">超節點之間的邊權 = 原圖兩 community 之間所有邊權加總</span><span data-lang="en">Super-edge weight = sum of all original edges between two communities</span></li>
+  <li><span data-lang="zh">用新圖回到 Phase 1，直到 Q 不再改善</span><span data-lang="en">Run Phase 1 on new graph, until Q stops improving</span></li>
+</ol>
+
+<h3 data-lang="zh">3.3 ΔQ 的閉式公式</h3>
+<h3 data-lang="en">3.3 ΔQ closed form</h3>
+
+<div class="math-block">
+  $$\Delta Q = \left[\frac{\Sigma_{\text{in}} + 2 k_{i,\text{in}}}{2m} - \left(\frac{\Sigma_{\text{tot}} + k_i}{2m}\right)^2\right] - \left[\frac{\Sigma_{\text{in}}}{2m} - \left(\frac{\Sigma_{\text{tot}}}{2m}\right)^2 - \left(\frac{k_i}{2m}\right)^2\right]$$
+  <div class="formula-caption" data-lang="zh">$\Sigma_{\text{in}}$ = community 內邊權總和；$\Sigma_{\text{tot}}$ = 該 community 所有節點度總和；$k_{i,\text{in}}$ = $i$ 連到該 community 的邊權</div>
+  <div class="formula-caption" data-lang="en">$\Sigma_{\text{in}}$ = sum of community's internal edge weights; $\Sigma_{\text{tot}}$ = sum of community's node degrees; $k_{i,\text{in}}$ = $i$'s edges into community</div>
+</div>
+
+<p data-lang="zh">關鍵：ΔQ 可以<b>局部</b>計算（只看 $i$ 跟目標 community），所以每次重指派 $O(k_i)$，整體 $O(m)$，<b>能做百萬節點</b>。</p>
+<p data-lang="en">Key: ΔQ is <b>local</b> (only $i$ and target community), so each reassignment is $O(k_i)$, total $O(m)$ — <b>scales to millions</b>.</p>
+
+<h2 id="s4"><span class="num">§4</span> <span data-lang="zh">互動：Louvain 步驟導覽</span><span data-lang="en">Interactive: Louvain step-by-step</span></h2>
+
+<div class="card">
+  <p data-lang="zh">下方一個 30 節點圖。按「下一步」逐步看 Louvain 怎麼合併 community：</p>
+  <p data-lang="en">A 30-node graph. Click "Next step" to watch Louvain merge communities:</p>
+  <div class="controls">
+    <button id="s4next"><span data-lang="zh">下一步</span><span data-lang="en">Next step</span></button>
+    <button id="s4reset" class="ghost"><span data-lang="zh">重置</span><span data-lang="en">Reset</span></button>
+    <button id="s4auto" class="ghost"><span data-lang="zh">自動跑完</span><span data-lang="en">Auto-run</span></button>
+  </div>
+  <svg class="canvas" id="s4svg" viewBox="0 0 800 400" width="100%"></svg>
+  <div class="stat-row">
+    <div class="item"><span class="lbl" data-lang="zh">步驟</span><span class="lbl" data-lang="en">Step</span><span class="val" id="s4step">0</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">群數</span><span class="lbl" data-lang="en">Clusters</span><span class="val" id="s4nc">30</span></div>
+    <div class="item" style="color:#be123c"><span class="lbl">Q</span><span class="lbl">Q</span><span class="val" id="s4q">0.000</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">最近合併</span><span class="lbl" data-lang="en">Last merge</span><span class="val" id="s4last">—</span></div>
+  </div>
+</div>
+
+<h2 id="s5"><span class="num">§5</span> <span data-lang="zh">Louvain 的斷裂群 bug</span><span data-lang="en">Louvain's disconnected community bug</span></h2>
+
+<p data-lang="zh">
+  Louvain 有個<b>嚴重 bug</b>（Traag et al. 2019 才指出）：
+  Phase 1 在重指派節點時，可能把「<b>中介節點</b>」搬走，
+  讓原本連通的 community 變成<b>實際上斷裂的兩半</b>，但 Louvain 不檢查、繼續當成一個 community。
+</p>
+<p data-lang="en">
+  Louvain has a <b>serious bug</b> (only identified by Traag et al. 2019):
+  Phase 1's reassignments can remove a <b>bridge node</b>, leaving the original community <b>physically disconnected</b>,
+  but Louvain doesn't check — it continues treating them as one community.
+</p>
+
+<div class="card">
+  <h3 data-lang="zh">5.1 具體例子</h3>
+  <h3 data-lang="en">5.1 Concrete example</h3>
+  <svg class="canvas" id="s5svg" viewBox="0 0 800 320" width="100%"></svg>
+  <p data-lang="zh">
+    上圖：原本 community A = {1, 2, 3, 4, 5}，其中 3 是 1-2 跟 4-5 的橋。
+    Louvain 把 3 重指派給 community B（紫色）後，
+    A 就剩 {1, 2} 和 {4, 5} 兩塊互不連通，但 Louvain 仍當成同一群。
+  </p>
+  <p data-lang="en">
+    Above: original A = {1, 2, 3, 4, 5}, where 3 bridges {1,2} and {4,5}.
+    Louvain moves 3 to B (purple), leaving A = {1,2} ⊔ {4,5} — physically disconnected, but treated as one cluster.
+  </p>
+</div>
+
+<div class="callout warn">
+  <strong data-lang="zh">後果</strong><strong data-lang="en">Consequence</strong>:
+  <span data-lang="zh">scRNA 上這個 bug 會讓你的「T 細胞 cluster」其實是兩個不相連的子群被合在一起——影響下游 DE 分析、軌跡推斷。<b>2019 之後不該再用 Louvain</b>。</span>
+  <span data-lang="en">In scRNA, this bug means your "T cell cluster" may actually be two disconnected subgroups — corrupting downstream DE, trajectory inference. <b>Don't use Louvain post-2019</b>.</span>
+</div>
+
+<h2 id="s6"><span class="num">§6</span> <span data-lang="zh">Leiden 三階段修正</span><span data-lang="en">Leiden's 3-phase fix</h2>
+
+<p data-lang="zh">Traag, Waltman & van Eck (2019) 設計 Leiden 修補 Louvain 的 bug。多了一個「refinement」階段：</p>
+<p data-lang="en">Traag, Waltman & van Eck (2019) designed Leiden to fix Louvain. It adds a "refinement" phase:</p>
+
+<table class="compare">
+  <tr><th>Phase</th><th>Phase</th>
+      <th>Louvain</th><th>Louvain</th>
+      <th><b>Leiden</b></th><th><b>Leiden</b></th></tr>
+  <tr><td>1</td><td>1</td>
+      <td data-lang="zh">節點重指派</td><td data-lang="en">Local move</td>
+      <td data-lang="zh">節點重指派（fast）</td><td data-lang="en">Fast local move</td></tr>
+  <tr style="background:#ffe4e6;"><td>2</td><td>2</td>
+      <td>—</td><td>—</td>
+      <td><b data-lang="zh">Refinement</b><b data-lang="en">Refinement</b>: <span data-lang="zh">每 community 內部重新做 Phase 1，確保連通</span><span data-lang="en">re-run Phase 1 inside each community, guaranteeing connectivity</span></td>
+      <td><b data-lang="zh">Refinement</b><b data-lang="en">Refinement</b>: <span data-lang="zh">每 community 內部重新做 Phase 1，確保連通</span><span data-lang="en">re-run Phase 1 inside each community, guaranteeing connectivity</span></td></tr>
+  <tr><td>3</td><td>3</td>
+      <td data-lang="zh">圖收縮</td><td data-lang="en">Aggregate</td>
+      <td data-lang="zh">圖收縮（按 refined partition）</td>
+      <td data-lang="en">Aggregate (on refined partition)</td></tr>
+</table>
+
+<h3 data-lang="zh">6.1 Leiden 提供的數學保證</h3>
+<h3 data-lang="en">6.1 Leiden's guarantees</h3>
+
+<ol>
+  <li><span data-lang="zh"><b>connectivity</b>：每個 community 都是連通的（Louvain 不保證）</span>
+      <span data-lang="en"><b>Connectivity</b>: every community is connected (Louvain doesn't guarantee)</span></li>
+  <li><span data-lang="zh"><b>γ-separation</b>：每對 community 之間滿足「分開比合併好」的條件</span>
+      <span data-lang="en"><b>γ-separation</b>: every community pair satisfies "splitting is better than merging"</span></li>
+  <li><span data-lang="zh"><b>well-connectedness</b>：每個 community 內部沒有「明顯該分開的子群」</span>
+      <span data-lang="en"><b>Well-connectedness</b>: no internal "obvious sub-partition" within any community</span></li>
+</ol>
+
+<h3 data-lang="zh">6.2 速度跟結果</h3>
+<h3 data-lang="en">6.2 Speed and quality</h3>
+
+<div class="callout idea">
+  <strong data-lang="zh">實測</strong><strong data-lang="en">Empirical</strong>:
+  <span data-lang="zh">Leiden 在大圖上其實比 Louvain <b>快</b>（refinement 給 Phase 3 更好起點），且 Q 更高。
+  scanpy / Seurat 最新版本預設都用 Leiden。</span>
+  <span data-lang="en">On large graphs, Leiden is actually <b>faster</b> than Louvain (refinement gives Phase 3 a better start) and higher Q.
+  Recent Scanpy / Seurat versions default to Leiden.</span>
+</div>
+
+<h2 id="s7"><span class="num">§7</span> <span data-lang="zh">Resolution γ 與群數量</span><span data-lang="en">Resolution γ vs # clusters</span></h2>
+
+<p data-lang="zh">原始 modularity 有個著名缺陷：<b>resolution limit</b>——對大圖找不到小 community。
+解法是加上 resolution 參數 $\gamma$：</p>
+<p data-lang="en">Vanilla modularity has a famous flaw: <b>resolution limit</b> — small communities go undetected in large graphs.
+Fix: add resolution parameter $\gamma$:</p>
+
+<div class="math-block boxed">
+  $$Q_\gamma = \frac{1}{2m} \sum_{i,j} \left[ A_{ij} - \gamma \frac{k_i k_j}{2m} \right] \delta(c_i, c_j)$$
+</div>
+
+<p data-lang="zh"><b>γ 越大 → 群越多越小</b>；γ 越小 → 群越少越大。scanpy 預設 $\gamma = 1$。</p>
+<p data-lang="en"><b>Larger γ → more, smaller clusters</b>; smaller γ → fewer, bigger. Scanpy default $\gamma = 1$.</p>
+
+<div class="card">
+  <h3 data-lang="zh">7.1 互動：拉 γ 看 cluster 數變化</h3>
+  <h3 data-lang="en">7.1 Interactive: vary γ, see # clusters</h3>
+  <div class="controls">
+    <label>$\gamma$ (resolution):
+      <input type="range" id="s7gamma" min="0.1" max="3" value="1" step="0.1"><span id="s7gammaVal">1.0</span>
+    </label>
+    <button id="s7run"><span data-lang="zh">執行 Leiden</span><span data-lang="en">Run Leiden</span></button>
+  </div>
+  <svg class="canvas" id="s7svg" viewBox="0 0 800 380" width="100%"></svg>
+  <div class="stat-row">
+    <div class="item"><span class="lbl" data-lang="zh">群數</span><span class="lbl" data-lang="en">Clusters</span><span class="val" id="s7nc">—</span></div>
+    <div class="item" style="color:#be123c"><span class="lbl">Q (modularity)</span><span class="lbl">Q</span><span class="val" id="s7q">—</span></div>
+  </div>
+  <p data-lang="zh">建議：實務上跑 $\gamma \in \{0.5, 1, 1.5, 2\}$，找穩定（cluster 數不隨小變化跳很大）的範圍。</p>
+  <p data-lang="en">Practice: try $\gamma \in \{0.5, 1, 1.5, 2\}$, pick the stable region (cluster count doesn't jump with small γ changes).</p>
+</div>
+
+<h2 id="s8"><span class="num">§8</span> <span data-lang="zh">限制 + 下一步</span><span data-lang="en">Limits + next</span></h2>
+
+<h3 data-lang="zh">8.1 一個完整 pipeline</h3>
+<h3 data-lang="en">8.1 A complete pipeline</h3>
+
+<pre class="code"><span class="k">import</span> scanpy <span class="k">as</span> sc
+
+<span class="c"># after PCA</span>
+sc.pp.neighbors(adata, n_neighbors=<span class="n">15</span>, n_pcs=<span class="n">30</span>)
+sc.tl.leiden(adata, resolution=<span class="n">1.0</span>)
+<span class="c"># adata.obs["leiden"] 即為 cluster 標籤</span>
+
+<span class="c"># 多 resolution 試試看</span>
+<span class="k">for</span> gamma <span class="k">in</span> [<span class="n">0.5</span>, <span class="n">1.0</span>, <span class="n">1.5</span>, <span class="n">2.0</span>]:
+    sc.tl.leiden(adata, resolution=gamma, key_added=<span class="s">f"leiden_</span>{gamma}<span class="s">"</span>)</pre>
+
+<h3 data-lang="zh">8.2 限制</h3>
+<h3 data-lang="en">8.2 Limitations</h3>
+<table class="compare">
+  <tr><th data-lang="zh">限制</th><th data-lang="en">Limitation</th>
+      <th data-lang="zh">後果</th><th data-lang="en">Consequence</th>
+      <th data-lang="zh">緩解</th><th data-lang="en">Mitigation</th></tr>
+  <tr>
+    <td data-lang="zh">resolution limit（大圖）</td>
+    <td data-lang="en">resolution limit (large graphs)</td>
+    <td data-lang="zh">小 community 被合併</td>
+    <td data-lang="en">small communities get merged</td>
+    <td data-lang="zh">提高 γ 或用其他指標</td>
+    <td data-lang="en">increase γ or use other metrics</td>
+  </tr>
+  <tr>
+    <td data-lang="zh">結果隨機（節點順序）</td>
+    <td data-lang="en">stochastic (node order)</td>
+    <td data-lang="zh">每次跑結果略不同</td>
+    <td data-lang="en">slightly different each run</td>
+    <td data-lang="zh">設 seed、多次跑取共識</td>
+    <td data-lang="en">set seed, run multiple times, consensus</td>
+  </tr>
+  <tr>
+    <td data-lang="zh">假設每細胞屬於單一群</td>
+    <td data-lang="en">assumes hard partition</td>
+    <td data-lang="zh">過渡細胞被強制歸類</td>
+    <td data-lang="en">transitional cells forced into one cluster</td>
+    <td data-lang="zh">用 fuzzy / soft clustering</td>
+    <td data-lang="en">use fuzzy / soft clustering</td>
+  </tr>
+  <tr>
+    <td data-lang="zh">過度依賴 KNN graph 品質</td>
+    <td data-lang="en">depends on KNN graph quality</td>
+    <td data-lang="zh">壞 KNN → 壞 cluster</td>
+    <td data-lang="en">bad KNN → bad clusters</td>
+    <td data-lang="zh">先做 batch correction、PCA 數選對</td>
+    <td data-lang="en">batch correction, right n_pcs</td>
+  </tr>
+</table>
+
+<div class="callout prog">
+  <strong data-lang="zh">下一步</strong><strong data-lang="en">Next</strong>:
+  <span data-lang="zh">分群完了 → <a href="../M5-statistics/5.1-de-tests.html"><b>M5.1 DE tests</b></a> 找每群的 marker genes → <a href="../M6-advanced/6.2-pseudotime.html"><b>M6.2 Pseudotime</b></a> 把連續變化的細胞排成軌跡。</span>
+  <span data-lang="en">After clustering → <a href="../M5-statistics/5.1-de-tests.html"><b>M5.1 DE tests</b></a> for marker genes → <a href="../M6-advanced/6.2-pseudotime.html"><b>M6.2 Pseudotime</b></a> for trajectories.</span>
+</div>
+
+<p class="footer">
+  <span data-lang="zh">© scRNA-seq Advanced Math · M4.2 Louvain & Leiden Deep Interactive</span>
+  <span data-lang="en">© scRNA-seq Advanced Math · M4.2 Louvain & Leiden Deep Interactive</span>
+</p>
+
+</div>
+
 <script src="../i18n.js"></script>
-<script>function switchTab(b,id){const p=b.closest(".code-tabs");p.querySelectorAll(".code-tab-btn").forEach(x=>x.classList.remove("active"));p.querySelectorAll(".code-tab-content").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(id).classList.add("active");}</script>
-</body></html>
+<script>
+// Generic modularity helper
+function modularity(nodes, edges) {
+  const m = edges.length;
+  if (m === 0) return 0;
+  // node degrees
+  const k = {};
+  edges.forEach(e => { k[e.s] = (k[e.s]||0) + 1; k[e.t] = (k[e.t]||0) + 1; });
+  let q = 0;
+  // for each pair, but we sum over all i,j; for sparse edges use formula:
+  // Q = sum_c [(L_c / m) - (D_c/(2m))^2]
+  // L_c = sum of edges within community c
+  // D_c = sum of degrees of nodes in c
+  const Lc = {}; const Dc = {};
+  edges.forEach(e => {
+    const cs = nodes[e.s].c, ct = nodes[e.t].c;
+    if (cs === ct) Lc[cs] = (Lc[cs]||0) + 1;
+  });
+  nodes.forEach((n, i) => { Dc[n.c] = (Dc[n.c]||0) + (k[i]||0); });
+  Object.keys(Lc).forEach(c => { q += Lc[c]/m; });
+  Object.keys(Dc).forEach(c => { q -= (Dc[c]/(2*m))**2; });
+  return q;
+}
+
+// ====== §2 manual cluster ======
+(function(){
+  // 3 obvious groups
+  const nodes = [];
+  const positions = [
+    [180, 130], [220, 100], [220, 160], [260, 130],  // group A (top-left)
+    [430, 130], [470, 100], [470, 160], [510, 130],  // group B (top-right)
+    [310, 290], [350, 260], [350, 320], [390, 290]   // group C (bottom)
+  ];
+  positions.forEach((p, i) => nodes.push({x: p[0], y: p[1], c: 0, id: i}));
+  // Dense within groups, sparse between
+  const edges = [
+    [0,1],[0,2],[1,2],[1,3],[2,3],
+    [4,5],[4,6],[5,6],[5,7],[6,7],
+    [8,9],[8,10],[9,10],[9,11],[10,11],
+    [3,4],[7,11],[2,8]  // few cross-group bridges
+  ].map(e => ({s: e[0], t: e[1]}));
+  const colors = ['#2c5aa0', '#27795a', '#be123c'];
+  function draw() {
+    let s = '';
+    s += `<rect x="0" y="0" width="800" height="400" fill="#fcfcfa"/>`;
+    edges.forEach(e => {
+      const a = nodes[e.s], b = nodes[e.t];
+      const sameCluster = a.c === b.c;
+      s += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${sameCluster?'#888':'#ccc'}" stroke-width="${sameCluster?2:1}" opacity="${sameCluster?0.7:0.4}"/>`;
+    });
+    nodes.forEach(n => {
+      s += `<circle cx="${n.x}" cy="${n.y}" r="14" fill="${colors[n.c]}" stroke="#fff" stroke-width="2" style="cursor:pointer" data-i="${n.id}"/>`;
+      s += `<text x="${n.x}" y="${n.y+5}" text-anchor="middle" fill="#fff" font-weight="700" font-size="13" pointer-events="none">${n.id+1}</text>`;
+    });
+    document.getElementById('s2svg').innerHTML = s;
+    document.getElementById('s2svg').querySelectorAll('circle').forEach(c => {
+      c.addEventListener('click', () => { nodes[+c.dataset.i].c = (nodes[+c.dataset.i].c + 1) % 3; updateStats(); draw(); });
+    });
+    updateStats();
+  }
+  function updateStats() {
+    const q = modularity(nodes, edges);
+    const nc = new Set(nodes.map(n => n.c)).size;
+    const intra = edges.filter(e => nodes[e.s].c === nodes[e.t].c).length;
+    document.getElementById('s2m').textContent = edges.length;
+    document.getElementById('s2nc').textContent = nc;
+    document.getElementById('s2q').textContent = q.toFixed(3);
+    document.getElementById('s2intra').textContent = intra;
+  }
+  document.getElementById('s2reset').addEventListener('click', () => { nodes.forEach(n => n.c = 0); draw(); });
+  document.getElementById('s2optimal').addEventListener('click', () => {
+    [0,1,2,3].forEach(i => nodes[i].c = 0);
+    [4,5,6,7].forEach(i => nodes[i].c = 1);
+    [8,9,10,11].forEach(i => nodes[i].c = 2);
+    draw();
+  });
+  document.getElementById('s2random').addEventListener('click', () => { nodes.forEach(n => n.c = Math.floor(Math.random()*3)); draw(); });
+  draw();
+})();
+
+// ====== §4 Louvain step demo ======
+(function(){
+  let seed = 17; const rnd = () => { seed = (seed*9301+49297)%233280; return seed/233280; };
+  const nodes = [];
+  for (let g = 0; g < 3; g++) {
+    const cx = 200 + g*200, cy = 200;
+    for (let i = 0; i < 10; i++) {
+      nodes.push({x: cx + (rnd()-0.5)*120, y: cy + (rnd()-0.5)*120, c: nodes.length, id: nodes.length, grp: g});
+    }
+  }
+  const edges = [];
+  // dense within group
+  for (let g = 0; g < 3; g++) {
+    const idx = [...Array(10).keys()].map(i => g*10 + i);
+    for (let i = 0; i < idx.length; i++) {
+      for (let j = i+1; j < idx.length; j++) {
+        if (rnd() < 0.45) edges.push({s: idx[i], t: idx[j]});
+      }
+    }
+  }
+  // sparse between
+  for (let i = 0; i < 30; i++) {
+    for (let j = i+1; j < 30; j++) {
+      if (nodes[i].grp !== nodes[j].grp && rnd() < 0.03) edges.push({s: i, t: j});
+    }
+  }
+  const colors = ['#2c5aa0', '#27795a', '#be123c', '#8e44ad', '#f0c419', '#0d9488', '#d97706', '#1e3a8a', '#9d174d', '#27795a',
+                  '#666', '#999', '#bbb', '#7c8db5', '#5d3a14', '#0a3d3a', '#3b82f6', '#a45dc8', '#52b788', '#c0392b',
+                  '#1a2347', '#fbcfe8', '#fda4af', '#dbeafe', '#e0e7ff', '#fde68a', '#c7d2fe', '#99f6e4', '#fecdd3', '#fbcfe8'];
+  let step = 0;
+  let lastMerge = '—';
+
+  function lookupComm(nid) { return nodes[nid].c; }
+  function deltaQforMove(nid, newCom) {
+    // simple local heuristic: count edges from nid to newCom vs current
+    let toNew = 0, toCur = 0;
+    edges.forEach(e => {
+      let other;
+      if (e.s === nid) other = e.t;
+      else if (e.t === nid) other = e.s;
+      else return;
+      if (lookupComm(other) === newCom) toNew++;
+      if (lookupComm(other) === nodes[nid].c && other !== nid) toCur++;
+    });
+    return toNew - toCur;
+  }
+  function nextStep() {
+    // for each node, find best neighbor community
+    let moved = false;
+    const order = [...Array(nodes.length).keys()];
+    for (let k = order.length-1; k > 0; k--) { const j = Math.floor(rnd()*(k+1)); [order[k], order[j]] = [order[j], order[k]]; }
+    for (const i of order) {
+      // get neighbor communities
+      const neighComs = new Set();
+      edges.forEach(e => {
+        if (e.s === i) neighComs.add(nodes[e.t].c);
+        if (e.t === i) neighComs.add(nodes[e.s].c);
+      });
+      neighComs.delete(nodes[i].c);
+      let bestC = nodes[i].c, bestD = 0;
+      neighComs.forEach(c => {
+        const d = deltaQforMove(i, c);
+        if (d > bestD) { bestD = d; bestC = c; }
+      });
+      if (bestC !== nodes[i].c) {
+        lastMerge = `node ${i} → cluster ${bestC}`;
+        nodes[i].c = bestC;
+        moved = true;
+        break; // one move per step
+      }
+    }
+    if (!moved) lastMerge = (document.body.classList.contains('lang-en') ? 'no more moves possible' : '無更多可改善的移動');
+    step++;
+    draw();
+  }
+  function draw() {
+    const q = modularity(nodes, edges);
+    const nc = new Set(nodes.map(n => n.c)).size;
+    document.getElementById('s4step').textContent = step;
+    document.getElementById('s4nc').textContent = nc;
+    document.getElementById('s4q').textContent = q.toFixed(3);
+    document.getElementById('s4last').textContent = lastMerge;
+    let s = '';
+    s += `<rect x="0" y="0" width="800" height="400" fill="#fcfcfa"/>`;
+    edges.forEach(e => {
+      const a = nodes[e.s], b = nodes[e.t];
+      const sameC = a.c === b.c;
+      s += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${sameC?'#888':'#ddd'}" stroke-width="${sameC?1.5:0.7}" opacity="${sameC?0.7:0.4}"/>`;
+    });
+    nodes.forEach(n => {
+      s += `<circle cx="${n.x}" cy="${n.y}" r="8" fill="${colors[n.c % colors.length]}" stroke="#fff" stroke-width="1.5"/>`;
+    });
+    document.getElementById('s4svg').innerHTML = s;
+  }
+  function reset() { nodes.forEach((n, i) => n.c = i); step = 0; lastMerge = '—'; draw(); }
+  document.getElementById('s4next').addEventListener('click', nextStep);
+  document.getElementById('s4reset').addEventListener('click', reset);
+  document.getElementById('s4auto').addEventListener('click', () => {
+    let n = 0;
+    function tick() {
+      const prevQ = modularity(nodes, edges);
+      nextStep();
+      const newQ = modularity(nodes, edges);
+      if (++n < 60 && newQ > prevQ + 1e-6) setTimeout(tick, 100);
+    }
+    tick();
+  });
+  reset();
+})();
+
+// ====== §5 disconnected illustration ======
+(function(){
+  const W = 800, H = 320;
+  // Before and after panels
+  let s = '';
+  s += `<text class="lbl" x="200" y="25" text-anchor="middle" font-weight="700">Before Louvain Phase 1 (correct)</text>`;
+  s += `<text class="lbl" x="600" y="25" text-anchor="middle" font-weight="700">After Louvain (3 移走) — A 斷裂！</text>`;
+  // A: nodes 1, 2, 3, 4, 5 connected via 3
+  const A1 = {x: 80, y: 120, id: 1}, A2 = {x: 120, y: 150, id: 2};
+  const A3 = {x: 180, y: 130, id: 3};
+  const A4 = {x: 240, y: 100, id: 4}, A5 = {x: 280, y: 140, id: 5};
+  const B1 = {x: 240, y: 250, id: 6}, B2 = {x: 280, y: 280, id: 7}, B3 = {x: 200, y: 270, id: 8};
+  function drawNodes(off, A3Comm) {
+    const nodes = [
+      {n: A1, c: 'A'}, {n: A2, c: 'A'},
+      {n: A3, c: A3Comm},
+      {n: A4, c: 'A'}, {n: A5, c: 'A'},
+      {n: B1, c: 'B'}, {n: B2, c: 'B'}, {n: B3, c: 'B'}
+    ];
+    const edges = [
+      [A1, A2], [A1, A3], [A2, A3], [A3, A4], [A3, A5], [A4, A5],
+      [B1, B2], [B1, B3], [B2, B3], [A3, B3]  // A3 connects to B3
+    ];
+    const colors = { A: '#2c5aa0', B: '#8e44ad' };
+    let out = '';
+    edges.forEach(e => {
+      out += `<line x1="${e[0].x+off}" y1="${e[0].y}" x2="${e[1].x+off}" y2="${e[1].y}" stroke="#888" stroke-width="1.5" opacity="0.6"/>`;
+    });
+    nodes.forEach(nn => {
+      out += `<circle cx="${nn.n.x+off}" cy="${nn.n.y}" r="14" fill="${colors[nn.c]}" stroke="#fff" stroke-width="2"/>`;
+      out += `<text x="${nn.n.x+off}" y="${nn.n.y+5}" text-anchor="middle" fill="#fff" font-weight="700" font-size="13">${nn.n.id}</text>`;
+    });
+    return out;
+  }
+  s += drawNodes(0, 'A');
+  s += drawNodes(400, 'B'); // 3 moved to B
+  // labels
+  s += `<text class="lbl" x="200" y="305" text-anchor="middle" fill="#2c5aa0">A = {1,2,3,4,5} 連通</text>`;
+  s += `<text class="lbl" x="600" y="305" text-anchor="middle" fill="#c0392b">A = {1,2} ⊔ {4,5} 斷裂！</text>`;
+  document.getElementById('s5svg').innerHTML = s;
+})();
+
+// ====== §7 resolution ======
+(function(){
+  let seed = 91; const rnd = () => { seed = (seed*9301+49297)%233280; return seed/233280; };
+  // 60 nodes, 4 dense groups
+  const nodes = [];
+  const groupCenters = [[180, 130], [560, 130], [180, 290], [560, 290]];
+  groupCenters.forEach((c, g) => {
+    for (let i = 0; i < 15; i++) {
+      nodes.push({x: c[0] + (rnd()-0.5)*100, y: c[1] + (rnd()-0.5)*100, grp: g, c: g});
+    }
+  });
+  const edges = [];
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i+1; j < nodes.length; j++) {
+      const p = nodes[i].grp === nodes[j].grp ? 0.25 : 0.015;
+      if (rnd() < p) edges.push({s: i, t: j});
+    }
+  }
+  function runLeiden(gamma) {
+    // very simplified: re-cluster by gamma-modified greedy
+    nodes.forEach((n, i) => n.c = i);
+    for (let iter = 0; iter < 30; iter++) {
+      let moved = false;
+      const order = [...Array(nodes.length).keys()];
+      for (let k = order.length-1; k > 0; k--) { const j = Math.floor(rnd()*(k+1)); [order[k], order[j]] = [order[j], order[k]]; }
+      for (const i of order) {
+        const neighComs = {};
+        edges.forEach(e => {
+          let other;
+          if (e.s === i) other = e.t;
+          else if (e.t === i) other = e.s;
+          else return;
+          neighComs[nodes[other].c] = (neighComs[nodes[other].c]||0) + 1;
+        });
+        // count current community internal degree (gamma penalty)
+        let bestC = nodes[i].c, bestScore = 0;
+        Object.entries(neighComs).forEach(([c, cnt]) => {
+          if (+c === nodes[i].c) return;
+          // estimate community size for gamma penalty
+          const csize = nodes.filter(n => n.c === +c).length;
+          const score = cnt - gamma * csize * 0.05;
+          if (score > bestScore) { bestScore = score; bestC = +c; }
+        });
+        if (bestC !== nodes[i].c) { nodes[i].c = bestC; moved = true; }
+      }
+      if (!moved) break;
+    }
+  }
+  function draw() {
+    const gamma = +document.getElementById('s7gamma').value;
+    document.getElementById('s7gammaVal').textContent = gamma.toFixed(1);
+    runLeiden(gamma);
+    const q = modularity(nodes, edges);
+    const nc = new Set(nodes.map(n => n.c)).size;
+    document.getElementById('s7nc').textContent = nc;
+    document.getElementById('s7q').textContent = q.toFixed(3);
+    // colors mapped to unique cluster ids
+    const uniq = [...new Set(nodes.map(n => n.c))];
+    const colorMap = {};
+    const palette = ['#2c5aa0', '#27795a', '#be123c', '#8e44ad', '#f0c419', '#0d9488', '#d97706', '#1e3a8a', '#9d174d', '#c0392b', '#666', '#3b82f6', '#52b788', '#a45dc8', '#fbcfe8'];
+    uniq.forEach((c, i) => colorMap[c] = palette[i % palette.length]);
+    let s = '';
+    s += `<rect x="0" y="0" width="800" height="380" fill="#fcfcfa"/>`;
+    edges.forEach(e => {
+      const a = nodes[e.s], b = nodes[e.t];
+      const sameC = a.c === b.c;
+      s += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${sameC?'#888':'#ddd'}" stroke-width="${sameC?1.5:0.5}" opacity="${sameC?0.6:0.3}"/>`;
+    });
+    nodes.forEach(n => {
+      s += `<circle cx="${n.x}" cy="${n.y}" r="7" fill="${colorMap[n.c]}" stroke="#fff" stroke-width="1.5"/>`;
+    });
+    document.getElementById('s7svg').innerHTML = s;
+  }
+  document.getElementById('s7gamma').addEventListener('input', draw);
+  document.getElementById('s7run').addEventListener('click', draw);
+  draw();
+})();
+</script>
+</body>
+</html>

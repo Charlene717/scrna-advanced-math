@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<title>主成分分析 PCA — 從直覺到數學的完整旅程（深入互動版）</title>
+<title>PCA — 從直覺到數學 / From Intuition to Math (Deep Interactive)</title>
 <script>
   MathJax = {
     tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] },
@@ -327,15 +327,245 @@
   .math-live .pc1 { color: #ff7a6b; }
   .math-live .pc2 { color: #7cb1f0; }
   .math-live .pc3 { color: #82c89e; }
+
+  /* === 新增 V7：頂部 nav + 章節快捷 + 語言切換 === */
+  .top-nav {
+    background: #0f1733;
+    color: #fff;
+    padding: 14px 28px;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 12px rgba(15, 23, 51, 0.25);
+  }
+  .top-nav-inner {
+    max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; gap: 28px;
+  }
+  .top-nav-brand {
+    color: #fff; text-decoration: none;
+    font-weight: 700; font-size: 17px;
+    display: flex; align-items: center; gap: 10px;
+    flex-shrink: 0;
+  }
+  .top-nav-brand .badge-math {
+    background: #8b5cf6; color: #fff;
+    padding: 3px 9px; border-radius: 4px;
+    font-size: 11px; letter-spacing: 0.5px; font-weight: 600;
+  }
+  .top-nav-links {
+    list-style: none; margin: 0; padding: 0;
+    display: flex; gap: 6px; flex-wrap: wrap; flex: 1;
+  }
+  .top-nav-links a {
+    color: #c5cee8; text-decoration: none;
+    padding: 6px 11px; border-radius: 6px;
+    font-size: 13px; font-weight: 500;
+    transition: 0.2s;
+  }
+  .top-nav-links a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .top-nav-links a.active { background: #4f7df4; color: #fff; }
+
+  /* === 下拉式選單 === */
+  .top-nav-links li.dropdown { position: relative; }
+  .top-nav-links li.dropdown > a::after {
+    content: ' ▾'; font-size: 10px; opacity: 0.7; margin-left: 3px;
+    display: inline-block; transition: transform 0.2s;
+  }
+  .top-nav-links li.dropdown:hover > a::after,
+  .top-nav-links li.dropdown.open > a::after { transform: rotate(180deg); }
+  .top-nav-links .dropdown-menu {
+    display: none; position: absolute; top: 100%; left: 0;
+    background: #1a2347; border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px; padding: 6px 0; min-width: 230px;
+    list-style: none; z-index: 200;
+    box-shadow: 0 8px 28px rgba(15,23,51,0.5); margin: 6px 0 0;
+  }
+  .top-nav-links li.dropdown:hover > .dropdown-menu,
+  .top-nav-links li.dropdown.open > .dropdown-menu { display: block; }
+  .top-nav-links .dropdown-menu li { display: block; }
+  .top-nav-links .dropdown-menu li a {
+    display: block; padding: 9px 18px; border-radius: 0;
+    font-size: 13px; white-space: nowrap; color: #c5cee8;
+  }
+  .top-nav-links .dropdown-menu li a:hover { background: rgba(79,125,244,0.2); color: #fff; }
+  .top-nav-links .dropdown-menu li a.active-sub {
+    background: #4f7df4; color: #fff; font-weight: 700;
+  }
+  .top-nav-links .dropdown-menu .sub-label {
+    font-size: 10px; color: #6b7d9d; letter-spacing: 1px;
+    padding: 4px 18px 2px; text-transform: uppercase;
+  }
+
+  .lang-switch {
+    display: flex; gap: 4px;
+    background: rgba(255,255,255,0.08);
+    padding: 4px; border-radius: 6px;
+    flex-shrink: 0;
+  }
+  .lang-switch button {
+    background: transparent; border: 0;
+    color: #c5cee8;
+    font-size: 12px; font-weight: 700;
+    padding: 5px 10px; border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .lang-switch button.active { background: #4f7df4; color: #fff; }
+  .nav-pages {
+    display: flex; gap: 8px;
+    margin: 24px 0;
+    padding: 14px;
+    background: #1a2347;
+    border-radius: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .nav-pages a {
+    color: #c5cee8; text-decoration: none;
+    padding: 6px 12px; border-radius: 6px;
+    font-size: 13px; font-weight: 600;
+    transition: 0.2s;
+  }
+  .nav-pages a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .nav-pages .label {
+    color: #8990a8;
+    font-size: 11px; letter-spacing: 1px;
+    font-weight: 700;
+    margin-right: 8px;
+  }
+  /* EN 通知（PCA 目前只有中文） */
+  .en-notice {
+    display: none;
+    background: #fff3d6;
+    border-left: 4px solid #f0c419;
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    margin: 16px 0;
+    font-size: 14px;
+    color: #5a4500;
+  }
+  body.lang-en .en-notice { display: block; }
+
+  /* === V8.1 修正：語言切換規則 ===
+     必須加在 PCA inline styles 裡，因為 PCA 沒有 link ../styles.css */
+  [data-lang="en"] { display: none; }
+  body.lang-en [data-lang="zh"] { display: none; }
+  body.lang-en [data-lang="en"] { display: initial; }
+  /* h1/h2/h3/h4/p/div/ol/ul 等預設為 block，要明確設定 */
+  body.lang-en h1[data-lang="en"],
+  body.lang-en h2[data-lang="en"],
+  body.lang-en h3[data-lang="en"],
+  body.lang-en h4[data-lang="en"],
+  body.lang-en p[data-lang="en"],
+  body.lang-en div[data-lang="en"],
+  body.lang-en ol[data-lang="en"],
+  body.lang-en ul[data-lang="en"],
+  body.lang-en li[data-lang="en"] { display: block; }
+  body.lang-en li[data-lang="en"] { display: list-item; }
+  /* span 維持 inline */
+  body.lang-en span[data-lang="en"] { display: inline; }
+  /* tspan (SVG) 特別處理 */
+  body.lang-en tspan[data-lang="en"] { display: inline; }
 </style>
 </head>
 <body>
+
+<!-- ============ V7 新增：頂部導航 ============ -->
+<nav class="top-nav">
+  <div class="top-nav-inner">
+    <a href="../index.html" class="top-nav-brand">
+      <span>🧬</span>
+      <span>scRNA-seq 進階數學</span>
+      <span class="badge-math">MATH</span>
+    </a>
+    <ul class="top-nav-links">
+      <li class="dropdown">
+        <a href="../index.html#M1">M1</a>
+        <ul class="dropdown-menu">
+          <li class="sub-label">基礎 / FOUNDATIONS</li>
+          <li><a href="../M1-foundations/1.1-sparse-matrix.html">1.1 稀疏矩陣 / Sparse Matrix</a></li>
+          <li><a href="../M1-foundations/1.2-count-distributions.html">1.2 計數分布 / Count Distributions</a></li>
+        </ul>
+      </li>
+      <li class="dropdown">
+        <a href="../index.html#M2">M2</a>
+        <ul class="dropdown-menu">
+          <li class="sub-label">前處理 / PREPROCESSING</li>
+          <li><a href="../M2-preprocessing/2.1-qc-statistics.html">2.1 QC 統計</a></li>
+          <li><a href="../M2-preprocessing/2.2-normalization.html">2.2 Normalization</a></li>
+          <li><a href="../M2-preprocessing/2.3-hvg-selection.html">2.3 HVG 選擇</a></li>
+          <li><a href="../M2-preprocessing/2.4-scaling.html">2.4 Scaling</a></li>
+        </ul>
+      </li>
+      <li class="dropdown">
+        <a href="../index.html#M3" class="active">M3</a>
+        <ul class="dropdown-menu">
+          <li class="sub-label">降維 / DIM. REDUCTION</li>
+          <li><a href="3.1-pca.html" class="active-sub">3.1 PCA ⭐ (本頁)</a></li>
+          <li><a href="3.2-tsne.html">3.2 t-SNE</a></li>
+          <li><a href="3.3-umap.html">3.3 UMAP</a></li>
+          <li><a href="3.4-diffusion-map.html">3.4 Diffusion Maps</a></li>
+        </ul>
+      </li>
+      <li class="dropdown">
+        <a href="../index.html#M4">M4</a>
+        <ul class="dropdown-menu">
+          <li class="sub-label">圖與聚類 / GRAPH &amp; CLUSTERING</li>
+          <li><a href="../M4-graph-clustering/4.1-knn-graph.html">4.1 KNN Graph + HNSW</a></li>
+          <li><a href="../M4-graph-clustering/4.2-louvain-leiden.html">4.2 Louvain &amp; Leiden</a></li>
+        </ul>
+      </li>
+      <li class="dropdown">
+        <a href="../index.html#M5">M5</a>
+        <ul class="dropdown-menu">
+          <li class="sub-label">統計推論 / STATS</li>
+          <li><a href="../M5-statistics/5.1-de-tests.html">5.1 DE 檢定</a></li>
+          <li><a href="../M5-statistics/5.2-multiple-testing.html">5.2 多重檢定 / FDR</a></li>
+          <li><a href="../M5-statistics/5.3-classifier.html">5.3 細胞分類器</a></li>
+        </ul>
+      </li>
+      <li class="dropdown">
+        <a href="../index.html#M6">M6</a>
+        <ul class="dropdown-menu">
+          <li class="sub-label">進階 / ADVANCED</li>
+          <li><a href="../M6-advanced/6.1-integration.html">6.1 Integration</a></li>
+          <li><a href="../M6-advanced/6.2-pseudotime.html">6.2 Pseudotime</a></li>
+          <li><a href="../M6-advanced/6.3-cellchat.html">6.3 CellChat</a></li>
+        </ul>
+      </li>
+      <li><a href="../index.html">🏠 回首頁 / Home</a></li>
+    </ul>
+    <div class="lang-switch">
+      <button data-lang-btn="zh" class="active">中文</button>
+      <button data-lang-btn="en">EN</button>
+    </div>
+  </div>
+</nav>
+
 <div class="wrap">
 
+<!-- ============ 章節快捷 ============ -->
+<div class="nav-pages">
+  <span class="label" data-lang="zh">本頁章節</span><span class="label" data-lang="en">CHAPTERS</span>
+  <a href="#s0"><span data-lang="zh">§0 故事</span><span data-lang="en">§0 Story</span></a>
+  <a href="#s1"><span data-lang="zh">§1 直覺</span><span data-lang="en">§1 Intuition</span></a>
+  <a href="#s2"><span data-lang="zh">§2 共變異數</span><span data-lang="en">§2 Covariance</span></a>
+  <a href="#s3"><span data-lang="zh">§3 最大變異</span><span data-lang="en">§3 Maximize Var.</span></a>
+  <a href="#s4"><span data-lang="zh">§4 中心化</span><span data-lang="en">§4 Centering</span></a>
+  <a href="#s5"><span data-lang="zh">§5 C 矩陣</span><span data-lang="en">§5 C Matrix</span></a>
+  <a href="#s6"><span data-lang="zh">§6 矩陣幾何</span><span data-lang="en">§6 Matrix Geometry</span></a>
+  <a href="#s7"><span data-lang="zh">§7 Lagrange</span><span data-lang="en">§7 Lagrange</span></a>
+  <a href="#s8"><span data-lang="zh">§8 SVD</span><span data-lang="en">§8 SVD</span></a>
+  <a href="#s9"><span data-lang="zh">§9 投影重建</span><span data-lang="en">§9 Projection</span></a>
+  <a href="#s10"><span data-lang="zh">§10 3D 三基因</span><span data-lang="en">§10 3D 3-Gene</span></a>
+  <a href="#s11"><span data-lang="zh">§11 高維</span><span data-lang="en">§11 High-D</span></a>
+  <a href="#s12"><span data-lang="zh">§12 整理</span><span data-lang="en">§12 Summary</span></a>
+</div>
+
 <header class="cover">
-  <div class="badge">深入互動版 · 點擊連動 + 演算法步驟導覽</div>
-  <h1>主成分分析 PCA — 從直覺到數學的完整旅程</h1>
-  <div class="sub">
+  <div class="badge"><span data-lang="zh">深入互動版 · 點擊連動 + 演算法步驟導覽</span><span data-lang="en">Deep Interactive · Linked Clicks + 7-Step Algorithm Walkthrough</span></div>
+  <h1 data-lang="zh">主成分分析 PCA — 從直覺到數學的完整旅程</h1>
+  <h1 data-lang="en">Principal Component Analysis — From Intuition to Math</h1>
+  <div class="sub" data-lang="zh">
     全書以<b>基因表現量資料</b>為主軸（Gene1、Gene2、Gene3...），
     把抽象的線性代數推導，
     具象化成「拿尺去量好幾個樣本的好幾個基因」這件事。<br><br>
@@ -348,39 +578,56 @@
     「演算法步驟導覽」用 7 個步驟，
     讓 PCA 在你眼前「展開」自己。
   </div>
+  <div class="sub" data-lang="en">
+    The entire tutorial is anchored around <b>gene expression data</b> (Gene1, Gene2, Gene3...),
+    grounding abstract linear-algebra derivations into the concrete act of
+    "measuring multiple genes across multiple samples."<br><br>
+    Every formula is fed <b>real numbers</b> so you can see how it computes.
+    Every figure is <b>clickable</b> — picking one data point lights it up across all linked views
+    and shows its original gene expression values plus PC scores.<br><br>
+    Section 10 is the heart: a 3D 3-gene example offers <b>two modes</b> —
+    "Free Exploration" lets you drag-rotate and click any sample for full math;
+    "Algorithm Step-by-Step" unfolds PCA in 7 animated steps before your eyes.
+  </div>
 </header>
 
 <div class="toc">
-  <h4>目錄</h4>
-  <p style="margin:6px 0;font-size:13px;color:var(--muted)">
+  <h4 data-lang="zh">目錄</h4>
+  <h4 data-lang="en">Table of Contents</h4>
+  <p style="margin:6px 0;font-size:13px;color:var(--muted)" data-lang="zh">
     ✨ <b>新加入 §0：故事開始</b>——
     從「你拿到一份基因資料表」開始，
     一步步發現變異數、共變異數、主成分這些詞背後的意思。
     每個專有名詞都會在你「理解它在做什麼」之後才登場。
   </p>
+  <p style="margin:6px 0;font-size:13px;color:var(--muted)" data-lang="en">
+    ✨ <b>New §0: Story</b> — start with "you receive a gene expression table",
+    gradually discover the meaning behind variance, covariance, principal components.
+    Every technical term appears only after you understand what it does.
+  </p>
   <ol start="0">
-    <li><a href="#s0">故事開始：假設你是新進的生物資訊研究員</a><span class="new">新增</span></li>
-    <li><a href="#s1">你看到的是什麼？— 點擊任何樣本看細節</a></li>
-    <li><a href="#s2">共變異數本身在量什麼：互動式逐項計算</a></li>
-    <li><a href="#s3">為什麼要「最大化變異數」？</a></li>
-    <li><a href="#s4">中心化：把資料拉到原點</a></li>
-    <li><a href="#s5">共變異數矩陣 C：逐元素建構動畫</a><span class="new">新增</span></li>
-    <li><a href="#s6">矩陣的幾何意義：誰是「不被旋轉」的方向？</a></li>
-    <li><a href="#s7">用 Lagrange 乘子法解出最佳方向</a></li>
-    <li><a href="#s8">特徵值分解、SVD、它們其實是同一件事</a></li>
-    <li><a href="#s9">投影、降維、與重建誤差</a></li>
-    <li><a href="#s10">3D 三基因：自由探索 + 演算法步驟導覽</a><span class="new">大改</span></li>
-    <li><a href="#s11">推到高維：Gene1 到 Gene20</a></li>
-    <li><a href="#s12">把整套故事串起來 + 限制與下一步</a></li>
+    <li><a href="#s0"><span data-lang="zh">故事開始：假設你是新進的生物資訊研究員</span><span data-lang="en">Story: You're a new bioinformatics researcher</span></a><span class="new" data-lang="zh">新增</span><span class="new" data-lang="en">NEW</span></li>
+    <li><a href="#s1"><span data-lang="zh">你看到的是什麼？— 點擊任何樣本看細節</span><span data-lang="en">What you see — click any sample for details</span></a></li>
+    <li><a href="#s2"><span data-lang="zh">共變異數本身在量什麼：互動式逐項計算</span><span data-lang="en">What covariance actually measures: interactive term-by-term</span></a></li>
+    <li><a href="#s3"><span data-lang="zh">為什麼要「最大化變異數」？</span><span data-lang="en">Why "maximize variance"?</span></a></li>
+    <li><a href="#s4"><span data-lang="zh">中心化：把資料拉到原點</span><span data-lang="en">Centering: pull data to origin</span></a></li>
+    <li><a href="#s5"><span data-lang="zh">共變異數矩陣 C：逐元素建構動畫</span><span data-lang="en">Covariance matrix C: element-by-element animation</span></a><span class="new" data-lang="zh">新增</span><span class="new" data-lang="en">NEW</span></li>
+    <li><a href="#s6"><span data-lang="zh">矩陣的幾何意義：誰是「不被旋轉」的方向？</span><span data-lang="en">Matrix geometry: which directions aren't rotated?</span></a></li>
+    <li><a href="#s7"><span data-lang="zh">用 Lagrange 乘子法解出最佳方向</span><span data-lang="en">Solve optimal direction via Lagrange multipliers</span></a></li>
+    <li><a href="#s8"><span data-lang="zh">特徵值分解、SVD、它們其實是同一件事</span><span data-lang="en">Eigendecomposition, SVD — they're the same thing</span></a></li>
+    <li><a href="#s9"><span data-lang="zh">投影、降維、與重建誤差</span><span data-lang="en">Projection, dim reduction, reconstruction error</span></a></li>
+    <li><a href="#s10"><span data-lang="zh">3D 三基因：自由探索 + 演算法步驟導覽</span><span data-lang="en">3D 3-Gene: free exploration + 7-step walkthrough</span></a><span class="new" data-lang="zh">大改</span><span class="new" data-lang="en">REWORKED</span></li>
+    <li><a href="#s11"><span data-lang="zh">推到高維：Gene1 到 Gene20</span><span data-lang="en">Scale to high-D: Gene1 to Gene20</span></a></li>
+    <li><a href="#s12"><span data-lang="zh">把整套故事串起來 + 限制與下一步</span><span data-lang="en">Tying it all together + limits and next steps</span></a></li>
   </ol>
 </div>
 
 <!-- =====================================
      §0 故事開始（NEW 深入淺出開場）
      ===================================== -->
-<h2 id="s0"><span class="num">§0</span> 故事開始：假設你是新進的生物資訊研究員</h2>
+<h2 id="s0"><span class="num">§0</span> <span data-lang="zh">故事開始：假設你是新進的生物資訊研究員</span><span data-lang="en">Story: You're a new bioinformatics researcher</span></h2>
 
-<div class="callout idea">
+<div class="callout idea" data-lang="zh">
   <strong>怎麼讀這一章？</strong>
   接下來的小節會用「你拿到一份基因資料表」這個情境，
   讓你<b>親手玩</b>幾個小遊戲，慢慢發現
@@ -388,39 +635,61 @@
   <b>每個專有名詞都會在你理解它做什麼之後才登場</b>——
   你不用記任何公式，只要把每個互動玩過一遍。
 </div>
+<div class="callout idea" data-lang="en">
+  <strong>How to read this chapter?</strong>
+  The next subsections use the scenario "you receive a gene expression table" to let you
+  <b>play hands-on</b> with mini-games, gradually discovering
+  "why is variance squared?" and "why are principal components some specific directions?"
+  <b>Every technical term appears only after you understand what it does</b> —
+  you don't need to memorize any formula, just play through each interactive.
+</div>
 
-<h3>0-1 場景：你手上有一份 60 樣本 × 3 基因的資料表</h3>
+<h3 data-lang="zh">0-1 場景：你手上有一份 60 樣本 × 3 基因的資料表</h3>
+<h3 data-lang="en">0-1 Scenario: You have a 60-sample × 3-gene table</h3>
 
-<p>研究員給你一份資料：60 個樣本（例如 60 個病人的細胞切片）
+<p data-lang="zh">研究員給你一份資料：60 個樣本（例如 60 個病人的細胞切片）
   測到的 3 個基因表現量。她沒告訴你細胞型態（「細胞型態」這欄是 ?），
   只說：「<b>幫我看看裡面有沒有隱藏的結構</b>。」<br>
   下面隨機顯示其中 10 列（樣本順序<b>沒有特別排過</b>，是按實驗 ID 來的）：</p>
+<p data-lang="en">A researcher hands you data: 60 samples (e.g., cell sections from 60 patients)
+  with expression measured for 3 genes. She didn't tell you the cell types (the "Cell Type" column is "?"),
+  only said: "<b>see if there's any hidden structure in here</b>."<br>
+  Below shows a random 10 rows (sample order is <b>not specially arranged</b>, by experiment ID):</p>
 
 <div class="card" style="padding:18px">
   <div class="grid-2">
     <div>
-      <h4 style="margin-top:0">原始資料（隨機抽 10 列看看）</h4>
+      <h4 style="margin-top:0" data-lang="zh">原始資料（隨機抽 10 列看看）</h4>
+      <h4 style="margin-top:0" data-lang="en">Raw data (random 10 rows)</h4>
       <div class="scrollbox" style="max-height:280px">
         <table class="calc-table" id="s0RawTable"></table>
       </div>
-      <p style="margin-top:10px; font-size:13px; color:var(--muted)">
+      <p style="margin-top:10px; font-size:13px; color:var(--muted)" data-lang="zh">
         每一列都長得不太一樣：有時 Gene1 高、有時 Gene2 高、有時 Gene3 高，
         看起來像「亂數」。<b>真的看不出 60 個樣本是不是該分群、該分幾群</b>。
       </p>
-      <button id="s0VizBtn" style="margin-top:8px">試試把它「畫」出來 →</button>
-      <button id="s0ResetBtn" class="ghost" style="margin-top:8px">換一批 10 列看看</button>
+      <p style="margin-top:10px; font-size:13px; color:var(--muted)" data-lang="en">
+        Each row looks different: sometimes Gene1 is high, sometimes Gene2, sometimes Gene3 —
+        looks like "random numbers". <b>You really can't tell if these 60 samples should be grouped, or into how many groups</b>.
+      </p>
+      <button id="s0VizBtn" style="margin-top:8px"><span data-lang="zh">試試把它「畫」出來 →</span><span data-lang="en">Try plotting it →</span></button>
+      <button id="s0ResetBtn" class="ghost" style="margin-top:8px"><span data-lang="zh">換一批 10 列看看</span><span data-lang="en">Try another 10 rows</span></button>
     </div>
     <div>
-      <h4 style="margin-top:0">視覺化結果</h4>
+      <h4 style="margin-top:0" data-lang="zh">視覺化結果</h4>
+      <h4 style="margin-top:0" data-lang="en">Visualization result</h4>
       <svg id="s0Scatter" class="canvas" width="100%" viewBox="0 0 380 380"></svg>
-      <p style="font-size:13px; color:var(--muted); margin-top:8px" id="s0VizNote">
+      <p style="font-size:13px; color:var(--muted); margin-top:8px" id="s0VizNote" data-lang="zh">
         🔘 按下左邊的「畫出來」按鈕，散佈圖才會出現。
+      </p>
+      <p style="font-size:13px; color:var(--muted); margin-top:8px" data-lang="en">
+        🔘 Press the "plot it" button on the left to reveal the scatter plot.
       </p>
     </div>
   </div>
 </div>
 
-<div class="callout">
+<div class="callout" data-lang="zh">
   <strong>第一個 aha：</strong> 同一份資料、剛才在表格裡看不出規律，
   畫成散佈圖後<b>結構馬上跳出來</b>。視覺化的力量就在這。<br><br>
   但是有個問題——剛才我們只看了 (Gene1, Gene2) 兩個基因。
@@ -430,43 +699,65 @@
   <b>PCA 的答案：找一條「最能代表資料變化的方向」，把高維資料投影上去。</b>
   那條方向上的 1D / 2D 投影，就能濃縮原本高維結構的精華。
 </div>
+<div class="callout" data-lang="en">
+  <strong>First aha:</strong> Same data — in the table you couldn't see patterns,
+  but plotted as a scatter <b>structure pops out instantly</b>. That's the power of visualization.<br><br>
+  But there's a problem — we only looked at (Gene1, Gene2), two genes.
+  What about <b>3 genes</b>? Need 3D (still manageable);
+  <b>20 genes</b>? <b>20,000 genes</b> (real RNA-seq)?
+  Human eyes max out at 3D; thousand-dimensional data simply cannot be "plotted directly".<br><br>
+  <b>PCA's answer: find a direction that "best captures the data's variation" and project the high-D data onto it.</b>
+  That 1D / 2D projection condenses the essence of the original high-D structure.
+</div>
 
-<h3>0-2 但「最能代表變化的方向」是什麼意思？</h3>
+<h3 data-lang="zh">0-2 但「最能代表變化的方向」是什麼意思？</h3>
+<h3 data-lang="en">0-2 But what does "best direction for variation" actually mean?</h3>
 
-<p>先回到一維：假設你只看 5 個樣本的 Gene1 表現量。下方有 5 個藍點散在一條線上。
+<p data-lang="zh">先回到一維：假設你只看 5 個樣本的 Gene1 表現量。下方有 5 個藍點散在一條線上。
   你可以<b>拖動每個點</b>，讓它們變得「比較分散」或「比較集中」。</p>
+<p data-lang="en">First back to 1D: suppose you only look at Gene1 expression across 5 samples. Below are 5 blue dots scattered on a line.
+  You can <b>drag each point</b> to make them "more spread out" or "more concentrated".</p>
 
 <div class="card">
   <div class="grid-2">
     <div>
-      <h4 style="margin-top:0">拖動點：感受「分散」</h4>
+      <h4 style="margin-top:0" data-lang="zh">拖動點：感受「分散」</h4>
+      <h4 style="margin-top:0" data-lang="en">Drag points: feel the "spread"</h4>
       <svg id="s0Spread" class="canvas" width="100%" viewBox="0 0 400 160"></svg>
       <div class="controls">
-        <button id="s0SpreadBunch" class="ghost">把點集中</button>
-        <button id="s0SpreadSpread" class="ghost">把點打散</button>
+        <button id="s0SpreadBunch" class="ghost"><span data-lang="zh">把點集中</span><span data-lang="en">Cluster points</span></button>
+        <button id="s0SpreadSpread" class="ghost"><span data-lang="zh">把點打散</span><span data-lang="en">Spread points</span></button>
       </div>
     </div>
     <div>
-      <h4 style="margin-top:0">怎麼用「一個數字」描述分散程度？</h4>
-      <p style="font-size:14px">這就是我們現在要解的問題。
+      <h4 style="margin-top:0" data-lang="zh">怎麼用「一個數字」描述分散程度？</h4>
+      <h4 style="margin-top:0" data-lang="en">How to describe "spread" with one number?</h4>
+      <p style="font-size:14px" data-lang="zh">這就是我們現在要解的問題。
         下面提供 4 種候選公式，每個都可以「算出一個數字」。
         但只有<b>一種</b>會被數學家最後選來當「變異數」。
         ——你能猜出是哪一種、為什麼嗎？</p>
+      <p style="font-size:14px" data-lang="en">That's the problem we're now solving.
+        Below are 4 candidate formulas, each yielding "a single number".
+        But only <b>one</b> gets adopted by mathematicians as "variance".
+        — Can you guess which, and why?</p>
     </div>
   </div>
 </div>
 
-<h3>0-3 互動探索：變異數公式四選一</h3>
+<h3 data-lang="zh">0-3 互動探索：變異數公式四選一</h3>
+<h3 data-lang="en">0-3 Interactive exploration: pick 1 of 4 variance formulas</h3>
 
-<p>下面顯示同一份資料（5 個點），點任一卡片試試看那個公式算出來是什麼。
+<p data-lang="zh">下面顯示同一份資料（5 個點），點任一卡片試試看那個公式算出來是什麼。
   我們會幫你<b>列出每一步計算</b>，並指出該公式有什麼<b>缺點或優點</b>。</p>
+<p data-lang="en">Same data (5 points) below. Click any card to see what that formula computes.
+  We'll <b>list every calculation step</b> and point out its <b>strengths or flaws</b>.</p>
 
 <div class="card">
   <div id="s0FormulaCards" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px"></div>
   <div class="detail-panel" id="s0FormulaDetail" style="min-height:200px"></div>
 </div>
 
-<div class="callout idea">
+<div class="callout idea" data-lang="zh">
   <strong>結論（玩完四個公式後再看）：</strong> 數學家選了第 4 個（<b>平方差總和 / (n-1)</b>），原因有三：
   <ol style="margin:8px 0">
     <li><b>不會抵消</b>：平方一定非負，所有資料都有貢獻。</li>
@@ -476,31 +767,53 @@
   <b>恭喜！</b>你剛剛親手「發現」了變異數的公式：
   $\mathrm{Var}(X) = \frac{1}{n-1}\sum_i (x_i-\bar{x})^2$
 </div>
+<div class="callout idea" data-lang="en">
+  <strong>Conclusion (read after trying all 4):</strong> Mathematicians chose #4 (<b>sum of squared deviations / (n-1)</b>) for three reasons:
+  <ol style="margin:8px 0">
+    <li><b>No cancellation</b>: squaring is always non-negative; every datum contributes.</li>
+    <li><b>Differentiable</b>: derivative-friendly, enabling optimization methods (like Lagrange) later.</li>
+    <li><b>Geometric meaning</b>: corresponds to squared "Euclidean distance" — rich mathematical machinery.</li>
+  </ol>
+  <b>Congratulations!</b> You just "discovered" the variance formula by hand:
+  $\mathrm{Var}(X) = \frac{1}{n-1}\sum_i (x_i-\bar{x})^2$
+</div>
 
-<h3>0-4 從 1D 推廣到 2D：方向上的變異數</h3>
+<h3 data-lang="zh">0-4 從 1D 推廣到 2D：方向上的變異數</h3>
+<h3 data-lang="en">0-4 From 1D to 2D: variance along a direction</h3>
 
-<p>現在你會算<b>單一變數</b>的變異數了。
+<p data-lang="zh">現在你會算<b>單一變數</b>的變異數了。
   但是 PCA 處理的是<b>多變數</b>資料（Gene1, Gene2, ...）。
   「方向上的變異數」是什麼意思？</p>
+<p data-lang="en">Now you can compute variance for a <b>single variable</b>.
+  But PCA handles <b>multivariate</b> data (Gene1, Gene2, ...).
+  What does "variance along a direction" mean?</p>
 
 <div class="card">
-  <h4 style="margin-top:0">互動：把所有點投影到一條線上，然後算 1D 變異數</h4>
-  <p style="font-size:14px">
+  <h4 style="margin-top:0" data-lang="zh">互動：把所有點投影到一條線上，然後算 1D 變異數</h4>
+  <h4 style="margin-top:0" data-lang="en">Interactive: project all points onto a line, then compute 1D variance</h4>
+  <p style="font-size:14px" data-lang="zh">
     下方是 30 個樣本的 (Gene1, Gene2) 散布圖。
     用<b>滑鼠拖動綠色虛線箭頭</b>來改變投影方向。
     每個點會「掉」到那條線上（虛線是掉落軌跡），
     右邊會即時顯示<b>投影後 1D 變異數</b>。
     <br>你的任務：<b>找出讓變異數最大的方向</b>。
   </p>
+  <p style="font-size:14px" data-lang="en">
+    Below is a scatter of 30 samples on (Gene1, Gene2).
+    <b>Drag the green dashed arrow</b> to change the projection direction.
+    Each point "falls" onto the line (dashed lines are the projection paths),
+    and the right panel shows the <b>1D variance after projection</b> in real-time.
+    <br>Your task: <b>find the direction that maximizes variance</b>.
+  </p>
   <div class="grid-2">
     <div>
       <svg id="s0Proj" class="canvas" width="100%" viewBox="0 0 420 420"></svg>
       <div class="controls">
-        <label>方向角度：
+        <label><span data-lang="zh">方向角度：</span><span data-lang="en">Angle:</span>
           <input type="range" id="s0ProjTheta" min="0" max="180" value="20" step="1">
           <span id="s0ProjThetaVal" style="font-family:monospace">20°</span>
         </label>
-        <button id="s0ProjBest" class="ghost">自動找到最佳</button>
+        <button id="s0ProjBest" class="ghost"><span data-lang="zh">自動找到最佳</span><span data-lang="en">Auto-find best</span></button>
       </div>
     </div>
     <div>
@@ -509,36 +822,46 @@
   </div>
 </div>
 
-<h3>0-5 親手畫看看：你覺得「最佳方向」在哪？</h3>
+<h3 data-lang="zh">0-5 親手畫看看：你覺得「最佳方向」在哪？</h3>
+<h3 data-lang="en">0-5 Draw it yourself: where do YOU think the "best direction" is?</h3>
 
-<p>下面是另一份 (Gene1, Gene2) 資料。
+<p data-lang="zh">下面是另一份 (Gene1, Gene2) 資料。
   <b>在散佈圖上點兩下</b>（兩個位置）來畫出你心目中的「最佳方向」（PC1）。
   按「揭曉答案」會顯示<b>真正的 PC1</b> 和<b>你的猜測有多接近</b>。</p>
+<p data-lang="en">Below is another (Gene1, Gene2) dataset.
+  <b>Click twice on the scatter</b> (two positions) to draw your guess of the "best direction" (PC1).
+  Click "Reveal answer" to see <b>the true PC1</b> and <b>how close your guess is</b>.</p>
 
 <div class="card">
   <div class="grid-2">
     <div>
       <svg id="s0Guess" class="canvas" width="100%" viewBox="0 0 420 420"></svg>
       <div class="controls">
-        <button id="s0GuessReveal">揭曉答案</button>
-        <button id="s0GuessReset" class="ghost">重畫</button>
-        <button id="s0GuessNew" class="ghost">換一組資料</button>
+        <button id="s0GuessReveal"><span data-lang="zh">揭曉答案</span><span data-lang="en">Reveal answer</span></button>
+        <button id="s0GuessReset" class="ghost"><span data-lang="zh">重畫</span><span data-lang="en">Redraw</span></button>
+        <button id="s0GuessNew" class="ghost"><span data-lang="zh">換一組資料</span><span data-lang="en">New data</span></button>
       </div>
     </div>
     <div>
       <div class="detail-panel" id="s0GuessFeedback" style="min-height:200px">
-        <h4>怎麼玩</h4>
-        <p style="font-size:13px; margin:6px 0">
+        <h4 data-lang="zh">怎麼玩</h4>
+        <h4 data-lang="en">How to play</h4>
+        <p style="font-size:13px; margin:6px 0" data-lang="zh">
           1️⃣ 在散佈圖上<b>點第一下</b>，會出現一個黃色起點。<br>
           2️⃣ <b>點第二下</b>，連接成一條線——這就是你猜的 PC1。<br>
           3️⃣ 點「揭曉答案」看你跟真正 PC1 的差距。
+        </p>
+        <p style="font-size:13px; margin:6px 0" data-lang="en">
+          1️⃣ <b>First click</b> on the scatter — a yellow starting point appears.<br>
+          2️⃣ <b>Second click</b> — connects into a line: that's your guess of PC1.<br>
+          3️⃣ Click "Reveal answer" to see the gap between yours and true PC1.
         </p>
       </div>
     </div>
   </div>
 </div>
 
-<div class="callout idea">
+<div class="callout idea" data-lang="zh">
   <strong>關鍵連結（請務必停下來體會）：</strong><br>
   上面的<b>角度滑桿遊戲</b>和<b>猜 PC1 遊戲</b>其實是同一回事——
   「找變異數最大的方向」=「找 PC1」。<br><br>
@@ -547,12 +870,23 @@
   別擔心這些詞，後面章節會慢慢拆給你看。
   你現在只要記住一件事：<b>PCA 就是在找變異數最大的方向</b>。
 </div>
+<div class="callout idea" data-lang="en">
+  <strong>Key connection (please pause and absorb):</strong><br>
+  The <b>angle slider game</b> above and the <b>guess-PC1 game</b> are actually the same thing —
+  "find the direction of maximum variance" = "find PC1".<br><br>
+  Later chapters will explain rigorously:
+  <b>this direction is actually the "eigenvector of the covariance matrix"</b>.
+  Don't worry about these terms — later sections unpack them step by step.
+  For now just remember one thing: <b>PCA finds the direction of maximum variance</b>.
+</div>
 
-<h3>0-6 接下來會發生什麼？</h3>
+<h3 data-lang="zh">0-6 接下來會發生什麼？</h3>
+<h3 data-lang="en">0-6 What's next?</h3>
 
-<p>你已經理解了 PCA 的核心直覺。接下來的章節會：</p>
+<p data-lang="zh">你已經理解了 PCA 的核心直覺。接下來的章節會：</p>
+<p data-lang="en">You've grasped PCA's core intuition. Following chapters will:</p>
 
-<ol class="step-list">
+<ol class="step-list" data-lang="zh">
   <li><b>§1～§2：</b> 把上面的直覺用「拖點 + 點擊」遊戲玩到熟。同時學會「<b>共變異數</b>」這個關鍵詞。</li>
   <li><b>§3～§5：</b> 把「方向上的變異數」翻譯成<b>矩陣語言</b>，得到「<b>共變異數矩陣</b>」。</li>
   <li><b>§6～§7：</b> 學會「<b>特徵向量</b>」這個詞，並用 Lagrange 乘子法導出「PC1 = 最大特徵值對應的特徵向量」。</li>
@@ -560,47 +894,71 @@
   <li><b>§10：</b> 3D 三基因互動範例 + 演算法步驟導覽——這是把所有觀念拼回來的時刻。</li>
   <li><b>§11～§12：</b> 推廣到真實高維基因資料，並整理限制與下一步。</li>
 </ol>
+<ol class="step-list" data-lang="en">
+  <li><b>§1–§2:</b> Drill the above intuition via "drag + click" games. Also learn the key term "<b>covariance</b>".</li>
+  <li><b>§3–§5:</b> Translate "variance along a direction" into <b>matrix language</b>, yielding the "<b>covariance matrix</b>".</li>
+  <li><b>§6–§7:</b> Learn the term "<b>eigenvector</b>" and derive via Lagrange multipliers: "PC1 = eigenvector of the largest eigenvalue".</li>
+  <li><b>§8–§9:</b> Learn "<b>SVD</b>", "<b>projection</b>", "<b>reconstruction error</b>" — practical tools.</li>
+  <li><b>§10:</b> 3D 3-Gene interactive + 7-step algorithm walkthrough — where all concepts come together.</li>
+  <li><b>§11–§12:</b> Extend to real high-D gene data, summarize limits and next steps.</li>
+</ol>
 
 <details>
-  <summary>📚 專有名詞速查表（後面會慢慢解釋，先掃過去）</summary>
+  <summary><span data-lang="zh">📚 專有名詞速查表（後面會慢慢解釋，先掃過去）</span><span data-lang="en">📚 Glossary (will be unpacked later; skim now)</span></summary>
   <table class="compare" style="margin-top:10px">
-    <tr><th>名詞</th><th>白話意思</th><th>哪一節介紹</th></tr>
-    <tr><td><b>變異數 Variance</b></td><td>「一群數字有多分散」的量度</td><td>§0-3</td></tr>
-    <tr><td><b>共變異數 Covariance</b></td><td>「兩個變數同向變化的程度」</td><td>§2</td></tr>
-    <tr><td><b>共變異數矩陣 C</b></td><td>把所有變異數和共變異數排成方陣</td><td>§5</td></tr>
-    <tr><td><b>主成分 PC1, PC2, ...</b></td><td>變異數由大到小排序的方向</td><td>§1</td></tr>
-    <tr><td><b>特徵向量 Eigenvector</b></td><td>套用矩陣後「方向不變」的向量</td><td>§6</td></tr>
-    <tr><td><b>特徵值 Eigenvalue</b></td><td>特徵向量被矩陣「拉長的倍率」</td><td>§6</td></tr>
-    <tr><td><b>投影 Projection</b></td><td>把點「掉」到某條線/平面上</td><td>§3, §9</td></tr>
-    <tr><td><b>SVD 奇異值分解</b></td><td>計算 PCA 的數值穩定方法</td><td>§8</td></tr>
-    <tr><td><b>Loading</b></td><td>每個原始變數對某個 PC 的貢獻權重</td><td>§10</td></tr>
-    <tr><td><b>Scree plot</b></td><td>各 PC 解釋變異量的長條圖</td><td>§9, §11</td></tr>
+    <tr><th><span data-lang="zh">名詞</span><span data-lang="en">Term</span></th><th><span data-lang="zh">白話意思</span><span data-lang="en">Plain meaning</span></th><th><span data-lang="zh">哪一節介紹</span><span data-lang="en">Section</span></th></tr>
+    <tr><td><b>Variance</b> <span data-lang="zh">變異數</span></td><td><span data-lang="zh">「一群數字有多分散」的量度</span><span data-lang="en">Measure of "how spread out a set of numbers is"</span></td><td>§0-3</td></tr>
+    <tr><td><b>Covariance</b> <span data-lang="zh">共變異數</span></td><td><span data-lang="zh">「兩個變數同向變化的程度」</span><span data-lang="en">"Degree to which two variables move together"</span></td><td>§2</td></tr>
+    <tr><td><b>Covariance Matrix C</b> <span data-lang="zh">共變異數矩陣</span></td><td><span data-lang="zh">把所有變異數和共變異數排成方陣</span><span data-lang="en">All variances and covariances arranged in a square matrix</span></td><td>§5</td></tr>
+    <tr><td><b>Principal Components PC1, PC2, ...</b> <span data-lang="zh">主成分</span></td><td><span data-lang="zh">變異數由大到小排序的方向</span><span data-lang="en">Directions sorted by variance, largest first</span></td><td>§1</td></tr>
+    <tr><td><b>Eigenvector</b> <span data-lang="zh">特徵向量</span></td><td><span data-lang="zh">套用矩陣後「方向不變」的向量</span><span data-lang="en">Vector whose direction doesn't change after applying a matrix</span></td><td>§6</td></tr>
+    <tr><td><b>Eigenvalue</b> <span data-lang="zh">特徵值</span></td><td><span data-lang="zh">特徵向量被矩陣「拉長的倍率」</span><span data-lang="en">Scale factor by which the matrix stretches the eigenvector</span></td><td>§6</td></tr>
+    <tr><td><b>Projection</b> <span data-lang="zh">投影</span></td><td><span data-lang="zh">把點「掉」到某條線/平面上</span><span data-lang="en">"Dropping" points onto a line/plane</span></td><td>§3, §9</td></tr>
+    <tr><td><b>SVD (Singular Value Decomposition)</b> <span data-lang="zh">奇異值分解</span></td><td><span data-lang="zh">計算 PCA 的數值穩定方法</span><span data-lang="en">Numerically stable method for computing PCA</span></td><td>§8</td></tr>
+    <tr><td><b>Loading</b></td><td><span data-lang="zh">每個原始變數對某個 PC 的貢獻權重</span><span data-lang="en">Weight of each original variable's contribution to a PC</span></td><td>§10</td></tr>
+    <tr><td><b>Scree plot</b></td><td><span data-lang="zh">各 PC 解釋變異量的長條圖</span><span data-lang="en">Bar chart of variance explained by each PC</span></td><td>§9, §11</td></tr>
   </table>
 </details>
 
 <!-- =====================================
      §1
      ===================================== -->
-<h2 id="s1"><span class="num">§1</span> 你看到的是什麼？— 點擊任何樣本看細節</h2>
+<h2 id="s1"><span class="num">§1</span> <span data-lang="zh">你看到的是什麼？— 點擊任何樣本看細節</span><span data-lang="en">What you see — click any sample for details</span></h2>
 
-<p class="lead">
+<p class="lead" data-lang="zh">
   在跳進公式之前，先讓你的眼睛告訴你 PCA 在幹嘛。
 </p>
+<p class="lead" data-lang="en">
+  Before diving into formulas, let your eyes tell you what PCA is doing.
+</p>
 
-<div class="callout bio">
+<div class="callout bio" data-lang="zh">
   <strong>情境：</strong> 你做了一個實驗，量了 18 個樣本（細胞、病人、組織切片，隨便你想）
   的<b>兩個基因 Gene1 和 Gene2</b> 的表現量。
   橫軸是 Gene1，縱軸是 Gene2。每個藍點代表一個樣本的兩個基因表現量。
   你想知道：這些樣本背後是否有「自然的變化軸」？
 </div>
+<div class="callout bio" data-lang="en">
+  <strong>Scenario:</strong> You ran an experiment measuring 18 samples (cells, patients, tissue sections — your choice)
+  for <b>two genes, Gene1 and Gene2</b>.
+  The x-axis is Gene1, y-axis is Gene2. Each blue point represents one sample's two-gene expression values.
+  You want to know: is there a "natural axis of variation" hidden in this data?
+</div>
 
-<p>隨便<b>拖動</b>任何一個點改變資料，或<b>點擊</b>任何點看它的詳細資訊：</p>
+<p data-lang="zh">隨便<b>拖動</b>任何一個點改變資料，或<b>點擊</b>任何點看它的詳細資訊：</p>
+<p data-lang="en">Feel free to <b>drag</b> any point to change the data, or <b>click</b> any point to see its details:</p>
 
-<ol>
+<ol data-lang="zh">
   <li><b>兩條彩色箭頭</b>：紅色是 PC1，藍色是 PC2。永遠垂直，長度 ∝ 該方向的變異量。</li>
   <li>右側的<b>共變異數矩陣</b>會用即時計算的數字更新。</li>
   <li>點擊某個樣本後，會顯示它的 (Gene1, Gene2) 表現量、以及它<b>在 PC1 / PC2 上的得分</b>——
     這就是「降維後的新座標」。</li>
+</ol>
+<ol data-lang="en">
+  <li><b>Two colored arrows</b>: red is PC1, blue is PC2. Always perpendicular; length ∝ variance along that direction.</li>
+  <li>The <b>covariance matrix</b> on the right updates with real-time computed values.</li>
+  <li>Click any sample to see its (Gene1, Gene2) expression and its <b>PC1 / PC2 scores</b> —
+    these are the "new coordinates after dimensionality reduction".</li>
 </ol>
 
 <div class="card">
@@ -626,43 +984,52 @@
         <g id="ptsG"></g>
         <line id="pc1L" class="pc1" x1="220" y1="220" x2="220" y2="220"/>
         <line id="pc2L" class="pc2" x1="220" y1="220" x2="220" y2="220"/>
-        <text x="10" y="14" class="lbl" fill="#888">拖動 → 改資料 ｜ 點擊 → 看細節</text>
+        <text x="10" y="14" class="lbl" fill="#888"><tspan data-lang="zh">拖動 → 改資料 ｜ 點擊 → 看細節</tspan><tspan data-lang="en">Drag → change data | Click → see details</tspan></text>
       </svg>
       <div class="legend">
         <span><span class="dot" style="background:#c0392b"></span>PC1</span>
         <span><span class="dot" style="background:#2c5aa0"></span>PC2</span>
-        <span><span class="dot" style="background:#2c5aa0;width:10px;height:10px;border-radius:50%"></span>樣本（藍）</span>
-        <span><span class="dot" style="background:#f0c419;width:10px;height:10px;border-radius:50%;border:2px solid #c0392b"></span>選中樣本</span>
+        <span><span class="dot" style="background:#2c5aa0;width:10px;height:10px;border-radius:50%"></span><span data-lang="zh">樣本（藍）</span><span data-lang="en">Sample (blue)</span></span>
+        <span><span class="dot" style="background:#f0c419;width:10px;height:10px;border-radius:50%;border:2px solid #c0392b"></span><span data-lang="zh">選中樣本</span><span data-lang="en">Selected sample</span></span>
       </div>
       <div class="controls">
-        <button id="btnReset">重設</button>
-        <button id="btnRandom" class="ghost">隨機散佈</button>
-        <button id="btnLine" class="ghost">逼近直線</button>
-        <button id="btnCircle" class="ghost">圓形雲</button>
-        <label><input type="checkbox" id="showShadows">顯示到 PC1 的投影虛線</label>
+        <button id="btnReset"><span data-lang="zh">重設</span><span data-lang="en">Reset</span></button>
+        <button id="btnRandom" class="ghost"><span data-lang="zh">隨機散佈</span><span data-lang="en">Random scatter</span></button>
+        <button id="btnLine" class="ghost"><span data-lang="zh">逼近直線</span><span data-lang="en">Near line</span></button>
+        <button id="btnCircle" class="ghost"><span data-lang="zh">圓形雲</span><span data-lang="en">Circular cloud</span></button>
+        <label><input type="checkbox" id="showShadows"><span data-lang="zh">顯示到 PC1 的投影虛線</span><span data-lang="en">Show projection to PC1</span></label>
       </div>
     </div>
     <div>
-      <h3>即時統計</h3>
-      <p style="margin:4px 0; color:var(--muted); font-size:13px">資料均值 $\bar{\mathbf{x}}$（紫色 + 號標記）</p>
+      <h3 data-lang="zh">即時統計</h3>
+      <h3 data-lang="en">Live statistics</h3>
+      <p style="margin:4px 0; color:var(--muted); font-size:13px" data-lang="zh">資料均值 $\bar{\mathbf{x}}$（紫色 + 號標記）</p>
+      <p style="margin:4px 0; color:var(--muted); font-size:13px" data-lang="en">Data mean $\bar{\mathbf{x}}$ (purple + marker)</p>
       <div id="meanShow" style="font-family:monospace; font-size:14px"></div>
-      <h3 style="margin-top:18px">共變異數矩陣 $\mathbf{C}$</h3>
+      <h3 style="margin-top:18px" data-lang="zh">共變異數矩陣 $\mathbf{C}$</h3>
+      <h3 style="margin-top:18px" data-lang="en">Covariance matrix $\mathbf{C}$</h3>
       <div id="covShow" class="matrix"></div>
-      <h3 style="margin-top:18px">特徵值與解釋變異量</h3>
+      <h3 style="margin-top:18px" data-lang="zh">特徵值與解釋變異量</h3>
+      <h3 style="margin-top:18px" data-lang="en">Eigenvalues &amp; variance explained</h3>
       <div class="stat-row" id="eigShow"></div>
       <div id="screeMini" style="margin-top:10px"></div>
       <div class="detail-panel" id="detailS1" style="margin-top:18px">
-        <h4>點擊任一樣本看細節 ↑</h4>
-        <p style="margin:0; font-size:13px; color:var(--muted)">
+        <h4 data-lang="zh">點擊任一樣本看細節 ↑</h4>
+        <h4 data-lang="en">Click any sample for details ↑</h4>
+        <p style="margin:0; font-size:13px; color:var(--muted)" data-lang="zh">
           點選某個藍點後，這裡會顯示它的原始基因表現量、
           以及在 PC1 / PC2 軸上的「新座標」。
+        </p>
+        <p style="margin:0; font-size:13px; color:var(--muted)" data-lang="en">
+          After clicking a blue point, this panel shows its original gene expression values
+          and its "new coordinates" on the PC1 / PC2 axes.
         </p>
       </div>
     </div>
   </div>
 </div>
 
-<div class="callout idea">
+<div class="callout idea" data-lang="zh">
   <strong>三個觀察題</strong>，請你親手做：
   <ol style="margin:8px 0">
     <li>點「逼近直線」——資料幾乎排成一條斜線時，PC1 會沿著那條線，
@@ -676,55 +1043,93 @@
   PCA 的核心直覺其實只有一句話：
   <b>主成分排列的順序，就是「方向上資料分散程度」由大到小的順序。</b>
 </div>
+<div class="callout idea" data-lang="en">
+  <strong>Three observation exercises</strong>, please try hands-on:
+  <ol style="margin:8px 0">
+    <li>Click "Near line" — when data is almost a slanted line, PC1 aligns with that line,
+      and PC2 shrinks to nearly a point. Meaning: <b>almost no information along PC2</b>;
+      projecting onto PC1 preserves nearly all structure.</li>
+    <li>Click "Circular cloud" — PC1 and PC2 are equal length, because there's "no main direction".
+      PCA-based dim reduction loses a lot of info here; <b>PCA can do nothing for such data</b>.</li>
+    <li>Drag a few points far away — does PC1 get pulled along?
+      That's visual evidence of <b>PCA's strong sensitivity to outliers</b>.</li>
+  </ol>
+  PCA's core intuition is really just one sentence:
+  <b>The order of principal components is "directional data spread" sorted from largest to smallest.</b>
+</div>
 
 <!-- =====================================
      §2 共變異數本身 (NEW)
      ===================================== -->
-<h2 id="s2"><span class="num">§2</span> 共變異數本身在量什麼：互動式逐項計算</h2>
+<h2 id="s2"><span class="num">§2</span> <span data-lang="zh">共變異數本身在量什麼：互動式逐項計算</span><span data-lang="en">What covariance actually measures: interactive term-by-term</span></h2>
 
-<p class="lead">
+<p class="lead" data-lang="zh">
   PCA 的所有公式都圍繞著「共變異數矩陣」。
   在堆砌矩陣之前，我們先用最樸素的視角看一下：
   <b>兩個基因的「共變異數」到底是怎麼算出來的？它在量什麼？</b>
 </p>
+<p class="lead" data-lang="en">
+  All PCA formulas revolve around the "covariance matrix".
+  Before stacking matrices, let's look from the most basic angle:
+  <b>How is the "covariance" of two genes computed? What does it measure?</b>
+</p>
 
-<p>數學定義：</p>
+<p data-lang="zh">數學定義：</p>
+<p data-lang="en">Mathematical definition:</p>
 
 $$ \mathrm{Cov}(\text{Gene1}, \text{Gene2}) = \frac{1}{n-1}\sum_{i=1}^n (g1_i-\overline{g1})(g2_i-\overline{g2}) $$
 
-<p>看起來抽象，其實非常具體：對<b>每一個樣本</b>，
+<p data-lang="zh">看起來抽象，其實非常具體：對<b>每一個樣本</b>，
   算它相對於均值的 $\text{Gene1}$ 偏差乘以 $\text{Gene2}$ 偏差，
   然後把這些乘積<b>全部加起來再除以 $(n-1)$</b>。</p>
+<p data-lang="en">Looks abstract but very concrete: for <b>each sample</b>,
+  compute its $\text{Gene1}$ deviation from the mean times its $\text{Gene2}$ deviation,
+  then <b>sum all these products and divide by $(n-1)$</b>.</p>
 
-<p>關鍵在那個「乘積」的符號：</p>
+<p data-lang="zh">關鍵在那個「乘積」的符號：</p>
+<p data-lang="en">The key is the sign of that "product":</p>
 
-<ul>
+<ul data-lang="zh">
   <li>當樣本落在均值的「右上 / 左下」象限：兩個偏差同號，乘積<b>是正的</b> → 反映「Gene1 高時 Gene2 也高」。</li>
   <li>當樣本落在「左上 / 右下」象限：兩個偏差異號，乘積<b>是負的</b> → 反映「Gene1 高時 Gene2 反而低」。</li>
   <li>共變異數 = 所有貢獻的平均。<b>正貢獻佔上風 → 正相關</b>；反之為負相關。</li>
 </ul>
+<ul data-lang="en">
+  <li>When a sample lies in the mean's "upper-right / lower-left" quadrant: both deviations same sign → product <b>positive</b> → reflects "Gene1 high when Gene2 also high".</li>
+  <li>When a sample lies in "upper-left / lower-right" quadrant: deviations opposite signs → product <b>negative</b> → reflects "Gene1 high when Gene2 is low".</li>
+  <li>Covariance = mean of all contributions. <b>Positive contributions dominate → positive correlation</b>; otherwise negative correlation.</li>
+</ul>
 
 <div class="card">
-  <h3>互動：點在哪個象限就貢獻什麼符號</h3>
-  <p>下圖中<b>綠色背景</b>是「正貢獻」象限，<b>紅色背景</b>是「負貢獻」象限。
+  <h3 data-lang="zh">互動：點在哪個象限就貢獻什麼符號</h3>
+  <h3 data-lang="en">Interactive: the sign of each point's contribution depends on its quadrant</h3>
+  <p data-lang="zh">下圖中<b>綠色背景</b>是「正貢獻」象限，<b>紅色背景</b>是「負貢獻」象限。
     右側是<b>逐項計算表格</b>——
     把滑鼠移到任一列，左圖會點亮對應的樣本；
     點擊欄位的列也可在散佈圖上鎖定該樣本。</p>
+  <p data-lang="en">In the figure, <b>green background</b> = "positive contribution" quadrants, <b>red background</b> = "negative contribution" quadrants.
+    Right side: <b>term-by-term computation table</b> —
+    hover any row to light up the corresponding sample on the left;
+    click to lock the sample in the scatter.</p>
   <div class="grid-2">
     <div>
       <svg class="canvas" id="svgCov" width="100%" viewBox="0 0 440 440"></svg>
       <div class="controls">
-        <button id="btnCovReset">重設</button>
-        <button id="btnCovPos" class="ghost">正相關</button>
-        <button id="btnCovNeg" class="ghost">負相關</button>
-        <button id="btnCovZero" class="ghost">無相關</button>
-        <label><input type="checkbox" id="showContrib" checked>顯示每點貢獻數字</label>
+        <button id="btnCovReset"><span data-lang="zh">重設</span><span data-lang="en">Reset</span></button>
+        <button id="btnCovPos" class="ghost"><span data-lang="zh">正相關</span><span data-lang="en">Positive corr.</span></button>
+        <button id="btnCovNeg" class="ghost"><span data-lang="zh">負相關</span><span data-lang="en">Negative corr.</span></button>
+        <button id="btnCovZero" class="ghost"><span data-lang="zh">無相關</span><span data-lang="en">No corr.</span></button>
+        <label><input type="checkbox" id="showContrib" checked><span data-lang="zh">顯示每點貢獻數字</span><span data-lang="en">Show contribution numbers</span></label>
       </div>
     </div>
     <div>
-      <h3 style="margin-top:0">逐項計算表格</h3>
-      <p style="font-size:13px; color:var(--muted); margin:6px 0">
+      <h3 style="margin-top:0" data-lang="zh">逐項計算表格</h3>
+      <h3 style="margin-top:0" data-lang="en">Term-by-term computation</h3>
+      <p style="font-size:13px; color:var(--muted); margin:6px 0" data-lang="zh">
         每一列是一個樣本。把滑鼠移到列上，左圖會把該樣本點大。
+      </p>
+      <p style="font-size:13px; color:var(--muted); margin:6px 0" data-lang="en">
+        Each row is one sample. Hover a row to enlarge that sample on the left.
       </p>
       <div class="scrollbox">
         <table class="calc-table" id="covTable"></table>
@@ -734,7 +1139,7 @@ $$ \mathrm{Cov}(\text{Gene1}, \text{Gene2}) = \frac{1}{n-1}\sum_{i=1}^n (g1_i-\o
   </div>
 </div>
 
-<div class="callout">
+<div class="callout" data-lang="zh">
   <strong>從共變異數到「相關係數」：</strong>
   共變異數的數值大小取決於 $x$、$y$ 的單位（cm 和 kg 算出來的 cov 跟 m 和 g 不同）。
   把它除以兩個變數的標準差就得到「<b>相關係數</b>」$r$，
@@ -743,63 +1148,101 @@ $$ \mathrm{Cov}(\text{Gene1}, \text{Gene2}) = \frac{1}{n-1}\sum_{i=1}^n (g1_i-\o
   但當特徵的<b>單位差異很大</b>時，標準化（z-score）後再做 PCA
   等同於對<b>相關係數矩陣</b>做 PCA，這在實務上很常見。
 </div>
+<div class="callout" data-lang="en">
+  <strong>From covariance to "correlation coefficient":</strong>
+  Covariance's magnitude depends on $x, y$ units (cov in cm vs m differs).
+  Dividing by both variables' standard deviations gives the "<b>correlation coefficient</b>" $r$,
+  which is unitless and always lies in $[-1, 1]$.
+  For PCA derivations we use the covariance matrix;
+  but when features have <b>very different units</b>, standardizing (z-score) before PCA
+  is equivalent to running PCA on the <b>correlation matrix</b> — common in practice.
+</div>
 
 <!-- =====================================
      §3 為什麼最大化變異數
      ===================================== -->
-<h2 id="s3"><span class="num">§3</span> 為什麼要「最大化變異數」？</h2>
+<h2 id="s3"><span class="num">§3</span> <span data-lang="zh">為什麼要「最大化變異數」？</span><span data-lang="en">Why "maximize variance"?</span></h2>
 
-<p class="lead">
+<p class="lead" data-lang="zh">
   PCA 的所有後續推導都建立在一個關鍵假設：
   <b>「值得保留的方向，就是資料變化最大的方向。」</b>
 </p>
+<p class="lead" data-lang="en">
+  All PCA derivations rest on one key assumption:
+  <b>"The direction worth keeping is the one along which data varies most."</b>
+</p>
 
-<p>想像你站在一個橢圓形池塘旁邊。從<b>長軸方向</b>看過去，
+<p data-lang="zh">想像你站在一個橢圓形池塘旁邊。從<b>長軸方向</b>看過去，
   你看到一條長長的水面，每個點都有明顯的位置；
   從<b>短軸方向</b>看過去，所有點幾乎重疊。
   <b>「能區分點的方向，就是變異大的方向。」</b>
   反過來說，若你把資料壓到一個變異小的方向，
   所有點都會擠成一團——你等於丟掉了區分它們的能力。
 </p>
+<p data-lang="en">Imagine standing beside an elliptical pond. Looking down the <b>long axis</b>,
+  you see a long water surface — each point has a clear position;
+  looking down the <b>short axis</b>, all points nearly overlap.
+  <b>"The direction that distinguishes points is the high-variance direction."</b>
+  Conversely, if you squeeze data along a low-variance direction,
+  all points pile together — you lose the ability to tell them apart.
+</p>
 
-<div class="callout idea">
+<div class="callout idea" data-lang="zh">
   <strong>把它放到基因資料的脈絡：</strong>
   在 Gene1-Gene2 平面上找一個方向，把樣本投影上去後得到一個 1D 分數。
   若那個方向「保留了最多樣本之間的差異」，
   我們就只用這個分數來代表每個樣本——
   從 2D 降到 1D，卻幾乎不損失資訊。
 </div>
+<div class="callout idea" data-lang="en">
+  <strong>In the gene data context:</strong>
+  find a direction in the Gene1-Gene2 plane; project samples onto it to get a 1D score.
+  If that direction "preserves the most inter-sample differences",
+  we represent each sample by just that score —
+  going from 2D to 1D without losing meaningful information.
+</div>
 
 <div class="card">
-  <h3>互動：旋轉投影方向，看哪個角度變異最大</h3>
-  <p>綠色直線代表你選的投影方向。
+  <h3 data-lang="zh">互動：旋轉投影方向，看哪個角度變異最大</h3>
+  <h3 data-lang="en">Interactive: rotate the projection direction, see which angle has max variance</h3>
+  <p data-lang="zh">綠色直線代表你選的投影方向。
     拉滑桿改變角度 $\theta$，每個資料點會垂直落在線上（虛線是投影路徑），
     右邊的曲線顯示「投影到那個角度後的變異數」。
     找出曲線最高點對應的角度——那就是 PC1。</p>
+  <p data-lang="en">The green line shows your chosen projection direction.
+    Drag the slider to change angle $\theta$; each data point lands perpendicularly on the line (dashed = projection path),
+    and the right curve shows "variance after projection at that angle".
+    The angle at the curve's peak is PC1.</p>
   <div class="grid-2">
     <div>
       <svg class="canvas" id="svgRot" width="100%" viewBox="0 0 420 420"></svg>
       <div class="controls">
-        <label>角度 $\theta$：
+        <label><span data-lang="zh">角度</span><span data-lang="en">Angle</span> $\theta$：
           <input type="range" id="thetaR" min="0" max="180" value="0" step="1">
           <span id="thetaV" style="font-family:monospace">0°</span>
         </label>
-        <button id="btnFindMax" class="ghost">自動掃描找最大</button>
+        <button id="btnFindMax" class="ghost"><span data-lang="zh">自動掃描找最大</span><span data-lang="en">Auto-scan max</span></button>
       </div>
     </div>
     <div>
-      <h3>投影後變異數曲線</h3>
+      <h3 data-lang="zh">投影後變異數曲線</h3>
+      <h3 data-lang="en">Variance vs angle curve</h3>
       <svg id="varCurve" width="100%" viewBox="0 0 400 220" style="background:#fff;border:1px solid var(--border);border-radius:6px"></svg>
-      <p style="font-size:13px; color:var(--muted); margin:8px 0">
+      <p style="font-size:13px; color:var(--muted); margin:8px 0" data-lang="zh">
         x 軸 = 角度 $\theta$（0° → 180°）<br>
         y 軸 = 投影到該方向後的變異數 $\mathrm{Var}(\mathbf{X}\mathbf{w}_\theta)$<br>
         綠色虛線標出讓變異數最大的角度。
+      </p>
+      <p style="font-size:13px; color:var(--muted); margin:8px 0" data-lang="en">
+        x-axis = angle $\theta$ (0° → 180°)<br>
+        y-axis = variance after projection $\mathrm{Var}(\mathbf{X}\mathbf{w}_\theta)$<br>
+        Green dashed line marks the variance-maximizing angle.
       </p>
     </div>
   </div>
 </div>
 
-<div class="callout">
+<div class="callout" data-lang="zh">
   <strong>數學上要解的問題：</strong>
   $$\mathbf{w}^* = \arg\max_{\mathbf{w}} \; \mathrm{Var}(\mathbf{X}\mathbf{w}) \quad \text{s.t.} \; \|\mathbf{w}\|=1$$
   其中 $\mathbf{w}$ 是一個單位向量（代表方向），$\mathbf{X}\mathbf{w}$ 是把每筆資料投影到 $\mathbf{w}$ 後的純量。
@@ -807,33 +1250,53 @@ $$ \mathrm{Cov}(\text{Gene1}, \text{Gene2}) = \frac{1}{n-1}\sum_{i=1}^n (g1_i-\o
   把 $\mathbf{w}$ 拉長 10 倍，變異數就會被放大 100 倍，最大化問題會「跑掉」。
   限制成單位向量，我們才是在<b>比較不同的「方向」</b>，而不是比較不同的「長度」。
 </div>
+<div class="callout" data-lang="en">
+  <strong>The mathematical problem to solve:</strong>
+  $$\mathbf{w}^* = \arg\max_{\mathbf{w}} \; \mathrm{Var}(\mathbf{X}\mathbf{w}) \quad \text{s.t.} \; \|\mathbf{w}\|=1$$
+  Here $\mathbf{w}$ is a unit vector (representing a direction); $\mathbf{X}\mathbf{w}$ is each datum's projection onto $\mathbf{w}$ (a scalar).
+  <br>※ Why require $\|\mathbf{w}\|=1$? Without this constraint,
+  stretching $\mathbf{w}$ by 10× would inflate variance by 100×, breaking the maximization.
+  Restricting to unit vectors means we're <b>comparing "directions"</b>, not "lengths".
+</div>
 
 <!-- =====================================
      §4 中心化
      ===================================== -->
-<h2 id="s4"><span class="num">§4</span> 中心化：把資料拉到原點</h2>
+<h2 id="s4"><span class="num">§4</span> <span data-lang="zh">中心化：把資料拉到原點</span><span data-lang="en">Centering: pulling data to the origin</span></h2>
 
-<p>在做 PCA 之前，要把資料每一個維度的<b>均值</b>減掉，讓資料以原點為中心。
+<p data-lang="zh">在做 PCA 之前，要把資料每一個維度的<b>均值</b>減掉，讓資料以原點為中心。
   為什麼？因為 PCA 找的是「資料分散的方向」，
   而方向是相對於資料中心而言的。
   如果不中心化，PC1 會被「資料離原點多遠」這件無關緊要的事拉走。</p>
+<p data-lang="en">Before doing PCA, subtract the <b>mean</b> of each dimension to center the data at the origin.
+  Why? Because PCA looks for "directions of variation",
+  and directions are defined relative to the data's center.
+  Without centering, PC1 would be pulled by the irrelevant fact of "how far the data is from origin".</p>
 
-<p>數學上，給定資料矩陣 $\mathbf{X} \in \mathbb{R}^{n \times p}$
+<p data-lang="zh">數學上，給定資料矩陣 $\mathbf{X} \in \mathbb{R}^{n \times p}$
 （$n$ 筆樣本、$p$ 個特徵）：</p>
+<p data-lang="en">Mathematically, given data matrix $\mathbf{X} \in \mathbb{R}^{n \times p}$
+($n$ samples, $p$ features):</p>
 
 $$ \tilde{\mathbf{X}} = \mathbf{X} - \mathbf{1}\bar{\mathbf{x}}^\top,
 \qquad \bar{\mathbf{x}} = \frac{1}{n}\sum_{i=1}^n \mathbf{x}_i $$
 
-<div class="callout idea">
+<div class="callout idea" data-lang="zh">
   <strong>視覺化：</strong> 在 §1 互動圖裡，紫色 + 號標記的就是 $\bar{\mathbf{x}}$。
   中心化就是把整團點平移，讓 + 號落在原點。
   <b>後續所有推導都假設資料已經中心化過。</b>
 </div>
+<div class="callout idea" data-lang="en">
+  <strong>Visualization:</strong> in §1's interactive, the purple + marker is $\bar{\mathbf{x}}$.
+  Centering translates the cluster so the + sits at the origin.
+  <b>All subsequent derivations assume centered data.</b>
+</div>
 
 <details>
-  <summary>是否需要進一步「標準化」（除以標準差）？</summary>
-  <p>看情境：</p>
-  <ul>
+  <summary><span data-lang="zh">是否需要進一步「標準化」（除以標準差）？</span><span data-lang="en">Do we also need to "standardize" (divide by std)?</span></summary>
+  <p data-lang="zh">看情境：</p>
+  <p data-lang="en">It depends:</p>
+  <ul data-lang="zh">
     <li>如果不同特徵的<b>單位差很多</b>（「身高 cm」vs「年薪 萬元」），
       數值大的會主宰共變異數矩陣，PC1 幾乎只反映年薪。
       這時要 z-score 化：
@@ -843,63 +1306,97 @@ $$ \tilde{\mathbf{X}} = \mathbf{X} - \mathbf{1}\bar{\mathbf{x}}^\top,
     <li>RNA-seq 資料常先做 log 轉換、再做 PCA。
       log 轉換能壓縮高表現基因的極大值，避免單一基因主宰。</li>
   </ul>
+  <ul data-lang="en">
+    <li>If features have <b>vastly different units</b> ("height cm" vs "salary 10k"),
+      large-magnitude features dominate the covariance matrix; PC1 mostly reflects salary.
+      Apply z-score:
+      $\tilde{x}_{ij} = (x_{ij} - \bar{x}_j) / s_j$.</li>
+    <li>If features share units (e.g., all are <b>gene expression measured the same way</b>),
+      skipping standardization lets "naturally high-variance genes" contribute more.</li>
+    <li>RNA-seq data often gets log-transformed before PCA.
+      log compresses extreme highs, preventing dominance by a single gene.</li>
+  </ul>
 </details>
 
 <!-- =====================================
      §5 共變異數矩陣 C
      ===================================== -->
-<h2 id="s5"><span class="num">§5</span> 共變異數矩陣 C：逐元素建構動畫</h2>
+<h2 id="s5"><span class="num">§5</span> <span data-lang="zh">共變異數矩陣 C：逐元素建構動畫</span><span data-lang="en">Covariance matrix C: element-by-element animation</span></h2>
 
-<p>中心化之後，<b>樣本共變異數矩陣</b>是：</p>
+<p data-lang="zh">中心化之後，<b>樣本共變異數矩陣</b>是：</p>
+<p data-lang="en">After centering, the <b>sample covariance matrix</b> is:</p>
 
 $$ \mathbf{C} = \frac{1}{n-1}\,\tilde{\mathbf{X}}^\top \tilde{\mathbf{X}} \;\in\; \mathbb{R}^{p\times p} $$
 
-<p>第 $(i,j)$ 個元素：</p>
+<p data-lang="zh">第 $(i,j)$ 個元素：</p>
+<p data-lang="en">Element at $(i,j)$:</p>
 
 $$ C_{ij} = \frac{1}{n-1} \sum_{k=1}^n \tilde{x}_{ki}\,\tilde{x}_{kj}
 = \mathrm{Cov}(X_i, X_j) $$
 
-<p>意義：</p>
-<ul>
+<p data-lang="zh">意義：</p>
+<p data-lang="en">Meaning:</p>
+<ul data-lang="zh">
   <li><b>對角線</b> $C_{ii}$ = 第 $i$ 個基因自己的<b>變異數</b>。</li>
   <li><b>非對角線</b> $C_{ij}$ = 第 $i$、$j$ 兩個基因的<b>共變異數</b>（§2）。</li>
   <li>$\mathbf{C}$ 必定<b>對稱</b>（$C_{ij}=C_{ji}$）也必定<b>半正定</b>（任何方向的變異數 $\ge 0$）。</li>
 </ul>
+<ul data-lang="en">
+  <li><b>Diagonal</b> $C_{ii}$ = the $i$-th gene's own <b>variance</b>.</li>
+  <li><b>Off-diagonal</b> $C_{ij}$ = <b>covariance</b> of the $i$-th and $j$-th genes (§2).</li>
+  <li>$\mathbf{C}$ is always <b>symmetric</b> ($C_{ij}=C_{ji}$) and <b>positive semi-definite</b> (variance along any direction $\ge 0$).</li>
+</ul>
 
 <details>
-  <summary>為什麼「對稱」與「半正定」這麼重要？</summary>
-  <p><b>對稱</b>保證了一件大事：<b>譜定理</b> 告訴我們，
+  <summary><span data-lang="zh">為什麼「對稱」與「半正定」這麼重要？</span><span data-lang="en">Why are "symmetry" and "PSD" so important?</span></summary>
+  <p data-lang="zh"><b>對稱</b>保證了一件大事：<b>譜定理</b> 告訴我們，
     任何對稱矩陣都可以分解成 $\mathbf{C} = \mathbf{V}\boldsymbol{\Lambda}\mathbf{V}^\top$，
     其中 $\mathbf{V}$ 的所有列是<b>實數值、互相正交的特徵向量</b>，
     $\boldsymbol{\Lambda}$ 是<b>實數值</b>的對角矩陣。
     這保證了 PCA 找到的「主成分」一定是現實世界裡有意義的方向（不會跑出複數）、
     且彼此垂直（不會重複承載資訊）。</p>
-  <p><b>半正定</b>保證所有 $\lambda_i \ge 0$，
+  <p data-lang="en"><b>Symmetry</b> guarantees a big thing: the <b>spectral theorem</b> says
+    any symmetric matrix decomposes as $\mathbf{C} = \mathbf{V}\boldsymbol{\Lambda}\mathbf{V}^\top$,
+    where columns of $\mathbf{V}$ are <b>real, mutually orthogonal eigenvectors</b>,
+    and $\boldsymbol{\Lambda}$ is a <b>real</b> diagonal matrix.
+    This ensures PCA's "principal components" are meaningful real-world directions (not complex)
+    and mutually perpendicular (no redundant information).</p>
+  <p data-lang="zh"><b>半正定</b>保證所有 $\lambda_i \ge 0$，
     換言之「沒有負的變異數」——
     這聽起來廢話，但它讓我們能放心對特徵值排序、用 $\sqrt{\lambda}$ 算長度等等。</p>
+  <p data-lang="en"><b>PSD</b> ensures all $\lambda_i \ge 0$ —
+    i.e., "no negative variance".
+    Sounds trivial, but lets us safely sort eigenvalues, take $\sqrt{\lambda}$ as lengths, etc.</p>
 </details>
 
 <div class="card">
-  <h3>互動：3 個基因的共變異數矩陣怎麼一格一格被算出來</h3>
-  <p>下面是 6 個樣本對 3 個基因 (Gene1, Gene2, Gene3) 的量測。
+  <h3 data-lang="zh">互動：3 個基因的共變異數矩陣怎麼一格一格被算出來</h3>
+  <h3 data-lang="en">Interactive: how the 3-gene covariance matrix is built cell-by-cell</h3>
+  <p data-lang="zh">下面是 6 個樣本對 3 個基因 (Gene1, Gene2, Gene3) 的量測。
     點「下一格」會依序計算 $\mathbf{C}$ 矩陣的每個元素——
     高亮顯示<b>哪兩個欄位被乘起來</b>、<b>所有 6 筆乘積</b>、<b>加總後除以 $n-1$</b>。</p>
+  <p data-lang="en">Below: 6 samples × 3 genes (Gene1, Gene2, Gene3).
+    Click "Next cell" to sequentially compute each element of $\mathbf{C}$ —
+    highlighting <b>which two columns are multiplied</b>, <b>all 6 products</b>, and <b>sum / (n-1)</b>.</p>
   <div class="grid-2">
     <div>
-      <h4>原始資料 X (n=6, p=3)</h4>
+      <h4 data-lang="zh">原始資料 X (n=6, p=3)</h4>
+      <h4 data-lang="en">Raw data X (n=6, p=3)</h4>
       <div class="scrollbox" style="max-height:260px">
         <table class="calc-table" id="s5Data"></table>
       </div>
-      <h4 style="margin-top:16px">當前計算步驟</h4>
+      <h4 style="margin-top:16px" data-lang="zh">當前計算步驟</h4>
+      <h4 style="margin-top:16px" data-lang="en">Current step</h4>
       <div class="math-live" id="s5Math"></div>
       <div class="controls">
-        <button id="s5Prev" class="ghost">← 上一格</button>
-        <button id="s5Next">下一格 →</button>
-        <button id="s5Reset" class="ghost">重新開始</button>
+        <button id="s5Prev" class="ghost">← <span data-lang="zh">上一格</span><span data-lang="en">Prev cell</span></button>
+        <button id="s5Next"><span data-lang="zh">下一格</span><span data-lang="en">Next cell</span> →</button>
+        <button id="s5Reset" class="ghost"><span data-lang="zh">重新開始</span><span data-lang="en">Reset</span></button>
       </div>
     </div>
     <div>
-      <h4>共變異數矩陣 C (3×3)</h4>
+      <h4 data-lang="zh">共變異數矩陣 C (3×3)</h4>
+      <h4 data-lang="en">Covariance matrix C (3×3)</h4>
       <div id="s5MatrixWrap" style="display:flex;flex-direction:column;align-items:center;gap:14px;margin-top:8px">
         <svg id="s5Matrix" width="100%" viewBox="0 0 300 300" style="max-width:340px"></svg>
         <div class="detail-panel" id="s5Note" style="width:100%"></div>
@@ -908,85 +1405,128 @@ $$ C_{ij} = \frac{1}{n-1} \sum_{k=1}^n \tilde{x}_{ki}\,\tilde{x}_{kj}
   </div>
 </div>
 
-<div class="callout bio">
+<div class="callout bio" data-lang="zh">
   <strong>生物學情境：</strong> 假設你量了 1000 個樣本、20000 個基因的表現量。
   共變異數矩陣會是 $20000 \times 20000$ 大小，
   每個元素告訴你「兩個基因是否傾向一起上升或下降」——
   共表現 (co-expression) 分析的數學基礎就在這裡。
   PCA 把這個巨大矩陣「對角化」，告訴你<b>哪些基因組合是樣本主要的變化方向</b>。
 </div>
+<div class="callout bio" data-lang="en">
+  <strong>Biological context:</strong> Suppose you measured 1000 samples × 20000 genes.
+  The covariance matrix would be $20000 \times 20000$;
+  each element tells you "whether two genes tend to rise or fall together" —
+  the mathematical foundation of co-expression analysis.
+  PCA "diagonalizes" this giant matrix, revealing <b>which gene combinations drive the main directions of sample variation</b>.
+</div>
 
-<h3>關鍵恆等式：任意方向的變異數</h3>
-<p>對任何單位向量 $\mathbf{w}$，把所有資料投影到 $\mathbf{w}$ 後的變異數是：</p>
+<h3 data-lang="zh">關鍵恆等式：任意方向的變異數</h3>
+<h3 data-lang="en">Key identity: variance along an arbitrary direction</h3>
+<p data-lang="zh">對任何單位向量 $\mathbf{w}$，把所有資料投影到 $\mathbf{w}$ 後的變異數是：</p>
+<p data-lang="en">For any unit vector $\mathbf{w}$, the variance after projecting all data onto $\mathbf{w}$ is:</p>
 
 $$ \boxed{\;\mathrm{Var}(\tilde{\mathbf{X}}\mathbf{w}) = \mathbf{w}^\top \mathbf{C}\, \mathbf{w}\;} $$
 
 <details>
-  <summary>展開推導</summary>
-  <p>投影後每筆資料變成純量 $y_k = \tilde{\mathbf{x}}_k^\top \mathbf{w}$。
+  <summary><span data-lang="zh">展開推導</span><span data-lang="en">Show derivation</span></summary>
+  <p data-lang="zh">投影後每筆資料變成純量 $y_k = \tilde{\mathbf{x}}_k^\top \mathbf{w}$。
     資料已中心化 → $\bar{y}=0$，所以：</p>
+  <p data-lang="en">After projection each datum becomes a scalar $y_k = \tilde{\mathbf{x}}_k^\top \mathbf{w}$.
+    Data already centered → $\bar{y}=0$, so:</p>
   $$ \mathrm{Var}(y) = \frac{1}{n-1}\sum_k y_k^2
      = \frac{1}{n-1}\sum_k (\tilde{\mathbf{x}}_k^\top \mathbf{w})^2
      = \frac{1}{n-1}\mathbf{w}^\top \tilde{\mathbf{X}}^\top \tilde{\mathbf{X}}\, \mathbf{w}
      = \mathbf{w}^\top \mathbf{C}\, \mathbf{w} $$
 </details>
 
-<p>這個式子是整套推導的<b>樞紐</b>。
+<p data-lang="zh">這個式子是整套推導的<b>樞紐</b>。
   下一節我們會解「找 $\mathbf{w}$ 讓 $\mathbf{w}^\top \mathbf{C}\mathbf{w}$ 最大」——
   但在那之前，先看一個更深的東西：矩陣的幾何意義。</p>
+<p data-lang="en">This identity is the <b>linchpin</b> of the whole derivation.
+  Next section we'll solve "find $\mathbf{w}$ maximizing $\mathbf{w}^\top \mathbf{C}\mathbf{w}$" —
+  but first, a deeper detour: the geometric meaning of matrices.</p>
 
 <!-- =====================================
      §6 矩陣的幾何 (NEW)
      ===================================== -->
-<h2 id="s6"><span class="num">§6</span> 矩陣的幾何意義：誰是「不被旋轉」的方向？</h2>
+<h2 id="s6"><span class="num">§6</span> <span data-lang="zh">矩陣的幾何意義：誰是「不被旋轉」的方向？</span><span data-lang="en">Matrix geometry: which directions are NOT rotated?</span></h2>
 
-<p class="lead">
+<p class="lead" data-lang="zh">
   我們即將證明「最佳方向 = 特徵向量」。但<b>特徵向量到底是什麼東西</b>？
   在跳進 Lagrange 公式之前，先建立這個幾何直覺。
 </p>
+<p class="lead" data-lang="en">
+  We're about to prove "optimal direction = eigenvector". But <b>what IS an eigenvector?</b>
+  Before diving into Lagrange formulas, build this geometric intuition first.
+</p>
 
-<p>任何矩陣 $\mathbf{C}$ 都可以看成<b>一個變換</b>：
+<p data-lang="zh">任何矩陣 $\mathbf{C}$ 都可以看成<b>一個變換</b>：
   你給它一個向量 $\mathbf{v}$，它把 $\mathbf{v}$ 變成另一個向量 $\mathbf{C}\mathbf{v}$。
   如果是 $2 \times 2$ 矩陣，這個變換可以分解為「拉伸 + 旋轉」。</p>
+<p data-lang="en">Any matrix $\mathbf{C}$ can be viewed as <b>a transformation</b>:
+  give it a vector $\mathbf{v}$; it produces another vector $\mathbf{C}\mathbf{v}$.
+  For $2 \times 2$ matrices, this transformation decomposes into "stretch + rotation".</p>
 
-<p>大多數的向量在套用 $\mathbf{C}$ 之後，<b>方向會變</b>（被旋轉了）。
+<p data-lang="zh">大多數的向量在套用 $\mathbf{C}$ 之後，<b>方向會變</b>（被旋轉了）。
   但有一些<b>特殊的方向</b>，套用 $\mathbf{C}$ 之後方向<b>完全不變</b>，
   只是被拉長或縮短——
   <b>這些方向就是特徵向量</b>，被拉長的倍率就是<b>特徵值</b>。</p>
+<p data-lang="en">Most vectors get their <b>direction changed</b> (rotated) by $\mathbf{C}$.
+  But for some <b>special directions</b>, applying $\mathbf{C}$ leaves direction <b>completely unchanged</b>,
+  only stretching/shrinking —
+  <b>those directions are eigenvectors</b>, and the stretch factors are <b>eigenvalues</b>.</p>
 
-$$ \mathbf{C}\mathbf{v} = \lambda \mathbf{v} \quad\Longleftrightarrow\quad \mathbf{C} \text{ 把 } \mathbf{v} \text{ 拉成 } \lambda \text{ 倍但方向不變} $$
+$$ \mathbf{C}\mathbf{v} = \lambda \mathbf{v} \quad\Longleftrightarrow\quad \mathbf{C} \text{ scales } \mathbf{v} \text{ by } \lambda \text{ without rotation} $$
 
 <div class="card">
-  <h3>互動：套用 C 後誰被旋轉？誰沒被旋轉？</h3>
-  <p>左圖灰色箭頭是<b>單位圓上的一群向量</b>。
+  <h3 data-lang="zh">互動：套用 C 後誰被旋轉？誰沒被旋轉？</h3>
+  <h3 data-lang="en">Interactive: who gets rotated by C, who doesn't?</h3>
+  <p data-lang="zh">左圖灰色箭頭是<b>單位圓上的一群向量</b>。
     點「套用 C」按鈕，每個灰色箭頭會變成紫色箭頭——
     觀察大多紫色箭頭的<b>方向都跟原本不同</b>（被旋轉了）。
     只有<b>紅色與藍色標出的兩個方向</b>沒被旋轉，只被拉長/縮短——
     那就是 $\mathbf{C}$ 的兩個特徵向量。</p>
+  <p data-lang="en">Gray arrows on the left = <b>a set of vectors on the unit circle</b>.
+    Click "Apply C" — each gray arrow becomes purple.
+    Most purple arrows <b>differ in direction from the original</b> (rotated).
+    Only the <b>two directions marked in red and blue</b> are NOT rotated, just stretched —
+    those are $\mathbf{C}$'s two eigenvectors.</p>
   <div class="grid-2">
     <div>
       <svg class="canvas" id="svgEig" width="100%" viewBox="0 0 420 420"></svg>
       <div class="controls">
-        <button id="btnEigApply">套用 C 變換</button>
-        <button id="btnEigReset" class="ghost">回到單位圓</button>
-        <button id="btnEigMatrix" class="ghost">換一個 C</button>
+        <button id="btnEigApply"><span data-lang="zh">套用 C 變換</span><span data-lang="en">Apply C</span></button>
+        <button id="btnEigReset" class="ghost"><span data-lang="zh">回到單位圓</span><span data-lang="en">Back to unit circle</span></button>
+        <button id="btnEigMatrix" class="ghost"><span data-lang="zh">換一個 C</span><span data-lang="en">New C</span></button>
       </div>
     </div>
     <div>
-      <h3>當前 C 矩陣</h3>
+      <h3 data-lang="zh">當前 C 矩陣</h3>
+      <h3 data-lang="en">Current C matrix</h3>
       <div id="eigMatShow" class="matrix"></div>
-      <p style="margin-top:10px; font-size:13px; color:var(--muted)">
+      <p style="margin-top:10px; font-size:13px; color:var(--muted)" data-lang="zh">
         每個紅色與藍色箭頭都是 $\mathbf{C}$ 的特徵向量：
         $\mathbf{C}\mathbf{v}_1 = \lambda_1 \mathbf{v}_1$，
         $\mathbf{C}\mathbf{v}_2 = \lambda_2 \mathbf{v}_2$。
       </p>
+      <p style="margin-top:10px; font-size:13px; color:var(--muted)" data-lang="en">
+        Each red and blue arrow is an eigenvector of $\mathbf{C}$:
+        $\mathbf{C}\mathbf{v}_1 = \lambda_1 \mathbf{v}_1$,
+        $\mathbf{C}\mathbf{v}_2 = \lambda_2 \mathbf{v}_2$.
+      </p>
       <div class="stat-row" id="eigMatStats"></div>
-      <div class="callout idea" style="margin-top:14px; font-size:14px">
+      <div class="callout idea" style="margin-top:14px; font-size:14px" data-lang="zh">
         <strong>反過來看：</strong>
         $\mathbf{w}^\top \mathbf{C}\mathbf{w}$ 在「特徵向量方向」上達到極值：
         在 $\mathbf{v}_1$ 方向是<b>最大值</b> $\lambda_1$，
         在 $\mathbf{v}_2$ 方向是<b>最小值</b> $\lambda_2$。
         這正是 PCA 要找的東西。
+      </div>
+      <div class="callout idea" style="margin-top:14px; font-size:14px" data-lang="en">
+        <strong>Reverse view:</strong>
+        $\mathbf{w}^\top \mathbf{C}\mathbf{w}$ reaches extrema along eigenvector directions:
+        <b>max</b> $\lambda_1$ along $\mathbf{v}_1$, <b>min</b> $\lambda_2$ along $\mathbf{v}_2$.
+        This is exactly what PCA looks for.
       </div>
     </div>
   </div>
@@ -995,13 +1535,14 @@ $$ \mathbf{C}\mathbf{v} = \lambda \mathbf{v} \quad\Longleftrightarrow\quad \math
 <!-- =====================================
      §7 Lagrange
      ===================================== -->
-<h2 id="s7"><span class="num">§7</span> 用 Lagrange 乘子法解出最佳方向</h2>
+<h2 id="s7"><span class="num">§7</span> <span data-lang="zh">用 Lagrange 乘子法解出最佳方向</span><span data-lang="en">Solving the optimal direction via Lagrange multipliers</span></h2>
 
-<p>把 §5 的關鍵恆等式代進 §3 的最佳化問題，現在我們要解：</p>
+<p data-lang="zh">把 §5 的關鍵恆等式代進 §3 的最佳化問題，現在我們要解：</p>
+<p data-lang="en">Substituting §5's key identity into §3's optimization problem, we now solve:</p>
 
 $$ \boxed{\;\max_{\mathbf{w}} \; \mathbf{w}^\top \mathbf{C}\, \mathbf{w} \quad \text{s.t.} \quad \mathbf{w}^\top \mathbf{w} = 1\;} $$
 
-<div class="callout idea">
+<div class="callout idea" data-lang="zh">
   <strong>Lagrange 乘子法的直覺：</strong>
   假設你在一個圓形操場（約束：$\|\mathbf{w}\|=1$）上找海拔最高的點（目標：$\mathbf{w}^\top \mathbf{C}\mathbf{w}$）。
   <b>到達山頂時</b>，你會發現「往任何沿著操場的方向走，海拔都不再上升」——
@@ -1012,20 +1553,34 @@ $$ \boxed{\;\max_{\mathbf{w}} \; \mathbf{w}^\top \mathbf{C}\, \mathbf{w} \quad \
   這個「倍率 $\lambda$」就是 Lagrange 乘子，它的物理意義是「<b>約束帶來的代價</b>」，
   在 PCA 裡剛好就是<b>特徵值</b>。
 </div>
+<div class="callout idea" data-lang="en">
+  <strong>Lagrange multiplier intuition:</strong>
+  Imagine you're on a circular track (constraint: $\|\mathbf{w}\|=1$) seeking the highest-elevation point (objective: $\mathbf{w}^\top \mathbf{C}\mathbf{w}$).
+  <b>At the peak</b>, you realize "moving in any direction along the track no longer increases elevation" —
+  meaning elevation's <b>gradient</b> must be perpendicular to the track (else moving along it would gain height).
+  And "perpendicular to a circle" = the circle's normal direction.<br><br>
+  In math: at the optimum,
+  <b>objective gradient = some multiplier λ × constraint gradient</b> —
+  that "multiplier $\lambda$" is the Lagrange multiplier; its physical meaning is "<b>cost imposed by the constraint</b>",
+  which in PCA happens to be the <b>eigenvalue</b>.
+</div>
 
-<p>把約束 $\mathbf{w}^\top \mathbf{w}-1=0$ 用乘子 $\lambda$ 加進目標函數，
+<p data-lang="zh">把約束 $\mathbf{w}^\top \mathbf{w}-1=0$ 用乘子 $\lambda$ 加進目標函數，
   定義 Lagrangian：</p>
+<p data-lang="en">Embedding the constraint $\mathbf{w}^\top \mathbf{w}-1=0$ via multiplier $\lambda$,
+  define the Lagrangian:</p>
 
 $$ \mathcal{L}(\mathbf{w}, \lambda) = \mathbf{w}^\top \mathbf{C}\, \mathbf{w} - \lambda(\mathbf{w}^\top \mathbf{w} - 1) $$
 
-<p>對 $\mathbf{w}$ 取偏導，令其為零：</p>
+<p data-lang="zh">對 $\mathbf{w}$ 取偏導，令其為零：</p>
+<p data-lang="en">Take the partial derivative w.r.t. $\mathbf{w}$ and set to zero:</p>
 
 $$ \frac{\partial \mathcal{L}}{\partial \mathbf{w}}
 = 2\mathbf{C}\mathbf{w} - 2\lambda\mathbf{w} = \mathbf{0}
 \;\Longrightarrow\;
 \boxed{\;\mathbf{C}\mathbf{w} = \lambda\mathbf{w}\;} $$
 
-<div class="callout idea">
+<div class="callout idea" data-lang="zh">
   <strong>關鍵時刻！</strong>
   這正是<b>特徵值方程式的標準型</b>。
   最大化變異數的 $\mathbf{w}$，必定是 $\mathbf{C}$ 的<b>某一個特徵向量</b>，
@@ -1034,161 +1589,218 @@ $$ \frac{\partial \mathcal{L}}{\partial \mathbf{w}}
   你其實是在問<b>「哪個方向被 C 拉得最厲害？」</b>
   而答案就是 C 最大特徵值對應的特徵向量。
 </div>
+<div class="callout idea" data-lang="en">
+  <strong>Key moment!</strong>
+  This is exactly the <b>standard form of the eigenvalue equation</b>.
+  The variance-maximizing $\mathbf{w}$ must be <b>some eigenvector</b> of $\mathbf{C}$,
+  with corresponding $\lambda$ as the <b>eigenvalue</b>.<br><br>
+  This is why §6's geometric intuition matters: when you "maximize $\mathbf{w}^\top \mathbf{C}\mathbf{w}$",
+  you're really asking <b>"which direction does C stretch most?"</b>
+  And the answer is the eigenvector of C's largest eigenvalue.
+</div>
 
-<p>要選哪一個特徵向量？把 $\mathbf{C}\mathbf{w}=\lambda\mathbf{w}$
+<p data-lang="zh">要選哪一個特徵向量？把 $\mathbf{C}\mathbf{w}=\lambda\mathbf{w}$
 代回目標函數：</p>
+<p data-lang="en">Which eigenvector? Substitute $\mathbf{C}\mathbf{w}=\lambda\mathbf{w}$
+back into the objective:</p>
 
 $$ \mathbf{w}^\top \mathbf{C}\, \mathbf{w}
 = \mathbf{w}^\top (\lambda\mathbf{w})
 = \lambda \underbrace{\mathbf{w}^\top \mathbf{w}}_{=1} = \lambda $$
 
-<p>所以<b>目標函數的值 = 特徵值</b>。要最大化，就選<b>最大的特徵值</b>對應的特徵向量。
+<p data-lang="zh">所以<b>目標函數的值 = 特徵值</b>。要最大化，就選<b>最大的特徵值</b>對應的特徵向量。
   那就是 <b>PC1</b>。</p>
+<p data-lang="en">So <b>the objective's value = the eigenvalue</b>. To maximize, pick the eigenvector with the <b>largest eigenvalue</b>.
+  That's <b>PC1</b>.</p>
 
-<h3>那 PC2、PC3 怎麼來？</h3>
-<p>解完 PC1 後，我們找下一個方向，要求：
+<h3 data-lang="zh">那 PC2、PC3 怎麼來？</h3>
+<h3 data-lang="en">What about PC2, PC3?</h3>
+<p data-lang="zh">解完 PC1 後，我們找下一個方向，要求：
   (a)<b>單位長度</b>，(b)<b>與 PC1 正交</b>，
   在剩下的空間裡再次最大化變異數。
   加上正交約束做一樣的 Lagrange 推導，
   答案就是 $\mathbf{C}$ 的<b>第二大特徵值</b>對應的特徵向量。
   以此類推：</p>
+<p data-lang="en">After PC1, find the next direction requiring:
+  (a) <b>unit length</b>, (b) <b>orthogonal to PC1</b>,
+  maximizing variance in the remaining subspace.
+  Adding the orthogonality constraint to the same Lagrange derivation,
+  the answer is the eigenvector of $\mathbf{C}$'s <b>second-largest eigenvalue</b>.
+  And so on:</p>
 
-$$ \text{PC}_k = \mathbf{C} \text{ 的第 } k \text{ 大特徵值對應的特徵向量} $$
+$$ \text{PC}_k = \text{the eigenvector of } \mathbf{C}\text{'s } k\text{-th largest eigenvalue} $$
 
-<p>因為 $\mathbf{C}$ 是對稱矩陣，<b>譜定理</b>保證它的特徵向量可以選成兩兩正交、
+<p data-lang="zh">因為 $\mathbf{C}$ 是對稱矩陣，<b>譜定理</b>保證它的特徵向量可以選成兩兩正交、
   構成完整的正交基底，這完美符合 PCA 的需求。</p>
+<p data-lang="en">Since $\mathbf{C}$ is symmetric, the <b>spectral theorem</b> guarantees its eigenvectors can be chosen pairwise orthogonal,
+  forming a complete orthonormal basis — perfectly aligned with what PCA needs.</p>
 
 <details>
-  <summary>動手算一遍：5 個點的 PCA</summary>
-  <p>給定 5 個 2D 點：</p>
+  <summary><span data-lang="zh">動手算一遍：5 個點的 PCA</span><span data-lang="en">Compute by hand: PCA of 5 points</span></summary>
+  <p data-lang="zh">給定 5 個 2D 點：</p>
+  <p data-lang="en">Given 5 2D points:</p>
   <pre class="code">x: [1, 3, 5, 7, 9]
 y: [2, 3, 7, 8, 10]</pre>
-  <p>步驟 1：均值 $\bar{x} = 5$，$\bar{y} = 6$。</p>
-  <p>步驟 2：中心化後：</p>
+  <p data-lang="zh">步驟 1：均值 $\bar{x} = 5$，$\bar{y} = 6$。</p>
+  <p data-lang="en">Step 1: means $\bar{x} = 5$, $\bar{y} = 6$.</p>
+  <p data-lang="zh">步驟 2：中心化後：</p>
+  <p data-lang="en">Step 2: after centering:</p>
   <pre class="code">x̃: [-4, -2,  0,  2,  4]
 ỹ: [-4, -3,  1,  2,  4]</pre>
-  <p>步驟 3：共變異數矩陣（n-1 = 4）：</p>
+  <p data-lang="zh">步驟 3：共變異數矩陣（n-1 = 4）：</p>
+  <p data-lang="en">Step 3: covariance matrix (n-1 = 4):</p>
   $$ \mathbf{C} = \frac{1}{4}\begin{pmatrix} \sum \tilde{x}^2 & \sum \tilde{x}\tilde{y} \\ \sum \tilde{x}\tilde{y} & \sum \tilde{y}^2 \end{pmatrix}
      = \frac{1}{4}\begin{pmatrix} 40 & 38 \\ 38 & 46 \end{pmatrix}
      = \begin{pmatrix} 10 & 9.5 \\ 9.5 & 11.5 \end{pmatrix} $$
-  <p>步驟 4：解 $\det(\mathbf{C} - \lambda \mathbf{I}) = 0$：</p>
+  <p data-lang="zh">步驟 4：解 $\det(\mathbf{C} - \lambda \mathbf{I}) = 0$：</p>
+  <p data-lang="en">Step 4: solve $\det(\mathbf{C} - \lambda \mathbf{I}) = 0$:</p>
   $$ (10-\lambda)(11.5-\lambda) - 9.5^2 = 0 \;\Rightarrow\; \lambda^2 - 21.5\lambda + 24.75 = 0 $$
   $$ \lambda_1 \approx 20.27,\quad \lambda_2 \approx 1.23 $$
-  <p>步驟 5：找特徵向量（代回 $(\mathbf{C}-\lambda\mathbf{I})\mathbf{v}=0$）：</p>
+  <p data-lang="zh">步驟 5：找特徵向量（代回 $(\mathbf{C}-\lambda\mathbf{I})\mathbf{v}=0$）：</p>
+  <p data-lang="en">Step 5: find eigenvectors (back-substitute into $(\mathbf{C}-\lambda\mathbf{I})\mathbf{v}=0$):</p>
   $$ \mathbf{v}_1 \approx \begin{pmatrix} 0.681 \\ 0.733 \end{pmatrix},\quad
      \mathbf{v}_2 \approx \begin{pmatrix} -0.733 \\ 0.681 \end{pmatrix} $$
-  <p>PC1 解釋 $20.27/(20.27+1.23) \approx 94\%$ 的變異——
+  <p data-lang="zh">PC1 解釋 $20.27/(20.27+1.23) \approx 94\%$ 的變異——
     這 5 個點幾乎排在一條斜線上，符合預期。</p>
+  <p data-lang="en">PC1 explains $20.27/(20.27+1.23) \approx 94\%$ of variance —
+    these 5 points lie nearly along a slanted line, as expected.</p>
 </details>
 
 <!-- =====================================
      §8 SVD
      ===================================== -->
-<h2 id="s8"><span class="num">§8</span> 特徵值分解、SVD、它們其實是同一件事</h2>
+<h2 id="s8"><span class="num">§8</span> <span data-lang="zh">特徵值分解、SVD、它們其實是同一件事</span><span data-lang="en">Eigendecomposition, SVD — they're the same thing</span></h2>
 
-<p>實際在做 PCA 時，幾乎沒人直接算共變異數矩陣的特徵值——
+<p data-lang="zh">實際在做 PCA 時，幾乎沒人直接算共變異數矩陣的特徵值——
   大家用 <b>奇異值分解 SVD</b>。為什麼？</p>
+<p data-lang="en">In practice, almost no one computes covariance eigenvalues directly —
+  everyone uses <b>SVD (Singular Value Decomposition)</b>. Why?</p>
 
-<ul>
+<ul data-lang="zh">
   <li><b>數值更穩定</b>：直接計算 $\mathbf{C}=\tilde{\mathbf{X}}^\top\tilde{\mathbf{X}}/(n-1)$ 會放大舍入誤差。</li>
   <li><b>節省記憶體</b>：當特徵數 $p \gg n$（基因表現的典型情境），
     形成 $p\times p$ 的 $\mathbf{C}$ 浪費巨大空間，SVD 不必。</li>
 </ul>
+<ul data-lang="en">
+  <li><b>Better numerical stability</b>: directly forming $\mathbf{C}=\tilde{\mathbf{X}}^\top\tilde{\mathbf{X}}/(n-1)$ amplifies rounding error.</li>
+  <li><b>Memory savings</b>: when feature count $p \gg n$ (typical for gene expression),
+    forming a $p\times p$ $\mathbf{C}$ wastes enormous space; SVD doesn't need to.</li>
+</ul>
 
-<h3>它們是同一件事</h3>
+<h3 data-lang="zh">它們是同一件事</h3>
+<h3 data-lang="en">They're the same thing</h3>
 
-<p>對中心化資料做 SVD：</p>
+<p data-lang="zh">對中心化資料做 SVD：</p>
+<p data-lang="en">Run SVD on the centered data:</p>
 
 $$ \tilde{\mathbf{X}} = \mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^\top $$
 
-<p>代入共變異數定義：</p>
+<p data-lang="zh">代入共變異數定義：</p>
+<p data-lang="en">Substitute into the covariance definition:</p>
 
 $$ \mathbf{C} = \frac{1}{n-1}\tilde{\mathbf{X}}^\top \tilde{\mathbf{X}}
 = \frac{1}{n-1}\mathbf{V}\boldsymbol{\Sigma}^\top \mathbf{U}^\top \mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^\top
 = \mathbf{V}\,\underbrace{\tfrac{1}{n-1}\boldsymbol{\Sigma}^2}_{\boldsymbol{\Lambda}}\,\mathbf{V}^\top $$
 
-<p>這就是 $\mathbf{C}$ 的<b>特徵值分解</b>。對應關係：</p>
+<p data-lang="zh">這就是 $\mathbf{C}$ 的<b>特徵值分解</b>。對應關係：</p>
+<p data-lang="en">This is $\mathbf{C}$'s <b>eigendecomposition</b>. Correspondence:</p>
 
 <div class="card" style="background:#fff8e6">
   <table class="compare">
     <tr>
-      <th>SVD 觀點</th>
-      <th>特徵值分解觀點</th>
-      <th>PCA 的意義</th>
+      <th><span data-lang="zh">SVD 觀點</span><span data-lang="en">SVD view</span></th>
+      <th><span data-lang="zh">特徵值分解觀點</span><span data-lang="en">Eigendecomposition view</span></th>
+      <th><span data-lang="zh">PCA 的意義</span><span data-lang="en">PCA meaning</span></th>
     </tr>
     <tr>
-      <td>$\mathbf{V}$ 的第 $k$ 行</td>
-      <td>$\mathbf{C}$ 的第 $k$ 個特徵向量</td>
-      <td><b>第 $k$ 主成分方向</b>（loading）</td>
+      <td><span data-lang="zh">$\mathbf{V}$ 的第 $k$ 行</span><span data-lang="en">$k$-th column of $\mathbf{V}$</span></td>
+      <td><span data-lang="zh">$\mathbf{C}$ 的第 $k$ 個特徵向量</span><span data-lang="en">$k$-th eigenvector of $\mathbf{C}$</span></td>
+      <td><span data-lang="zh"><b>第 $k$ 主成分方向</b>（loading）</span><span data-lang="en"><b>$k$-th principal direction</b> (loading)</span></td>
     </tr>
     <tr>
       <td>$\sigma_k^2 / (n-1)$</td>
       <td>$\lambda_k$</td>
-      <td><b>PC$_k$ 上的變異數</b></td>
+      <td><span data-lang="zh"><b>PC$_k$ 上的變異數</b></span><span data-lang="en"><b>Variance along PC$_k$</b></span></td>
     </tr>
     <tr>
-      <td>$\mathbf{U}\boldsymbol{\Sigma}$ 的第 $k$ 行</td>
+      <td><span data-lang="zh">$\mathbf{U}\boldsymbol{\Sigma}$ 的第 $k$ 行</span><span data-lang="en">$k$-th column of $\mathbf{U}\boldsymbol{\Sigma}$</span></td>
       <td>$\tilde{\mathbf{X}}\mathbf{v}_k$</td>
-      <td><b>第 $k$ 主成分得分 (scores)</b></td>
+      <td><span data-lang="zh"><b>第 $k$ 主成分得分 (scores)</b></span><span data-lang="en"><b>$k$-th PC scores</b></span></td>
     </tr>
   </table>
 </div>
 
-<pre class="code"><span class="c"># Python: sklearn 內部就是這樣做的</span>
+<pre class="code"><span class="c"># Python: sklearn's PCA internally does this</span>
 <span class="k">import</span> numpy <span class="k">as</span> np
 <span class="k">from</span> sklearn.decomposition <span class="k">import</span> PCA
 
 X_centered = X - X.mean(axis=<span class="n">0</span>)
 U, S, Vt = np.linalg.svd(X_centered, full_matrices=<span class="k">False</span>)
 
-components    = Vt          <span class="c"># (k, p) — 每列是一個 PC 方向 (loading)</span>
-scores        = U * S       <span class="c"># (n, k) — 投影後座標</span>
+components    = Vt          <span class="c"># (k, p) — each row is a PC direction (loading)</span>
+scores        = U * S       <span class="c"># (n, k) — projected coordinates</span>
 explained_var = (S**<span class="n">2</span>) / (len(X)-<span class="n">1</span>)</pre>
 
 <!-- =====================================
      §9 投影與重建
      ===================================== -->
-<h2 id="s9"><span class="num">§9</span> 投影、降維、與重建誤差</h2>
+<h2 id="s9"><span class="num">§9</span> <span data-lang="zh">投影、降維、與重建誤差</span><span data-lang="en">Projection, Dimension Reduction, and Reconstruction Error</span></h2>
 
-<p>有了主成分方向 $\mathbf{V}=[\mathbf{v}_1, \mathbf{v}_2, \dots, \mathbf{v}_p]$，
+<p data-lang="zh">有了主成分方向 $\mathbf{V}=[\mathbf{v}_1, \mathbf{v}_2, \dots, \mathbf{v}_p]$，
   要把資料降到 $k$ 維就是<b>取前 $k$ 個主成分</b>做投影：</p>
+<p data-lang="en">With principal directions $\mathbf{V}=[\mathbf{v}_1, \mathbf{v}_2, \dots, \mathbf{v}_p]$,
+  reducing data to $k$ dimensions means <b>taking the first $k$ principal components</b> and projecting:</p>
 
 $$ \mathbf{Y} = \tilde{\mathbf{X}}\mathbf{V}_k \in \mathbb{R}^{n\times k} $$
 
-<p>反過來，把降維後的 $\mathbf{Y}$ 重建回原始 $p$ 維空間：</p>
+<p data-lang="zh">反過來，把降維後的 $\mathbf{Y}$ 重建回原始 $p$ 維空間：</p>
+<p data-lang="en">Conversely, reconstructing $\mathbf{Y}$ back to the original $p$-dimensional space:</p>
 
 $$ \hat{\tilde{\mathbf{X}}} = \mathbf{Y}\mathbf{V}_k^\top $$
 
-<p>重建誤差是：</p>
+<p data-lang="zh">重建誤差是：</p>
+<p data-lang="en">Reconstruction error:</p>
 
-$$ \text{誤差} = \|\tilde{\mathbf{X}} - \hat{\tilde{\mathbf{X}}}\|_F^2 = (n-1)\sum_{j>k} \lambda_j $$
+$$ \text{error} = \|\tilde{\mathbf{X}} - \hat{\tilde{\mathbf{X}}}\|_F^2 = (n-1)\sum_{j>k} \lambda_j $$
 
-<p>也就是<b>「丟掉的特徵值的總和（乘上 $n-1$）」</b>。
+<p data-lang="zh">也就是<b>「丟掉的特徵值的總和（乘上 $n-1$）」</b>。
   這同時是著名的 <b>Eckart–Young 定理</b>的結論：
   在所有秩為 $k$ 的近似中，<b>前 $k$ 主成分給出的重建誤差最小</b>。
   PCA 不只是「方便」，而是<b>數學上最佳</b>。</p>
+<p data-lang="en">i.e., <b>"sum of discarded eigenvalues (times $n-1$)"</b>.
+  This is the conclusion of the famous <b>Eckart–Young theorem</b>:
+  among all rank-$k$ approximations, <b>the top $k$ PCs give the minimum reconstruction error</b>.
+  PCA isn't just "convenient" — it's <b>mathematically optimal</b>.</p>
 
 <div class="card">
-  <h3>互動：拉動 k 看重建效果</h3>
-  <p>左邊是原始 8 維資料的折線圖；右邊是用前 $k$ 個 PC 重建後的版本疊在上面（紅色）。
+  <h3 data-lang="zh">互動：拉動 k 看重建效果</h3>
+  <h3 data-lang="en">Interactive: drag k to see reconstruction quality</h3>
+  <p data-lang="zh">左邊是原始 8 維資料的折線圖；右邊是用前 $k$ 個 PC 重建後的版本疊在上面（紅色）。
     拉動 $k$，觀察「保留比例」如何變化、重建版本如何越來越貼近原始。</p>
+  <p data-lang="en">Left: line chart of original 8-D data. Right: reconstructed version using top $k$ PCs overlaid (red).
+    Drag $k$ to see how "retained ratio" changes and how reconstruction increasingly matches the original.</p>
   <div class="grid-2">
     <div>
       <svg class="canvas" id="svgRecon" width="100%" viewBox="0 0 420 320"></svg>
       <div class="controls">
-        <label>保留主成分數 $k$：
+        <label><span data-lang="zh">保留主成分數</span><span data-lang="en">Keep PCs</span> $k$:
           <input type="range" id="kSlider" min="1" max="8" value="2" step="1">
           <span id="kVal" style="font-family:monospace">2</span>
         </label>
-        <button id="btnReconGen" class="ghost">換一組資料</button>
+        <button id="btnReconGen" class="ghost"><span data-lang="zh">換一組資料</span><span data-lang="en">New data</span></button>
       </div>
     </div>
     <div>
-      <h3>scree plot（碎石圖）</h3>
+      <h3 data-lang="zh">scree plot（碎石圖）</h3>
+      <h3 data-lang="en">Scree plot</h3>
       <svg id="screePlot" width="100%" viewBox="0 0 380 240" style="background:#fff;border:1px solid var(--border);border-radius:6px"></svg>
-      <p style="font-size:13px; color:var(--muted); margin:8px 0">
+      <p style="font-size:13px; color:var(--muted); margin:8px 0" data-lang="zh">
         每根長條 = 該 PC 解釋的變異量比例。<br>
         藍色虛線是「累積比例」，到 $k$ 為止的累積就是你保留的資訊量。
+      </p>
+      <p style="font-size:13px; color:var(--muted); margin:8px 0" data-lang="en">
+        Each bar = variance explained by that PC.<br>
+        Blue dashed line = "cumulative ratio"; cumulative up to $k$ = information you retain.
       </p>
       <div class="stat-row" id="reconStats"></div>
     </div>
@@ -1198,15 +1810,20 @@ $$ \text{誤差} = \|\tilde{\mathbf{X}} - \hat{\tilde{\mathbf{X}}}\|_F^2 = (n-1)
 <!-- =====================================
      §10 3D 三基因範例 (NEW MAJOR)
      ===================================== -->
-<h2 id="s10"><span class="num">§10</span> 3D 三基因：自由探索 + 演算法步驟導覽</h2>
+<h2 id="s10"><span class="num">§10</span> <span data-lang="zh">3D 三基因：自由探索 + 演算法步驟導覽</span><span data-lang="en">3D 3-Gene: Free Exploration + 7-Step Algorithm Walkthrough</span></h2>
 
-<p class="lead">
+<p class="lead" data-lang="zh">
   這一節是核心。我們進入一個能完全「具象化」的情境：
   <b>三個基因 (Gene1, Gene2, Gene3) 的表現量恰好就是 3 個座標軸</b>，
   讓你可以在 3D 空間裡看見資料、看見主成分、看見投影到 2D 的過程。
 </p>
+<p class="lead" data-lang="en">
+  This is the heart of the tutorial. We enter a fully "tangible" scenario:
+  <b>three genes (Gene1, Gene2, Gene3) whose expression values literally are the 3 coordinate axes</b>,
+  letting you see the data, principal components, and projection-to-2D all in 3D space.
+</p>
 
-<div class="callout bio">
+<div class="callout bio" data-lang="zh">
   <strong>情境設定：</strong> 你量了 60 個樣本對 3 個基因的表現量。
   資料是 60×3 的矩陣 $\mathbf{X}$。
   其中混雜了 3 種細胞型態 A、B、C，
@@ -1216,63 +1833,90 @@ $$ \text{誤差} = \|\tilde{\mathbf{X}} - \hat{\tilde{\mathbf{X}}}\|_F^2 = (n-1)
   你只想知道：資料裡有沒有自然分群？
   <br>（生物學上，這對應到 T 細胞 / 神經元 / 肝細胞各自的 marker gene 例如 CD3D / MAP2 / ALB。）
 </div>
+<div class="callout bio" data-lang="en">
+  <strong>Setup:</strong> You measured 60 samples × 3 genes. Data is a 60×3 matrix $\mathbf{X}$.
+  Mixed in are 3 cell types A, B, C, each "strongly expressing its own gene":
+  Type A mostly expresses Gene1, Type B → Gene2, Type C → Gene3.
+  <br>—— But you <b>don't know</b> which sample belongs to which type;
+  you just want to know: does the data have natural clustering?
+  <br>(Biologically, this maps to T-cell / neuron / hepatocyte marker genes like CD3D / MAP2 / ALB.)
+</div>
 
 <div class="mode-tabs">
-  <button id="modeFree" class="active">🧭 自由探索（拖曳、點擊看細節）</button>
-  <button id="modeStep">📚 演算法步驟導覽（7 步動畫）</button>
+  <button id="modeFree" class="active">🧭 <span data-lang="zh">自由探索（拖曳、點擊看細節）</span><span data-lang="en">Free Exploration (drag, click for details)</span></button>
+  <button id="modeStep">📚 <span data-lang="zh">演算法步驟導覽（7 步動畫）</span><span data-lang="en">Algorithm Walkthrough (7-step)</span></button>
 </div>
 
 <div class="card" id="freeModeCard">
-  <h3>自由探索模式</h3>
-  <p>用滑鼠<b>拖曳整個 3D 圖</b>旋轉視角，用滑鼠<b>點擊任一資料點</b>來選取它——
+  <h3 data-lang="zh">自由探索模式</h3>
+  <h3 data-lang="en">Free Exploration Mode</h3>
+  <p data-lang="zh">用滑鼠<b>拖曳整個 3D 圖</b>旋轉視角，用滑鼠<b>點擊任一資料點</b>來選取它——
     它會在 3D 與 2D 兩個視圖<b>同步點亮</b>，
     並在下方顯示它的原始 (Gene1, Gene2, Gene3) 表現量、
     中心化座標、以及在 PC1 / PC2 / PC3 上的得分。</p>
+  <p data-lang="en"><b>Drag the entire 3D plot</b> with the mouse to rotate, and <b>click any data point</b> to select it —
+    it lights up <b>simultaneously</b> in both 3D and 2D views,
+    and below you'll see its original (Gene1, Gene2, Gene3) expression,
+    centered coordinates, and PC1 / PC2 / PC3 scores.</p>
   <div class="grid-2">
     <div class="threed-container">
       <svg class="canvas" id="svg3D" width="100%" viewBox="0 0 480 480"></svg>
       <div class="controls" style="font-size:13px">
-        <label><input type="checkbox" id="show3DPC" checked> PC 軸</label>
-        <label><input type="checkbox" id="show3DPlane" checked> PC1-PC2 平面</label>
-        <label><input type="checkbox" id="show3DProj" checked> 投影虛線</label>
-        <button id="btn3DReset" class="ghost">重設視角</button>
-        <button id="btn3DSpin" class="ghost">自動旋轉</button>
+        <label><input type="checkbox" id="show3DPC" checked> <span data-lang="zh">PC 軸</span><span data-lang="en">PC axes</span></label>
+        <label><input type="checkbox" id="show3DPlane" checked> <span data-lang="zh">PC1-PC2 平面</span><span data-lang="en">PC1-PC2 plane</span></label>
+        <label><input type="checkbox" id="show3DProj" checked> <span data-lang="zh">投影虛線</span><span data-lang="en">Projection lines</span></label>
+        <button id="btn3DReset" class="ghost"><span data-lang="zh">重設視角</span><span data-lang="en">Reset view</span></button>
+        <button id="btn3DSpin" class="ghost"><span data-lang="zh">自動旋轉</span><span data-lang="en">Auto-spin</span></button>
       </div>
       <div class="legend" id="legend3D"></div>
     </div>
     <div>
-      <h3 style="margin-top:6px">2D 投影（PC1 × PC2）</h3>
+      <h3 style="margin-top:6px" data-lang="zh">2D 投影（PC1 × PC2）</h3>
+      <h3 style="margin-top:6px" data-lang="en">2D Projection (PC1 × PC2)</h3>
       <svg class="canvas" id="svg2DProj" width="100%" viewBox="0 0 400 400"></svg>
-      <p style="font-size:13px; color:var(--muted); margin:8px 0">
+      <p style="font-size:13px; color:var(--muted); margin:8px 0" data-lang="zh">
         從 3D「沿著 PC3 方向看下來」的視角。
         3 種細胞自然分成 3 群——
         PCA 從未拿到細胞型態標籤，但前兩個主成分就把它們區分開。
       </p>
-      <h4 style="margin-top:16px">三個主成分解釋的變異量</h4>
+      <p style="font-size:13px; color:var(--muted); margin:8px 0" data-lang="en">
+        View from "looking down the PC3 axis" in 3D.
+        Three cell types naturally separate into 3 clusters —
+        PCA never received cell-type labels, yet the first two PCs distinguish them.
+      </p>
+      <h4 style="margin-top:16px" data-lang="zh">三個主成分解釋的變異量</h4>
+      <h4 style="margin-top:16px" data-lang="en">Variance explained by each PC</h4>
       <div id="scree3D"></div>
     </div>
   </div>
   <div class="detail-panel" id="sample3DDetail" style="margin-top:16px">
-    <h4>點擊 3D 或 2D 任一樣本看完整數學細節 ↑</h4>
-    <p style="margin:0; font-size:13px; color:var(--muted)">
+    <h4 data-lang="zh">點擊 3D 或 2D 任一樣本看完整數學細節 ↑</h4>
+    <h4 data-lang="en">Click any sample in 3D or 2D for complete math details ↑</h4>
+    <p style="margin:0; font-size:13px; color:var(--muted)" data-lang="zh">
       選取後會顯示：原始 (Gene1, Gene2, Gene3) → 中心化 → PC1/PC2/PC3 得分的完整算式。
+    </p>
+    <p style="margin:0; font-size:13px; color:var(--muted)" data-lang="en">
+      After selecting, shows: original (Gene1, Gene2, Gene3) → centered → PC1/PC2/PC3 scores with full formulas.
     </p>
   </div>
 </div>
 
 <div class="card" id="stepModeCard" style="display:none">
-  <h3>演算法步驟導覽模式</h3>
-  <p>點下方「下一步」按鈕，PCA 演算法會在 3D 圖上<b>一步一步展開</b>。
+  <h3 data-lang="zh">演算法步驟導覽模式</h3>
+  <h3 data-lang="en">Algorithm Walkthrough Mode</h3>
+  <p data-lang="zh">點下方「下一步」按鈕，PCA 演算法會在 3D 圖上<b>一步一步展開</b>。
     左側 3D 視覺化會即時改變，右側顯示當前步驟的<b>數學算式</b>與<b>解釋</b>。</p>
+  <p data-lang="en">Click "Next" below; PCA <b>unfolds step-by-step</b> on the 3D plot.
+    The left 3D visualization updates live; the right shows the current step's <b>math</b> and <b>explanation</b>.</p>
   <div class="step-nav">
     <div class="step-num" id="stepNum">0</div>
     <div class="step-text">
-      <div class="title" id="stepTitle">尚未開始</div>
-      <div class="desc" id="stepDesc">點「下一步」開始 PCA 演算法之旅</div>
+      <div class="title" id="stepTitle"><span data-lang="zh">尚未開始</span><span data-lang="en">Not started</span></div>
+      <div class="desc" id="stepDesc"><span data-lang="zh">點「下一步」開始 PCA 演算法之旅</span><span data-lang="en">Click "Next" to start the PCA walkthrough</span></div>
     </div>
-    <button id="stepPrev" class="ghost">← 上一步</button>
-    <button id="stepNext">下一步 →</button>
-    <button id="stepReset" class="ghost">重新開始</button>
+    <button id="stepPrev" class="ghost">← <span data-lang="zh">上一步</span><span data-lang="en">Prev</span></button>
+    <button id="stepNext"><span data-lang="zh">下一步</span><span data-lang="en">Next</span> →</button>
+    <button id="stepReset" class="ghost"><span data-lang="zh">重新開始</span><span data-lang="en">Reset</span></button>
   </div>
   <div class="grid-2">
     <div class="threed-container">
@@ -1280,7 +1924,8 @@ $$ \text{誤差} = \|\tilde{\mathbf{X}} - \hat{\tilde{\mathbf{X}}}\|_F^2 = (n-1)
       <div class="legend" id="legendStep"></div>
     </div>
     <div>
-      <h4 style="margin-top:0">當前步驟的數學</h4>
+      <h4 style="margin-top:0" data-lang="zh">當前步驟的數學</h4>
+      <h4 style="margin-top:0" data-lang="en">Current step's math</h4>
       <div class="math-live" id="stepMath" style="min-height:240px"></div>
       <div class="detail-panel" id="stepNote" style="margin-top:14px"></div>
     </div>
@@ -1288,89 +1933,125 @@ $$ \text{誤差} = \|\tilde{\mathbf{X}} - \hat{\tilde{\mathbf{X}}}\|_F^2 = (n-1)
 </div>
 
 <div class="card">
-  <h3>讀 loadings：每個基因對 PC 的貢獻</h3>
-  <p>主成分是<b>三個基因的線性組合</b>。每個 PC 的組合係數叫 <b>loading</b>：</p>
+  <h3 data-lang="zh">讀 loadings：每個基因對 PC 的貢獻</h3>
+  <h3 data-lang="en">Reading loadings: each gene's contribution to PCs</h3>
+  <p data-lang="zh">主成分是<b>三個基因的線性組合</b>。每個 PC 的組合係數叫 <b>loading</b>：</p>
+  <p data-lang="en">A principal component is a <b>linear combination of all three genes</b>. The combination coefficients are called <b>loadings</b>:</p>
   <div id="loadings3D"></div>
-  <p style="font-size:13px; color:var(--muted); margin-top:12px">
+  <p style="font-size:13px; color:var(--muted); margin-top:12px" data-lang="zh">
     loading 的絕對值大代表「該基因對這個 PC 影響大」；
     符號表示「同向 / 反向」。
     讀 loadings 是解讀 PCA 結果的關鍵：
     它告訴你「在這個資料裡，每個 PC 的生物學意義是什麼」。
   </p>
+  <p style="font-size:13px; color:var(--muted); margin-top:12px" data-lang="en">
+    A loading's absolute magnitude means "that gene's influence on this PC";
+    the sign indicates "same / opposite direction".
+    Reading loadings is the key to interpreting PCA results:
+    it tells you "what each PC biologically means in this data".
+  </p>
 </div>
 
 <div class="card">
-  <h3>互動：調整資料分離程度</h3>
-  <p>用下面的滑桿調整「三種細胞之間的差異強度」與「測量雜訊」。
+  <h3 data-lang="zh">互動：調整資料分離程度</h3>
+  <h3 data-lang="en">Interactive: adjust cluster separation</h3>
+  <p data-lang="zh">用下面的滑桿調整「三種細胞之間的差異強度」與「測量雜訊」。
     PCA <b>誠實反映資料</b>——分群明顯時它顯示分群、雜訊大時它就分不出來。</p>
+  <p data-lang="en">Use the sliders to adjust "cell-type separation" and "measurement noise".
+    PCA <b>honestly reflects the data</b> — visible clusters when they exist, indistinguishable when noise dominates.</p>
   <div class="controls">
-    <label>細胞型態間差異強度：
+    <label><span data-lang="zh">細胞型態間差異強度：</span><span data-lang="en">Cell-type separation:</span>
       <input type="range" id="sep3D" min="20" max="100" value="80" step="1">
       <span id="sep3DVal" style="font-family:monospace">80%</span>
     </label>
-    <label>每點的測量雜訊：
+    <label><span data-lang="zh">每點的測量雜訊：</span><span data-lang="en">Measurement noise:</span>
       <input type="range" id="noise3D" min="5" max="60" value="20" step="1">
       <span id="noise3DVal" style="font-family:monospace">20%</span>
     </label>
-    <button id="btn3DRegen" class="ghost">重新模擬</button>
+    <button id="btn3DRegen" class="ghost"><span data-lang="zh">重新模擬</span><span data-lang="en">Re-simulate</span></button>
   </div>
 </div>
 
 <!-- =====================================
      §11 高維基因表現
      ===================================== -->
-<h2 id="s11"><span class="num">§11</span> 推到高維：Gene1 到 Gene20</h2>
+<h2 id="s11"><span class="num">§11</span> <span data-lang="zh">推到高維：Gene1 到 Gene20</span><span data-lang="en">Scaling to high-D: Gene1 to Gene20</span></h2>
 
-<p class="lead">
+<p class="lead" data-lang="zh">
   剛才的 3D 範例幫你建立了直覺——但<b>真實 RNA-seq 資料是幾萬維的</b>。
   好消息是：PCA 的數學完全一樣，只是「3 個軸」變成「20000 個軸」。
   你的眼睛沒辦法看 20000 維，但 PCA 會幫你把它壓回 2-3 維。
 </p>
+<p class="lead" data-lang="en">
+  The 3D example built intuition — but <b>real RNA-seq data is tens of thousands of dimensions</b>.
+  The good news: PCA's math is identical, just "3 axes" becomes "20,000 axes".
+  Your eyes can't see 20,000 dimensions, but PCA compresses it back to 2-3D.
+</p>
 
 <div class="card">
-  <h3>合成資料：3 種細胞型態 × 20 個基因 (Gene1 ~ Gene20) × 60 個樣本</h3>
-  <p>左圖是<b>原始表現矩陣熱圖</b>（紅高、藍低），每一列是一個樣本、
+  <h3 data-lang="zh">合成資料：3 種細胞型態 × 20 個基因 (Gene1 ~ Gene20) × 60 個樣本</h3>
+  <h3 data-lang="en">Synthetic data: 3 cell types × 20 genes (Gene1 ~ Gene20) × 60 samples</h3>
+  <p data-lang="zh">左圖是<b>原始表現矩陣熱圖</b>（紅高、藍低），每一列是一個樣本、
     每一欄是一個基因。樣本已按真實標籤排好（僅為視覺化清晰），
     但 PCA 完全不使用標籤。<br>
     右圖是 PCA 把每個樣本降到 2D 的散佈圖——
     每個點是一個樣本，顏色是真實型態。
     PCA 自然把三群分開。</p>
+  <p data-lang="en">Left: <b>raw expression matrix heatmap</b> (red high, blue low); each row = a sample, each column = a gene.
+    Samples are sorted by true label (just for visual clarity), but PCA doesn't use labels at all.<br>
+    Right: PCA's 2D projection of each sample —
+    each point is a sample colored by true type.
+    PCA naturally separates the 3 clusters.</p>
   <div class="grid-2">
     <div>
-      <h3 style="margin-top:6px">表現量熱圖</h3>
+      <h3 style="margin-top:6px" data-lang="zh">表現量熱圖</h3>
+      <h3 style="margin-top:6px" data-lang="en">Expression heatmap</h3>
       <svg id="heatmap" width="100%" viewBox="0 0 420 360" style="background:#fff;border:1px solid var(--border);border-radius:6px"></svg>
-      <p style="font-size:12px; color:var(--muted); margin:4px 0">
+      <p style="font-size:12px; color:var(--muted); margin:4px 0" data-lang="zh">
         列：60 個樣本（左側色條 = 真實細胞型態）<br>
         欄：20 個基因
       </p>
+      <p style="font-size:12px; color:var(--muted); margin:4px 0" data-lang="en">
+        Rows: 60 samples (left color bar = true cell type)<br>
+        Columns: 20 genes
+      </p>
     </div>
     <div>
-      <h3 style="margin-top:6px">PCA 2D 投影</h3>
+      <h3 style="margin-top:6px" data-lang="zh">PCA 2D 投影</h3>
+      <h3 style="margin-top:6px" data-lang="en">PCA 2D projection</h3>
       <svg id="pcaScatter" width="100%" viewBox="0 0 420 360" style="background:#fff;border:1px solid var(--border);border-radius:6px"></svg>
       <div class="legend" id="cellLegend"></div>
-      <p style="font-size:12px; color:var(--muted); margin:4px 0">
+      <p style="font-size:12px; color:var(--muted); margin:4px 0" data-lang="zh">
         PC 由原始 20 維資料計算，未使用標籤。
+      </p>
+      <p style="font-size:12px; color:var(--muted); margin:4px 0" data-lang="en">
+        PCs computed from raw 20-D data, without using labels.
       </p>
     </div>
   </div>
   <div class="controls">
-    <button id="btnGeneNew">重新模擬資料</button>
-    <label>細胞型態間差異強度：
+    <button id="btnGeneNew"><span data-lang="zh">重新模擬資料</span><span data-lang="en">Re-simulate data</span></button>
+    <label><span data-lang="zh">細胞型態間差異強度：</span><span data-lang="en">Cell-type separation:</span>
       <input type="range" id="sepSlider" min="0" max="100" value="60" step="1">
       <span id="sepVal" style="font-family:monospace">60%</span>
     </label>
   </div>
   <div style="margin-top:18px">
-    <h3>scree plot：要保留幾個主成分？</h3>
+    <h3 data-lang="zh">scree plot：要保留幾個主成分？</h3>
+    <h3 data-lang="en">Scree plot: how many PCs to keep?</h3>
     <svg id="geneScree" width="100%" viewBox="0 0 600 220" style="background:#fff;border:1px solid var(--border);border-radius:6px"></svg>
-    <p style="font-size:13px; color:var(--muted); margin:8px 0">
+    <p style="font-size:13px; color:var(--muted); margin:8px 0" data-lang="zh">
       只有前 2-3 個主成分有顯著變異量，剩下幾乎是雜訊。
       這就是為什麼從 20 維降到 2 維幾乎不損失分群資訊。
+    </p>
+    <p style="font-size:13px; color:var(--muted); margin:8px 0" data-lang="en">
+      Only the first 2-3 PCs have significant variance; the rest are mostly noise.
+      That's why going from 20-D to 2-D barely loses clustering information.
     </p>
   </div>
 </div>
 
-<div class="callout bio">
+<div class="callout bio" data-lang="zh">
   <strong>實務上你會踩到的坑：</strong>
   <ul style="margin:8px 0">
     <li><b>標準化基因</b>：高表現基因（如 ribosomal RNA）天然變異大，
@@ -1386,15 +2067,32 @@ $$ \text{誤差} = \|\tilde{\mathbf{X}} - \hat{\tilde{\mathbf{X}}}\|_F^2 = (n-1)
       PCA 在這條 pipeline 裡擔任<b>去雜訊</b>的角色。</li>
   </ul>
 </div>
+<div class="callout bio" data-lang="en">
+  <strong>Practical pitfalls you'll encounter:</strong>
+  <ul style="margin:8px 0">
+    <li><b>Gene standardization</b>: highly expressed genes (e.g., ribosomal RNA) have inherently large variance
+      and dominate PC1 if not standardized. Common practice: z-score or log transform.</li>
+    <li><b>Batch effect</b>: if PC1 mainly distinguishes "experimental batches"
+      rather than biological differences, PCA honestly shows that — a common QC tool.
+      Solutions include ComBat, Harmony, reciprocal PCA, etc.</li>
+    <li><b>Loadings interpretation</b>: each component of $\mathbf{v}_1$ is "that gene's contribution to PC1".
+      Genes with large absolute values are <b>key drivers of sample variation</b> —
+      a common starting point for marker gene discovery.</li>
+    <li><b>Cluster after dim reduction</b>: typical pipeline is
+      "PCA → 30-50D → KNN graph → Leiden / Louvain clustering" (e.g., Seurat, Scanpy).
+      PCA serves as a <b>denoising</b> step in this pipeline.</li>
+  </ul>
+</div>
 
 <!-- =====================================
      §12 整理
      ===================================== -->
-<h2 id="s12"><span class="num">§12</span> 把整套故事串起來 + 限制與下一步</h2>
+<h2 id="s12"><span class="num">§12</span> <span data-lang="zh">把整套故事串起來 + 限制與下一步</span><span data-lang="en">Tying it together + Limits and Next Steps</span></h2>
 
-<h3>整套推導的核心邏輯</h3>
+<h3 data-lang="zh">整套推導的核心邏輯</h3>
+<h3 data-lang="en">The core logic of the whole derivation</h3>
 
-<ol class="step-list">
+<ol class="step-list" data-lang="zh">
   <li><b>目標</b>：把高維資料壓到低維時，<b>保留最多的「點與點之間的差異」</b>。</li>
   <li><b>翻譯成數學</b>：找一個單位向量 $\mathbf{w}$，
     讓投影後的變異數 $\mathrm{Var}(\tilde{\mathbf{X}}\mathbf{w}) = \mathbf{w}^\top \mathbf{C}\mathbf{w}$ 最大。</li>
@@ -1406,43 +2104,57 @@ $$ \text{誤差} = \|\tilde{\mathbf{X}} - \hat{\tilde{\mathbf{X}}}\|_F^2 = (n-1)
     Eckart–Young 定理保證重建誤差最小。</li>
   <li><b>應用</b>：基因表現分群、影像壓縮、雜訊去除、視覺化。</li>
 </ol>
+<ol class="step-list" data-lang="en">
+  <li><b>Goal</b>: compress high-D data to low-D while <b>preserving maximum "inter-point differences"</b>.</li>
+  <li><b>Translate to math</b>: find a unit vector $\mathbf{w}$
+    maximizing post-projection variance $\mathrm{Var}(\tilde{\mathbf{X}}\mathbf{w}) = \mathbf{w}^\top \mathbf{C}\mathbf{w}$.</li>
+  <li><b>Lagrange multipliers</b>: constrained-optimization KKT conditions directly give $\mathbf{C}\mathbf{w}=\lambda\mathbf{w}$.</li>
+  <li><b>Interpret back</b>: optimal direction = eigenvector of $\mathbf{C}$;
+    variance along it = corresponding eigenvalue.</li>
+  <li><b>Implementation</b>: SVD on centered data — numerically stable and high-D friendly.</li>
+  <li><b>Dim reduction</b>: project onto top $k$ PCs;
+    Eckart–Young guarantees minimum reconstruction error.</li>
+  <li><b>Applications</b>: gene expression clustering, image compression, denoising, visualization.</li>
+</ol>
 
-<h3>PCA 的限制（什麼時候不該用 PCA）</h3>
+<h3 data-lang="zh">PCA 的限制（什麼時候不該用 PCA）</h3>
+<h3 data-lang="en">PCA's limits (when NOT to use PCA)</h3>
 
 <div class="card">
   <table class="compare">
-    <tr><th>限制</th><th>原因</th><th>替代方案</th></tr>
+    <tr><th><span data-lang="zh">限制</span><span data-lang="en">Limit</span></th><th><span data-lang="zh">原因</span><span data-lang="en">Reason</span></th><th><span data-lang="zh">替代方案</span><span data-lang="en">Alternative</span></th></tr>
     <tr>
-      <td><b>只能捕捉「線性」結構</b></td>
-      <td>PCA 找的是線性子空間，遇到螺旋、流形結構就失效</td>
-      <td>t-SNE、UMAP、kernel PCA、autoencoder</td>
+      <td><b><span data-lang="zh">只能捕捉「線性」結構</span><span data-lang="en">Captures only "linear" structure</span></b></td>
+      <td><span data-lang="zh">PCA 找的是線性子空間，遇到螺旋、流形結構就失效</span><span data-lang="en">PCA seeks linear subspaces; fails on spirals or manifolds</span></td>
+      <td>t-SNE, UMAP, kernel PCA, autoencoder</td>
     </tr>
     <tr>
-      <td><b>對離群值敏感</b></td>
-      <td>變異數是平方誤差，極端值會被嚴重放大</td>
-      <td>robust PCA、log 轉換、先除離群值</td>
+      <td><b><span data-lang="zh">對離群值敏感</span><span data-lang="en">Sensitive to outliers</span></b></td>
+      <td><span data-lang="zh">變異數是平方誤差，極端值會被嚴重放大</span><span data-lang="en">Variance is squared error; extremes get magnified</span></td>
+      <td><span data-lang="zh">robust PCA、log 轉換、先除離群值</span><span data-lang="en">robust PCA, log transform, outlier removal first</span></td>
     </tr>
     <tr>
-      <td><b>主成分缺乏可解釋性</b></td>
-      <td>PC 是所有原始特徵的線性組合，不容易翻譯成「人話」</td>
-      <td>sparse PCA、NMF、factor analysis</td>
+      <td><b><span data-lang="zh">主成分缺乏可解釋性</span><span data-lang="en">PCs lack interpretability</span></b></td>
+      <td><span data-lang="zh">PC 是所有原始特徵的線性組合，不容易翻譯成「人話」</span><span data-lang="en">PCs are linear combinations of all features; hard to translate to "plain language"</span></td>
+      <td>sparse PCA, NMF, factor analysis</td>
     </tr>
     <tr>
-      <td><b>無法處理類別變數</b></td>
-      <td>共變異數矩陣只對連續變數有意義</td>
-      <td>MCA（對應分析）、autoencoder embedding</td>
+      <td><b><span data-lang="zh">無法處理類別變數</span><span data-lang="en">Can't handle categorical variables</span></b></td>
+      <td><span data-lang="zh">共變異數矩陣只對連續變數有意義</span><span data-lang="en">Covariance only meaningful for continuous variables</span></td>
+      <td><span data-lang="zh">MCA（對應分析）、autoencoder embedding</span><span data-lang="en">MCA (correspondence analysis), autoencoder embedding</span></td>
     </tr>
     <tr>
-      <td><b>不一定保留分群</b></td>
-      <td>PCA 最大化變異，不是最大化分群可分性</td>
-      <td>LDA（已知標籤）、UMAP（保留局部結構）</td>
+      <td><b><span data-lang="zh">不一定保留分群</span><span data-lang="en">Doesn't guarantee cluster preservation</span></b></td>
+      <td><span data-lang="zh">PCA 最大化變異，不是最大化分群可分性</span><span data-lang="en">PCA maximizes variance, not cluster separability</span></td>
+      <td><span data-lang="zh">LDA（已知標籤）、UMAP（保留局部結構）</span><span data-lang="en">LDA (labels known), UMAP (local structure)</span></td>
     </tr>
   </table>
 </div>
 
-<h3>下一步建議</h3>
+<h3 data-lang="zh">下一步建議</h3>
+<h3 data-lang="en">Next-step recommendations</h3>
 
-<ul>
+<ul data-lang="zh">
   <li>用 <code class="inline">sklearn.decomposition.PCA</code> 對自己的真實資料跑一次，
     把 scree plot 畫出來決定 $k$。</li>
   <li>如果是 RNA-seq 資料，先看 <b>Scanpy</b> 或 <b>Seurat</b> 的 PCA 教學，
@@ -1452,9 +2164,22 @@ $$ \text{誤差} = \|\tilde{\mathbf{X}} - \hat{\tilde{\mathbf{X}}}\|_F^2 = (n-1)
   <li>若資料是非線性結構，下一站學 <b>UMAP</b>；
     若要嚴格統計推論，學 <b>probabilistic PCA</b> 與 <b>factor analysis</b>。</li>
 </ul>
+<ul data-lang="en">
+  <li>Run <code class="inline">sklearn.decomposition.PCA</code> on your own real data;
+    plot the scree to choose $k$.</li>
+  <li>For RNA-seq data, follow <b>Scanpy</b> or <b>Seurat</b> PCA tutorials,
+    which prescribe "select high-variance genes first" and "log-normalize first" conventions.</li>
+  <li>Learn to read a <b>PCA biplot</b>: overlay samples and gene loadings on the same chart,
+    seeing both "how samples cluster" and "which genes drive clustering" simultaneously.</li>
+  <li>For non-linear structure, next stop is <b>UMAP</b>;
+    for rigorous statistical inference, study <b>probabilistic PCA</b> and <b>factor analysis</b>.</li>
+</ul>
 
-<p class="footer">
+<p class="footer" data-lang="zh">
   互動式教材（增訂版）· 拖動 · 旋轉 · 觀察 · 體會
+</p>
+<p class="footer" data-lang="en">
+  Interactive Tutorial (Bilingual Edition) · Drag · Rotate · Observe · Experience
 </p>
 
 </div>
@@ -3701,5 +4426,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
   generate(); render();
 })();
 </script>
+<!-- V7 新增：i18n.js 啟用語言切換按鈕 -->
+<script src="../i18n.js"></script>
 </body>
 </html>

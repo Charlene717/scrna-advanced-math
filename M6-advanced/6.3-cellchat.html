@@ -1,110 +1,652 @@
 <!DOCTYPE html>
-<html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>6.3 CellChat — scRNA-seq Advanced Math</title><link rel="stylesheet" href="../styles.css">
-<script>MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] } };</script>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>6.3 CellChat：細胞間通訊 — Deep Interactive</title>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
-</head><body>
+<style>
+  :root {
+    --bg: #fafaf7; --fg: #1a1a1a; --muted: #666;
+    --accent: #c0392b; --accent2: #2c5aa0;
+    --green: #27795a; --purple: #8e44ad; --yellow: #f0c419;
+    --rust: #c2410c;
+    --card: #ffffff; --border: #e0e0d8; --code: #f4f1ea;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Helvetica Neue", "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif; background: var(--bg); color: var(--fg); line-height: 1.75; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 40px 28px 120px; }
+  header.cover { margin: 20px 0 60px; padding: 52px 40px;
+    background: linear-gradient(135deg, #431407 0%, #c2410c 55%, #fdba74 100%);
+    color: #fff; border-radius: 16px; box-shadow: 0 14px 40px rgba(67,20,7,0.18); }
+  header.cover h1 { margin: 0 0 14px; font-size: 36px; }
+  header.cover .sub { font-size: 17px; opacity: 0.92; line-height: 1.65; }
+  header.cover .badge { display: inline-block; background: rgba(255,255,255,0.18);
+    padding: 4px 12px; border-radius: 20px; font-size: 13px; margin-bottom: 16px; }
+  h2 { margin-top: 70px; padding-bottom: 8px; border-bottom: 3px solid var(--rust);
+    font-size: 26px; display: flex; align-items: baseline; gap: 12px; }
+  h2 .num { color: var(--rust); font-weight: 800; font-size: 20px; }
+  h3 { margin-top: 36px; font-size: 19px; color: var(--accent2); }
+  h4 { margin-top: 22px; font-size: 16px; color: var(--accent); }
+  p { margin: 14px 0; }
+  .lead { font-size: 17px; color: #2a2a2a; }
+  .callout { background: #fff8e6; border-left: 4px solid var(--yellow); padding: 14px 18px; border-radius: 6px; margin: 22px 0; }
+  .callout.idea { background: #eaf4ff; border-left-color: var(--accent2); }
+  .callout.warn { background: #fdecec; border-left-color: var(--accent); }
+  .callout.bio  { background: #effaf3; border-left-color: var(--green); }
+  .callout.prog { background: #ffedd5; border-left-color: var(--rust); }
+  .card { background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px 26px; margin: 26px 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+  .card h3 { margin-top: 0; }
+  .controls { display: flex; flex-wrap: wrap; gap: 14px 22px;
+    align-items: center; margin: 14px 0; padding: 12px 16px;
+    background: #f4f1ea; border-radius: 8px; font-size: 14px; }
+  .controls label { display: flex; align-items: center; gap: 8px; }
+  button { background: var(--rust); color: #fff; border: 0;
+    padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 14px;
+    font-family: inherit; }
+  button:hover { background: #9a3412; }
+  button.ghost { background: #fff; color: var(--rust); border: 1px solid var(--rust); }
+  input[type="range"] { width: 180px; vertical-align: middle; }
+  svg.canvas { background: #fcfcfa; border: 1px solid var(--border); border-radius: 8px; display: block; }
+  svg.canvas .axis { stroke: #bbb; stroke-width: 1; }
+  svg.canvas .grid { stroke: #ececea; stroke-width: 0.5; }
+  svg.canvas text.lbl { font-size: 12px; fill: #333; }
+  .stat-row { display: flex; flex-wrap: wrap; gap: 22px; margin: 14px 0; font-size: 14px; }
+  .stat-row .item { display: flex; flex-direction: column; }
+  .stat-row .item .lbl { color: var(--muted); font-size: 12px; }
+  .stat-row .item .val { font-family: "JetBrains Mono", monospace; font-size: 18px; }
+  details { margin: 16px 0; }
+  details summary { cursor: pointer; font-weight: 600; color: var(--accent2); padding: 6px 0; }
+  .toc { background: #fff; border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 28px; margin: 30px 0; }
+  .toc h4 { margin: 0 0 10px; color: var(--rust); }
+  .toc ol { margin: 6px 0; padding-left: 24px; line-height: 1.9; }
+  .toc a { color: var(--accent2); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .toc .new { background: var(--rust); color: #fff; font-size: 11px;
+    padding: 1px 8px; border-radius: 10px; margin-left: 6px; }
+  code.inline { background: var(--code); padding: 2px 6px; border-radius: 4px;
+    font-size: 13px; font-family: "JetBrains Mono", "Consolas", monospace; }
+  pre.code { background: #1e1e1e; color: #dcdcdc;
+    padding: 14px 18px; border-radius: 8px; overflow-x: auto; font-size: 13px;
+    font-family: "JetBrains Mono", "Consolas", monospace; line-height: 1.55; }
+  pre.code .k { color: #569cd6; }
+  pre.code .s { color: #ce9178; }
+  pre.code .c { color: #6a9955; }
+  pre.code .n { color: #b5cea8; }
+  table.compare { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.compare th, table.compare td { border: 1px solid var(--border); padding: 8px 12px; }
+  table.compare th { background: #f4f1ea; text-align: left; }
+  .math-block { background: #fff; border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 18px; margin: 18px 0; }
+  .math-block.boxed { border: 2px solid var(--rust); background: #ffedd5; }
+  .formula-caption { font-size: 12.5px; color: var(--muted); text-align: center; margin-top: 6px; }
+  .footer { text-align: center; color: var(--muted); margin-top: 80px; font-size: 13px; }
+  .top-nav { background: #431407; color: #fff; padding: 14px 28px;
+    position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(67,20,7,0.25); }
+  .top-nav-inner { max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; gap: 28px; }
+  .top-nav-brand { color: #fff; text-decoration: none;
+    font-weight: 700; font-size: 17px;
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .top-nav-brand .badge-math { background: #c2410c; color: #fff;
+    padding: 3px 9px; border-radius: 4px; font-size: 11px; }
+  .top-nav-links { list-style: none; margin: 0; padding: 0;
+    display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+  .top-nav-links a { color: #fed7aa; text-decoration: none;
+    padding: 6px 11px; border-radius: 6px; font-size: 13px; font-weight: 500;
+    transition: 0.2s; }
+  .top-nav-links a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .top-nav-links a.active { background: #c2410c; color: #fff; }
+  .top-nav-links li.dropdown { position: relative; }
+  .top-nav-links li.dropdown > a::after { content: ' ▾';
+    font-size: 10px; opacity: 0.7; margin-left: 3px;
+    display: inline-block; transition: transform 0.2s; }
+  .top-nav-links li.dropdown:hover > a::after,
+  .top-nav-links li.dropdown.open > a::after { transform: rotate(180deg); }
+  .top-nav-links .dropdown-menu { display: none; position: absolute; top: 100%; left: 0;
+    background: #5e2010; border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px; padding: 6px 0; min-width: 230px;
+    list-style: none; z-index: 200;
+    box-shadow: 0 8px 28px rgba(67,20,7,0.5); margin: 6px 0 0; }
+  .top-nav-links li.dropdown:hover > .dropdown-menu,
+  .top-nav-links li.dropdown.open > .dropdown-menu { display: block; }
+  .top-nav-links .dropdown-menu li { display: block; }
+  .top-nav-links .dropdown-menu li a { display: block; padding: 9px 18px;
+    border-radius: 0; font-size: 13px; white-space: nowrap; color: #fed7aa; }
+  .top-nav-links .dropdown-menu li a:hover { background: rgba(194,65,12,0.3); color: #fff; }
+  .top-nav-links .dropdown-menu li a.active-sub { background: #c2410c; color: #fff; font-weight: 700; }
+  .top-nav-links .dropdown-menu .sub-label { font-size: 10px; color: #fdba74;
+    letter-spacing: 1px; padding: 4px 18px 2px; text-transform: uppercase; }
+  .lang-switch { display: flex; gap: 4px;
+    background: rgba(255,255,255,0.08); padding: 4px; border-radius: 6px; flex-shrink: 0; }
+  .lang-switch button { background: transparent; border: 0; color: #fed7aa;
+    font-size: 12px; font-weight: 700; padding: 5px 10px;
+    border-radius: 4px; cursor: pointer; font-family: inherit; }
+  .lang-switch button.active { background: #c2410c; color: #fff; }
+  .nav-pages { display: flex; gap: 8px; margin: 24px 0; padding: 14px;
+    background: #5e2010; border-radius: 10px; align-items: center; flex-wrap: wrap; }
+  .nav-pages a { color: #fed7aa; text-decoration: none;
+    padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600;
+    transition: 0.2s; }
+  .nav-pages a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .nav-pages .label { color: #fdba74; font-size: 11px;
+    letter-spacing: 1px; font-weight: 700; margin-right: 8px; }
+  [data-lang="en"] { display: none; }
+  body.lang-en [data-lang="zh"] { display: none; }
+  body.lang-en [data-lang="en"] { display: initial; }
+  body.lang-en h1[data-lang="en"], body.lang-en h2[data-lang="en"],
+  body.lang-en h3[data-lang="en"], body.lang-en h4[data-lang="en"],
+  body.lang-en p[data-lang="en"], body.lang-en div[data-lang="en"],
+  body.lang-en ol[data-lang="en"], body.lang-en ul[data-lang="en"] { display: block; }
+  body.lang-en li[data-lang="en"] { display: list-item; }
+  body.lang-en span[data-lang="en"] { display: inline; }
+  body.lang-en tspan[data-lang="en"] { display: inline; }
+</style>
+</head>
+<body>
+
 <nav class="top-nav"><div class="top-nav-inner">
-  <a href="../index.html" class="top-nav-brand"><span>🧬</span><span data-lang="zh">scRNA-seq 進階數學</span><span data-lang="en">scRNA-seq Advanced Math</span><span class="badge-math">MATH</span></a>
-  <ul class="top-nav-links"><li><a href="../index.html#M1">M1</a></li><li><a href="../index.html#M2">M2</a></li><li><a href="../index.html#M3">M3</a></li><li><a href="../index.html#M4">M4</a></li><li><a href="../index.html#M5">M5</a></li><li><a href="../index.html#M6" class="active">M6</a></li><li><a href="../index.html" data-lang="zh">🏠 回首頁</a><span data-lang="en">🏠 Home</span></li></ul>
-  <div class="lang-switch"><button data-lang-btn="zh" class="active">中文</button><button data-lang-btn="en">EN</button></div>
+  <a href="../index.html" class="top-nav-brand">
+    <span>🧬</span>
+    <span data-lang="zh">scRNA-seq 進階數學</span>
+    <span data-lang="en">scRNA-seq Advanced Math</span>
+    <span class="badge-math">MATH</span>
+  </a>
+  <ul class="top-nav-links">
+    <li class="dropdown"><a href="../index.html#M1">M1</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">基礎 / FOUNDATIONS</li>
+        <li><a href="../M1-foundations/1.1-sparse-matrix.html">1.1 稀疏矩陣</a></li>
+        <li><a href="../M1-foundations/1.2-count-distributions.html">1.2 計數分布</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M2">M2</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">前處理 / PREPROCESSING</li>
+        <li><a href="../M2-preprocessing/2.1-qc-statistics.html">2.1 QC 統計</a></li>
+        <li><a href="../M2-preprocessing/2.2-normalization.html">2.2 Normalization</a></li>
+        <li><a href="../M2-preprocessing/2.3-hvg-selection.html">2.3 HVG 選擇</a></li>
+        <li><a href="../M2-preprocessing/2.4-scaling.html">2.4 Scaling</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M3">M3</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">降維 / DIM. REDUCTION</li>
+        <li><a href="../M3-dimreduction/3.1-pca.html">3.1 PCA</a></li>
+        <li><a href="../M3-dimreduction/3.2-tsne.html">3.2 t-SNE</a></li>
+        <li><a href="../M3-dimreduction/3.3-umap.html">3.3 UMAP</a></li>
+        <li><a href="../M3-dimreduction/3.4-diffusion-map.html">3.4 Diffusion Maps</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M4">M4</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">圖與聚類 / GRAPH &amp; CLUSTERING</li>
+        <li><a href="../M4-graph-clustering/4.1-knn-graph.html">4.1 KNN Graph + HNSW</a></li>
+        <li><a href="../M4-graph-clustering/4.2-louvain-leiden.html">4.2 Louvain &amp; Leiden</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M5">M5</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">統計推論 / STATS</li>
+        <li><a href="../M5-statistics/5.1-de-tests.html">5.1 DE 檢定</a></li>
+        <li><a href="../M5-statistics/5.2-multiple-testing.html">5.2 多重檢定 / FDR</a></li>
+        <li><a href="../M5-statistics/5.3-classifier.html">5.3 細胞分類器</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M6" class="active">M6</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">進階 / ADVANCED</li>
+        <li><a href="6.1-integration.html">6.1 Integration</a></li>
+        <li><a href="6.2-pseudotime.html">6.2 Pseudotime</a></li>
+        <li><a href="6.3-cellchat.html" class="active-sub">6.3 CellChat ⭐ (本頁)</a></li>
+      </ul></li>
+    <li><a href="../index.html"><span data-lang="zh">🏠 回首頁</span><span data-lang="en">🏠 Home</span></a></li>
+  </ul>
+  <div class="lang-switch">
+    <button data-lang-btn="zh" class="active">中文</button>
+    <button data-lang-btn="en">EN</button>
+  </div>
 </div></nav>
-<header class="page-hero"><div class="page-hero-inner">
-  <div class="page-badge">M6.3 · ADVANCED</div>
-  <h1 data-lang="zh">CellChat 細胞通訊</h1><h1 data-lang="en">CellChat: Cell-Cell Communication</h1>
-  <p class="subtitle" data-lang="zh">怎麼把基因表現量轉成「通訊機率」？Hill function、permutation test、與其他工具 (CellPhoneDB) 的差別。</p>
-  <p class="subtitle" data-lang="en">Turning expression into "communication probability". Hill function, permutation tests, vs CellPhoneDB.</p>
-</div></header>
 
-<main class="content-wrap">
+<div class="wrap">
 
-<section class="section">
-  <span class="section-label intuition">直覺 / Intuition</span>
-  <div data-lang="zh"><p>細胞之間透過「<b>ligand-receptor 配對</b>」溝通：A 細胞分泌 ligand → B 細胞表面 receptor 接收。要量化「A → B 用 pathway P 通訊的強度」，我們需要：(1) 已知 L-R 對的資料庫；(2) 把 A 的 ligand 表現量 + B 的 receptor 表現量轉成一個機率。</p></div>
-  <div data-lang="en"><p>Cells communicate via <b>ligand-receptor pairs</b>: cell A secretes ligand, cell B's receptor receives. Need: (1) curated L-R database; (2) function to combine A's ligand + B's receptor into probability.</p></div>
-</section>
-
-<section class="section">
-  <span class="section-label math">核心數學 / Math</span>
-  <h3 data-lang="zh">通訊機率公式</h3><h3 data-lang="en">Communication probability</h3>
-  <div class="math-block">$$P_{i \to j}^{LR} = \frac{L_i \cdot R_j}{K_h + L_i \cdot R_j}$$<div class="formula-caption" data-lang="zh">Hill function 形式，$K_h$ 是 half-saturation 常數</div><div class="formula-caption" data-lang="en">Hill function, $K_h$ = half-saturation constant</div></div>
-  <p data-lang="zh">$L_i$ = cluster $i$ 平均 ligand 表現、$R_j$ = cluster $j$ 平均 receptor 表現。Hill function 是飽和曲線——表現量低時近 0、高時近 1。</p>
-  <p data-lang="en">$L_i$ = ligand mean in cluster $i$, $R_j$ = receptor mean in $j$. Hill saturates: ~0 at low, ~1 at high.</p>
-
-  <h3 data-lang="zh">考慮 cofactor / agonist / antagonist</h3>
-  <div class="math-block">$$P_{i \to j}^{LR} = \frac{L_i \cdot R_j \cdot (1 + AG_i)^{n}}{K_h + L_i \cdot R_j \cdot (1 + AN_j)^{n}}$$</div>
-  <p data-lang="zh">$AG$ 是 agonist（增強）、$AN$ 是 antagonist（抑制）。CellChat 的 L-R 資料庫已包含這些 cofactor 資訊。</p>
-  <p data-lang="en">$AG$ enhances, $AN$ inhibits. CellChat's L-R database includes cofactors.</p>
-
-  <h3 data-lang="zh">Permutation test 找顯著通訊</h3><h3 data-lang="en">Permutation test for significance</h3>
-  <div class="algo-block">
-<span class="comment"># Null hypothesis: cluster identities are random</span>
-<span class="keyword">for</span> r <span class="keyword">in</span> range(<span class="num">1000</span>):
-    shuffled_labels = random.permutation(cluster_labels)
-    P_null[r] = compute_probability(L, R, shuffled_labels)
-
-p_value = mean(P_null &gt;= P_observed)
-  </div>
-
-  <h3 data-lang="zh">Pathway 層級聚合</h3><h3 data-lang="en">Pathway aggregation</h3>
-  <div class="math-block">$$P_{i \to j}^{\text{pathway}} = \sum_{LR \in \text{pathway}} P_{i \to j}^{LR}$$</div>
-  <p data-lang="zh">同一 pathway 內多個 L-R 對加總，得到 pathway 層級通訊強度。</p>
-  <p data-lang="en">Sum across L-R pairs in same pathway for pathway-level strength.</p>
-
-  <h3 data-lang="zh">與 CellPhoneDB 的差別</h3><h3 data-lang="en">Vs CellPhoneDB</h3>
-  <ul data-lang="zh">
-    <li><b>CellPhoneDB</b>：用「平均表現量乘積」+ permutation。簡單但忽略飽和。</li>
-    <li><b>CellChat</b>：Hill function + cofactor，更生物學。多種「通訊角色」分析（sender、receiver、mediator、influencer）。</li>
-    <li><b>NicheNet</b>：考慮下游轉錄因子訊號傳遞，最接近因果。</li>
-  </ul>
-  <ul data-lang="en">
-    <li><b>CellPhoneDB</b>: mean × mean + permutation. Simple, ignores saturation.</li>
-    <li><b>CellChat</b>: Hill + cofactors, more biological. Multiple roles analysis.</li>
-    <li><b>NicheNet</b>: includes downstream TF signaling, closest to causality.</li>
-  </ul>
-</section>
-
-<section class="section">
-  <span class="section-label code">程式碼 / Code</span>
-  <div class="code-tabs"><div class="code-tab-btns"><button class="code-tab-btn active" onclick="switchTab(this,'r17')">R / CellChat</button><button class="code-tab-btn" onclick="switchTab(this,'py17')">Python / cellchat</button></div>
-    <div class="code-tab-content active" id="r17"><pre><span class="keyword">library</span>(CellChat)
-cc &lt;- <span class="func">createCellChat</span>(<span class="func">GetAssayData</span>(pbmc, slot=<span class="str">"data"</span>),
-                     meta=pbmc@meta.data, group.by=<span class="str">"cell_type"</span>)
-<span class="func">setIdent</span>(cc, ident.use=<span class="str">"cell_type"</span>)
-cc@DB &lt;- CellChatDB.human
-
-cc &lt;- <span class="func">subsetData</span>(cc) %&gt;% <span class="func">identifyOverExpressedGenes</span>() %&gt;%
-      <span class="func">identifyOverExpressedInteractions</span>()
-cc &lt;- <span class="func">computeCommunProb</span>(cc)      <span class="comment"># 主要算法</span>
-cc &lt;- <span class="func">computeCommunProbPathway</span>(cc)
-cc &lt;- <span class="func">aggregateNet</span>(cc)
-
-<span class="func">netVisual_circle</span>(cc@net$weight)
-</pre></div>
-    <div class="code-tab-content" id="py17"><pre><span class="comment"># Python 端目前較常用 cellrank / liana</span>
-<span class="keyword">import</span> liana <span class="keyword">as</span> li
-li.mt.rank_aggregate(adata, groupby=<span class="str">"cell_type"</span>, resource_name=<span class="str">"consensus"</span>)
-</pre></div>
-  </div>
-</section>
-
-<section class="section">
-  <span class="section-label">參考 / References</span>
-  <ul class="refs-list">
-    <li><div class="ref-title">Jin, S. et al. (2021). CellChat.</div><div class="ref-meta">Nat Commun 12. <a href="https://doi.org/10.1038/s41467-021-21246-9">10.1038/s41467-021-21246-9</a></div></li>
-    <li><div class="ref-title">Efremova, M. et al. (2020). CellPhoneDB.</div><div class="ref-meta">Nat Protocols 15. <a href="https://doi.org/10.1038/s41596-020-0292-x">10.1038/s41596-020-0292-x</a></div></li>
-    <li><div class="ref-title">Browaeys, R., Saelens, W., Saeys, Y. (2020). NicheNet.</div><div class="ref-meta">Nat Methods 17. <a href="https://doi.org/10.1038/s41592-019-0667-5">10.1038/s41592-019-0667-5</a></div></li>
-    <li><div class="ref-title">Dimitrov, D. et al. (2022). Comparison of methods and resources for cell-cell communication inference from single-cell RNA-Seq data.</div><div class="ref-meta">Nat Commun 13. <a href="https://doi.org/10.1038/s41467-022-30755-0">10.1038/s41467-022-30755-0</a></div></li>
-  </ul>
-</section>
-
-<div class="cross-links">
-  <a href="6.2-pseudotime.html" class="cross-link"><div class="cross-label" data-lang="zh">← 上一篇</div><div class="cross-label" data-lang="en">← PREV</div><div class="cross-title"><span class="cross-id">M6.2</span> Pseudotime</div></a>
-  <a href="../index.html" class="cross-link"><div class="cross-label" data-lang="zh">🏠 回首頁</div><div class="cross-label" data-lang="en">🏠 HOME</div><div class="cross-title" data-lang="zh">完成全部 18 主題</div><div class="cross-title" data-lang="en">All 18 topics done</div></a>
+<div class="nav-pages">
+  <span class="label" data-lang="zh">本頁章節</span><span class="label" data-lang="en">CHAPTERS</span>
+  <a href="#s0"><span data-lang="zh">§0 故事</span><span data-lang="en">§0 Story</span></a>
+  <a href="#s1"><span data-lang="zh">§1 L-R database</span><span data-lang="en">§1 L-R database</span></a>
+  <a href="#s2"><span data-lang="zh">§2 通訊強度公式</span><span data-lang="en">§2 communication formula</span></a>
+  <a href="#s3"><span data-lang="zh">§3 互動 L-R 分數</span><span data-lang="en">§3 Interactive L-R score</span></a>
+  <a href="#s4"><span data-lang="zh">§4 permutation test</span><span data-lang="en">§4 permutation test</span></a>
+  <a href="#s5"><span data-lang="zh">§5 通訊網路</span><span data-lang="en">§5 communication network</span></a>
+  <a href="#s6"><span data-lang="zh">§6 三方法對比</span><span data-lang="en">§6 3-method compare</span></a>
+  <a href="#s7"><span data-lang="zh">§7 限制</span><span data-lang="en">§7 Limits</span></a>
 </div>
 
-</main>
-<footer class="site-footer"><p>© Charlene</p></footer>
+<header class="cover">
+  <div class="badge"><span data-lang="zh">深入互動版 · 從直覺到數學</span><span data-lang="en">Deep Interactive · From Intuition to Math</span></div>
+  <h1 data-lang="zh">CellChat：找細胞間的 ligand-receptor 通訊</h1>
+  <h1 data-lang="en">CellChat: ligand-receptor cell-cell communication</h1>
+  <div class="sub" data-lang="zh">
+    細胞型態（T cell, B cell, monocyte...）之間並非彼此獨立——它們透過<b>分泌訊號分子 (ligand)</b> 跟其他細胞的 <b>受體 (receptor)</b> 互動。
+    例如 monocyte 分泌 IL-1β → 在 T cell 上跟 IL1R 結合 → 活化 T cell。<br><br>
+    CellChat（Jin et al. 2021）等工具系統化找出：「<b>cluster A 透過 ligand X 跟 cluster B 的 receptor Y 通訊</b>」的所有可能對。
+    本節從 ligand-receptor database 直覺開始，理解通訊強度的數學（mass action law），
+    用 permutation test 篩選顯著通訊，最後比較 CellChat / CellPhoneDB / NicheNet 三大主流工具。
+  </div>
+  <div class="sub" data-lang="en">
+    Cell types (T cell, B cell, monocyte...) don't operate independently — they communicate via <b>secreted ligands</b> binding <b>receptors</b> on others.
+    E.g., monocyte secretes IL-1β → binds IL1R on T cell → activates T cell.<br><br>
+    CellChat (Jin et al. 2021) systematically finds: "<b>cluster A communicates with cluster B via ligand X → receptor Y</b>" pairs.
+    Starting from L-R database intuition, communication-strength math (mass action law),
+    permutation testing, and finally comparing CellChat / CellPhoneDB / NicheNet.
+  </div>
+</header>
+
+<div class="toc">
+  <h4 data-lang="zh">目錄</h4>
+  <h4 data-lang="en">Table of Contents</h4>
+  <ol start="0">
+    <li><a href="#s0"><span data-lang="zh">故事：誰跟誰在「說話」？</span><span data-lang="en">Story: who's "talking" to whom?</span></a><span class="new" data-lang="zh">新增</span><span class="new" data-lang="en">NEW</span></li>
+    <li><a href="#s1"><span data-lang="zh">L-R database 的結構</span><span data-lang="en">L-R database structure</span></a></li>
+    <li><a href="#s2"><span data-lang="zh">通訊強度：mass action law</span><span data-lang="en">Communication strength: mass action</span></a><span class="new" data-lang="zh">核心</span><span class="new" data-lang="en">CORE</span></li>
+    <li><a href="#s3"><span data-lang="zh">互動：拉表現量看分數</span><span data-lang="en">Interactive: drag expression, see score</span></a></li>
+    <li><a href="#s4"><span data-lang="zh">Permutation test 篩選顯著通訊</span><span data-lang="en">Permutation test</span></a></li>
+    <li><a href="#s5"><span data-lang="zh">通訊網路視覺化</span><span data-lang="en">Communication network viz</span></a></li>
+    <li><a href="#s6"><span data-lang="zh">CellChat vs CellPhoneDB vs NicheNet</span><span data-lang="en">CellChat vs CellPhoneDB vs NicheNet</span></a></li>
+    <li><a href="#s7"><span data-lang="zh">限制</span><span data-lang="en">Limits</span></a></li>
+  </ol>
+</div>
+
+<h2 id="s0"><span class="num">§0</span> <span data-lang="zh">故事：誰跟誰在「說話」？</span><span data-lang="en">Story: who's "talking" to whom?</span></h2>
+
+<p class="lead" data-lang="zh">
+  scRNA-seq 把細胞分群、找出 marker、整合 batch、排好軌跡。下一個問題是：
+  「<b>哪些 cluster 在跟哪些 cluster 互動?</b>」這在腫瘤微環境、發育、免疫學是核心問題。
+</p>
+<p class="lead" data-lang="en">
+  scRNA-seq clusters cells, finds markers, integrates batches, infers trajectories. Next:
+  "<b>which clusters interact with which?</b>" Central in tumor microenvironment, development, immunology.
+</p>
+
+<div class="card">
+  <h3 data-lang="zh">§0-1 IL-1β 的例子</h3>
+  <h3 data-lang="en">§0-1 The IL-1β example</h3>
+  <p data-lang="zh">免疫反應中，<b>macrophage</b> 表現 IL-1β（ligand）；<b>T cell</b> 表現 IL1R1（receptor）。兩細胞接觸時：</p>
+  <p data-lang="en">In immune response, <b>macrophage</b> expresses IL-1β (ligand); <b>T cell</b> expresses IL1R1 (receptor). On contact:</p>
+  <svg class="canvas" id="s0svg" viewBox="0 0 800 200" width="100%"></svg>
+  <div class="callout idea">
+    <strong data-lang="zh">問題本質</strong><strong data-lang="en">Core question</strong>:
+    <span data-lang="zh">給定每個 cluster 的<b>所有基因表現量</b>，能否從中推斷「哪對 cluster 透過哪個 ligand-receptor pair 在通訊」？</span>
+    <span data-lang="en">Given each cluster's <b>full expression profile</b>, can we infer "which cluster pair communicates via which L-R pair"?</span>
+  </div>
+</div>
+
+<h2 id="s1"><span class="num">§1</span> <span data-lang="zh">L-R database 的結構</span><span data-lang="en">L-R database structure</span></h2>
+
+<p data-lang="zh">
+  L-R database 是「已知 ligand-receptor 配對」的清單。CellChat 用的 CellChatDB 涵蓋 ~3000 對人類 L-R，
+  包括三類訊號：<b>secreted signaling</b>（IL、chemokine、growth factor）、<b>cell-cell contact</b>（Notch、Eph）、<b>ECM-receptor</b>（laminin、collagen）。
+</p>
+<p data-lang="en">
+  L-R database = list of known ligand-receptor pairs. CellChat uses CellChatDB with ~3000 human L-R pairs,
+  three categories: <b>secreted signaling</b> (IL, chemokine, growth factor), <b>cell-cell contact</b> (Notch, Eph), <b>ECM-receptor</b> (laminin, collagen).
+</p>
+
+<table class="compare">
+  <tr><th>Database</th><th>Database</th>
+      <th data-lang="zh">L-R 對數</th><th data-lang="en"># L-R pairs</th>
+      <th data-lang="zh">特色</th><th data-lang="en">Features</th></tr>
+  <tr><td>CellChatDB</td><td>CellChatDB</td>
+      <td>~3000</td><td>~3000</td>
+      <td data-lang="zh">支援 multimer、cofactor</td>
+      <td data-lang="en">supports multimers, cofactors</td></tr>
+  <tr><td>CellPhoneDB</td><td>CellPhoneDB</td>
+      <td>~1400</td><td>~1400</td>
+      <td data-lang="zh">原始版本，較保守</td>
+      <td data-lang="en">original, conservative</td></tr>
+  <tr><td>OmniPath</td><td>OmniPath</td>
+      <td>~9000</td><td>~9000</td>
+      <td data-lang="zh">超大整合資料</td>
+      <td data-lang="en">large meta-resource</td></tr>
+</table>
+
+<h2 id="s2"><span class="num">§2</span> <span data-lang="zh">通訊強度：mass action law</span><span data-lang="en">Communication strength: mass action</span></h2>
+
+<p data-lang="zh">
+  CellChat 用化學的 <b>mass action 定律</b> 估通訊強度。直覺：「分子越多 → 反應越強」。
+  ligand 量大 × receptor 量大 → 通訊強。
+</p>
+<p data-lang="en">
+  CellChat uses chemistry's <b>mass action law</b> for communication strength. Intuition: "more molecules → stronger reaction".
+  Many ligands × many receptors → strong communication.
+</p>
+
+<h3 data-lang="zh">2.1 公式</h3>
+<h3 data-lang="en">2.1 Formula</h3>
+
+<div class="math-block boxed">
+  $$P_{A \to B}^{L-R} = \frac{L_A \cdot R_B}{K_h + L_A \cdot R_B} \cdot \prod_k \text{cofactor}_k$$
+  <div class="formula-caption" data-lang="zh">$L_A$ = cluster A 中 ligand 平均表現量、$R_B$ = cluster B 中 receptor 平均表現量、$K_h$ = Hill 常數</div>
+  <div class="formula-caption" data-lang="en">$L_A$ = mean ligand in cluster A, $R_B$ = mean receptor in cluster B, $K_h$ = Hill constant</div>
+</div>
+
+<p data-lang="zh">這是 <b>Hill 飽和函數</b>：當 $L_A \cdot R_B \ll K_h$ → 線性；$\gg K_h$ → 飽和到 1。模擬實際酶反應的飽和現象。
+$\prod_k \text{cofactor}_k$ 校正 agonist / antagonist 的影響（CellChat 獨有）。</p>
+<p data-lang="en">This is a <b>Hill saturation function</b>: when $L_A \cdot R_B \ll K_h$ → linear; $\gg K_h$ → saturates to 1. Mimics enzyme kinetics.
+$\prod_k \text{cofactor}_k$ adjusts for agonist/antagonist effects (CellChat unique).</p>
+
+<h3 data-lang="zh">2.2 三種「平均」的選擇</h3>
+<h3 data-lang="en">2.2 Choice of "mean"</h3>
+
+<table class="compare">
+  <tr><th></th>
+      <th>CellChat</th><th>CellChat</th>
+      <th>CellPhoneDB</th><th>CellPhoneDB</th></tr>
+  <tr><td data-lang="zh">表現量度量</td><td data-lang="en">Expression metric</td>
+      <td data-lang="zh">trimean (穩健)</td><td data-lang="en">trimean (robust)</td>
+      <td>geometric mean</td><td>geometric mean</td></tr>
+  <tr><td data-lang="zh">分數公式</td><td data-lang="en">Score formula</td>
+      <td>Hill function</td><td>Hill function</td>
+      <td>$\sqrt{L_A \cdot R_B}$</td><td>$\sqrt{L_A \cdot R_B}$</td></tr>
+</table>
+
+<h2 id="s3"><span class="num">§3</span> <span data-lang="zh">互動：拉表現量看分數</span><span data-lang="en">Interactive: drag expression, see score</span></h2>
+
+<div class="card">
+  <p data-lang="zh">假設 cluster A 表現 IL-1β（ligand）、cluster B 表現 IL1R1（receptor）。拉滑桿改變兩 cluster 中的表現量看通訊強度怎麼變：</p>
+  <p data-lang="en">Cluster A expresses IL-1β (ligand), B expresses IL1R1 (receptor). Drag expression sliders, watch communication strength:</p>
+  <div class="controls">
+    <label>cluster A (L): <input type="range" id="s3l" min="0" max="10" value="5" step="0.5"><span id="s3lVal">5.0</span></label>
+    <label>cluster B (R): <input type="range" id="s3r" min="0" max="10" value="5" step="0.5"><span id="s3rVal">5.0</span></label>
+    <label>$K_h$: <input type="range" id="s3kh" min="1" max="50" value="10" step="1"><span id="s3khVal">10</span></label>
+  </div>
+  <svg class="canvas" id="s3svg" viewBox="0 0 800 320" width="100%"></svg>
+  <div class="stat-row">
+    <div class="item"><span class="lbl">L · R</span><span class="lbl">L · R</span><span class="val" id="s3lr">—</span></div>
+    <div class="item" style="color:#c2410c"><span class="lbl" data-lang="zh">CellChat 分數</span><span class="lbl" data-lang="en">CellChat score</span><span class="val" id="s3cc">—</span></div>
+    <div class="item" style="color:#2c5aa0"><span class="lbl" data-lang="zh">CellPhoneDB 分數</span><span class="lbl" data-lang="en">CellPhoneDB score</span><span class="val" id="s3cp">—</span></div>
+  </div>
+</div>
+
+<h2 id="s4"><span class="num">§4</span> <span data-lang="zh">Permutation test 篩選顯著通訊</span><span data-lang="en">Permutation test</span></h2>
+
+<p data-lang="zh">
+  算出每對 (cluster A, cluster B, L, R) 的<b>觀察分數</b>。怎麼知道分數高是<b>真實通訊</b>還是純隨機？
+  答案：<b>permutation test</b>。
+</p>
+<p data-lang="en">
+  We get observed scores per (cluster A, cluster B, L, R). How to know high score = <b>real communication</b> vs random?
+  Answer: <b>permutation test</b>.
+</p>
+
+<h3 data-lang="zh">4.1 三步驟</h3>
+<h3 data-lang="en">4.1 Three steps</h3>
+
+<ol>
+  <li><span data-lang="zh">隨機重新分配細胞 cluster 標籤 → 算分數 $P_{\text{null}}^{(k)}$，重複 1000 次</span>
+      <span data-lang="en">Randomly shuffle cell cluster labels → compute score $P_{\text{null}}^{(k)}$, repeat 1000 times</span></li>
+  <li><span data-lang="zh">p-value = </span><span data-lang="en">p-value = </span>$\#\{P_{\text{null}}^{(k)} \ge P_{\text{obs}}\} / 1000$</li>
+  <li><span data-lang="zh">FDR (BH) 篩選 p &lt; 0.05 的 L-R pair</span>
+      <span data-lang="en">FDR (BH) filter L-R pairs with p &lt; 0.05</span></li>
+</ol>
+
+<div class="callout idea">
+  <strong data-lang="zh">關鍵直覺</strong><strong data-lang="en">Key intuition</strong>:
+  <span data-lang="zh">通訊「強」不一定「特異」。permutation test 檢驗「這個分數是不是<b>只有原本 cluster 標籤才會出現</b>」——也就是 cluster identity 真的有影響。</span>
+  <span data-lang="en">"Strong" communication ≠ "specific". Permutation tests whether "this score is <b>special to the original cluster labels</b>" — confirming cluster identity matters.</span>
+</div>
+
+<h2 id="s5"><span class="num">§5</span> <span data-lang="zh">通訊網路視覺化</span><span data-lang="en">Communication network viz</span></h2>
+
+<div class="card">
+  <p data-lang="zh">下方 4 個 cluster（CD8 T、CD4 T、monocyte、B cell）的通訊網路。<b>箭頭粗細</b>對應通訊強度。
+    點箭頭看 L-R 細節。</p>
+  <p data-lang="en">4 clusters (CD8 T, CD4 T, monocyte, B cell) communication network. <b>Arrow thickness</b> = communication strength.
+    Hover for L-R details.</p>
+  <svg class="canvas" id="s5svg" viewBox="0 0 800 400" width="100%"></svg>
+  <div id="s5info" style="font-size:13px; padding:14px; background:#ffedd5; border-radius:6px; margin-top:14px; min-height:60px">
+    <span data-lang="zh">點任何箭頭看 L-R 細節</span>
+    <span data-lang="en">Click any arrow for L-R details</span>
+  </div>
+</div>
+
+<h2 id="s6"><span class="num">§6</span> <span data-lang="zh">CellChat vs CellPhoneDB vs NicheNet</span><span data-lang="en">CellChat vs CellPhoneDB vs NicheNet</span></h2>
+
+<table class="compare">
+  <tr><th></th>
+      <th>CellChat</th><th>CellChat</th>
+      <th>CellPhoneDB</th><th>CellPhoneDB</th>
+      <th>NicheNet</th><th>NicheNet</th></tr>
+  <tr><td data-lang="zh">核心想法</td><td data-lang="en">Core idea</td>
+      <td>Hill function + cofactor</td><td>Hill function + cofactor</td>
+      <td data-lang="zh">幾何平均 + permutation</td><td data-lang="en">geometric mean + permutation</td>
+      <td data-lang="zh">L-R + 下游靶基因模型</td><td data-lang="en">L-R + downstream target gene model</td></tr>
+  <tr><td data-lang="zh">含 cofactor</td><td data-lang="en">Cofactors</td>
+      <td>✅</td><td>✅</td>
+      <td>❌</td><td>❌</td>
+      <td>❌</td><td>❌</td></tr>
+  <tr><td data-lang="zh">空間版本</td><td data-lang="en">Spatial version</td>
+      <td>CellChat v2 ✅</td><td>CellChat v2 ✅</td>
+      <td>CellPhoneDB v5 ✅</td><td>CellPhoneDB v5 ✅</td>
+      <td>—</td><td>—</td></tr>
+  <tr><td data-lang="zh">下游 target gene</td><td data-lang="en">Downstream targets</td>
+      <td>❌</td><td>❌</td>
+      <td>❌</td><td>❌</td>
+      <td><b>✅</b></td><td><b>✅</b></td></tr>
+  <tr><td data-lang="zh">語言</td><td data-lang="en">Language</td>
+      <td>R</td><td>R</td>
+      <td>Python</td><td>Python</td>
+      <td>R</td><td>R</td></tr>
+</table>
+
+<h3 data-lang="zh">6.1 三方法 Python / R 範例</h3>
+<h3 data-lang="en">6.1 Code examples</h3>
+
+<pre class="code"><span class="c"># CellPhoneDB (Python)</span>
+<span class="k">import</span> cellphonedb
+cellphonedb.method.statistical_analysis(
+    meta_filename=<span class="s">"meta.tsv"</span>,
+    counts_filename=<span class="s">"counts.tsv"</span>,
+)
+
+<span class="c"># CellChat (R)</span>
+<span class="c"># library(CellChat)</span>
+<span class="c"># cellchat &lt;- createCellChat(object = data, group.by = "celltype")</span>
+<span class="c"># cellchat &lt;- computeCommunProb(cellchat)</span>
+<span class="c"># cellchat &lt;- computeCommunProbPathway(cellchat)</span>
+<span class="c"># cellchat &lt;- aggregateNet(cellchat)</span></pre>
+
+<h2 id="s7"><span class="num">§7</span> <span data-lang="zh">限制</span><span data-lang="en">Limits</span></h2>
+
+<table class="compare">
+  <tr><th data-lang="zh">限制</th><th data-lang="en">Limitation</th>
+      <th data-lang="zh">後果</th><th data-lang="en">Consequence</th>
+      <th data-lang="zh">緩解</th><th data-lang="en">Mitigation</th></tr>
+  <tr>
+    <td data-lang="zh">不檢驗物理接觸</td>
+    <td data-lang="en">no physical contact check</td>
+    <td data-lang="zh">空間遙遠的 cluster 也被當「通訊」</td>
+    <td data-lang="en">spatially distant clusters labeled "communicating"</td>
+    <td data-lang="zh">用空間資料（Visium, MERFISH）</td>
+    <td data-lang="en">use spatial data (Visium, MERFISH)</td>
+  </tr>
+  <tr>
+    <td data-lang="zh">mRNA ≠ protein</td>
+    <td data-lang="en">mRNA ≠ protein</td>
+    <td data-lang="zh">基因高表現不代表 protein 真的分泌</td>
+    <td data-lang="en">high RNA ≠ secreted protein</td>
+    <td data-lang="zh">CITE-seq 或 proteomics 驗證</td>
+    <td data-lang="en">CITE-seq / proteomics validation</td>
+  </tr>
+  <tr>
+    <td data-lang="zh">L-R database 不完整</td>
+    <td data-lang="en">L-R database incomplete</td>
+    <td data-lang="zh">新發現的 pair 找不到</td>
+    <td data-lang="en">novel pairs missed</td>
+    <td data-lang="zh">合併多 database (OmniPath)</td>
+    <td data-lang="en">merge databases (OmniPath)</td>
+  </tr>
+  <tr>
+    <td data-lang="zh">無方向資訊（誰影響誰）</td>
+    <td data-lang="en">no directionality</td>
+    <td data-lang="zh">不知道是 A 影響 B 還是雙向</td>
+    <td data-lang="en">unclear if A→B or bidirectional</td>
+    <td data-lang="zh">用 NicheNet 配合下游 DE</td>
+    <td data-lang="en">use NicheNet with downstream DE</td>
+  </tr>
+</table>
+
+<div class="callout prog">
+  <strong data-lang="zh">完結篇</strong><strong data-lang="en">Wrap-up</strong>:
+  <span data-lang="zh">恭喜！這就是 scRNA-seq 進階數學的完整旅程。從 <a href="../M1-foundations/1.1-sparse-matrix.html"><b>稀疏儲存</b></a> 開始 → QC → normalize → HVG → scale → PCA → t-SNE / UMAP → KNN graph → Leiden → DE → FDR → 分類器 → 整合 → 軌跡 → <b>細胞通訊</b>。
+    回 <a href="../index.html">首頁</a>看全圖。</span>
+  <span data-lang="en">Congrats! This completes the scRNA-seq advanced math journey. From <a href="../M1-foundations/1.1-sparse-matrix.html"><b>sparse storage</b></a> → QC → normalize → HVG → scale → PCA → t-SNE/UMAP → KNN graph → Leiden → DE → FDR → classifier → integration → trajectory → <b>cell communication</b>.
+    Back to <a href="../index.html">home</a> for the full picture.</span>
+</div>
+
+<p class="footer">
+  <span data-lang="zh">© scRNA-seq Advanced Math · M6.3 CellChat Deep Interactive</span>
+  <span data-lang="en">© scRNA-seq Advanced Math · M6.3 CellChat Deep Interactive</span>
+</p>
+
+</div>
+
 <script src="../i18n.js"></script>
-<script>function switchTab(b,id){const p=b.closest(".code-tabs");p.querySelectorAll(".code-tab-btn").forEach(x=>x.classList.remove("active"));p.querySelectorAll(".code-tab-content").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(id).classList.add("active");}</script>
-</body></html>
+<script>
+// ===== §0 illustration =====
+(function() {
+  let s = '';
+  s += `<circle cx="200" cy="100" r="50" fill="#fed7aa" stroke="#c2410c" stroke-width="2"/>`;
+  s += `<text class="lbl" x="200" y="80" text-anchor="middle" font-weight="700" fill="#c2410c">Macrophage</text>`;
+  s += `<text class="lbl" x="200" y="100" text-anchor="middle" font-size="10">IL-1β</text>`;
+  s += `<text class="lbl" x="200" y="115" text-anchor="middle" font-size="9">(ligand)</text>`;
+  // arrow
+  s += `<defs><marker id="a1" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><polygon points="0 0, 10 3, 0 6" fill="#c2410c"/></marker></defs>`;
+  s += `<path d="M 255 95 Q 380 60, 540 95" stroke="#c2410c" stroke-width="3" fill="none" marker-end="url(#a1)"/>`;
+  s += `<text class="lbl" x="395" y="55" text-anchor="middle" font-weight="700" fill="#c2410c">IL-1β secretion</text>`;
+  // cell B
+  s += `<circle cx="600" cy="100" r="50" fill="#dbeafe" stroke="#2c5aa0" stroke-width="2"/>`;
+  s += `<text class="lbl" x="600" y="80" text-anchor="middle" font-weight="700" fill="#2c5aa0">T cell</text>`;
+  s += `<text class="lbl" x="600" y="100" text-anchor="middle" font-size="10">IL1R1</text>`;
+  s += `<text class="lbl" x="600" y="115" text-anchor="middle" font-size="9">(receptor)</text>`;
+  // label below
+  s += `<text class="lbl" x="400" y="175" text-anchor="middle" font-weight="700" fill="#27795a">↓ activates T cell ↓</text>`;
+  document.getElementById('s0svg').innerHTML = s;
+})();
+
+// ===== §3 interactive L-R score =====
+(function() {
+  function draw() {
+    const L = +document.getElementById('s3l').value;
+    const R = +document.getElementById('s3r').value;
+    const Kh = +document.getElementById('s3kh').value;
+    document.getElementById('s3lVal').textContent = L.toFixed(1);
+    document.getElementById('s3rVal').textContent = R.toFixed(1);
+    document.getElementById('s3khVal').textContent = Kh;
+    const lr = L * R;
+    const cc = lr / (Kh + lr);
+    const cp = Math.sqrt(lr);
+    document.getElementById('s3lr').textContent = lr.toFixed(1);
+    document.getElementById('s3cc').textContent = cc.toFixed(3);
+    document.getElementById('s3cp').textContent = cp.toFixed(2);
+    // draw curve
+    const W = 800, H = 320;
+    const X = lr => 70 + lr/100 * 700;
+    const Y = s => 280 - s * 240;
+    let s = '';
+    s += `<line class="axis" x1="70" y1="280" x2="770" y2="280"/>`;
+    s += `<line class="axis" x1="70" y1="30" x2="70" y2="280"/>`;
+    s += `<text class="lbl" x="400" y="305" text-anchor="middle" font-weight="700">L · R</text>`;
+    // CellChat Hill curve
+    let p = '';
+    for (let v = 0; v <= 100; v += 1) {
+      const score = v / (Kh + v);
+      p += `${v===0?'M':'L'} ${X(v)},${Y(score)} `;
+    }
+    s += `<path d="${p}" stroke="#c2410c" stroke-width="2.5" fill="none"/>`;
+    s += `<text class="lbl" x="600" y="80" fill="#c2410c" font-weight="700">CellChat (Hill)</text>`;
+    // CellPhoneDB sqrt curve (normalize by max sqrt(100))
+    let p2 = '';
+    for (let v = 0; v <= 100; v += 1) {
+      const score = Math.sqrt(v) / 10;
+      p2 += `${v===0?'M':'L'} ${X(v)},${Y(score)} `;
+    }
+    s += `<path d="${p2}" stroke="#2c5aa0" stroke-width="2" fill="none" stroke-dasharray="5,3"/>`;
+    s += `<text class="lbl" x="600" y="120" fill="#2c5aa0" font-weight="700">CellPhoneDB (sqrt, scaled)</text>`;
+    // current point
+    s += `<circle cx="${X(lr)}" cy="${Y(cc)}" r="6" fill="#f0c419" stroke="#000" stroke-width="2"/>`;
+    s += `<text class="lbl" x="${X(lr)+10}" y="${Y(cc)-5}" font-weight="700">current</text>`;
+    // y-axis labels
+    [0, 0.25, 0.5, 0.75, 1].forEach(v => {
+      s += `<text class="lbl" x="62" y="${Y(v)+4}" text-anchor="end">${v.toFixed(2)}</text>`;
+    });
+    document.getElementById('s3svg').innerHTML = s;
+  }
+  ['l','r','kh'].forEach(id => document.getElementById('s3' + id).addEventListener('input', draw));
+  draw();
+})();
+
+// ===== §5 communication network =====
+(function() {
+  const clusters = [
+    {id: 0, name: 'CD8 T', x: 200, y: 100, color: '#2c5aa0'},
+    {id: 1, name: 'CD4 T', x: 600, y: 100, color: '#27795a'},
+    {id: 2, name: 'Monocyte', x: 200, y: 300, color: '#c2410c'},
+    {id: 3, name: 'B cell', x: 600, y: 300, color: '#8e44ad'}
+  ];
+  const edges = [
+    {from: 2, to: 0, lr: 'IL-1β / IL1R1', strength: 0.85},
+    {from: 2, to: 1, lr: 'IL-1β / IL1R2', strength: 0.42},
+    {from: 1, to: 3, lr: 'CD40LG / CD40', strength: 0.78},
+    {from: 0, to: 2, lr: 'IFNG / IFNGR1', strength: 0.65},
+    {from: 1, to: 0, lr: 'IL2 / IL2RA', strength: 0.31}
+  ];
+  let s = '';
+  s += `<rect x="0" y="0" width="800" height="400" fill="#fcfcfa"/>`;
+  s += `<defs>`;
+  edges.forEach((e, i) => {
+    const c = clusters.find(cl => cl.id === e.to).color;
+    s += `<marker id="arr${i}" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><polygon points="0 0, 10 3, 0 6" fill="${c}"/></marker>`;
+  });
+  s += `</defs>`;
+  edges.forEach((e, i) => {
+    const cFrom = clusters.find(c => c.id === e.from);
+    const cTo = clusters.find(c => c.id === e.to);
+    // shorten line to stop at circle edge
+    const dx = cTo.x - cFrom.x, dy = cTo.y - cFrom.y;
+    const L = Math.sqrt(dx*dx + dy*dy);
+    const r = 45;
+    const x1 = cFrom.x + dx/L * r, y1 = cFrom.y + dy/L * r;
+    const x2 = cTo.x - dx/L * r, y2 = cTo.y - dy/L * r;
+    // perpendicular offset for curve / multi-arrow
+    const px = -dy/L * (i%2 === 0 ? 18 : -18), py = dx/L * (i%2 === 0 ? 18 : -18);
+    const mx = (x1+x2)/2 + px, my = (y1+y2)/2 + py;
+    const sw = e.strength * 6 + 1;
+    s += `<path d="M ${x1} ${y1} Q ${mx} ${my} ${x2} ${y2}" stroke="${cTo.color}" stroke-width="${sw}" fill="none" marker-end="url(#arr${i})" opacity="0.8" style="cursor:pointer" data-i="${i}"/>`;
+    s += `<text class="lbl" x="${mx}" y="${my-5}" text-anchor="middle" font-size="10" fill="${cTo.color}" pointer-events="none">${e.lr}</text>`;
+  });
+  clusters.forEach(c => {
+    s += `<circle cx="${c.x}" cy="${c.y}" r="40" fill="${c.color}" opacity="0.9"/>`;
+    s += `<text x="${c.x}" y="${c.y+5}" text-anchor="middle" fill="#fff" font-weight="700">${c.name}</text>`;
+  });
+  document.getElementById('s5svg').innerHTML = s;
+  document.getElementById('s5svg').querySelectorAll('path[data-i]').forEach(p => {
+    p.addEventListener('click', () => {
+      const i = +p.dataset.i;
+      const e = edges[i];
+      const lang = document.body.classList.contains('lang-en') ? 'en' : 'zh';
+      const from = clusters[e.from].name, to = clusters[e.to].name;
+      const txt = lang === 'en'
+        ? `${from} → ${to} via <b>${e.lr}</b> (strength ${e.strength.toFixed(2)}). Direction: ${from} secretes ligand; ${to} expresses receptor.`
+        : `${from} → ${to} 透過 <b>${e.lr}</b>（強度 ${e.strength.toFixed(2)}）。方向：${from} 分泌 ligand；${to} 表現 receptor。`;
+      document.getElementById('s5info').innerHTML = txt;
+    });
+  });
+})();
+</script>
+</body>
+</html>
