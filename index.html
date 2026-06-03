@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>scRNA-seq 進階數學教程 — Advanced Math for Single-Cell RNA-seq</title>
+<meta name="description" content="From count matrices to manifold learning — the deep mathematics behind every step of the scRNA-seq pipeline.">
+<link rel="stylesheet" href="styles.css">
+<script>MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] } };</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
+</head>
+<body>
+
+<!-- ============ 頂部導航 ============ -->
+<nav class="top-nav">
+  <div class="top-nav-inner">
+    <a href="index.html" class="top-nav-brand">
+      <span>🧬</span>
+      <span data-lang="zh">scRNA-seq 進階數學</span>
+      <span data-lang="en">scRNA-seq Advanced Math</span>
+      <span class="badge-math">MATH</span>
+    </a>
+    <ul class="top-nav-links">
+      <li><a href="#M1" data-lang="zh">基礎</a><span data-lang="en">Foundations</span></li>
+      <li><a href="#M2" data-lang="zh">前處理</a><span data-lang="en">Preprocessing</span></li>
+      <li><a href="#M3" data-lang="zh">降維</a><span data-lang="en">Dim. Reduction</span></li>
+      <li><a href="#M4" data-lang="zh">圖&聚類</a><span data-lang="en">Graph &amp; Cluster</span></li>
+      <li><a href="#M5" data-lang="zh">統計推論</a><span data-lang="en">Inference</span></li>
+      <li><a href="#M6" data-lang="zh">進階</a><span data-lang="en">Advanced</span></li>
+      <li><a href="../scrna-interactive-tutorial/index.html" data-lang="zh">📖 實務教材</a><span data-lang="en">📖 Practical Tutorial</span></li>
+    </ul>
+    <div class="lang-switch">
+      <button data-lang-btn="zh" data-lang="" class="active">中文</button>
+      <button data-lang-btn="en" data-lang="">EN</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ============ Hero ============ -->
+<section class="hero">
+  <div class="hero-inner">
+    <h1>
+      <span data-lang="zh">scRNA-seq 流程背後的<span class="accent">數學</span></span>
+      <span data-lang="en">The <span class="accent">Mathematics</span> Behind scRNA-seq</span>
+    </h1>
+    <p class="subtitle" data-lang="zh">
+      從原始計數矩陣到流形學習——
+      用嚴謹的數學推導 + 互動式視覺化，
+      讓你看清 QC、Normalization、PCA、UMAP、Leiden、DESeq2、Harmony 等演算法<b>到底在算什麼</b>。
+    </p>
+    <p class="subtitle" data-lang="en">
+      From raw count matrices to manifold learning —
+      rigorous mathematical derivations plus interactive visualizations
+      reveal what QC, Normalization, PCA, UMAP, Leiden, DESeq2, Harmony actually compute.
+    </p>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="num">6</div>
+        <div class="label" data-lang="zh">模塊</div><div class="label" data-lang="en">Modules</div>
+      </div>
+      <div class="hero-stat">
+        <div class="num">18</div>
+        <div class="label" data-lang="zh">算法主題</div><div class="label" data-lang="en">Algorithms</div>
+      </div>
+      <div class="hero-stat">
+        <div class="num">1</div>
+        <div class="label" data-lang="zh">已完整化</div><div class="label" data-lang="en">In Depth</div>
+      </div>
+      <div class="hero-stat">
+        <div class="num">∞</div>
+        <div class="label" data-lang="zh">互動公式</div><div class="label" data-lang="en">Live Formulas</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 工作流程方塊圖 ============ -->
+<section class="workflow-section">
+  <h2 data-lang="zh">📋 完整工作流程 — 點任一方塊跳到對應主題</h2>
+  <h2 data-lang="en">📋 Complete Workflow — click any box to jump to its topic</h2>
+  <p class="desc" data-lang="zh">下圖是典型 scRNA-seq 流程的每個運算步驟。<b style="color:#06a77d">綠色 = 已有深度教材</b>、<b style="color:#4f7df4">藍色 = 規劃中</b>。每個方塊都對應下方某個模塊。</p>
+  <p class="desc" data-lang="en">Every computational step in a typical scRNA-seq pipeline. <b style="color:#06a77d">Green = full tutorial available</b>, <b style="color:#4f7df4">Blue = planned</b>. Each box maps to a module below.</p>
+
+  <div class="workflow-svg-wrap">
+    <svg viewBox="0 0 900 720" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arrowhead" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#8990a8"/>
+        </marker>
+      </defs>
+
+      <!-- 類別背景條 -->
+      <rect class="workflow-section-bg" x="0" y="20" width="900" height="100" fill="#e6ecf7"/>
+      <text class="workflow-cat" x="450" y="42" fill="#4f7df4">M1 · 基礎 / FOUNDATIONS</text>
+      <rect class="workflow-section-bg" x="0" y="125" width="900" height="180" fill="#fef3c7"/>
+      <text class="workflow-cat" x="450" y="147" fill="#92590e">M2 · 前處理 / PREPROCESSING</text>
+      <rect class="workflow-section-bg" x="0" y="310" width="900" height="100" fill="#f3e8ff"/>
+      <text class="workflow-cat" x="450" y="332" fill="#5e35b1">M3 · 降維 / DIMENSIONALITY REDUCTION</text>
+      <rect class="workflow-section-bg" x="0" y="415" width="900" height="100" fill="#dbeafe"/>
+      <text class="workflow-cat" x="450" y="437" fill="#1e40af">M4 · 圖&amp;聚類 / GRAPH &amp; CLUSTERING</text>
+      <rect class="workflow-section-bg" x="0" y="520" width="900" height="100" fill="#e7f9f1"/>
+      <text class="workflow-cat" x="450" y="542" fill="#06a77d">M5 · 統計推論 / INFERENCE</text>
+      <rect class="workflow-section-bg" x="0" y="625" width="900" height="90" fill="#fce7f3"/>
+      <text class="workflow-cat" x="450" y="647" fill="#be185d">M6 · 進階 / ADVANCED</text>
+
+      <!-- M1: Foundations (1 box) -->
+      <a href="M1-foundations/1.1-sparse-matrix.html">
+        <rect class="workflow-node" x="290" y="58" width="180" height="50" rx="8"/>
+        <text class="workflow-step" x="380" y="76">FOUNDATIONS</text>
+        <text class="workflow-label" x="380" y="92">計數矩陣 · 稀疏儲存</text>
+      </a>
+      <a href="M1-foundations/1.2-count-distributions.html">
+        <rect class="workflow-node" x="490" y="58" width="180" height="50" rx="8"/>
+        <text class="workflow-step" x="580" y="76">FOUNDATIONS</text>
+        <text class="workflow-label" x="580" y="92">Poisson · NB · ZINB</text>
+      </a>
+      <path class="workflow-arrow-side" d="M380,108 L380,140"/>
+      <path class="workflow-arrow-side" d="M580,108 L580,140"/>
+
+      <!-- M2: Preprocessing (4 boxes in 2 rows) -->
+      <a href="M2-preprocessing/2.1-qc-statistics.html">
+        <rect class="workflow-node" x="120" y="165" width="170" height="50" rx="8"/>
+        <text class="workflow-step" x="205" y="183">STEP 1</text>
+        <text class="workflow-label" x="205" y="199">QC · MAD 離群偵測</text>
+      </a>
+      <a href="M2-preprocessing/2.2-normalization.html">
+        <rect class="workflow-node" x="310" y="165" width="170" height="50" rx="8"/>
+        <text class="workflow-step" x="395" y="183">STEP 2</text>
+        <text class="workflow-label" x="395" y="199">Normalization</text>
+      </a>
+      <a href="M2-preprocessing/2.3-hvg-selection.html">
+        <rect class="workflow-node" x="500" y="165" width="170" height="50" rx="8"/>
+        <text class="workflow-step" x="585" y="183">STEP 3</text>
+        <text class="workflow-label" x="585" y="199">HVG · 高變異基因</text>
+      </a>
+      <a href="M2-preprocessing/2.4-scaling.html">
+        <rect class="workflow-node" x="690" y="165" width="170" height="50" rx="8"/>
+        <text class="workflow-step" x="775" y="183">STEP 4</text>
+        <text class="workflow-label" x="775" y="199">Scaling · z-score</text>
+      </a>
+      <path class="workflow-arrow" d="M290,190 L310,190"/>
+      <path class="workflow-arrow" d="M480,190 L500,190"/>
+      <path class="workflow-arrow" d="M670,190 L690,190"/>
+
+      <!-- Flow connectors -->
+      <path class="workflow-arrow" d="M775,215 C775,250 770,260 580,265 L580,290 L460,290 L460,345"/>
+
+      <!-- M3: Dim Reduction (4 boxes) -->
+      <a href="PCA/PCA_互動教材.html">
+        <rect class="workflow-node done" x="120" y="345" width="170" height="50" rx="8"/>
+        <text class="workflow-step" x="205" y="363">STEP 5 ✓</text>
+        <text class="workflow-label" x="205" y="379">PCA</text>
+      </a>
+      <a href="M3-dimreduction/3.2-tsne.html">
+        <rect class="workflow-node" x="310" y="345" width="170" height="50" rx="8"/>
+        <text class="workflow-step" x="395" y="363">VIS</text>
+        <text class="workflow-label" x="395" y="379">t-SNE</text>
+      </a>
+      <a href="M3-dimreduction/3.3-umap.html">
+        <rect class="workflow-node" x="500" y="345" width="170" height="50" rx="8"/>
+        <text class="workflow-step" x="585" y="363">STEP 7</text>
+        <text class="workflow-label" x="585" y="379">UMAP</text>
+      </a>
+      <a href="M3-dimreduction/3.4-diffusion-map.html">
+        <rect class="workflow-node" x="690" y="345" width="170" height="50" rx="8"/>
+        <text class="workflow-step" x="775" y="363">VIS</text>
+        <text class="workflow-label" x="775" y="379">Diffusion Map</text>
+      </a>
+      <path class="workflow-arrow" d="M205,395 L205,440"/>
+
+      <!-- M4: Graph & Clustering (2 boxes) -->
+      <a href="M4-graph-clustering/4.1-knn-graph.html">
+        <rect class="workflow-node" x="120" y="450" width="170" height="50" rx="8"/>
+        <text class="workflow-step" x="205" y="468">STEP 6a</text>
+        <text class="workflow-label" x="205" y="484">KNN graph · HNSW</text>
+      </a>
+      <a href="M4-graph-clustering/4.2-louvain-leiden.html">
+        <rect class="workflow-node" x="310" y="450" width="170" height="50" rx="8"/>
+        <text class="workflow-step" x="395" y="468">STEP 6b</text>
+        <text class="workflow-label" x="395" y="484">Leiden · Modularity</text>
+      </a>
+      <path class="workflow-arrow" d="M290,475 L310,475"/>
+      <path class="workflow-arrow" d="M395,500 L395,550"/>
+      <!-- side branch from M3 PCA to KNN already drawn above -->
+      <path class="workflow-arrow-side" d="M395,395 C 460,420 460,420 395,450"/>
+      <path class="workflow-arrow-side" d="M585,395 C 585,420 585,420 585,440"/>
+
+      <!-- M5: Inference (3 boxes) -->
+      <a href="M5-statistics/5.3-classifier.html">
+        <rect class="workflow-node" x="120" y="555" width="170" height="50" rx="8"/>
+        <text class="workflow-step" x="205" y="573">STEP 8</text>
+        <text class="workflow-label" x="205" y="589">Annotation · 分類器</text>
+      </a>
+      <a href="M5-statistics/5.1-de-tests.html">
+        <rect class="workflow-node" x="310" y="555" width="170" height="50" rx="8"/>
+        <text class="workflow-step" x="395" y="573">STEP 9</text>
+        <text class="workflow-label" x="395" y="589">DE · Wilcoxon / MAST</text>
+      </a>
+      <a href="M5-statistics/5.2-multiple-testing.html">
+        <rect class="workflow-node" x="500" y="555" width="170" height="50" rx="8"/>
+        <text class="workflow-step" x="585" y="573">STEP 9b</text>
+        <text class="workflow-label" x="585" y="589">FDR · BH 校正</text>
+      </a>
+      <path class="workflow-arrow" d="M480,580 L500,580"/>
+      <path class="workflow-arrow" d="M395,605 L395,660"/>
+
+      <!-- M6: Advanced (3 boxes) -->
+      <a href="M6-advanced/6.1-integration.html">
+        <rect class="workflow-node" x="120" y="660" width="170" height="50" rx="8"/>
+        <text class="workflow-step" x="205" y="678">ADVANCED</text>
+        <text class="workflow-label" x="205" y="694">Integration · Harmony</text>
+      </a>
+      <a href="M6-advanced/6.2-pseudotime.html">
+        <rect class="workflow-node" x="310" y="660" width="170" height="50" rx="8"/>
+        <text class="workflow-step" x="395" y="678">ADVANCED</text>
+        <text class="workflow-label" x="395" y="694">Pseudotime · DPT</text>
+      </a>
+      <a href="M6-advanced/6.3-cellchat.html">
+        <rect class="workflow-node" x="500" y="660" width="170" height="50" rx="8"/>
+        <text class="workflow-step" x="585" y="678">ADVANCED</text>
+        <text class="workflow-label" x="585" y="694">CellChat 通訊</text>
+      </a>
+    </svg>
+  </div>
+</section>
+
+<!-- ============ 模塊 1：基礎 ============ -->
+<div class="modules-wrap">
+<section class="module" id="M1">
+  <div class="module-header">
+    <div class="module-num">M1</div>
+    <div class="module-title">
+      <h2 data-lang="zh">基礎篇 — Foundations</h2>
+      <h2 data-lang="en">M1 · Foundations</h2>
+      <div class="module-subtitle" data-lang="zh">資料表示、計數模型——所有後續算法的數學起點</div>
+      <div class="module-subtitle" data-lang="en">Data representation &amp; count models — the math starting point</div>
+    </div>
+  </div>
+  <div class="card-grid">
+    <a href="M1-foundations/1.1-sparse-matrix.html" class="topic-card">
+      <div class="card-meta"><span class="card-id">1.1</span><span class="card-status status-planned">規劃中 / Planned</span></div>
+      <h3 data-lang="zh">計數矩陣與稀疏儲存</h3>
+      <h3 data-lang="en">Count Matrices &amp; Sparse Storage</h3>
+      <div class="card-en">CSR / CSC, memory model, COO triplets</div>
+      <p class="card-desc" data-lang="zh">scRNA-seq 矩陣 ~95% 是 0。CSR/CSC 怎麼把它壓成可運算的資料結構？sparse @ dense 怎麼變快的？</p>
+      <p class="card-desc" data-lang="en">~95% of scRNA-seq matrix entries are 0. How CSR/CSC compresses it. Why sparse @ dense is fast.</p>
+      <div class="card-formula">memory = nnz · (8 + 4) bytes</div>
+    </a>
+    <a href="M1-foundations/1.2-count-distributions.html" class="topic-card">
+      <div class="card-meta"><span class="card-id">1.2</span><span class="card-status status-planned">規劃中 / Planned</span></div>
+      <h3 data-lang="zh">計數分布：Poisson · NB · ZINB</h3>
+      <h3 data-lang="en">Count Distributions</h3>
+      <div class="card-en">Poisson, Negative Binomial, Zero-inflated NB</div>
+      <p class="card-desc" data-lang="zh">為什麼 scRNA-seq 計數適合用 NB 不是 Poisson？「過度離散」(overdispersion) 的數學是什麼？ZINB 又解決了什麼？</p>
+      <p class="card-desc" data-lang="en">Why NB fits scRNA-seq counts better than Poisson. What overdispersion means mathematically. What ZINB adds.</p>
+      <div class="card-formula">Var(X) = μ + μ²/θ &gt; E(X)</div>
+    </a>
+  </div>
+</section>
+
+<!-- ============ 模塊 2：前處理 ============ -->
+<section class="module" id="M2">
+  <div class="module-header">
+    <div class="module-num">M2</div>
+    <div class="module-title">
+      <h2 data-lang="zh">前處理篇 — Preprocessing</h2>
+      <h2 data-lang="en">M2 · Preprocessing</h2>
+      <div class="module-subtitle" data-lang="zh">把原始矩陣「整理乾淨」之前的每一步數學</div>
+      <div class="module-subtitle" data-lang="en">The math behind cleaning raw data before downstream analysis</div>
+    </div>
+  </div>
+  <div class="card-grid">
+    <a href="M2-preprocessing/2.1-qc-statistics.html" class="topic-card">
+      <div class="card-meta"><span class="card-id">2.1</span><span class="card-status status-planned">規劃中</span></div>
+      <h3 data-lang="zh">QC 統計：MAD 離群偵測</h3>
+      <h3 data-lang="en">QC: MAD-based Outlier Detection</h3>
+      <div class="card-en">Median Absolute Deviation, Scrublet</div>
+      <p class="card-desc" data-lang="zh">為什麼 QC 不用標準差而用 MAD？Scrublet 怎麼用模擬 doublets 算機率？</p>
+      <p class="card-desc" data-lang="en">Why QC uses MAD not σ. How Scrublet estimates doublet probability via simulation.</p>
+      <div class="card-formula">MAD = median(|x − med(x)|)</div>
+    </a>
+    <a href="M2-preprocessing/2.2-normalization.html" class="topic-card">
+      <div class="card-meta"><span class="card-id">2.2</span><span class="card-status status-planned">規劃中</span></div>
+      <h3 data-lang="zh">Normalization 數學</h3>
+      <h3 data-lang="en">Normalization Math</h3>
+      <div class="card-en">LogNorm vs SCTransform (regularized NB GLM)</div>
+      <p class="card-desc" data-lang="zh">log(x+1) 是怎麼想到的？SCTransform 為什麼要用 Pearson residuals？正則化負二項回歸的完整推導。</p>
+      <p class="card-desc" data-lang="en">Where log(x+1) comes from. Why SCTransform uses Pearson residuals. Full regularized NB GLM derivation.</p>
+      <div class="card-formula">z_{ij} = (x_{ij} − μ̂_{ij}) / √(μ̂_{ij}(1+μ̂_{ij}/θ̂))</div>
+    </a>
+    <a href="M2-preprocessing/2.3-hvg-selection.html" class="topic-card">
+      <div class="card-meta"><span class="card-id">2.3</span><span class="card-status status-planned">規劃中</span></div>
+      <h3 data-lang="zh">HVG 選擇：mean-variance 建模</h3>
+      <h3 data-lang="en">HVG Selection</h3>
+      <div class="card-en">VST, dispersion estimation, Seurat v3 vs Scran</div>
+      <p class="card-desc" data-lang="zh">為什麼變異最大的基因 ≠ 最有資訊的基因？「平均-變異關係」怎麼幫我們挑出真正生物變化的基因？</p>
+      <p class="card-desc" data-lang="en">Why most-variable ≠ most-informative. How mean-variance modeling extracts truly biologically variable genes.</p>
+      <div class="card-formula">log(var) = f(log(mean)) + ε</div>
+    </a>
+    <a href="M2-preprocessing/2.4-scaling.html" class="topic-card">
+      <div class="card-meta"><span class="card-id">2.4</span><span class="card-status status-planned">規劃中</span></div>
+      <h3 data-lang="zh">Scaling 的高斯假設</h3>
+      <h3 data-lang="en">Scaling &amp; the Gaussian Assumption</h3>
+      <div class="card-en">z-score, why PCA needs centering</div>
+      <p class="card-desc" data-lang="zh">為什麼 PCA 前要 scale？對 RNA 計數做 z-score 會破壞什麼？sctransform 為什麼可以省略 scale？</p>
+      <p class="card-desc" data-lang="en">Why scale before PCA. What z-score destroys in count data. Why sctransform can skip scaling.</p>
+      <div class="card-formula">z = (x − μ) / σ</div>
+    </a>
+  </div>
+</section>
+
+<!-- ============ 模塊 3：降維 ============ -->
+<section class="module" id="M3">
+  <div class="module-header">
+    <div class="module-num">M3</div>
+    <div class="module-title">
+      <h2 data-lang="zh">降維篇 — Dimensionality Reduction ⭐</h2>
+      <h2 data-lang="en">M3 · Dimensionality Reduction ⭐</h2>
+      <div class="module-subtitle" data-lang="zh">把 2 萬維基因壓回 2D 而不丟失結構——本系列的核心</div>
+      <div class="module-subtitle" data-lang="en">Squeezing 20,000 dimensions into 2D without losing structure — the heart of this series</div>
+    </div>
+  </div>
+  <div class="card-grid">
+    <a href="PCA/PCA_互動教材.html" class="topic-card" style="border-color:#06a77d">
+      <div class="card-meta"><span class="card-id">3.1</span><span class="card-status status-done">已完整 V5 · Complete</span></div>
+      <h3 data-lang="zh">主成分分析 PCA</h3>
+      <h3 data-lang="en">Principal Component Analysis</h3>
+      <div class="card-en">Eigendecomposition · SVD · Lagrange · Eckart-Young</div>
+      <p class="card-desc" data-lang="zh">從直覺到嚴謹推導：共變異數矩陣的特徵向量為什麼是最佳方向。含 3D 三基因互動 + 7 步演算法導覽 + §0 故事開場。</p>
+      <p class="card-desc" data-lang="en">From intuition to rigor: why eigenvectors of covariance are the optimal directions. Includes 3D 3-gene interactive + 7-step walkthrough + §0 story opener.</p>
+      <div class="card-formula">C w = λ w,  max w⊤Cw s.t. ‖w‖=1</div>
+    </a>
+    <a href="M3-dimreduction/3.2-tsne.html" class="topic-card">
+      <div class="card-meta"><span class="card-id">3.2</span><span class="card-status status-planned">規劃中</span></div>
+      <h3 data-lang="zh">t-SNE</h3>
+      <h3 data-lang="en">t-SNE</h3>
+      <div class="card-en">SNE → t-SNE, perplexity, Barnes-Hut</div>
+      <p class="card-desc" data-lang="zh">為什麼用 t 分布而不是高斯？perplexity 到底在量什麼？KL 散度為什麼讓 t-SNE 「擠群」?</p>
+      <p class="card-desc" data-lang="en">Why t-distribution not Gaussian. What perplexity measures. Why KL makes t-SNE crowd clusters.</p>
+      <div class="card-formula">C = KL(P‖Q) = Σ p_ij log(p_ij/q_ij)</div>
+    </a>
+    <a href="M3-dimreduction/3.3-umap.html" class="topic-card">
+      <div class="card-meta"><span class="card-id">3.3</span><span class="card-status status-planned">規劃中</span></div>
+      <h3 data-lang="zh">UMAP 流形學習</h3>
+      <h3 data-lang="en">UMAP &amp; Manifold Learning</h3>
+      <div class="card-en">Fuzzy simplicial sets · cross-entropy · spectral init</div>
+      <p class="card-desc" data-lang="zh">UMAP 的範疇論基底是什麼？「fuzzy simplicial set」聽起來嚇人但其實...？為什麼 UMAP 比 t-SNE 保留全局結構更好？</p>
+      <p class="card-desc" data-lang="en">UMAP's category-theoretic foundation. What "fuzzy simplicial set" actually means. Why UMAP preserves global structure better than t-SNE.</p>
+      <div class="card-formula">CE(μ,ν) = Σ μ log(μ/ν) + (1−μ) log((1−μ)/(1−ν))</div>
+    </a>
+    <a href="M3-dimreduction/3.4-diffusion-map.html" class="topic-card">
+      <div class="card-meta"><span class="card-id">3.4</span><span class="card-status status-planned">規劃中</span></div>
+      <h3 data-lang="zh">Diffusion Maps</h3>
+      <h3 data-lang="en">Diffusion Maps</h3>
+      <div class="card-en">Graph Laplacian · Markov diffusion · spectral embedding</div>
+      <p class="card-desc" data-lang="zh">隨機行走的特徵向量為什麼能當降維座標？Diffusion Pseudotime（DPT）就是用這個。</p>
+      <p class="card-desc" data-lang="en">Why random walk eigenvectors serve as dimension-reduced coordinates. Foundation of DPT.</p>
+      <div class="card-formula">L_sym = I − D^{-1/2} W D^{-1/2}</div>
+    </a>
+  </div>
+</section>
+
+<!-- ============ 模塊 4：圖&聚類 ============ -->
+<section class="module" id="M4">
+  <div class="module-header">
+    <div class="module-num">M4</div>
+    <div class="module-title">
+      <h2 data-lang="zh">圖與聚類 — Graph &amp; Clustering</h2>
+      <h2 data-lang="en">M4 · Graph &amp; Clustering</h2>
+      <div class="module-subtitle" data-lang="zh">把 PCA 投影變成 KNN 圖，再用圖論方法分群</div>
+      <div class="module-subtitle" data-lang="en">From PCA space to KNN graph to community detection</div>
+    </div>
+  </div>
+  <div class="card-grid">
+    <a href="M4-graph-clustering/4.1-knn-graph.html" class="topic-card">
+      <div class="card-meta"><span class="card-id">4.1</span><span class="card-status status-planned">規劃中</span></div>
+      <h3 data-lang="zh">KNN graph 與 HNSW 加速</h3>
+      <h3 data-lang="en">KNN Graph &amp; HNSW</h3>
+      <div class="card-en">Approximate nearest neighbors · navigable small world</div>
+      <p class="card-desc" data-lang="zh">在 30 維裡找 100 萬個細胞的 15 個近鄰要花多久？HNSW 怎麼用「分層導航」把它降到 log(n)？</p>
+      <p class="card-desc" data-lang="en">Finding 15 nearest neighbors in 30D for 1M cells. How HNSW achieves log(n) via hierarchical navigation.</p>
+      <div class="card-formula">O(n log n) instead of O(n²)</div>
+    </a>
+    <a href="M4-graph-clustering/4.2-louvain-leiden.html" class="topic-card">
+      <div class="card-meta"><span class="card-id">4.2</span><span class="card-status status-planned">規劃中</span></div>
+      <h3 data-lang="zh">Louvain 與 Leiden 演算法</h3>
+      <h3 as="h3" data-lang="en">Louvain &amp; Leiden</h3>
+      <div class="card-en">Modularity, refinement, resolution parameter</div>
+      <p class="card-desc" data-lang="zh">什麼是「modularity」？Louvain 為什麼會產生「斷裂群」而 Leiden 怎麼修？resolution 參數背後的數學意義？</p>
+      <p class="card-desc" data-lang="en">What modularity actually optimizes. Why Louvain produces disconnected communities and how Leiden fixes it.</p>
+      <div class="card-formula">Q = (1/2m) Σ [A_ij − γ k_i k_j/(2m)] δ(c_i, c_j)</div>
+    </a>
+  </div>
+</section>
+
+<!-- ============ 模塊 5：統計推論 ============ -->
+<section class="module" id="M5">
+  <div class="module-header">
+    <div class="module-num">M5</div>
+    <div class="module-title">
+      <h2 data-lang="zh">統計推論 — Statistical Inference</h2>
+      <h2 data-lang="en">M5 · Statistical Inference</h2>
+      <div class="module-subtitle" data-lang="zh">分群之後：哪些基因有差異？分類器怎麼工作？</div>
+      <div class="module-subtitle" data-lang="en">After clustering: what genes differ? How do classifiers work?</div>
+    </div>
+  </div>
+  <div class="card-grid">
+    <a href="M5-statistics/5.1-de-tests.html" class="topic-card">
+      <div class="card-meta"><span class="card-id">5.1</span><span class="card-status status-planned">規劃中</span></div>
+      <h3 data-lang="zh">DE 檢定：Wilcoxon · MAST · DESeq2</h3>
+      <h3 data-lang="en">DE Tests</h3>
+      <div class="card-en">Wilcoxon rank-sum, MAST hurdle model, DESeq2 GLM</div>
+      <p class="card-desc" data-lang="zh">Wilcoxon 為什麼是 Seurat 預設？MAST 的「hurdle 模型」如何處理「表達/不表達」二元 + 連續量？DESeq2 的負二項 GLM 全推導。</p>
+      <p class="card-desc" data-lang="en">Why Wilcoxon is Seurat's default. MAST's two-part hurdle model. Full DESeq2 NB GLM derivation.</p>
+      <div class="card-formula">log(μ_ij) = β_0 + β_g · group_i</div>
+    </a>
+    <a href="M5-statistics/5.2-multiple-testing.html" class="topic-card">
+      <div class="card-meta"><span class="card-id">5.2</span><span class="card-status status-planned">規劃中</span></div>
+      <h3 data-lang="zh">多重檢定校正：FDR</h3>
+      <h3 data-lang="en">Multiple Testing &amp; FDR</h3>
+      <div class="card-en">Bonferroni, Benjamini-Hochberg, q-value</div>
+      <p class="card-desc" data-lang="zh">2 萬個基因做 t 檢定為什麼會「滿地都是顯著」？FWER vs FDR 在問什麼不同的問題？BH 程序的證明。</p>
+      <p class="card-desc" data-lang="en">Why 20,000 simultaneous tests yield bogus significance. FWER vs FDR. Proof sketch of BH procedure.</p>
+      <div class="card-formula">p_(k) ≤ k · α / m</div>
+    </a>
+    <a href="M5-statistics/5.3-classifier.html" class="topic-card">
+      <div class="card-meta"><span class="card-id">5.3</span><span class="card-status status-planned">規劃中</span></div>
+      <h3 data-lang="zh">細胞註釋分類器</h3>
+      <h3 data-lang="en">Cell Type Classifiers</h3>
+      <div class="card-en">Logistic, SVM, scANVI, CellTypist</div>
+      <p class="card-desc" data-lang="zh">如何把「reference 資料集」轉成可用的分類器？scANVI 的半監督變分推論。SingleR 的相關性分數。</p>
+      <p class="card-desc" data-lang="en">Turning reference datasets into classifiers. scANVI's semi-supervised VI. SingleR correlation scores.</p>
+      <div class="card-formula">P(c|x) = softmax(W^⊤ φ(x) + b)</div>
+    </a>
+  </div>
+</section>
+
+<!-- ============ 模塊 6：進階 ============ -->
+<section class="module" id="M6">
+  <div class="module-header">
+    <div class="module-num">M6</div>
+    <div class="module-title">
+      <h2 data-lang="zh">進階主題 — Advanced</h2>
+      <h2 data-lang="en">M6 · Advanced Topics</h2>
+      <div class="module-subtitle" data-lang="zh">多樣本整合、發育軌跡、細胞通訊的深層數學</div>
+      <div class="module-subtitle" data-lang="en">Deep math of integration, trajectories, and cell-cell communication</div>
+    </div>
+  </div>
+  <div class="card-grid">
+    <a href="M6-advanced/6.1-integration.html" class="topic-card">
+      <div class="card-meta"><span class="card-id">6.1</span><span class="card-status status-planned">規劃中</span></div>
+      <h3 data-lang="zh">Integration · Harmony</h3>
+      <h3 data-lang="en">Integration · Harmony</h3>
+      <div class="card-en">CCA, MNN, soft clustering iteration</div>
+      <p class="card-desc" data-lang="zh">CCA、MNN、Harmony 的迭代算法。為什麼 batch effect 可以在 PCA 空間用「軟分群 + 偏移修正」消除？</p>
+      <p class="card-desc" data-lang="en">CCA, MNN, Harmony's iterative algorithm. Why batch effects can be removed in PCA space via soft clustering + shift correction.</p>
+      <div class="card-formula">Z_corrected = Z − Σ_k R_k · β_k</div>
+    </a>
+    <a href="M6-advanced/6.2-pseudotime.html" class="topic-card">
+      <div class="card-meta"><span class="card-id">6.2</span><span class="card-status status-planned">規劃中</span></div>
+      <h3 data-lang="zh">Pseudotime · DPT &amp; Slingshot</h3>
+      <h3 data-lang="en">Pseudotime · DPT &amp; Slingshot</h3>
+      <div class="card-en">Diffusion pseudotime, principal curves, PAGA</div>
+      <p class="card-desc" data-lang="zh">DPT 的擴散距離怎麼變成 pseudotime？Slingshot 的 principal curves 怎麼擬合？PAGA 的圖結構簡化。</p>
+      <p class="card-desc" data-lang="en">From diffusion distance to pseudotime. Slingshot's principal curves. PAGA's graph abstraction.</p>
+      <div class="card-formula">dpt(x,y) = ‖ψ(x) − ψ(y)‖</div>
+    </a>
+    <a href="M6-advanced/6.3-cellchat.html" class="topic-card">
+      <div class="card-meta"><span class="card-id">6.3</span><span class="card-status status-planned">規劃中</span></div>
+      <h3 data-lang="zh">CellChat 細胞通訊</h3>
+      <h3 data-lang="en">CellChat: Cell-Cell Communication</h3>
+      <div class="card-en">Ligand-receptor, Hill function, permutation test</div>
+      <p class="card-desc" data-lang="zh">CellChat 怎麼把基因表現量轉成「通訊機率」？Hill function 的數學形式為什麼適合？置換檢定的細節。</p>
+      <p class="card-desc" data-lang="en">Turning expression into "communication probability." Why Hill functions fit. Permutation test details.</p>
+      <div class="card-formula">P_comm = L^n / (K^n + L^n) · R^n / (K^n + R^n)</div>
+    </a>
+  </div>
+</section>
+</div>
+
+<!-- ============ 學習路徑 ============ -->
+<section class="paths-section">
+  <div class="paths-inner">
+    <h2 data-lang="zh">🛣️ 建議學習路徑</h2>
+    <h2 data-lang="en">🛣️ Recommended Learning Paths</h2>
+    <p class="desc" data-lang="zh">依照你的程度選一條路走。每個路徑都已排好順序，遇到不熟的可以隨時跳到對應主題。</p>
+    <p class="desc" data-lang="en">Pick a path matching your background. Each is pre-ordered; jump to specific topics as needed.</p>
+
+    <div class="paths-grid">
+      <div class="path-card">
+        <h3 data-lang="zh">🌱 從零開始</h3>
+        <h3 data-lang="en">🌱 Starting from Zero</h3>
+        <div class="path-for" data-lang="zh">已有 Python/R 但對 scRNA-seq 數學陌生</div>
+        <div class="path-for" data-lang="en">Familiar with Python/R but new to scRNA-seq math</div>
+        <ol class="path-steps">
+          <li>M1.1 → M1.2（資料 + 分布）</li>
+          <li>M2.1 → M2.4（前處理全套）</li>
+          <li>M3.1 PCA ⭐（已有完整教材）</li>
+          <li>M4.1 → M4.2（圖 + Leiden）</li>
+          <li>M3.3 UMAP（視覺化）</li>
+          <li>M5.1 → M5.2（DE + FDR）</li>
+        </ol>
+      </div>
+      <div class="path-card">
+        <h3 data-lang="zh">🎯 已會 PCA、補降維</h3>
+        <h3 data-lang="en">🎯 Know PCA, Need Other Reductions</h3>
+        <div class="path-for" data-lang="zh">PCA 熟、想了解 t-SNE 與 UMAP 的真正差異</div>
+        <div class="path-for" data-lang="en">Comfortable with PCA, want to compare t-SNE vs UMAP rigorously</div>
+        <ol class="path-steps">
+          <li>M3.2 t-SNE（先 SNE 直覺）</li>
+          <li>M3.3 UMAP（流形觀點）</li>
+          <li>M3.4 Diffusion Maps</li>
+          <li>對照 M3.1 PCA 重新讀</li>
+        </ol>
+      </div>
+      <div class="path-card">
+        <h3 data-lang="zh">🧪 想了解統計推論</h3>
+        <h3 data-lang="en">🧪 Statistical Inference Focus</h3>
+        <div class="path-for" data-lang="zh">關心 DE 結果可信度、p-value、FDR</div>
+        <div class="path-for" data-lang="en">Focus on DE result validity, p-values, FDR</div>
+        <ol class="path-steps">
+          <li>M1.2 計數分布</li>
+          <li>M2.2 Normalization（影響統計力）</li>
+          <li>M5.1 DE 三大方法</li>
+          <li>M5.2 FDR 的數學保證</li>
+          <li>M5.3 分類器</li>
+        </ol>
+      </div>
+      <div class="path-card">
+        <h3 data-lang="zh">🚀 進階：多樣本整合 + 軌跡</h3>
+        <h3 data-lang="en">🚀 Advanced: Integration + Trajectory</h3>
+        <div class="path-for" data-lang="zh">想做大型 atlas 或發育研究</div>
+        <div class="path-for" data-lang="en">Building atlases or studying developmental trajectories</div>
+        <ol class="path-steps">
+          <li>M3.4 Diffusion Maps（DPT 基礎）</li>
+          <li>M4.1 KNN graph（MNN 的數學）</li>
+          <li>M6.1 Integration / Harmony</li>
+          <li>M6.2 Pseudotime / Slingshot</li>
+          <li>M6.3 CellChat</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <p>© Charlene · <span data-lang="zh">scRNA-seq 進階數學教程</span><span data-lang="en">scRNA-seq Advanced Math Tutorial</span></p>
+  <p style="margin-top:8px"><span data-lang="zh">想看實務應用？前往 </span><span data-lang="en">Looking for practical applications? Visit </span><a href="../scrna-interactive-tutorial/index.html">scRNA-seq Interactive Tutorial →</a></p>
+</footer>
+
+<script src="i18n.js"></script>
+</body>
+</html>
