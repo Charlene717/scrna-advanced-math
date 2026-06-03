@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>1.1 計數矩陣與稀疏儲存 — scRNA-seq Advanced Math</title>
+<link rel="stylesheet" href="../styles.css">
+<script>MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] } };</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
+</head>
+<body>
+
+<nav class="top-nav">
+  <div class="top-nav-inner">
+    <a href="../index.html" class="top-nav-brand">
+      <span>🧬</span>
+      <span data-lang="zh">scRNA-seq 進階數學</span>
+      <span data-lang="en">scRNA-seq Advanced Math</span>
+      <span class="badge-math">MATH</span>
+    </a>
+    <ul class="top-nav-links">
+      <li><a href="../index.html#M1" class="active">M1</a></li>
+      <li><a href="../index.html#M2">M2</a></li>
+      <li><a href="../index.html#M3">M3</a></li>
+      <li><a href="../index.html#M4">M4</a></li>
+      <li><a href="../index.html#M5">M5</a></li>
+      <li><a href="../index.html#M6">M6</a></li>
+      <li><a href="../index.html" data-lang="zh">🏠 回首頁</a><span data-lang="en">🏠 Home</span></li>
+    </ul>
+    <div class="lang-switch">
+      <button data-lang-btn="zh" class="active">中文</button>
+      <button data-lang-btn="en">EN</button>
+    </div>
+  </div>
+</nav>
+
+<header class="page-hero">
+  <div class="page-hero-inner">
+    <div class="page-badge">M1.1 · FOUNDATIONS</div>
+    <h1 data-lang="zh">計數矩陣與稀疏儲存</h1>
+    <h1 data-lang="en">Count Matrices &amp; Sparse Storage</h1>
+    <p class="subtitle" data-lang="zh">95% 是零的矩陣，怎麼放進記憶體？CSR / CSC / COO 三種編碼的本質差異。</p>
+    <p class="subtitle" data-lang="en">When a matrix is 95% zero, how do we store it? Essential differences between CSR, CSC, COO encodings.</p>
+  </div>
+</header>
+
+<main class="content-wrap">
+
+<section class="section">
+  <span class="section-label intuition">直覺 / Intuition</span>
+  <h2 data-lang="zh">為什麼 scRNA-seq 矩陣會這麼稀疏？</h2>
+  <h2 data-lang="en">Why are scRNA-seq matrices so sparse?</h2>
+  <div data-lang="zh">
+    <p>一個典型 10x Genomics 實驗：<b>10,000 細胞 × 20,000 基因 = 2 億個元素</b>。
+    但每個細胞實際上「捕捉到」的 mRNA 分子數通常只有 1,000~5,000 種基因。
+    所以這個矩陣裡<b>大約 90-95% 的元素是 0</b>。</p>
+    <p>用普通 <code>numpy.ndarray</code>（dense）儲存：
+    $200,000,000 \times 8 \text{ bytes} = 1.6 \text{ GB}$——光是讀進來就吃光記憶體。</p>
+    <p>核心問題：<b>有 95% 是 0 的資料，為什麼要花空間記錄那些 0？</b></p>
+  </div>
+  <div data-lang="en">
+    <p>A typical 10x Genomics experiment: <b>10,000 cells × 20,000 genes = 200 million entries</b>.
+    But each cell actually captures only ~1,000–5,000 detectable genes worth of mRNA.
+    So about <b>90–95% of the matrix is zero</b>.</p>
+    <p>Storing with plain <code>numpy.ndarray</code> (dense):
+    $200{,}000{,}000 \times 8 \text{ bytes} = 1.6 \text{ GB}$ — just loading exhausts memory.</p>
+    <p>The core question: <b>why store all those zeros explicitly?</b></p>
+  </div>
+</section>
+
+<section class="section">
+  <span class="section-label math">核心數學 / Math</span>
+  <h2 data-lang="zh">三種稀疏編碼：COO · CSR · CSC</h2>
+  <h2 data-lang="en">Three Sparse Encodings: COO · CSR · CSC</h2>
+
+  <h3>COO (Coordinate format)</h3>
+  <div data-lang="zh"><p>最直觀：用三個平行陣列記錄「行、列、值」。</p></div>
+  <div data-lang="en"><p>Most intuitive: three parallel arrays storing row, col, value.</p></div>
+  <div class="math-block">
+  $$\text{COO}(A) = \{(i_k, j_k, v_k) : v_k \neq 0\}_{k=1}^{\text{nnz}}$$
+  <div class="formula-caption" data-lang="zh">nnz = number of non-zeros（非零元素數）。需要 3 個長度為 nnz 的陣列。</div>
+  <div class="formula-caption" data-lang="en">nnz = number of non-zeros. Requires 3 arrays of length nnz.</div>
+  </div>
+  <p data-lang="zh"><b>記憶體</b>：$\text{nnz} \times (4 + 4 + 8) = 16 \text{ bytes per nnz}$（int32 + int32 + float64）</p>
+  <p data-lang="en"><b>Memory</b>: $\text{nnz} \times (4 + 4 + 8) = 16 \text{ bytes per nnz}$ (int32 + int32 + float64)</p>
+
+  <h3>CSR (Compressed Sparse Row)</h3>
+  <div data-lang="zh"><p>把 COO 的「行索引」進一步壓縮成「每列從哪一個位置開始」的指標。</p></div>
+  <div data-lang="en"><p>Compresses COO's row indices into pointers indicating where each row starts.</p></div>
+  <div class="math-block">
+  $$\text{CSR}(A) = \begin{cases}
+    \text{values}[k] = v_k & k = 1, \dots, \text{nnz} \\
+    \text{col\_idx}[k] = j_k & k = 1, \dots, \text{nnz} \\
+    \text{row\_ptr}[i] = \text{第 } i \text{ 列第一個非零在 values 的索引} & i = 0, \dots, n
+  \end{cases}$$
+  </div>
+  <p data-lang="zh">第 $i$ 列的非零元素 = <code>values[row_ptr[i] : row_ptr[i+1]]</code>。
+  記憶體：$\text{nnz} \times 12 + (n+1) \times 4$ bytes。<b>列向操作（row-slicing、SpMV）特快</b>。</p>
+  <p data-lang="en">Row $i$'s non-zeros are <code>values[row_ptr[i] : row_ptr[i+1]]</code>.
+  Memory: $\text{nnz} \times 12 + (n+1) \times 4$ bytes. <b>Row-slicing and SpMV are very fast</b>.</p>
+
+  <h3>CSC (Compressed Sparse Column)</h3>
+  <div data-lang="zh"><p>CSR 的轉置版本：壓縮列索引，得到「每行從哪開始」的指標。<b>行向操作快</b>（例如「取出基因 $g$ 在所有細胞的表現」）。</p></div>
+  <div data-lang="en"><p>Transpose of CSR: compresses column indices into column pointers. <b>Column-slicing is fast</b> (e.g., "expression of gene $g$ across all cells").</p></div>
+
+  <div class="callout callout-deep">
+    <strong data-lang="zh">💡 何時用 CSR vs CSC？</strong>
+    <strong data-lang="en">💡 When to use CSR vs CSC?</strong>
+    <p data-lang="zh"><b>Scanpy</b> 用 CSR（細胞為列，QC、subset cells 很多）。<br>
+    <b>Seurat</b> 內部用 dgCMatrix = CSC（基因為列，DE、HVG 是 per-gene 操作）。</p>
+    <p data-lang="en"><b>Scanpy</b> uses CSR (cells as rows, frequent cell subsetting). <br>
+    <b>Seurat</b> uses dgCMatrix = CSC internally (genes as columns, DE/HVG are per-gene).</p>
+  </div>
+</section>
+
+<section class="section">
+  <span class="section-label algo">演算法 / Algorithm</span>
+  <h2 data-lang="zh">稀疏矩陣乘以密集向量 (SpMV)</h2>
+  <h2 data-lang="en">Sparse Matrix × Dense Vector (SpMV)</h2>
+  <p data-lang="zh">PCA、KNN graph 都需要 $\mathbf{A} \mathbf{x}$ 運算（$\mathbf{A}$ 稀疏、$\mathbf{x}$ 密集）。CSR 形式下：</p>
+  <p data-lang="en">PCA, KNN graph all need $\mathbf{A} \mathbf{x}$ (sparse $\mathbf{A}$, dense $\mathbf{x}$). In CSR:</p>
+
+  <div class="algo-block">
+<span class="comment"># Input: A (CSR with values, col_idx, row_ptr), x (dense vector)</span>
+<span class="comment"># Output: y = A @ x</span>
+<span class="keyword">for</span> i <span class="keyword">in</span> range(n):
+    y[i] = 0
+    <span class="keyword">for</span> k <span class="keyword">in</span> range(row_ptr[i], row_ptr[i+1]):
+        j = col_idx[k]
+        y[i] += values[k] * x[j]      <span class="comment"># 只算非零項</span>
+  </div>
+
+  <p data-lang="zh"><b>複雜度</b>：$O(\text{nnz})$，而非 dense 的 $O(nm)$。
+  10,000 × 20,000、5% 密度 → CSR SpMV 比 dense 快 <b>~20 倍</b>。</p>
+  <p data-lang="en"><b>Complexity</b>: $O(\text{nnz})$ instead of dense $O(nm)$.
+  10,000 × 20,000 at 5% density → CSR SpMV is ~<b>20× faster</b> than dense.</p>
+</section>
+
+<section class="section">
+  <span class="section-label">互動 / Interactive</span>
+  <h2 data-lang="zh">記憶體佔用試算器</h2>
+  <h2 data-lang="en">Memory Estimator</h2>
+  <p data-lang="zh">拉動下面的滑桿模擬你的資料規模，比較 dense / COO / CSR 三種儲存方式的記憶體佔用。</p>
+  <p data-lang="en">Adjust sliders to match your data and compare dense / COO / CSR memory footprints.</p>
+
+  <div style="background:#f6f8fc; padding:18px; border-radius:10px; margin:18px 0">
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:14px">
+      <div>
+        <label style="font-size:12px; color:#4a5779; font-weight:700" data-lang="zh">細胞數 n</label>
+        <label style="font-size:12px; color:#4a5779; font-weight:700" data-lang="en">Cells n</label>
+        <input type="range" id="cellsR" min="1000" max="1000000" value="10000" step="1000" style="width:100%">
+        <div id="cellsV" style="font-family:monospace; font-size:14px; font-weight:700">10,000</div>
+      </div>
+      <div>
+        <label style="font-size:12px; color:#4a5779; font-weight:700" data-lang="zh">基因數 m</label>
+        <label style="font-size:12px; color:#4a5779; font-weight:700" data-lang="en">Genes m</label>
+        <input type="range" id="genesR" min="2000" max="50000" value="20000" step="1000" style="width:100%">
+        <div id="genesV" style="font-family:monospace; font-size:14px; font-weight:700">20,000</div>
+      </div>
+      <div>
+        <label style="font-size:12px; color:#4a5779; font-weight:700" data-lang="zh">密度 (%) 非零比例</label>
+        <label style="font-size:12px; color:#4a5779; font-weight:700" data-lang="en">Density % nonzero</label>
+        <input type="range" id="densR" min="1" max="50" value="5" step="1" style="width:100%">
+        <div id="densV" style="font-family:monospace; font-size:14px; font-weight:700">5%</div>
+      </div>
+    </div>
+    <div style="margin-top:16px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px">
+      <div style="background:#fff; padding:14px; border-radius:8px; border-left:4px solid #dc2626">
+        <div style="font-size:11px; color:#666; letter-spacing:1px">DENSE</div>
+        <div id="denseMem" style="font-size:22px; font-weight:800; color:#dc2626; font-family:monospace">— GB</div>
+        <div style="font-size:11px; color:#888" data-lang="zh">n × m × 8 bytes</div>
+        <div style="font-size:11px; color:#888" data-lang="en">n × m × 8 bytes</div>
+      </div>
+      <div style="background:#fff; padding:14px; border-radius:8px; border-left:4px solid #f59e0b">
+        <div style="font-size:11px; color:#666; letter-spacing:1px">COO</div>
+        <div id="cooMem" style="font-size:22px; font-weight:800; color:#f59e0b; font-family:monospace">— MB</div>
+        <div style="font-size:11px; color:#888">nnz × 16 bytes</div>
+      </div>
+      <div style="background:#fff; padding:14px; border-radius:8px; border-left:4px solid #06a77d">
+        <div style="font-size:11px; color:#666; letter-spacing:1px">CSR</div>
+        <div id="csrMem" style="font-size:22px; font-weight:800; color:#06a77d; font-family:monospace">— MB</div>
+        <div style="font-size:11px; color:#888">nnz × 12 + (n+1) × 4</div>
+      </div>
+    </div>
+    <div id="ratioMsg" style="margin-top:14px; padding:10px; background:#eef2ff; border-radius:6px; font-size:13px; color:#1e2a5c"></div>
+  </div>
+</section>
+
+<section class="section">
+  <span class="section-label code">程式碼 / Code</span>
+  <h2 data-lang="zh">實作範例</h2>
+  <h2 data-lang="en">Code Examples</h2>
+  <div class="code-tabs">
+    <div class="code-tab-btns">
+      <button class="code-tab-btn active" onclick="switchTab(this,'py1')">Python / Scanpy</button>
+      <button class="code-tab-btn" onclick="switchTab(this,'r1')">R / Seurat</button>
+    </div>
+    <div class="code-tab-content active" id="py1"><pre><span class="keyword">import</span> scanpy <span class="keyword">as</span> sc
+<span class="keyword">import</span> scipy.sparse <span class="keyword">as</span> sp
+
+<span class="comment"># 載入時就是 CSR 格式</span>
+adata = sc.read_h5ad(<span class="str">"pbmc.h5ad"</span>)
+<span class="func">print</span>(<span class="func">type</span>(adata.X))    <span class="comment"># scipy.sparse._csr.csr_matrix</span>
+<span class="func">print</span>(adata.X.nnz)      <span class="comment"># 非零元素總數</span>
+<span class="func">print</span>(adata.X.shape)    <span class="comment"># (n_cells, n_genes)</span>
+
+<span class="comment"># 密度</span>
+density = adata.X.nnz / (adata.X.shape[<span class="num">0</span>] * adata.X.shape[<span class="num">1</span>])
+<span class="func">print</span>(<span class="str">f"Density: {density:.2%}"</span>)
+
+<span class="comment"># 取一列 = 一個細胞（CSR 適合）</span>
+cell_row = adata.X[<span class="num">0</span>]                 <span class="comment"># O(平均 nnz/n)</span>
+
+<span class="comment"># 取一行 = 一個基因（CSC 適合，CSR 慢）</span>
+adata.X_csc = adata.X.tocsc()
+gene_col = adata.X_csc[:, gene_idx]   <span class="comment"># O(平均 nnz/m)</span>
+</pre></div>
+    <div class="code-tab-content" id="r1"><pre><span class="keyword">library</span>(Matrix)
+<span class="keyword">library</span>(Seurat)
+
+<span class="comment"># Seurat 內部使用 dgCMatrix = CSC 格式</span>
+pbmc &lt;- <span class="func">Read10X</span>(<span class="str">"data/"</span>)
+<span class="func">class</span>(pbmc)              <span class="comment"># "dgCMatrix"</span>
+<span class="func">dim</span>(pbmc)                <span class="comment"># [基因數, 細胞數]</span>
+
+<span class="comment"># 取出非零項數量</span>
+nnz &lt;- <span class="func">length</span>(pbmc@x)
+density &lt;- nnz / <span class="func">prod</span>(<span class="func">dim</span>(pbmc))
+<span class="func">cat</span>(<span class="func">sprintf</span>(<span class="str">"Density: %.2f%%\n"</span>, density*<span class="num">100</span>))
+
+<span class="comment"># dgCMatrix 三個 slot 對應 CSC 編碼</span>
+pbmc@x       <span class="comment"># values</span>
+pbmc@i       <span class="comment"># row indices (對應 col_idx 的角色)</span>
+pbmc@p       <span class="comment"># column pointers</span>
+
+<span class="comment"># 行操作（取基因）快</span>
+gene_expr &lt;- pbmc[<span class="str">"CD3D"</span>, ]    <span class="comment"># O(該基因的 nnz)</span>
+</pre></div>
+  </div>
+</section>
+
+<section class="section">
+  <span class="section-label">比較 / Comparison</span>
+  <h2 data-lang="zh">三種編碼快速對照</h2>
+  <h2 data-lang="en">Quick Comparison</h2>
+  <table class="compare-table">
+    <tr>
+      <th></th><th>COO</th><th>CSR</th><th>CSC</th>
+    </tr>
+    <tr>
+      <td data-lang="zh">建構速度</td><td data-lang="en">Construction</td>
+      <td class="good">最快</td>
+      <td class="meh">需排序</td>
+      <td class="meh">需排序</td>
+    </tr>
+    <tr>
+      <td data-lang="zh">記憶體</td><td data-lang="en">Memory</td>
+      <td class="meh">16 B/nnz</td>
+      <td class="good">12 B/nnz + 列指標</td>
+      <td class="good">12 B/nnz + 行指標</td>
+    </tr>
+    <tr>
+      <td data-lang="zh">列切片（取細胞）</td><td data-lang="en">Row slice</td>
+      <td class="bad">慢 O(nnz)</td>
+      <td class="good">O(nnz/n)</td>
+      <td class="bad">需掃所有行</td>
+    </tr>
+    <tr>
+      <td data-lang="zh">行切片（取基因）</td><td data-lang="en">Col slice</td>
+      <td class="bad">慢 O(nnz)</td>
+      <td class="bad">需掃所有列</td>
+      <td class="good">O(nnz/m)</td>
+    </tr>
+    <tr>
+      <td>SpMV (Ax)</td><td>SpMV (Ax)</td>
+      <td class="meh">中</td>
+      <td class="good">最快</td>
+      <td class="meh">需轉置</td>
+    </tr>
+    <tr>
+      <td data-lang="zh">框架預設</td><td data-lang="en">Framework</td>
+      <td>scipy default</td>
+      <td>Scanpy</td>
+      <td>Seurat (dgCMatrix)</td>
+    </tr>
+  </table>
+</section>
+
+<section class="section">
+  <span class="section-label">參考 / References</span>
+  <ul class="refs-list">
+    <li>
+      <div class="ref-title">Saad, Y. (2003). Iterative Methods for Sparse Linear Systems, 2nd ed.</div>
+      <div class="ref-meta">SIAM. <span data-lang="zh">稀疏矩陣編碼與運算的經典教科書。</span><span data-lang="en">Classic textbook on sparse matrix encodings.</span></div>
+    </li>
+    <li>
+      <div class="ref-title">Wolf, F.A. et al. (2018). SCANPY: large-scale single-cell gene expression data analysis.</div>
+      <div class="ref-meta">Genome Biology 19, 15. <a href="https://doi.org/10.1186/s13059-017-1382-0">10.1186/s13059-017-1382-0</a></div>
+    </li>
+    <li>
+      <div class="ref-title">Hao, Y. et al. (2021). Integrated analysis of multimodal single-cell data.</div>
+      <div class="ref-meta">Cell 184, 13. Seurat v4 / dgCMatrix usage. <a href="https://doi.org/10.1016/j.cell.2021.04.048">10.1016/j.cell.2021.04.048</a></div>
+    </li>
+  </ul>
+</section>
+
+<div class="cross-links">
+  <a href="1.2-count-distributions.html" class="cross-link">
+    <div class="cross-label" data-lang="zh">下一篇 →</div>
+    <div class="cross-label" data-lang="en">NEXT →</div>
+    <div class="cross-title"><span class="cross-id">M1.2</span> <span data-lang="zh">計數分布：Poisson · NB · ZINB</span><span data-lang="en">Count Distributions</span></div>
+  </a>
+  <a href="../M2-preprocessing/2.1-qc-statistics.html" class="cross-link">
+    <div class="cross-label" data-lang="zh">前處理 →</div>
+    <div class="cross-label" data-lang="en">PREPROCESSING →</div>
+    <div class="cross-title"><span class="cross-id">M2.1</span> <span data-lang="zh">QC 統計：MAD 離群偵測</span><span data-lang="en">QC: MAD Outlier Detection</span></div>
+  </a>
+</div>
+
+</main>
+
+<footer class="site-footer">
+  <p>© Charlene · <span data-lang="zh">scRNA-seq 進階數學教程</span><span data-lang="en">scRNA-seq Advanced Math Tutorial</span></p>
+</footer>
+
+<script src="../i18n.js"></script>
+<script>
+function switchTab(b,id){
+  const p=b.closest(".code-tabs");
+  p.querySelectorAll(".code-tab-btn").forEach(x=>x.classList.remove("active"));
+  p.querySelectorAll(".code-tab-content").forEach(x=>x.classList.remove("active"));
+  b.classList.add("active");
+  document.getElementById(id).classList.add("active");
+}
+
+function updateMem() {
+  const n = +document.getElementById('cellsR').value;
+  const m = +document.getElementById('genesR').value;
+  const d = +document.getElementById('densR').value / 100;
+  const nnz = Math.round(n * m * d);
+  const denseB = n * m * 8;
+  const cooB = nnz * 16;
+  const csrB = nnz * 12 + (n+1)*4;
+
+  document.getElementById('cellsV').textContent = n.toLocaleString();
+  document.getElementById('genesV').textContent = m.toLocaleString();
+  document.getElementById('densV').textContent = (d*100).toFixed(0) + '%';
+
+  function fmt(b) {
+    if (b > 1e9) return (b/1e9).toFixed(2) + ' GB';
+    if (b > 1e6) return (b/1e6).toFixed(1) + ' MB';
+    return (b/1e3).toFixed(0) + ' KB';
+  }
+  document.getElementById('denseMem').textContent = fmt(denseB);
+  document.getElementById('cooMem').textContent = fmt(cooB);
+  document.getElementById('csrMem').textContent = fmt(csrB);
+
+  const ratio = (denseB/csrB).toFixed(1);
+  const L = (window.I18n && window.I18n.get && window.I18n.get()) || 'zh';
+  document.getElementById('ratioMsg').innerHTML = L === 'zh'
+    ? `📊 用 CSR 比 Dense 節省 <b>${ratio}×</b> 記憶體。nnz = ${nnz.toLocaleString()} 個非零元素。`
+    : `📊 CSR saves <b>${ratio}×</b> memory vs Dense. nnz = ${nnz.toLocaleString()} non-zero entries.`;
+}
+['cellsR','genesR','densR'].forEach(id => document.getElementById(id).addEventListener('input', updateMem));
+document.addEventListener('langchange', updateMem);
+updateMem();
+</script>
+</body>
+</html>
