@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>2.1 QC 統計：MAD 離群偵測 — scRNA-seq Advanced Math</title>
+<link rel="stylesheet" href="../styles.css">
+<script>MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] } };</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
+</head>
+<body>
+<nav class="top-nav"><div class="top-nav-inner">
+  <a href="../index.html" class="top-nav-brand"><span>🧬</span><span data-lang="zh">scRNA-seq 進階數學</span><span data-lang="en">scRNA-seq Advanced Math</span><span class="badge-math">MATH</span></a>
+  <ul class="top-nav-links">
+    <li><a href="../index.html#M1">M1</a></li><li><a href="../index.html#M2" class="active">M2</a></li><li><a href="../index.html#M3">M3</a></li><li><a href="../index.html#M4">M4</a></li><li><a href="../index.html#M5">M5</a></li><li><a href="../index.html#M6">M6</a></li>
+    <li><a href="../index.html" data-lang="zh">🏠 回首頁</a><span data-lang="en">🏠 Home</span></li>
+  </ul>
+  <div class="lang-switch"><button data-lang-btn="zh" class="active">中文</button><button data-lang-btn="en">EN</button></div>
+</div></nav>
+
+<header class="page-hero"><div class="page-hero-inner">
+  <div class="page-badge">M2.1 · PREPROCESSING</div>
+  <h1 data-lang="zh">QC 統計：MAD 離群偵測</h1>
+  <h1 data-lang="en">QC: MAD-based Outlier Detection</h1>
+  <p class="subtitle" data-lang="zh">為什麼 QC 不用平均±2 標準差？MAD 為什麼比標準差更穩健？Scrublet 怎麼用模擬算 doublet 機率？</p>
+  <p class="subtitle" data-lang="en">Why QC avoids ±2σ thresholds. Why MAD is more robust than σ. How Scrublet simulates doublet probability.</p>
+</div></header>
+
+<main class="content-wrap">
+
+<section class="section">
+  <span class="section-label intuition">直覺 / Intuition</span>
+  <h2 data-lang="zh">為什麼平均±標準差會「失靈」？</h2>
+  <h2 data-lang="en">Why mean ± σ fails</h2>
+  <div data-lang="zh">
+    <p>QC 目的是過濾「壞細胞」——nFeature 太低（空 droplet）、MT% 太高（破裂死細胞）、nCount 過高（doublet）。
+    但這些「壞細胞」本身會<b>把平均跟標準差拉走</b>——
+    用 mean ± 2σ 當門檻反而把「不夠壞」的細胞也保留下來。</p>
+    <p>解法：用<b>中位數</b>取代平均、用 <b>MAD（中位數絕對偏差）</b>取代標準差。
+    中位數 / MAD 不會被極端值拉走，是「穩健統計」(robust statistics) 的基本工具。</p>
+  </div>
+  <div data-lang="en">
+    <p>QC filters bad cells — low nFeature (empty droplets), high MT% (dying cells), high nCount (doublets).
+    But these bad cells <b>pull mean and σ themselves</b> — using mean ± 2σ ironically retains less-bad outliers.</p>
+    <p>Solution: replace mean with <b>median</b>, σ with <b>MAD (Median Absolute Deviation)</b>. Both are unaffected by extreme values — the foundation of robust statistics.</p>
+  </div>
+</section>
+
+<section class="section">
+  <span class="section-label math">核心數學 / Math</span>
+  <h2>MAD <span data-lang="zh">的定義</span><span data-lang="en">definition</span></h2>
+  <div class="math-block">
+  $$\mathrm{MAD}(\mathbf{x}) = \mathrm{median}_i \left( \left| x_i - \mathrm{median}(\mathbf{x}) \right| \right)$$
+  <div class="formula-caption" data-lang="zh">中位數的「中位數絕對偏差」——對極端值不敏感</div>
+  <div class="formula-caption" data-lang="en">Median of absolute deviations from median — insensitive to extremes</div>
+  </div>
+
+  <h3 data-lang="zh">為什麼是 1.4826？</h3>
+  <h3 data-lang="en">Why the 1.4826 factor?</h3>
+  <p data-lang="zh">若資料其實是高斯分布，<code>1.4826 × MAD</code> 是 σ 的<b>無偏估計</b>。常數來自：</p>
+  <p data-lang="en">If data are Gaussian, <code>1.4826 × MAD</code> is an unbiased estimator of σ. The constant comes from:</p>
+  <div class="math-block">
+  $$1.4826 = \frac{1}{\Phi^{-1}(0.75)} = \frac{1}{0.6745}$$
+  <div class="formula-caption" data-lang="zh">$\Phi^{-1}(0.75)$ 是標準常態的第 75 分位數</div>
+  <div class="formula-caption" data-lang="en">$\Phi^{-1}(0.75)$ is the 75th percentile of standard normal</div>
+  </div>
+
+  <h3 data-lang="zh">QC 門檻設定</h3>
+  <h3 data-lang="en">QC threshold</h3>
+  <div class="math-block boxed">
+  $$\text{離群} \iff \left| x_i - \mathrm{median}(\mathbf{x}) \right| > k \cdot \mathrm{MAD}(\mathbf{x})$$
+  <div class="formula-caption" data-lang="zh">常用 $k = 3$（對應 ~99% Gaussian）或 $k = 5$（保守）</div>
+  <div class="formula-caption" data-lang="en">Common: $k=3$ (~99% Gaussian) or $k=5$ (conservative)</div>
+  </div>
+  <p data-lang="zh">QC 變數常先做 log 轉換才算 MAD，因為 nFeature / nCount 通常呈右偏分布。</p>
+  <p data-lang="en">QC variables are typically log-transformed before MAD computation, due to right-skewed distributions of nFeature / nCount.</p>
+</section>
+
+<section class="section">
+  <span class="section-label math">核心數學 / Math</span>
+  <h2 data-lang="zh">Scrublet：用模擬算 doublet 機率</h2>
+  <h2 data-lang="en">Scrublet: Simulated Doublet Probability</h2>
+  <p data-lang="zh">關鍵想法：<b>把細胞兩兩相加當作「合成 doublet」</b>，看真實細胞在 PCA 空間中跟誰像。</p>
+  <p data-lang="en">Key idea: <b>add cells in pairs to create "synthetic doublets"</b>, then check which real cells are similar in PCA space.</p>
+
+  <div class="algo-block">
+<span class="comment"># Step 1: 模擬 doublets</span>
+<span class="keyword">for</span> r <span class="keyword">in</span> range(n_simulated):
+    i, j = random.sample(range(n_cells), <span class="num">2</span>)
+    synthetic[r] = (X[i] + X[j])     <span class="comment"># 兩細胞相加</span>
+
+<span class="comment"># Step 2: 合併 + PCA</span>
+combined = concat([X, synthetic])
+Z = PCA(combined, n_components=<span class="num">30</span>)
+
+<span class="comment"># Step 3: 每個真實細胞算 KNN 中有幾個是模擬 doublet</span>
+<span class="keyword">for</span> i <span class="keyword">in</span> range(n_cells):
+    neighbors = kNN(Z[i], k=<span class="num">50</span>)
+    n_doublet_neighbors = sum(<span class="num">1</span> <span class="keyword">for</span> j <span class="keyword">in</span> neighbors <span class="keyword">if</span> is_synthetic(j))
+    doublet_score[i] = n_doublet_neighbors / <span class="num">50</span>
+  </div>
+
+  <p data-lang="zh">最終的 <code>doublet_score</code> 經過閾值判定即得 doublet 標籤。閾值通常用 GMM 或固定分位數決定。</p>
+  <p data-lang="en">The final <code>doublet_score</code> is thresholded (via GMM or fixed quantile) to label doublets.</p>
+</section>
+
+<section class="section">
+  <span class="section-label">互動 / Interactive</span>
+  <h2 data-lang="zh">MAD vs σ 比較器</h2>
+  <h2 data-lang="en">MAD vs σ Comparator</h2>
+  <p data-lang="zh">資料中加入幾個離群值，看 mean、σ、median、MAD 怎麼反應。</p>
+  <p data-lang="en">Add outliers and watch how mean, σ, median, MAD respond.</p>
+
+  <div style="background:#f6f8fc; padding:18px; border-radius:10px">
+    <label data-lang="zh" style="font-size:13px">離群值倍率（離主分布多遠）</label>
+    <label data-lang="en" style="font-size:13px">Outlier magnitude (how far from main cluster)</label>
+    <input type="range" id="outR" min="0" max="20" value="0" step="0.5" style="width:100%">
+    <div id="outV" style="font-family:monospace; margin-bottom:10px">0.0×</div>
+    <svg id="madSvg" viewBox="0 0 600 200" style="background:#fff; border-radius:8px; width:100%"></svg>
+    <div id="madStats" style="margin-top:10px; padding:10px; background:#fff; border-radius:6px; font-size:13px; font-family:monospace"></div>
+  </div>
+</section>
+
+<section class="section">
+  <span class="section-label code">程式碼 / Code</span>
+  <h2 data-lang="zh">實作範例</h2>
+  <h2 data-lang="en">Code Examples</h2>
+  <div class="code-tabs">
+    <div class="code-tab-btns"><button class="code-tab-btn active" onclick="switchTab(this,'py3')">Python / Scanpy</button><button class="code-tab-btn" onclick="switchTab(this,'r3')">R / Seurat</button></div>
+    <div class="code-tab-content active" id="py3"><pre><span class="keyword">import</span> scanpy <span class="keyword">as</span> sc
+<span class="keyword">import</span> numpy <span class="keyword">as</span> np
+<span class="keyword">from</span> scipy.stats <span class="keyword">import</span> median_abs_deviation
+
+sc.pp.calculate_qc_metrics(adata, percent_top=<span class="keyword">None</span>, log1p=<span class="keyword">False</span>, inplace=<span class="keyword">True</span>)
+
+<span class="keyword">def</span> <span class="func">is_outlier</span>(M, metric, nmads=<span class="num">5</span>):
+    x = M.obs[metric]
+    med, mad = np.median(x), median_abs_deviation(x)
+    <span class="keyword">return</span> (x &lt; med - nmads*mad) | (x &gt; med + nmads*mad)
+
+adata.obs[<span class="str">"outlier"</span>] = (
+    is_outlier(adata, <span class="str">"log1p_total_counts"</span>, <span class="num">5</span>) |
+    is_outlier(adata, <span class="str">"log1p_n_genes_by_counts"</span>, <span class="num">5</span>) |
+    is_outlier(adata, <span class="str">"pct_counts_in_top_20_genes"</span>, <span class="num">5</span>)
+)
+adata = adata[~adata.obs.outlier].copy()
+
+<span class="comment"># Doublet 偵測</span>
+<span class="keyword">import</span> scrublet <span class="keyword">as</span> scr
+scrub = scr.Scrublet(adata.X)
+adata.obs[<span class="str">"doublet_score"</span>], adata.obs[<span class="str">"predicted_doublet"</span>] = scrub.scrub_doublets()
+</pre></div>
+    <div class="code-tab-content" id="r3"><pre><span class="keyword">library</span>(Seurat); <span class="keyword">library</span>(scDblFinder)
+
+<span class="comment"># 基本 QC metrics</span>
+pbmc[[<span class="str">"percent.mt"</span>]] &lt;- <span class="func">PercentageFeatureSet</span>(pbmc, pattern = <span class="str">"^MT-"</span>)
+
+<span class="comment"># MAD-based filtering</span>
+qc_filter &lt;- <span class="keyword">function</span>(x, nmads = <span class="num">5</span>) {
+  med &lt;- <span class="func">median</span>(x); m &lt;- <span class="func">mad</span>(x)
+  x &gt; med - nmads*m &amp; x &lt; med + nmads*m
+}
+keep &lt;- qc_filter(<span class="func">log1p</span>(pbmc$nCount_RNA)) &amp;
+        qc_filter(<span class="func">log1p</span>(pbmc$nFeature_RNA)) &amp;
+        pbmc$percent.mt &lt; <span class="num">15</span>
+pbmc &lt;- pbmc[, keep]
+
+<span class="comment"># scDblFinder（推薦的 R doublet 工具）</span>
+sce &lt;- <span class="func">as.SingleCellExperiment</span>(pbmc)
+sce &lt;- <span class="func">scDblFinder</span>(sce)
+pbmc$doublet_score &lt;- sce$scDblFinder.score
+</pre></div>
+  </div>
+</section>
+
+<section class="section">
+  <span class="section-label">參考 / References</span>
+  <ul class="refs-list">
+    <li><div class="ref-title">Rousseeuw, P.J. &amp; Croux, C. (1993). Alternatives to the median absolute deviation.</div><div class="ref-meta">JASA. 穩健統計經典。</div></li>
+    <li><div class="ref-title">Wolock, S.L., Lopez, R., Klein, A.M. (2019). Scrublet.</div><div class="ref-meta">Cell Systems. <a href="https://doi.org/10.1016/j.cels.2018.11.005">10.1016/j.cels.2018.11.005</a></div></li>
+    <li><div class="ref-title">Germain, P.-L. et al. (2021). scDblFinder.</div><div class="ref-meta">F1000Research. <a href="https://doi.org/10.12688/f1000research.73600.2">10.12688/f1000research.73600.2</a></div></li>
+    <li><div class="ref-title">Heumos, L. et al. (2023). Best practices for single-cell analysis across modalities.</div><div class="ref-meta">Nat Rev Genet 24. <a href="https://doi.org/10.1038/s41576-023-00586-w">10.1038/s41576-023-00586-w</a></div></li>
+  </ul>
+</section>
+
+<div class="cross-links">
+  <a href="../M1-foundations/1.2-count-distributions.html" class="cross-link">
+    <div class="cross-label" data-lang="zh">← 基礎</div><div class="cross-label" data-lang="en">← FOUNDATIONS</div>
+    <div class="cross-title"><span class="cross-id">M1.2</span> <span data-lang="zh">計數分布</span><span data-lang="en">Count Distributions</span></div>
+  </a>
+  <a href="2.2-normalization.html" class="cross-link">
+    <div class="cross-label" data-lang="zh">下一篇 →</div><div class="cross-label" data-lang="en">NEXT →</div>
+    <div class="cross-title"><span class="cross-id">M2.2</span> Normalization</div>
+  </a>
+</div>
+
+</main>
+<footer class="site-footer"><p>© Charlene</p></footer>
+<script src="../i18n.js"></script>
+<script>
+function switchTab(b,id){const p=b.closest(".code-tabs");p.querySelectorAll(".code-tab-btn").forEach(x=>x.classList.remove("active"));p.querySelectorAll(".code-tab-content").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(id).classList.add("active");}
+
+function drawMAD() {
+  const out = +document.getElementById('outR').value;
+  document.getElementById('outV').textContent = out.toFixed(1) + '×';
+  // base distribution + outliers
+  const base = [];
+  for (let i = 0; i < 30; i++) base.push(5 + (Math.sin(i*0.5)*0.5 + (i%3-1)*0.3));
+  const outliers = out > 0 ? [5 + out, 5 + out*1.2, 5 + out*0.9] : [];
+  const data = [...base, ...outliers];
+  // stats
+  const mean = data.reduce((a,b)=>a+b,0)/data.length;
+  const sd = Math.sqrt(data.reduce((a,b)=>a+(b-mean)**2,0)/data.length);
+  const sorted = [...data].sort((a,b)=>a-b);
+  const med = sorted[Math.floor(sorted.length/2)];
+  const mad = [...data].map(x=>Math.abs(x-med)).sort((a,b)=>a-b)[Math.floor(data.length/2)];
+  // draw
+  const W=600, H=200, padT=40, padB=30, padL=30, padR=10;
+  const xmin = 0, xmax = Math.max(15, ...data) + 1;
+  function sx(v){ return padL + (v-xmin)/(xmax-xmin)*(W-padL-padR); }
+  let h = '';
+  h += `<line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="#999"/>`;
+  // mean+sd zone
+  h += `<rect x="${sx(mean-2*sd)}" y="60" width="${sx(mean+2*sd)-sx(mean-2*sd)}" height="${H-padB-60}" fill="rgba(220,38,38,0.1)"/>`;
+  h += `<line x1="${sx(mean)}" y1="60" x2="${sx(mean)}" y2="${H-padB}" stroke="#dc2626" stroke-width="2" stroke-dasharray="5 3"/>`;
+  h += `<text x="${sx(mean)}" y="${H-padB-50}" text-anchor="middle" font-size="11" fill="#dc2626">mean±2σ</text>`;
+  // med+mad zone
+  h += `<rect x="${sx(med-3*mad)}" y="120" width="${sx(med+3*mad)-sx(med-3*mad)}" height="${H-padB-120}" fill="rgba(6,167,125,0.15)"/>`;
+  h += `<line x1="${sx(med)}" y1="120" x2="${sx(med)}" y2="${H-padB}" stroke="#06a77d" stroke-width="2"/>`;
+  h += `<text x="${sx(med)}" y="${H-padB-10}" text-anchor="middle" font-size="11" fill="#06a77d">med±3·MAD</text>`;
+  // points
+  data.forEach((v,i)=>{
+    const isOut = i >= base.length;
+    h += `<circle cx="${sx(v)}" cy="${H-padB-5}" r="4" fill="${isOut?'#dc2626':'#4f7df4'}" stroke="#fff"/>`;
+  });
+  document.getElementById('madSvg').innerHTML = h;
+  document.getElementById('madStats').innerHTML =
+    `<span style="color:#dc2626">mean = ${mean.toFixed(2)}, σ = ${sd.toFixed(2)}</span><br>` +
+    `<span style="color:#06a77d">median = ${med.toFixed(2)}, MAD = ${mad.toFixed(2)}</span><br>` +
+    (out>0 ? `<b style="color:#92590e">⚠️ 離群值把 mean 拉走 ${(Math.abs(mean-5)).toFixed(2)}，median 只動 ${Math.abs(med-5).toFixed(2)}</b>` : '');
+}
+document.getElementById('outR').addEventListener('input', drawMAD);
+drawMAD();
+</script>
+</body></html>

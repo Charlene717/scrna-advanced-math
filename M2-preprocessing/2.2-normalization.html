@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>2.2 Normalization 數學 — scRNA-seq Advanced Math</title>
+<link rel="stylesheet" href="../styles.css">
+<script>MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] } };</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
+</head><body>
+<nav class="top-nav"><div class="top-nav-inner">
+  <a href="../index.html" class="top-nav-brand"><span>🧬</span><span data-lang="zh">scRNA-seq 進階數學</span><span data-lang="en">scRNA-seq Advanced Math</span><span class="badge-math">MATH</span></a>
+  <ul class="top-nav-links">
+    <li><a href="../index.html#M1">M1</a></li><li><a href="../index.html#M2" class="active">M2</a></li><li><a href="../index.html#M3">M3</a></li><li><a href="../index.html#M4">M4</a></li><li><a href="../index.html#M5">M5</a></li><li><a href="../index.html#M6">M6</a></li>
+    <li><a href="../index.html" data-lang="zh">🏠 回首頁</a><span data-lang="en">🏠 Home</span></li>
+  </ul>
+  <div class="lang-switch"><button data-lang-btn="zh" class="active">中文</button><button data-lang-btn="en">EN</button></div>
+</div></nav>
+
+<header class="page-hero"><div class="page-hero-inner">
+  <div class="page-badge">M2.2 · PREPROCESSING</div>
+  <h1 data-lang="zh">Normalization 的數學</h1>
+  <h1 data-lang="en">The Math of Normalization</h1>
+  <p class="subtitle" data-lang="zh">log(x+1) 從何而來？SCTransform 的 Pearson residuals 又是什麼？正則化負二項回歸完整推導。</p>
+  <p class="subtitle" data-lang="en">Where does log(x+1) come from? What are SCTransform's Pearson residuals? Full regularized NB regression.</p>
+</div></header>
+
+<main class="content-wrap">
+
+<section class="section">
+  <span class="section-label intuition">直覺 / Intuition</span>
+  <h2 data-lang="zh">為什麼要 Normalization？</h2>
+  <h2 data-lang="en">Why normalize?</h2>
+  <div data-lang="zh">
+    <p>同樣是「CD3D 表達 100」，在<b>細胞 A 共捕捉 5,000 分子</b>跟<b>細胞 B 共捕捉 20,000 分子</b>下完全不一樣——
+    前者代表「CD3D 是高表現基因」、後者代表「普通基因」。
+    必須先<b>校正 sequencing depth</b>，才能跨細胞比較表現量。</p>
+  </div>
+  <div data-lang="en">
+    <p>"CD3D = 100" means different things in cell A (5,000 total UMIs) vs cell B (20,000 total UMIs). Depth correction is necessary before comparing across cells.</p>
+  </div>
+</section>
+
+<section class="section">
+  <span class="section-label math">核心數學 / Math</span>
+  <h2>① LogNormalize <span data-lang="zh">（Seurat 預設）</span><span data-lang="en">(Seurat default)</span></h2>
+  <div class="math-block">
+  $$\tilde{x}_{ij} = \log\left( \frac{x_{ij}}{\sum_k x_{ik}} \cdot 10^4 + 1 \right)$$
+  <div class="formula-caption" data-lang="zh">3 個操作：除以該細胞總計數、乘 10,000（scale factor）、log(.+1)</div>
+  <div class="formula-caption" data-lang="en">Three steps: divide by total count, scale to 10^4, log(.+1)</div>
+  </div>
+  <p data-lang="zh"><b>為什麼 log？</b>表現量呈右偏分布，log 後接近常態，方便後續 PCA。<br>
+  <b>為什麼 +1？</b>避免 $\log(0) = -\infty$，且把零保留為 $\log 1 = 0$。</p>
+  <p data-lang="en"><b>Why log?</b> Right-skewed expressions become near-normal after log, suitable for PCA. <b>Why +1?</b> Avoids $\log(0)$ and keeps zeros as 0.</p>
+
+  <div class="callout callout-warn">
+    <strong data-lang="zh">⚠️ LogNormalize 的副作用</strong><strong data-lang="en">⚠️ Side effect of LogNormalize</strong>
+    <p data-lang="zh"><b>過度校正</b>：low-depth 細胞被「放大」，<b>低表現基因被高估方差</b>，造成下游 PCA 受 sparse genes 主宰。SCTransform 就是要解決這個。</p>
+    <p data-lang="en"><b>Over-correction</b>: low-depth cells get amplified, low-expression genes have inflated variance, leading PCA dominated by sparse genes. SCTransform addresses this.</p>
+  </div>
+
+  <h2>② SCTransform <span data-lang="zh">（Hafemeister &amp; Satija 2019）</span></h2>
+  <p data-lang="zh">對每個基因擬合一個負二項 GLM：</p>
+  <p data-lang="en">Fit a Negative Binomial GLM for each gene:</p>
+  <div class="math-block">
+  $$\log(\mu_{ij}) = \beta_0^{(j)} + \beta_1^{(j)} \log(n_i), \quad x_{ij} \sim \text{NB}(\mu_{ij}, \theta_j)$$
+  <div class="formula-caption" data-lang="zh">$n_i$ = 細胞 $i$ 總計數；$\beta_0^{(j)}, \beta_1^{(j)}, \theta_j$ 是基因 $j$ 專屬參數</div>
+  <div class="formula-caption" data-lang="en">$n_i$ = total counts of cell $i$; $\beta_0^{(j)}, \beta_1^{(j)}, \theta_j$ are gene-specific</div>
+  </div>
+  <p data-lang="zh">然後用 <b>Pearson residual</b> 當作標準化後的值：</p>
+  <p data-lang="en">Use <b>Pearson residuals</b> as normalized values:</p>
+  <div class="math-block">
+  $$z_{ij} = \frac{x_{ij} - \hat\mu_{ij}}{\sqrt{\hat\mu_{ij} + \hat\mu_{ij}^2 / \hat\theta_j}}$$
+  <div class="formula-caption" data-lang="zh">分母 = NB 的標準差。「比模型預期高/低多少個 σ」</div>
+  <div class="formula-caption" data-lang="en">Denominator = NB std. "How many σ above/below model prediction"</div>
+  </div>
+
+  <h3 data-lang="zh">「Regularized」是什麼意思？</h3>
+  <h3 data-lang="en">What does "regularized" mean?</h3>
+  <p data-lang="zh">參數 $\beta_0, \beta_1, \theta$ 對<b>低表現基因</b>會擬得不穩。SCTransform 用<b>核密度回歸</b>把這三個參數作為「平均表現量」的<b>平滑函數</b>，借相鄰基因的資訊使估計更穩定。</p>
+  <p data-lang="en">Parameters fluctuate wildly for low-expression genes. SCTransform applies kernel regression to smooth $\beta_0, \beta_1, \theta$ as functions of mean expression, borrowing strength across genes.</p>
+
+  <h2>③ scran <span data-lang="zh">（pool-based normalization）</span></h2>
+  <p data-lang="zh">用「細胞池」估計 size factor，再用線性回歸去除單細胞噪音。對<b>稀少 cell type</b>有時比 SCTransform 穩定。</p>
+  <p data-lang="en">Pool-based estimation of size factors, then linear deconvolution. Sometimes more stable for rare cell types than SCTransform.</p>
+</section>
+
+<section class="section">
+  <span class="section-label code">程式碼 / Code</span>
+  <div class="code-tabs">
+    <div class="code-tab-btns"><button class="code-tab-btn active" onclick="switchTab(this,'py4')">Python</button><button class="code-tab-btn" onclick="switchTab(this,'r4')">R</button></div>
+    <div class="code-tab-content active" id="py4"><pre><span class="comment"># LogNormalize</span>
+sc.pp.normalize_total(adata, target_sum=<span class="num">1e4</span>)
+sc.pp.log1p(adata)
+
+<span class="comment"># Pearson residuals (Lause et al. 2021 — simplified SCTransform)</span>
+sc.experimental.pp.normalize_pearson_residuals(adata, theta=<span class="num">100</span>)
+</pre></div>
+    <div class="code-tab-content" id="r4"><pre><span class="comment"># LogNormalize (Seurat default)</span>
+pbmc &lt;- <span class="func">NormalizeData</span>(pbmc, normalization.method = <span class="str">"LogNormalize"</span>, scale.factor = <span class="num">10000</span>)
+
+<span class="comment"># SCTransform (推薦做法)</span>
+pbmc &lt;- <span class="func">SCTransform</span>(pbmc, vst.flavor = <span class="str">"v2"</span>, verbose = <span class="keyword">FALSE</span>)
+
+<span class="comment"># scran (size factor)</span>
+<span class="keyword">library</span>(scran)
+sce &lt;- <span class="func">computeSumFactors</span>(sce, clusters = <span class="func">quickCluster</span>(sce))
+sce &lt;- <span class="func">logNormCounts</span>(sce)
+</pre></div>
+  </div>
+</section>
+
+<section class="section">
+  <span class="section-label">比較 / Comparison</span>
+  <table class="compare-table">
+    <tr><th></th><th>LogNormalize</th><th>SCTransform</th><th>scran</th></tr>
+    <tr><td data-lang="zh">速度</td><td data-lang="en">Speed</td><td class="good">秒級</td><td class="meh">分鐘級</td><td class="meh">分鐘級</td></tr>
+    <tr><td data-lang="zh">模型假設</td><td data-lang="en">Model</td><td class="meh">無顯式模型</td><td class="good">NB GLM</td><td class="good">線性 + pool</td></tr>
+    <tr><td data-lang="zh">處理 depth bias</td><td data-lang="en">Depth bias</td><td class="bad">部分</td><td class="good">完全</td><td class="good">完全</td></tr>
+    <tr><td data-lang="zh">稀少 cell type</td><td data-lang="en">Rare types</td><td class="meh">中</td><td class="meh">中</td><td class="good">較穩定</td></tr>
+    <tr><td data-lang="zh">下游 PCA 品質</td><td data-lang="en">PCA quality</td><td class="meh">受 sparse genes 主宰</td><td class="good">優</td><td class="good">優</td></tr>
+  </table>
+</section>
+
+<section class="section">
+  <span class="section-label">參考 / References</span>
+  <ul class="refs-list">
+    <li><div class="ref-title">Hafemeister, C. &amp; Satija, R. (2019). SCTransform.</div><div class="ref-meta">Genome Biology 20. <a href="https://doi.org/10.1186/s13059-019-1874-1">10.1186/s13059-019-1874-1</a></div></li>
+    <li><div class="ref-title">Lause, J., Berens, P., Kobak, D. (2021). Analytic Pearson residuals for normalization.</div><div class="ref-meta">Genome Biology 22. <a href="https://doi.org/10.1186/s13059-021-02451-7">10.1186/s13059-021-02451-7</a></div></li>
+    <li><div class="ref-title">Lun, A.T.L., Bach, K., Marioni, J.C. (2016). Pooling across cells for normalization.</div><div class="ref-meta">Genome Biology 17. scran. <a href="https://doi.org/10.1186/s13059-016-0947-7">10.1186/s13059-016-0947-7</a></div></li>
+  </ul>
+</section>
+
+<div class="cross-links">
+  <a href="2.1-qc-statistics.html" class="cross-link"><div class="cross-label" data-lang="zh">← 上一篇</div><div class="cross-label" data-lang="en">← PREV</div><div class="cross-title"><span class="cross-id">M2.1</span> QC</div></a>
+  <a href="2.3-hvg-selection.html" class="cross-link"><div class="cross-label" data-lang="zh">下一篇 →</div><div class="cross-label" data-lang="en">NEXT →</div><div class="cross-title"><span class="cross-id">M2.3</span> HVG <span data-lang="zh">選擇</span></div></a>
+</div>
+
+</main>
+<footer class="site-footer"><p>© Charlene</p></footer>
+<script src="../i18n.js"></script>
+<script>function switchTab(b,id){const p=b.closest(".code-tabs");p.querySelectorAll(".code-tab-btn").forEach(x=>x.classList.remove("active"));p.querySelectorAll(".code-tab-content").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(id).classList.add("active");}</script>
+</body></html>

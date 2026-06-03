@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>2.3 HVG 選擇 — scRNA-seq Advanced Math</title>
+<link rel="stylesheet" href="../styles.css">
+<script>MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] } };</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
+</head><body>
+<nav class="top-nav"><div class="top-nav-inner">
+  <a href="../index.html" class="top-nav-brand"><span>🧬</span><span data-lang="zh">scRNA-seq 進階數學</span><span data-lang="en">scRNA-seq Advanced Math</span><span class="badge-math">MATH</span></a>
+  <ul class="top-nav-links">
+    <li><a href="../index.html#M1">M1</a></li><li><a href="../index.html#M2" class="active">M2</a></li><li><a href="../index.html#M3">M3</a></li><li><a href="../index.html#M4">M4</a></li><li><a href="../index.html#M5">M5</a></li><li><a href="../index.html#M6">M6</a></li>
+    <li><a href="../index.html" data-lang="zh">🏠 回首頁</a><span data-lang="en">🏠 Home</span></li>
+  </ul>
+  <div class="lang-switch"><button data-lang-btn="zh" class="active">中文</button><button data-lang-btn="en">EN</button></div>
+</div></nav>
+
+<header class="page-hero"><div class="page-hero-inner">
+  <div class="page-badge">M2.3 · PREPROCESSING</div>
+  <h1 data-lang="zh">HVG 選擇：mean-variance 建模</h1>
+  <h1 data-lang="en">HVG Selection: Mean-Variance Modeling</h1>
+  <p class="subtitle" data-lang="zh">為什麼變異最大的基因 ≠ 最有資訊的基因？vst、dispersion estimation 的數學。</p>
+  <p class="subtitle" data-lang="en">Why most-variable ≠ most-informative. The math behind vst and dispersion estimation.</p>
+</div></header>
+
+<main class="content-wrap">
+
+<section class="section">
+  <span class="section-label intuition">直覺 / Intuition</span>
+  <h2 data-lang="zh">高變異 ≠ 有資訊</h2>
+  <h2 data-lang="en">High variance ≠ informative</h2>
+  <div data-lang="zh">
+    <p>「挑變異最大的基因」聽起來合理，但問題是：<b>變異本身與平均成正比</b>。
+    一個平均表現 100 的基因「自然」就有比較大的變異——這只是 NB 分布的性質，不代表它「有生物學意義」。</p>
+    <p>真正想要的是：<b>變異「比預期高」</b>的基因——這些才是真正在不同細胞群之間有差別的。</p>
+  </div>
+  <div data-lang="en">
+    <p>"Pick highest-variance genes" sounds reasonable, but variance scales with mean — a mean-100 gene has natural variance due to NB. We want genes with variance <b>higher than expected</b> at their mean.</p>
+  </div>
+</section>
+
+<section class="section">
+  <span class="section-label math">核心數學 / Math</span>
+  <h2 data-lang="zh">Mean-Variance 關係</h2>
+  <h2 data-lang="en">Mean-Variance Relationship</h2>
+  <p data-lang="zh">對所有基因畫 log(mean) vs log(var)，會看到一條清楚的趨勢線：</p>
+  <p data-lang="en">Plot log(mean) vs log(var) across all genes — a clear trend emerges:</p>
+  <div class="math-block">
+  $$\log(\mathrm{Var}_j) = f(\log(\mathrm{Mean}_j)) + \epsilon_j$$
+  <div class="formula-caption" data-lang="zh">$f$ 通常是平滑函數（loess 擬合），$\epsilon$ 是偏離趨勢的殘差</div>
+  <div class="formula-caption" data-lang="en">$f$ is a smooth function (loess), $\epsilon$ is residual deviation from trend</div>
+  </div>
+
+  <h3>Seurat v3 <span data-lang="zh">的 vst 方法</span><span data-lang="en">vst method</span></h3>
+  <div class="algo-block">
+<span class="comment"># Step 1: 對所有基因擬合 log(var) ~ loess(log(mean))</span>
+trend = loess(log_var ~ log_mean)
+expected_var[j] = exp(predict(trend, log_mean[j]))
+
+<span class="comment"># Step 2: 把每個基因的計數除以 √(expected_var)</span>
+<span class="comment">#         這就是 variance stabilizing transformation</span>
+y[i,j] = x[i,j] / sqrt(expected_var[j])
+
+<span class="comment"># Step 3: 計算 standardized variance</span>
+std_var[j] = var(y[:, j])
+
+<span class="comment"># Step 4: 挑 std_var 最大的前 N 個基因</span>
+HVG = top_N(std_var, N=<span class="num">2000</span>)
+  </div>
+
+  <h3>Scanpy <span data-lang="zh">的 seurat_v3 / cell_ranger</span></h3>
+  <p data-lang="zh">Scanpy 的 <code>flavor="seurat_v3"</code> 對應上面流程，<code>cell_ranger</code> 則是早期方法：把 mean-variance 散布圖切 bin，每個 bin 內取「normalized dispersion」最大的基因。</p>
+  <p data-lang="en">Scanpy's <code>flavor="seurat_v3"</code> matches above. <code>cell_ranger</code> bins mean-variance scatter and takes top normalized dispersions per bin.</p>
+
+  <h3>scran <span data-lang="zh">的 modelGeneVar</span></h3>
+  <p data-lang="zh">把總變異拆解成「技術變異 + 生物變異」，挑出<b>生物變異顯著為正</b>的基因。理論上最嚴謹。</p>
+  <p data-lang="en">Decomposes total variance into "technical + biological", selects genes with significantly positive biological variance. Most rigorous theoretically.</p>
+  <div class="math-block">
+  $$\mathrm{Var}_{\text{bio}, j} = \mathrm{Var}_{\text{total}, j} - \mathrm{Var}_{\text{tech}, j}$$
+  </div>
+</section>
+
+<section class="section">
+  <span class="section-label">互動 / Interactive</span>
+  <h2 data-lang="zh">Mean-Variance 散布圖</h2>
+  <h2 data-lang="en">Mean-Variance Scatter</h2>
+  <p data-lang="zh">模擬 200 個基因。黃色點 = 被選為 HVG（dispersion 超過趨勢線）；藍色 = 普通基因。</p>
+  <p data-lang="en">Simulated 200 genes. Yellow = HVG (dispersion above trend); Blue = ordinary.</p>
+  <div style="background:#f6f8fc; padding:18px; border-radius:10px">
+    <label data-lang="zh" style="font-size:13px">挑前 N 個 HVG</label><label data-lang="en" style="font-size:13px">Top N HVGs</label>
+    <input type="range" id="hvgR" min="10" max="100" value="40" step="5" style="width:100%">
+    <div id="hvgV" style="font-family:monospace; margin-bottom:10px">40</div>
+    <svg id="hvgSvg" viewBox="0 0 600 350" style="background:#fff; border-radius:8px; width:100%"></svg>
+  </div>
+</section>
+
+<section class="section">
+  <span class="section-label code">程式碼 / Code</span>
+  <div class="code-tabs">
+    <div class="code-tab-btns"><button class="code-tab-btn active" onclick="switchTab(this,'py5')">Python</button><button class="code-tab-btn" onclick="switchTab(this,'r5')">R</button></div>
+    <div class="code-tab-content active" id="py5"><pre>sc.pp.highly_variable_genes(adata, n_top_genes=<span class="num">2000</span>, flavor=<span class="str">"seurat_v3"</span>)
+adata = adata[:, adata.var.highly_variable]    <span class="comment"># subset</span>
+
+<span class="comment"># 視覺化趨勢線</span>
+sc.pl.highly_variable_genes(adata)
+</pre></div>
+    <div class="code-tab-content" id="r5"><pre>pbmc &lt;- <span class="func">FindVariableFeatures</span>(pbmc, selection.method = <span class="str">"vst"</span>, nfeatures = <span class="num">2000</span>)
+top10 &lt;- <span class="func">head</span>(<span class="func">VariableFeatures</span>(pbmc), <span class="num">10</span>)
+<span class="func">VariableFeaturePlot</span>(pbmc)
+</pre></div>
+  </div>
+</section>
+
+<section class="section">
+  <span class="section-label">參考 / References</span>
+  <ul class="refs-list">
+    <li><div class="ref-title">Stuart, T. et al. (2019). Comprehensive Integration of Single-Cell Data.</div><div class="ref-meta">Cell 177. Seurat v3 / vst. <a href="https://doi.org/10.1016/j.cell.2019.05.031">10.1016/j.cell.2019.05.031</a></div></li>
+    <li><div class="ref-title">Lun, A.T.L. (2018). modelGeneVar in scran.</div><div class="ref-meta">f1000 / Bioconductor</div></li>
+    <li><div class="ref-title">Yip, S.H., Wang, P., et al. (2019). Evaluation of tools for highly variable gene discovery.</div><div class="ref-meta">Briefings in Bioinformatics 20. <a href="https://doi.org/10.1093/bib/bby011">10.1093/bib/bby011</a></div></li>
+  </ul>
+</section>
+
+<div class="cross-links">
+  <a href="2.2-normalization.html" class="cross-link"><div class="cross-label" data-lang="zh">← 上一篇</div><div class="cross-label" data-lang="en">← PREV</div><div class="cross-title"><span class="cross-id">M2.2</span> Normalization</div></a>
+  <a href="2.4-scaling.html" class="cross-link"><div class="cross-label" data-lang="zh">下一篇 →</div><div class="cross-label" data-lang="en">NEXT →</div><div class="cross-title"><span class="cross-id">M2.4</span> Scaling</div></a>
+</div>
+
+</main>
+<footer class="site-footer"><p>© Charlene</p></footer>
+<script src="../i18n.js"></script>
+<script>
+function switchTab(b,id){const p=b.closest(".code-tabs");p.querySelectorAll(".code-tab-btn").forEach(x=>x.classList.remove("active"));p.querySelectorAll(".code-tab-content").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(id).classList.add("active");}
+
+// HVG scatter sim
+const genes = [];
+let rng = 1;
+function r() { rng = (rng * 9301 + 49297) % 233280; return rng/233280; }
+for (let i = 0; i < 200; i++) {
+  const logMean = -1 + r() * 4;
+  const trend = -0.5 + 0.95 * logMean;
+  const deviation = (r() - 0.4) * 0.8;
+  const logVar = trend + deviation + (r()-0.5)*0.15;
+  genes.push({logMean, logVar, dev: deviation});
+}
+function drawHVG() {
+  const N = +document.getElementById('hvgR').value;
+  document.getElementById('hvgV').textContent = N;
+  const sorted = [...genes].sort((a,b)=>b.dev - a.dev);
+  const hvgSet = new Set(sorted.slice(0, N));
+  const W=600, H=350, padL=50, padB=40, padT=20, padR=20;
+  const xs = genes.map(g=>g.logMean), ys = genes.map(g=>g.logVar);
+  const xmin = Math.min(...xs), xmax = Math.max(...xs);
+  const ymin = Math.min(...ys), ymax = Math.max(...ys);
+  function sx(v){ return padL + (v-xmin)/(xmax-xmin)*(W-padL-padR); }
+  function sy(v){ return H-padB - (v-ymin)/(ymax-ymin)*(H-padT-padB); }
+  let h = '';
+  h += `<line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="#999"/>`;
+  h += `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${H-padB}" stroke="#999"/>`;
+  // trend line
+  const trendPts = [];
+  for (let lm = xmin; lm <= xmax; lm += 0.1) trendPts.push([lm, -0.5 + 0.95*lm]);
+  const path = trendPts.map((p,i)=>(i?'L':'M')+sx(p[0])+','+sy(p[1])).join(' ');
+  h += `<path d="${path}" stroke="#dc2626" stroke-width="2" stroke-dasharray="4 3" fill="none"/>`;
+  h += `<text x="${W-80}" y="${padT+30}" font-size="11" fill="#dc2626">trend</text>`;
+  // points
+  for (const g of genes) {
+    const isHVG = hvgSet.has(g);
+    h += `<circle cx="${sx(g.logMean)}" cy="${sy(g.logVar)}" r="${isHVG?5:3}" fill="${isHVG?'#f59e0b':'#4f7df4'}" opacity="0.85" stroke="#fff"/>`;
+  }
+  // labels
+  h += `<text x="${W/2}" y="${H-8}" text-anchor="middle" font-size="12" fill="#444">log(mean)</text>`;
+  h += `<text x="14" y="${H/2}" font-size="12" fill="#444" transform="rotate(-90 14 ${H/2})" text-anchor="middle">log(var)</text>`;
+  h += `<text x="${W-150}" y="${padT+10}" font-size="11" fill="#f59e0b">● HVG (above trend)</text>`;
+  h += `<text x="${W-150}" y="${padT+24}" font-size="11" fill="#4f7df4">● ordinary</text>`;
+  document.getElementById('hvgSvg').innerHTML = h;
+}
+document.getElementById('hvgR').addEventListener('input', drawHVG);
+drawHVG();
+</script>
+</body></html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>2.4 Scaling — scRNA-seq Advanced Math</title><link rel="stylesheet" href="../styles.css">
+<script>MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] } };</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
+</head><body>
+<nav class="top-nav"><div class="top-nav-inner">
+  <a href="../index.html" class="top-nav-brand"><span>🧬</span><span data-lang="zh">scRNA-seq 進階數學</span><span data-lang="en">scRNA-seq Advanced Math</span><span class="badge-math">MATH</span></a>
+  <ul class="top-nav-links"><li><a href="../index.html#M1">M1</a></li><li><a href="../index.html#M2" class="active">M2</a></li><li><a href="../index.html#M3">M3</a></li><li><a href="../index.html#M4">M4</a></li><li><a href="../index.html#M5">M5</a></li><li><a href="../index.html#M6">M6</a></li><li><a href="../index.html" data-lang="zh">🏠 回首頁</a><span data-lang="en">🏠 Home</span></li></ul>
+  <div class="lang-switch"><button data-lang-btn="zh" class="active">中文</button><button data-lang-btn="en">EN</button></div>
+</div></nav>
+<header class="page-hero"><div class="page-hero-inner">
+  <div class="page-badge">M2.4 · PREPROCESSING</div>
+  <h1 data-lang="zh">Scaling 的高斯假設</h1><h1 data-lang="en">Scaling &amp; the Gaussian Assumption</h1>
+  <p class="subtitle" data-lang="zh">PCA 為什麼需要 z-score？對計數資料 scale 會破壞什麼？SCTransform 為什麼可以省略 scale？</p>
+  <p class="subtitle" data-lang="en">Why PCA needs z-score. What scaling destroys in count data. Why SCTransform can skip scaling.</p>
+</div></header>
+
+<main class="content-wrap">
+<section class="section">
+  <span class="section-label intuition">直覺 / Intuition</span>
+  <h2 data-lang="zh">PCA 不會「自動」處理單位差異</h2><h2 data-lang="en">PCA does not handle scale differences</h2>
+  <div data-lang="zh"><p>PCA 找變異最大的方向。若 Gene A 平均 1000、Gene B 平均 10，PC1 必定被 Gene A 主宰——因為它的數值絕對值大。但「數值大」≠「資訊多」。</p>
+    <p>解法：讓每個基因有<b>相同的「方差預算」</b>，這就是 z-score：</p></div>
+  <div data-lang="en"><p>PCA finds maximum-variance directions. If Gene A averages 1000 and Gene B averages 10, PC1 will be dominated by Gene A — but "large value" ≠ "informative". Solution: give every gene the same variance budget.</p></div>
+</section>
+
+<section class="section">
+  <span class="section-label math">核心數學 / Math</span>
+  <div class="math-block">
+  $$z_{ij} = \frac{x_{ij} - \mu_j}{\sigma_j}, \quad \mu_j = \frac{1}{n}\sum_i x_{ij}, \quad \sigma_j = \sqrt{\frac{1}{n-1}\sum_i (x_{ij}-\mu_j)^2}$$
+  </div>
+  <p data-lang="zh">每個基因（欄）變成 mean=0、var=1。等於：「每個維度被『重新校準』成同樣的尺度」。</p>
+  <p data-lang="en">Each gene (column) → mean=0, var=1. Every dimension is rescaled to identical magnitude.</p>
+
+  <div class="callout callout-warn">
+    <strong data-lang="zh">⚠️ Scale 是雙刃劍</strong><strong data-lang="en">⚠️ Scaling is double-edged</strong>
+    <p data-lang="zh"><b>放大噪音</b>：低表現基因的 σ 很小，scale 後反而把「微小的隨機波動」放大。<br>
+    <b>破壞計數本質</b>：對 0/1/2 這種離散計數做 z-score 之後，0 變成負值——「沒表現」變成「比平均低」，意義轉變。</p>
+    <p data-lang="en"><b>Amplifies noise</b>: σ of low-expression genes is tiny, so random fluctuations get magnified.<br>
+    <b>Destroys count nature</b>: z-scoring 0/1/2 discrete counts turns "not expressed" into "below average", changing meaning.</p>
+  </div>
+
+  <h3 data-lang="zh">SCTransform 為什麼可以省略 scale？</h3><h3 data-lang="en">Why can SCTransform skip scaling?</h3>
+  <p data-lang="zh">SCTransform 的 Pearson residuals 已經是 $(x - \hat\mu) / \sqrt{\hat\mu + \hat\mu^2/\hat\theta}$——
+  本質上已經是 z-score（分子減均值、分母除標準差），只是用 NB 模型算的而非樣本估計。所以後續可<b>直接</b> PCA、不需另外 scale。</p>
+  <p data-lang="en">SCTransform's Pearson residuals are already $(x - \hat\mu) / \sqrt{\hat\mu + \hat\mu^2/\hat\theta}$ — essentially z-scores computed from NB model, not sample statistics. Can go directly to PCA without re-scaling.</p>
+
+  <h3 data-lang="zh">回歸出 unwanted variation</h3><h3 data-lang="en">Regressing out unwanted variation</h3>
+  <p data-lang="zh">Seurat 的 <code>ScaleData(vars.to.regress=...)</code> 在 scale 同時做線性回歸：</p>
+  <div class="math-block">$$z_{ij} = \text{residual of } x_{ij} \sim \beta_0 + \beta_1 \cdot \text{nCount}_i + \beta_2 \cdot \text{MT\%}_i + \ldots$$</div>
+  <p data-lang="zh">用線性模型「扣掉」這些混淆變數的影響。注意：這假設它們的影響是<b>線性</b>的——對 nCount 不一定成立。</p>
+  <p data-lang="en">Linear model removes confounder effects. Assumes linearity, which may not hold for nCount.</p>
+</section>
+
+<section class="section">
+  <span class="section-label code">程式碼 / Code</span>
+  <div class="code-tabs"><div class="code-tab-btns"><button class="code-tab-btn active" onclick="switchTab(this,'py6')">Python</button><button class="code-tab-btn" onclick="switchTab(this,'r6')">R</button></div>
+    <div class="code-tab-content active" id="py6"><pre>sc.pp.scale(adata, max_value=<span class="num">10</span>)    <span class="comment"># clip extreme values</span>
+
+<span class="comment"># 回歸 out 混淆變數</span>
+sc.pp.regress_out(adata, [<span class="str">"total_counts"</span>, <span class="str">"pct_counts_mt"</span>])
+sc.pp.scale(adata, max_value=<span class="num">10</span>)
+</pre></div>
+    <div class="code-tab-content" id="r6"><pre>pbmc &lt;- <span class="func">ScaleData</span>(pbmc, vars.to.regress = <span class="func">c</span>(<span class="str">"nCount_RNA"</span>, <span class="str">"percent.mt"</span>))
+
+<span class="comment"># SCTransform 已內建，這步可省略</span>
+pbmc &lt;- <span class="func">SCTransform</span>(pbmc, vars.to.regress = <span class="str">"percent.mt"</span>)
+</pre></div>
+  </div>
+</section>
+
+<section class="section">
+  <span class="section-label">參考 / References</span>
+  <ul class="refs-list">
+    <li><div class="ref-title">Stuart, T. et al. (2019). Seurat v3.</div><div class="ref-meta">Cell 177. <a href="https://doi.org/10.1016/j.cell.2019.05.031">10.1016/j.cell.2019.05.031</a></div></li>
+    <li><div class="ref-title">Choudhary, S. &amp; Satija, R. (2022). Comparison and evaluation of statistical error models for scRNA-seq.</div><div class="ref-meta">Genome Biology 23. <a href="https://doi.org/10.1186/s13059-021-02584-9">10.1186/s13059-021-02584-9</a></div></li>
+  </ul>
+</section>
+
+<div class="cross-links">
+  <a href="2.3-hvg-selection.html" class="cross-link"><div class="cross-label" data-lang="zh">← 上一篇</div><div class="cross-label" data-lang="en">← PREV</div><div class="cross-title"><span class="cross-id">M2.3</span> HVG</div></a>
+  <a href="../PCA/PCA_互動教材.html" class="cross-link"><div class="cross-label" data-lang="zh">降維 →</div><div class="cross-label" data-lang="en">DIM. REDUCTION →</div><div class="cross-title"><span class="cross-id">M3.1</span> PCA ⭐</div></a>
+</div>
+
+</main>
+<footer class="site-footer"><p>© Charlene</p></footer>
+<script src="../i18n.js"></script>
+<script>function switchTab(b,id){const p=b.closest(".code-tabs");p.querySelectorAll(".code-tab-btn").forEach(x=>x.classList.remove("active"));p.querySelectorAll(".code-tab-content").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(id).classList.add("active");}</script>
+</body></html>
