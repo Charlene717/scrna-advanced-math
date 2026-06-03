@@ -1,0 +1,3705 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>主成分分析 PCA — 從直覺到數學的完整旅程（深入互動版）</title>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
+<style>
+  :root {
+    --bg: #fafaf7;
+    --fg: #1a1a1a;
+    --muted: #666;
+    --accent: #c0392b;
+    --accent2: #2c5aa0;
+    --green: #27795a;
+    --purple: #8e44ad;
+    --yellow: #f0c419;
+    --card: #ffffff;
+    --border: #e0e0d8;
+    --code: #f4f1ea;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Helvetica Neue", "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.75;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 40px 28px 120px; }
+  header.cover {
+    margin: 20px 0 60px;
+    padding: 52px 40px;
+    background: linear-gradient(135deg, #0f1d3d 0%, #2c5aa0 55%, #4a7bc8 100%);
+    color: #fff;
+    border-radius: 16px;
+    box-shadow: 0 14px 40px rgba(28,40,80,0.18);
+  }
+  header.cover h1 { margin: 0 0 14px; font-size: 36px; letter-spacing: 0.5px; }
+  header.cover .sub { font-size: 17px; opacity: 0.9; line-height: 1.65; }
+  header.cover .badge {
+    display: inline-block; background: rgba(255,255,255,0.15);
+    padding: 4px 12px; border-radius: 20px; font-size: 13px;
+    margin-bottom: 16px; letter-spacing: 0.5px;
+  }
+  h2 {
+    margin-top: 70px;
+    padding-bottom: 8px;
+    border-bottom: 3px solid var(--accent);
+    font-size: 26px;
+    display: flex; align-items: baseline; gap: 12px;
+  }
+  h2 .num { color: var(--accent); font-weight: 800; font-size: 20px; }
+  h3 { margin-top: 36px; font-size: 19px; color: var(--accent2); }
+  h4 { margin-top: 22px; font-size: 16px; color: var(--accent); }
+  p { margin: 14px 0; }
+  .lead { font-size: 17px; color: #2a2a2a; }
+  .callout {
+    background: #fff8e6;
+    border-left: 4px solid var(--yellow);
+    padding: 14px 18px;
+    border-radius: 6px;
+    margin: 22px 0;
+  }
+  .callout.idea { background: #eaf4ff; border-left-color: var(--accent2); }
+  .callout.warn { background: #fdecec; border-left-color: var(--accent); }
+  .callout.bio  { background: #effaf3; border-left-color: var(--green); }
+  .callout strong { color: var(--accent2); }
+  .callout.bio strong { color: var(--green); }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 26px;
+    margin: 26px 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  }
+  .card h3 { margin-top: 0; }
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px 22px;
+    align-items: center;
+    margin: 14px 0;
+    padding: 12px 16px;
+    background: #f4f1ea;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  .controls label { display: flex; align-items: center; gap: 8px; }
+  button {
+    background: var(--accent2); color: #fff;
+    border: 0; padding: 7px 14px; border-radius: 6px;
+    cursor: pointer; font-size: 14px;
+    font-family: inherit;
+  }
+  button:hover { background: #1d4380; }
+  button.ghost { background: #fff; color: var(--accent2); border: 1px solid var(--accent2); }
+  button.ghost:hover { background: #eaf4ff; }
+  button.green { background: var(--green); }
+  button.green:hover { background: #1f5c45; }
+  input[type="range"] { width: 180px; vertical-align: middle; }
+  input[type="checkbox"] { transform: scale(1.1); margin-right: 4px; }
+  .matrix {
+    display: inline-block;
+    padding: 8px 14px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: "JetBrains Mono", "Consolas", monospace;
+    font-size: 14px;
+  }
+  .matrix table { border-collapse: collapse; }
+  .matrix td { padding: 4px 10px; text-align: right; }
+  .stat-row {
+    display: flex; flex-wrap: wrap; gap: 22px;
+    margin: 14px 0;
+    font-size: 14px;
+  }
+  .stat-row .item { display: flex; flex-direction: column; }
+  .stat-row .item .lbl { color: var(--muted); font-size: 12px; }
+  .stat-row .item .val { font-family: "JetBrains Mono", monospace; font-size: 18px; }
+  svg.canvas { background: #fcfcfa; border: 1px solid var(--border); border-radius: 8px; display: block; }
+  svg.canvas .axis { stroke: #bbb; stroke-width: 1; }
+  svg.canvas .grid { stroke: #ececea; stroke-width: 0.5; }
+  svg.canvas circle.pt { fill: #2c5aa0; cursor: grab; }
+  svg.canvas circle.pt:hover { fill: #c0392b; }
+  svg.canvas .pc1 { stroke: #c0392b; stroke-width: 3; marker-end: url(#arrowR); }
+  svg.canvas .pc2 { stroke: #2c5aa0; stroke-width: 3; marker-end: url(#arrowB); }
+  svg.canvas .pc3 { stroke: #27795a; stroke-width: 3; marker-end: url(#arrowG); }
+  svg.canvas text.lbl { font-size: 12px; fill: #333; font-family: inherit; }
+  .legend {
+    display: flex; gap: 22px; flex-wrap: wrap;
+    font-size: 13px; margin: 10px 0;
+  }
+  .legend span.dot { display: inline-block; width: 14px; height: 4px; vertical-align: middle; margin-right: 6px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; }
+  .grid-2 > * { min-width: 0; }
+  @media (max-width: 760px) { .grid-2 { grid-template-columns: 1fr; } }
+  details { margin: 16px 0; }
+  details summary {
+    cursor: pointer; font-weight: 600; color: var(--accent2);
+    padding: 6px 0;
+  }
+  details summary:hover { color: var(--accent); }
+  .toc {
+    background: #fff; border: 1px solid var(--border); border-radius: 12px;
+    padding: 18px 28px; margin: 30px 0;
+  }
+  .toc h4 { margin: 0 0 10px; color: var(--accent); }
+  .toc ol { margin: 6px 0; padding-left: 24px; line-height: 1.9; }
+  .toc a { color: var(--accent2); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .toc .new { background: #c0392b; color: #fff; font-size: 11px; padding: 1px 8px; border-radius: 10px; margin-left: 6px; }
+  code.inline {
+    background: var(--code); padding: 2px 6px;
+    border-radius: 4px; font-size: 13px;
+    font-family: "JetBrains Mono", "Consolas", monospace;
+  }
+  pre.code {
+    background: #1e1e1e; color: #dcdcdc;
+    padding: 14px 18px; border-radius: 8px;
+    overflow-x: auto; font-size: 13px;
+    font-family: "JetBrains Mono", "Consolas", monospace;
+    line-height: 1.55;
+  }
+  pre.code .k { color: #569cd6; }
+  pre.code .s { color: #ce9178; }
+  pre.code .c { color: #6a9955; }
+  pre.code .n { color: #b5cea8; }
+  .footer { text-align: center; color: var(--muted); margin-top: 80px; font-size: 13px; }
+  table.compare { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.compare th, table.compare td { border: 1px solid var(--border); padding: 8px 12px; }
+  table.compare th { background: #f4f1ea; text-align: left; }
+  .threed-container { position: relative; }
+  .threed-container svg { cursor: grab; }
+  .threed-container svg.dragging { cursor: grabbing; }
+  .quadrant-bg.pos { fill: #d6f0d6; opacity: 0.4; }
+  .quadrant-bg.neg { fill: #f0d6d6; opacity: 0.4; }
+  .step-list {
+    counter-reset: stepC;
+    padding-left: 0;
+    list-style: none;
+  }
+  .step-list li {
+    counter-increment: stepC;
+    padding: 10px 14px 10px 50px;
+    margin: 12px 0;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    position: relative;
+  }
+  .step-list li::before {
+    content: counter(stepC);
+    position: absolute; left: 14px; top: 14px;
+    width: 26px; height: 26px;
+    background: var(--accent2); color: #fff;
+    border-radius: 50%;
+    text-align: center; line-height: 26px;
+    font-weight: 700;
+  }
+  /* === 新版互動元件 === */
+  .detail-panel {
+    background: linear-gradient(135deg, #fdfaf3 0%, #fff 100%);
+    border: 1px solid #d6c8a0;
+    border-left: 4px solid var(--yellow);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 14px 0;
+    font-size: 14px;
+  }
+  .detail-panel h4 { margin: 0 0 10px; color: var(--accent); font-size: 14px; }
+  .detail-panel .kv { display: flex; gap: 4px; margin: 4px 0; font-family: "JetBrains Mono", monospace; }
+  .detail-panel .kv .k { color: var(--muted); min-width: 110px; }
+  .detail-panel .kv .v { color: #222; font-weight: 600; }
+  .calc-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    font-family: "JetBrains Mono", "Consolas", monospace;
+  }
+  .calc-table th {
+    background: #2c5aa0; color: #fff;
+    padding: 6px 8px;
+    text-align: center;
+    font-weight: 600;
+    position: sticky; top: 0;
+  }
+  .calc-table td {
+    padding: 4px 8px;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .calc-table tr:hover td { background: #fff8e6; }
+  .calc-table tr.selected td { background: #ffe9d6 !important; font-weight: 700; }
+  .calc-table .sum-row td {
+    background: #fef5e7;
+    font-weight: 700;
+    border-top: 2px solid #c0392b;
+    border-bottom: 2px solid #c0392b;
+    cursor: default;
+  }
+  .calc-table .sum-row:hover td { background: #fef5e7; }
+  .calc-table .pos { color: #27795a; }
+  .calc-table .neg { color: #c0392b; }
+  .scrollbox {
+    max-height: 320px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+  .mode-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+    background: #f4f1ea;
+    padding: 4px;
+    border-radius: 8px;
+  }
+  .mode-tabs button {
+    flex: 1;
+    background: transparent;
+    color: var(--muted);
+    border: 0;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .mode-tabs button.active {
+    background: #fff;
+    color: var(--accent2);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+  }
+  .step-nav {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px;
+    background: #1d2c4d;
+    border-radius: 10px;
+    color: #fff;
+    margin: 16px 0;
+  }
+  .step-nav .step-num {
+    font-size: 28px; font-weight: 800;
+    background: var(--yellow); color: #1d2c4d;
+    width: 50px; height: 50px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .step-nav .step-text { flex: 1; }
+  .step-nav .step-text .title { font-weight: 700; font-size: 16px; }
+  .step-nav .step-text .desc { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+  .step-nav button {
+    background: var(--yellow); color: #1d2c4d;
+    font-weight: 700;
+  }
+  .step-nav button:hover { background: #fad347; }
+  .step-nav button:disabled { background: #555; color: #999; cursor: not-allowed; }
+  .selected-pt {
+    stroke: #f0c419 !important;
+    stroke-width: 3.5 !important;
+  }
+  svg.canvas circle.pt.dim { opacity: 0.25; }
+  .math-live {
+    background: #1e1e1e;
+    color: #dcdcdc;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-family: "JetBrains Mono", "Consolas", monospace;
+    font-size: 12.5px;
+    line-height: 1.7;
+    overflow-x: auto;
+  }
+  .math-live .lbl { color: #888; }
+  .math-live .num { color: #b5cea8; }
+  .math-live .hl { color: #f0c419; font-weight: 700; }
+  .math-live .pc1 { color: #ff7a6b; }
+  .math-live .pc2 { color: #7cb1f0; }
+  .math-live .pc3 { color: #82c89e; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="cover">
+  <div class="badge">深入互動版 · 點擊連動 + 演算法步驟導覽</div>
+  <h1>主成分分析 PCA — 從直覺到數學的完整旅程</h1>
+  <div class="sub">
+    全書以<b>基因表現量資料</b>為主軸（Gene1、Gene2、Gene3...），
+    把抽象的線性代數推導，
+    具象化成「拿尺去量好幾個樣本的好幾個基因」這件事。<br><br>
+    每個公式都會被代入<b>真實的數字</b>讓你看到它怎麼算出來。
+    每個圖都能<b>點擊互動</b>——
+    點一個資料點就會在所有視圖同步點亮，
+    並顯示它的原始基因表現量、PC 得分。<br><br>
+    第 10 節是核心：3D 三基因範例提供<b>兩種模式</b>——
+    「自由探索」讓你拖曳旋轉、點擊任意樣本看數學細節；
+    「演算法步驟導覽」用 7 個步驟，
+    讓 PCA 在你眼前「展開」自己。
+  </div>
+</header>
+
+<div class="toc">
+  <h4>目錄</h4>
+  <p style="margin:6px 0;font-size:13px;color:var(--muted)">
+    ✨ <b>新加入 §0：故事開始</b>——
+    從「你拿到一份基因資料表」開始，
+    一步步發現變異數、共變異數、主成分這些詞背後的意思。
+    每個專有名詞都會在你「理解它在做什麼」之後才登場。
+  </p>
+  <ol start="0">
+    <li><a href="#s0">故事開始：假設你是新進的生物資訊研究員</a><span class="new">新增</span></li>
+    <li><a href="#s1">你看到的是什麼？— 點擊任何樣本看細節</a></li>
+    <li><a href="#s2">共變異數本身在量什麼：互動式逐項計算</a></li>
+    <li><a href="#s3">為什麼要「最大化變異數」？</a></li>
+    <li><a href="#s4">中心化：把資料拉到原點</a></li>
+    <li><a href="#s5">共變異數矩陣 C：逐元素建構動畫</a><span class="new">新增</span></li>
+    <li><a href="#s6">矩陣的幾何意義：誰是「不被旋轉」的方向？</a></li>
+    <li><a href="#s7">用 Lagrange 乘子法解出最佳方向</a></li>
+    <li><a href="#s8">特徵值分解、SVD、它們其實是同一件事</a></li>
+    <li><a href="#s9">投影、降維、與重建誤差</a></li>
+    <li><a href="#s10">3D 三基因：自由探索 + 演算法步驟導覽</a><span class="new">大改</span></li>
+    <li><a href="#s11">推到高維：Gene1 到 Gene20</a></li>
+    <li><a href="#s12">把整套故事串起來 + 限制與下一步</a></li>
+  </ol>
+</div>
+
+<!-- =====================================
+     §0 故事開始（NEW 深入淺出開場）
+     ===================================== -->
+<h2 id="s0"><span class="num">§0</span> 故事開始：假設你是新進的生物資訊研究員</h2>
+
+<div class="callout idea">
+  <strong>怎麼讀這一章？</strong>
+  接下來的小節會用「你拿到一份基因資料表」這個情境，
+  讓你<b>親手玩</b>幾個小遊戲，慢慢發現
+  「為什麼變異數要用平方？」「為什麼主成分是某個方向？」這些問題的答案。
+  <b>每個專有名詞都會在你理解它做什麼之後才登場</b>——
+  你不用記任何公式，只要把每個互動玩過一遍。
+</div>
+
+<h3>0-1 場景：你手上有一份 60 樣本 × 3 基因的資料表</h3>
+
+<p>研究員給你一份資料：60 個樣本（例如 60 個病人的細胞切片）
+  測到的 3 個基因表現量。她沒告訴你細胞型態（「細胞型態」這欄是 ?），
+  只說：「<b>幫我看看裡面有沒有隱藏的結構</b>。」<br>
+  下面隨機顯示其中 10 列（樣本順序<b>沒有特別排過</b>，是按實驗 ID 來的）：</p>
+
+<div class="card" style="padding:18px">
+  <div class="grid-2">
+    <div>
+      <h4 style="margin-top:0">原始資料（隨機抽 10 列看看）</h4>
+      <div class="scrollbox" style="max-height:280px">
+        <table class="calc-table" id="s0RawTable"></table>
+      </div>
+      <p style="margin-top:10px; font-size:13px; color:var(--muted)">
+        每一列都長得不太一樣：有時 Gene1 高、有時 Gene2 高、有時 Gene3 高，
+        看起來像「亂數」。<b>真的看不出 60 個樣本是不是該分群、該分幾群</b>。
+      </p>
+      <button id="s0VizBtn" style="margin-top:8px">試試把它「畫」出來 →</button>
+      <button id="s0ResetBtn" class="ghost" style="margin-top:8px">換一批 10 列看看</button>
+    </div>
+    <div>
+      <h4 style="margin-top:0">視覺化結果</h4>
+      <svg id="s0Scatter" class="canvas" width="100%" viewBox="0 0 380 380"></svg>
+      <p style="font-size:13px; color:var(--muted); margin-top:8px" id="s0VizNote">
+        🔘 按下左邊的「畫出來」按鈕，散佈圖才會出現。
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="callout">
+  <strong>第一個 aha：</strong> 同一份資料、剛才在表格裡看不出規律，
+  畫成散佈圖後<b>結構馬上跳出來</b>。視覺化的力量就在這。<br><br>
+  但是有個問題——剛才我們只看了 (Gene1, Gene2) 兩個基因。
+  如果有 <b>3 個基因</b>，要用 3D 圖（還勉強）；
+  <b>20 個基因</b>呢？<b>20,000 個基因</b>（真實 RNA-seq）呢？
+  人眼最多看 3D，幾千維資料根本無法「直接畫出來」。<br><br>
+  <b>PCA 的答案：找一條「最能代表資料變化的方向」，把高維資料投影上去。</b>
+  那條方向上的 1D / 2D 投影，就能濃縮原本高維結構的精華。
+</div>
+
+<h3>0-2 但「最能代表變化的方向」是什麼意思？</h3>
+
+<p>先回到一維：假設你只看 5 個樣本的 Gene1 表現量。下方有 5 個藍點散在一條線上。
+  你可以<b>拖動每個點</b>，讓它們變得「比較分散」或「比較集中」。</p>
+
+<div class="card">
+  <div class="grid-2">
+    <div>
+      <h4 style="margin-top:0">拖動點：感受「分散」</h4>
+      <svg id="s0Spread" class="canvas" width="100%" viewBox="0 0 400 160"></svg>
+      <div class="controls">
+        <button id="s0SpreadBunch" class="ghost">把點集中</button>
+        <button id="s0SpreadSpread" class="ghost">把點打散</button>
+      </div>
+    </div>
+    <div>
+      <h4 style="margin-top:0">怎麼用「一個數字」描述分散程度？</h4>
+      <p style="font-size:14px">這就是我們現在要解的問題。
+        下面提供 4 種候選公式，每個都可以「算出一個數字」。
+        但只有<b>一種</b>會被數學家最後選來當「變異數」。
+        ——你能猜出是哪一種、為什麼嗎？</p>
+    </div>
+  </div>
+</div>
+
+<h3>0-3 互動探索：變異數公式四選一</h3>
+
+<p>下面顯示同一份資料（5 個點），點任一卡片試試看那個公式算出來是什麼。
+  我們會幫你<b>列出每一步計算</b>，並指出該公式有什麼<b>缺點或優點</b>。</p>
+
+<div class="card">
+  <div id="s0FormulaCards" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px"></div>
+  <div class="detail-panel" id="s0FormulaDetail" style="min-height:200px"></div>
+</div>
+
+<div class="callout idea">
+  <strong>結論（玩完四個公式後再看）：</strong> 數學家選了第 4 個（<b>平方差總和 / (n-1)</b>），原因有三：
+  <ol style="margin:8px 0">
+    <li><b>不會抵消</b>：平方一定非負，所有資料都有貢獻。</li>
+    <li><b>可微分</b>：對導數友善，後續可以用最佳化方法（如 Lagrange）。</li>
+    <li><b>幾何上有意義</b>：與「歐式距離」的平方對應，數學工具豐富。</li>
+  </ol>
+  <b>恭喜！</b>你剛剛親手「發現」了變異數的公式：
+  $\mathrm{Var}(X) = \frac{1}{n-1}\sum_i (x_i-\bar{x})^2$
+</div>
+
+<h3>0-4 從 1D 推廣到 2D：方向上的變異數</h3>
+
+<p>現在你會算<b>單一變數</b>的變異數了。
+  但是 PCA 處理的是<b>多變數</b>資料（Gene1, Gene2, ...）。
+  「方向上的變異數」是什麼意思？</p>
+
+<div class="card">
+  <h4 style="margin-top:0">互動：把所有點投影到一條線上，然後算 1D 變異數</h4>
+  <p style="font-size:14px">
+    下方是 30 個樣本的 (Gene1, Gene2) 散布圖。
+    用<b>滑鼠拖動綠色虛線箭頭</b>來改變投影方向。
+    每個點會「掉」到那條線上（虛線是掉落軌跡），
+    右邊會即時顯示<b>投影後 1D 變異數</b>。
+    <br>你的任務：<b>找出讓變異數最大的方向</b>。
+  </p>
+  <div class="grid-2">
+    <div>
+      <svg id="s0Proj" class="canvas" width="100%" viewBox="0 0 420 420"></svg>
+      <div class="controls">
+        <label>方向角度：
+          <input type="range" id="s0ProjTheta" min="0" max="180" value="20" step="1">
+          <span id="s0ProjThetaVal" style="font-family:monospace">20°</span>
+        </label>
+        <button id="s0ProjBest" class="ghost">自動找到最佳</button>
+      </div>
+    </div>
+    <div>
+      <div class="detail-panel" id="s0ProjStats" style="min-height:180px"></div>
+    </div>
+  </div>
+</div>
+
+<h3>0-5 親手畫看看：你覺得「最佳方向」在哪？</h3>
+
+<p>下面是另一份 (Gene1, Gene2) 資料。
+  <b>在散佈圖上點兩下</b>（兩個位置）來畫出你心目中的「最佳方向」（PC1）。
+  按「揭曉答案」會顯示<b>真正的 PC1</b> 和<b>你的猜測有多接近</b>。</p>
+
+<div class="card">
+  <div class="grid-2">
+    <div>
+      <svg id="s0Guess" class="canvas" width="100%" viewBox="0 0 420 420"></svg>
+      <div class="controls">
+        <button id="s0GuessReveal">揭曉答案</button>
+        <button id="s0GuessReset" class="ghost">重畫</button>
+        <button id="s0GuessNew" class="ghost">換一組資料</button>
+      </div>
+    </div>
+    <div>
+      <div class="detail-panel" id="s0GuessFeedback" style="min-height:200px">
+        <h4>怎麼玩</h4>
+        <p style="font-size:13px; margin:6px 0">
+          1️⃣ 在散佈圖上<b>點第一下</b>，會出現一個黃色起點。<br>
+          2️⃣ <b>點第二下</b>，連接成一條線——這就是你猜的 PC1。<br>
+          3️⃣ 點「揭曉答案」看你跟真正 PC1 的差距。
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="callout idea">
+  <strong>關鍵連結（請務必停下來體會）：</strong><br>
+  上面的<b>角度滑桿遊戲</b>和<b>猜 PC1 遊戲</b>其實是同一回事——
+  「找變異數最大的方向」=「找 PC1」。<br><br>
+  接下來的章節會用嚴謹的數學說明：
+  <b>這個方向其實是「共變異數矩陣的特徵向量」</b>。
+  別擔心這些詞，後面章節會慢慢拆給你看。
+  你現在只要記住一件事：<b>PCA 就是在找變異數最大的方向</b>。
+</div>
+
+<h3>0-6 接下來會發生什麼？</h3>
+
+<p>你已經理解了 PCA 的核心直覺。接下來的章節會：</p>
+
+<ol class="step-list">
+  <li><b>§1～§2：</b> 把上面的直覺用「拖點 + 點擊」遊戲玩到熟。同時學會「<b>共變異數</b>」這個關鍵詞。</li>
+  <li><b>§3～§5：</b> 把「方向上的變異數」翻譯成<b>矩陣語言</b>，得到「<b>共變異數矩陣</b>」。</li>
+  <li><b>§6～§7：</b> 學會「<b>特徵向量</b>」這個詞，並用 Lagrange 乘子法導出「PC1 = 最大特徵值對應的特徵向量」。</li>
+  <li><b>§8～§9：</b> 學會「<b>SVD</b>」、「<b>投影</b>」、「<b>重建誤差</b>」這些實作上會用到的工具。</li>
+  <li><b>§10：</b> 3D 三基因互動範例 + 演算法步驟導覽——這是把所有觀念拼回來的時刻。</li>
+  <li><b>§11～§12：</b> 推廣到真實高維基因資料，並整理限制與下一步。</li>
+</ol>
+
+<details>
+  <summary>📚 專有名詞速查表（後面會慢慢解釋，先掃過去）</summary>
+  <table class="compare" style="margin-top:10px">
+    <tr><th>名詞</th><th>白話意思</th><th>哪一節介紹</th></tr>
+    <tr><td><b>變異數 Variance</b></td><td>「一群數字有多分散」的量度</td><td>§0-3</td></tr>
+    <tr><td><b>共變異數 Covariance</b></td><td>「兩個變數同向變化的程度」</td><td>§2</td></tr>
+    <tr><td><b>共變異數矩陣 C</b></td><td>把所有變異數和共變異數排成方陣</td><td>§5</td></tr>
+    <tr><td><b>主成分 PC1, PC2, ...</b></td><td>變異數由大到小排序的方向</td><td>§1</td></tr>
+    <tr><td><b>特徵向量 Eigenvector</b></td><td>套用矩陣後「方向不變」的向量</td><td>§6</td></tr>
+    <tr><td><b>特徵值 Eigenvalue</b></td><td>特徵向量被矩陣「拉長的倍率」</td><td>§6</td></tr>
+    <tr><td><b>投影 Projection</b></td><td>把點「掉」到某條線/平面上</td><td>§3, §9</td></tr>
+    <tr><td><b>SVD 奇異值分解</b></td><td>計算 PCA 的數值穩定方法</td><td>§8</td></tr>
+    <tr><td><b>Loading</b></td><td>每個原始變數對某個 PC 的貢獻權重</td><td>§10</td></tr>
+    <tr><td><b>Scree plot</b></td><td>各 PC 解釋變異量的長條圖</td><td>§9, §11</td></tr>
+  </table>
+</details>
+
+<!-- =====================================
+     §1
+     ===================================== -->
+<h2 id="s1"><span class="num">§1</span> 你看到的是什麼？— 點擊任何樣本看細節</h2>
+
+<p class="lead">
+  在跳進公式之前，先讓你的眼睛告訴你 PCA 在幹嘛。
+</p>
+
+<div class="callout bio">
+  <strong>情境：</strong> 你做了一個實驗，量了 18 個樣本（細胞、病人、組織切片，隨便你想）
+  的<b>兩個基因 Gene1 和 Gene2</b> 的表現量。
+  橫軸是 Gene1，縱軸是 Gene2。每個藍點代表一個樣本的兩個基因表現量。
+  你想知道：這些樣本背後是否有「自然的變化軸」？
+</div>
+
+<p>隨便<b>拖動</b>任何一個點改變資料，或<b>點擊</b>任何點看它的詳細資訊：</p>
+
+<ol>
+  <li><b>兩條彩色箭頭</b>：紅色是 PC1，藍色是 PC2。永遠垂直，長度 ∝ 該方向的變異量。</li>
+  <li>右側的<b>共變異數矩陣</b>會用即時計算的數字更新。</li>
+  <li>點擊某個樣本後，會顯示它的 (Gene1, Gene2) 表現量、以及它<b>在 PC1 / PC2 上的得分</b>——
+    這就是「降維後的新座標」。</li>
+</ol>
+
+<div class="card">
+  <div class="grid-2">
+    <div>
+      <svg class="canvas" id="svgPC" width="100%" viewBox="0 0 440 440">
+        <defs>
+          <marker id="arrowR" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#c0392b"/>
+          </marker>
+          <marker id="arrowB" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#2c5aa0"/>
+          </marker>
+          <marker id="arrowG" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#27795a"/>
+          </marker>
+        </defs>
+        <g id="gridG"></g>
+        <line class="axis" x1="20" y1="220" x2="440" y2="220"/>
+        <line class="axis" x1="220" y1="0" x2="220" y2="420"/>
+        <text x="420" y="236" class="lbl" fill="#444" font-weight="600">Gene1 →</text>
+        <text x="225" y="14" class="lbl" fill="#444" font-weight="600">↑ Gene2</text>
+        <g id="ptsG"></g>
+        <line id="pc1L" class="pc1" x1="220" y1="220" x2="220" y2="220"/>
+        <line id="pc2L" class="pc2" x1="220" y1="220" x2="220" y2="220"/>
+        <text x="10" y="14" class="lbl" fill="#888">拖動 → 改資料 ｜ 點擊 → 看細節</text>
+      </svg>
+      <div class="legend">
+        <span><span class="dot" style="background:#c0392b"></span>PC1</span>
+        <span><span class="dot" style="background:#2c5aa0"></span>PC2</span>
+        <span><span class="dot" style="background:#2c5aa0;width:10px;height:10px;border-radius:50%"></span>樣本（藍）</span>
+        <span><span class="dot" style="background:#f0c419;width:10px;height:10px;border-radius:50%;border:2px solid #c0392b"></span>選中樣本</span>
+      </div>
+      <div class="controls">
+        <button id="btnReset">重設</button>
+        <button id="btnRandom" class="ghost">隨機散佈</button>
+        <button id="btnLine" class="ghost">逼近直線</button>
+        <button id="btnCircle" class="ghost">圓形雲</button>
+        <label><input type="checkbox" id="showShadows">顯示到 PC1 的投影虛線</label>
+      </div>
+    </div>
+    <div>
+      <h3>即時統計</h3>
+      <p style="margin:4px 0; color:var(--muted); font-size:13px">資料均值 $\bar{\mathbf{x}}$（紫色 + 號標記）</p>
+      <div id="meanShow" style="font-family:monospace; font-size:14px"></div>
+      <h3 style="margin-top:18px">共變異數矩陣 $\mathbf{C}$</h3>
+      <div id="covShow" class="matrix"></div>
+      <h3 style="margin-top:18px">特徵值與解釋變異量</h3>
+      <div class="stat-row" id="eigShow"></div>
+      <div id="screeMini" style="margin-top:10px"></div>
+      <div class="detail-panel" id="detailS1" style="margin-top:18px">
+        <h4>點擊任一樣本看細節 ↑</h4>
+        <p style="margin:0; font-size:13px; color:var(--muted)">
+          點選某個藍點後，這裡會顯示它的原始基因表現量、
+          以及在 PC1 / PC2 軸上的「新座標」。
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="callout idea">
+  <strong>三個觀察題</strong>，請你親手做：
+  <ol style="margin:8px 0">
+    <li>點「逼近直線」——資料幾乎排成一條斜線時，PC1 會沿著那條線，
+      PC2 幾乎縮成一點。意思是：<b>沿 PC2 方向幾乎沒有資訊</b>，
+      把資料投到 PC1 就保留了幾乎全部結構。</li>
+    <li>點「圓形雲」——PC1 和 PC2 一樣長，因為「沒有主要方向」。
+      這種資料用 PCA 降維會丟掉很多資訊，<b>PCA 對它無能為力</b>。</li>
+    <li>把幾個點拖到很遠的地方——觀察 PC1 是否會被它們拉走？
+      這就是 PCA 對<b>離群值非常敏感</b>的視覺證據。</li>
+  </ol>
+  PCA 的核心直覺其實只有一句話：
+  <b>主成分排列的順序，就是「方向上資料分散程度」由大到小的順序。</b>
+</div>
+
+<!-- =====================================
+     §2 共變異數本身 (NEW)
+     ===================================== -->
+<h2 id="s2"><span class="num">§2</span> 共變異數本身在量什麼：互動式逐項計算</h2>
+
+<p class="lead">
+  PCA 的所有公式都圍繞著「共變異數矩陣」。
+  在堆砌矩陣之前，我們先用最樸素的視角看一下：
+  <b>兩個基因的「共變異數」到底是怎麼算出來的？它在量什麼？</b>
+</p>
+
+<p>數學定義：</p>
+
+$$ \mathrm{Cov}(\text{Gene1}, \text{Gene2}) = \frac{1}{n-1}\sum_{i=1}^n (g1_i-\overline{g1})(g2_i-\overline{g2}) $$
+
+<p>看起來抽象，其實非常具體：對<b>每一個樣本</b>，
+  算它相對於均值的 $\text{Gene1}$ 偏差乘以 $\text{Gene2}$ 偏差，
+  然後把這些乘積<b>全部加起來再除以 $(n-1)$</b>。</p>
+
+<p>關鍵在那個「乘積」的符號：</p>
+
+<ul>
+  <li>當樣本落在均值的「右上 / 左下」象限：兩個偏差同號，乘積<b>是正的</b> → 反映「Gene1 高時 Gene2 也高」。</li>
+  <li>當樣本落在「左上 / 右下」象限：兩個偏差異號，乘積<b>是負的</b> → 反映「Gene1 高時 Gene2 反而低」。</li>
+  <li>共變異數 = 所有貢獻的平均。<b>正貢獻佔上風 → 正相關</b>；反之為負相關。</li>
+</ul>
+
+<div class="card">
+  <h3>互動：點在哪個象限就貢獻什麼符號</h3>
+  <p>下圖中<b>綠色背景</b>是「正貢獻」象限，<b>紅色背景</b>是「負貢獻」象限。
+    右側是<b>逐項計算表格</b>——
+    把滑鼠移到任一列，左圖會點亮對應的樣本；
+    點擊欄位的列也可在散佈圖上鎖定該樣本。</p>
+  <div class="grid-2">
+    <div>
+      <svg class="canvas" id="svgCov" width="100%" viewBox="0 0 440 440"></svg>
+      <div class="controls">
+        <button id="btnCovReset">重設</button>
+        <button id="btnCovPos" class="ghost">正相關</button>
+        <button id="btnCovNeg" class="ghost">負相關</button>
+        <button id="btnCovZero" class="ghost">無相關</button>
+        <label><input type="checkbox" id="showContrib" checked>顯示每點貢獻數字</label>
+      </div>
+    </div>
+    <div>
+      <h3 style="margin-top:0">逐項計算表格</h3>
+      <p style="font-size:13px; color:var(--muted); margin:6px 0">
+        每一列是一個樣本。把滑鼠移到列上，左圖會把該樣本點大。
+      </p>
+      <div class="scrollbox">
+        <table class="calc-table" id="covTable"></table>
+      </div>
+      <div class="detail-panel" style="margin-top:14px" id="covSummary"></div>
+    </div>
+  </div>
+</div>
+
+<div class="callout">
+  <strong>從共變異數到「相關係數」：</strong>
+  共變異數的數值大小取決於 $x$、$y$ 的單位（cm 和 kg 算出來的 cov 跟 m 和 g 不同）。
+  把它除以兩個變數的標準差就得到「<b>相關係數</b>」$r$，
+  它沒有單位，永遠落在 $[-1, 1]$。
+  PCA 推導時我們用共變異數矩陣；
+  但當特徵的<b>單位差異很大</b>時，標準化（z-score）後再做 PCA
+  等同於對<b>相關係數矩陣</b>做 PCA，這在實務上很常見。
+</div>
+
+<!-- =====================================
+     §3 為什麼最大化變異數
+     ===================================== -->
+<h2 id="s3"><span class="num">§3</span> 為什麼要「最大化變異數」？</h2>
+
+<p class="lead">
+  PCA 的所有後續推導都建立在一個關鍵假設：
+  <b>「值得保留的方向，就是資料變化最大的方向。」</b>
+</p>
+
+<p>想像你站在一個橢圓形池塘旁邊。從<b>長軸方向</b>看過去，
+  你看到一條長長的水面，每個點都有明顯的位置；
+  從<b>短軸方向</b>看過去，所有點幾乎重疊。
+  <b>「能區分點的方向，就是變異大的方向。」</b>
+  反過來說，若你把資料壓到一個變異小的方向，
+  所有點都會擠成一團——你等於丟掉了區分它們的能力。
+</p>
+
+<div class="callout idea">
+  <strong>把它放到基因資料的脈絡：</strong>
+  在 Gene1-Gene2 平面上找一個方向，把樣本投影上去後得到一個 1D 分數。
+  若那個方向「保留了最多樣本之間的差異」，
+  我們就只用這個分數來代表每個樣本——
+  從 2D 降到 1D，卻幾乎不損失資訊。
+</div>
+
+<div class="card">
+  <h3>互動：旋轉投影方向，看哪個角度變異最大</h3>
+  <p>綠色直線代表你選的投影方向。
+    拉滑桿改變角度 $\theta$，每個資料點會垂直落在線上（虛線是投影路徑），
+    右邊的曲線顯示「投影到那個角度後的變異數」。
+    找出曲線最高點對應的角度——那就是 PC1。</p>
+  <div class="grid-2">
+    <div>
+      <svg class="canvas" id="svgRot" width="100%" viewBox="0 0 420 420"></svg>
+      <div class="controls">
+        <label>角度 $\theta$：
+          <input type="range" id="thetaR" min="0" max="180" value="0" step="1">
+          <span id="thetaV" style="font-family:monospace">0°</span>
+        </label>
+        <button id="btnFindMax" class="ghost">自動掃描找最大</button>
+      </div>
+    </div>
+    <div>
+      <h3>投影後變異數曲線</h3>
+      <svg id="varCurve" width="100%" viewBox="0 0 400 220" style="background:#fff;border:1px solid var(--border);border-radius:6px"></svg>
+      <p style="font-size:13px; color:var(--muted); margin:8px 0">
+        x 軸 = 角度 $\theta$（0° → 180°）<br>
+        y 軸 = 投影到該方向後的變異數 $\mathrm{Var}(\mathbf{X}\mathbf{w}_\theta)$<br>
+        綠色虛線標出讓變異數最大的角度。
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="callout">
+  <strong>數學上要解的問題：</strong>
+  $$\mathbf{w}^* = \arg\max_{\mathbf{w}} \; \mathrm{Var}(\mathbf{X}\mathbf{w}) \quad \text{s.t.} \; \|\mathbf{w}\|=1$$
+  其中 $\mathbf{w}$ 是一個單位向量（代表方向），$\mathbf{X}\mathbf{w}$ 是把每筆資料投影到 $\mathbf{w}$ 後的純量。
+  <br>※ 為什麼要求 $\|\mathbf{w}\|=1$？若不加這個約束，
+  把 $\mathbf{w}$ 拉長 10 倍，變異數就會被放大 100 倍，最大化問題會「跑掉」。
+  限制成單位向量，我們才是在<b>比較不同的「方向」</b>，而不是比較不同的「長度」。
+</div>
+
+<!-- =====================================
+     §4 中心化
+     ===================================== -->
+<h2 id="s4"><span class="num">§4</span> 中心化：把資料拉到原點</h2>
+
+<p>在做 PCA 之前，要把資料每一個維度的<b>均值</b>減掉，讓資料以原點為中心。
+  為什麼？因為 PCA 找的是「資料分散的方向」，
+  而方向是相對於資料中心而言的。
+  如果不中心化，PC1 會被「資料離原點多遠」這件無關緊要的事拉走。</p>
+
+<p>數學上，給定資料矩陣 $\mathbf{X} \in \mathbb{R}^{n \times p}$
+（$n$ 筆樣本、$p$ 個特徵）：</p>
+
+$$ \tilde{\mathbf{X}} = \mathbf{X} - \mathbf{1}\bar{\mathbf{x}}^\top,
+\qquad \bar{\mathbf{x}} = \frac{1}{n}\sum_{i=1}^n \mathbf{x}_i $$
+
+<div class="callout idea">
+  <strong>視覺化：</strong> 在 §1 互動圖裡，紫色 + 號標記的就是 $\bar{\mathbf{x}}$。
+  中心化就是把整團點平移，讓 + 號落在原點。
+  <b>後續所有推導都假設資料已經中心化過。</b>
+</div>
+
+<details>
+  <summary>是否需要進一步「標準化」（除以標準差）？</summary>
+  <p>看情境：</p>
+  <ul>
+    <li>如果不同特徵的<b>單位差很多</b>（「身高 cm」vs「年薪 萬元」），
+      數值大的會主宰共變異數矩陣，PC1 幾乎只反映年薪。
+      這時要 z-score 化：
+      $\tilde{x}_{ij} = (x_{ij} - \bar{x}_j) / s_j$。</li>
+    <li>如果特徵單位一致（例如所有變數都是<b>同樣方法量出的基因表現量</b>），
+      可以不標準化，讓「天然變異大的基因」貢獻更多。</li>
+    <li>RNA-seq 資料常先做 log 轉換、再做 PCA。
+      log 轉換能壓縮高表現基因的極大值，避免單一基因主宰。</li>
+  </ul>
+</details>
+
+<!-- =====================================
+     §5 共變異數矩陣 C
+     ===================================== -->
+<h2 id="s5"><span class="num">§5</span> 共變異數矩陣 C：逐元素建構動畫</h2>
+
+<p>中心化之後，<b>樣本共變異數矩陣</b>是：</p>
+
+$$ \mathbf{C} = \frac{1}{n-1}\,\tilde{\mathbf{X}}^\top \tilde{\mathbf{X}} \;\in\; \mathbb{R}^{p\times p} $$
+
+<p>第 $(i,j)$ 個元素：</p>
+
+$$ C_{ij} = \frac{1}{n-1} \sum_{k=1}^n \tilde{x}_{ki}\,\tilde{x}_{kj}
+= \mathrm{Cov}(X_i, X_j) $$
+
+<p>意義：</p>
+<ul>
+  <li><b>對角線</b> $C_{ii}$ = 第 $i$ 個基因自己的<b>變異數</b>。</li>
+  <li><b>非對角線</b> $C_{ij}$ = 第 $i$、$j$ 兩個基因的<b>共變異數</b>（§2）。</li>
+  <li>$\mathbf{C}$ 必定<b>對稱</b>（$C_{ij}=C_{ji}$）也必定<b>半正定</b>（任何方向的變異數 $\ge 0$）。</li>
+</ul>
+
+<details>
+  <summary>為什麼「對稱」與「半正定」這麼重要？</summary>
+  <p><b>對稱</b>保證了一件大事：<b>譜定理</b> 告訴我們，
+    任何對稱矩陣都可以分解成 $\mathbf{C} = \mathbf{V}\boldsymbol{\Lambda}\mathbf{V}^\top$，
+    其中 $\mathbf{V}$ 的所有列是<b>實數值、互相正交的特徵向量</b>，
+    $\boldsymbol{\Lambda}$ 是<b>實數值</b>的對角矩陣。
+    這保證了 PCA 找到的「主成分」一定是現實世界裡有意義的方向（不會跑出複數）、
+    且彼此垂直（不會重複承載資訊）。</p>
+  <p><b>半正定</b>保證所有 $\lambda_i \ge 0$，
+    換言之「沒有負的變異數」——
+    這聽起來廢話，但它讓我們能放心對特徵值排序、用 $\sqrt{\lambda}$ 算長度等等。</p>
+</details>
+
+<div class="card">
+  <h3>互動：3 個基因的共變異數矩陣怎麼一格一格被算出來</h3>
+  <p>下面是 6 個樣本對 3 個基因 (Gene1, Gene2, Gene3) 的量測。
+    點「下一格」會依序計算 $\mathbf{C}$ 矩陣的每個元素——
+    高亮顯示<b>哪兩個欄位被乘起來</b>、<b>所有 6 筆乘積</b>、<b>加總後除以 $n-1$</b>。</p>
+  <div class="grid-2">
+    <div>
+      <h4>原始資料 X (n=6, p=3)</h4>
+      <div class="scrollbox" style="max-height:260px">
+        <table class="calc-table" id="s5Data"></table>
+      </div>
+      <h4 style="margin-top:16px">當前計算步驟</h4>
+      <div class="math-live" id="s5Math"></div>
+      <div class="controls">
+        <button id="s5Prev" class="ghost">← 上一格</button>
+        <button id="s5Next">下一格 →</button>
+        <button id="s5Reset" class="ghost">重新開始</button>
+      </div>
+    </div>
+    <div>
+      <h4>共變異數矩陣 C (3×3)</h4>
+      <div id="s5MatrixWrap" style="display:flex;flex-direction:column;align-items:center;gap:14px;margin-top:8px">
+        <svg id="s5Matrix" width="100%" viewBox="0 0 300 300" style="max-width:340px"></svg>
+        <div class="detail-panel" id="s5Note" style="width:100%"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="callout bio">
+  <strong>生物學情境：</strong> 假設你量了 1000 個樣本、20000 個基因的表現量。
+  共變異數矩陣會是 $20000 \times 20000$ 大小，
+  每個元素告訴你「兩個基因是否傾向一起上升或下降」——
+  共表現 (co-expression) 分析的數學基礎就在這裡。
+  PCA 把這個巨大矩陣「對角化」，告訴你<b>哪些基因組合是樣本主要的變化方向</b>。
+</div>
+
+<h3>關鍵恆等式：任意方向的變異數</h3>
+<p>對任何單位向量 $\mathbf{w}$，把所有資料投影到 $\mathbf{w}$ 後的變異數是：</p>
+
+$$ \boxed{\;\mathrm{Var}(\tilde{\mathbf{X}}\mathbf{w}) = \mathbf{w}^\top \mathbf{C}\, \mathbf{w}\;} $$
+
+<details>
+  <summary>展開推導</summary>
+  <p>投影後每筆資料變成純量 $y_k = \tilde{\mathbf{x}}_k^\top \mathbf{w}$。
+    資料已中心化 → $\bar{y}=0$，所以：</p>
+  $$ \mathrm{Var}(y) = \frac{1}{n-1}\sum_k y_k^2
+     = \frac{1}{n-1}\sum_k (\tilde{\mathbf{x}}_k^\top \mathbf{w})^2
+     = \frac{1}{n-1}\mathbf{w}^\top \tilde{\mathbf{X}}^\top \tilde{\mathbf{X}}\, \mathbf{w}
+     = \mathbf{w}^\top \mathbf{C}\, \mathbf{w} $$
+</details>
+
+<p>這個式子是整套推導的<b>樞紐</b>。
+  下一節我們會解「找 $\mathbf{w}$ 讓 $\mathbf{w}^\top \mathbf{C}\mathbf{w}$ 最大」——
+  但在那之前，先看一個更深的東西：矩陣的幾何意義。</p>
+
+<!-- =====================================
+     §6 矩陣的幾何 (NEW)
+     ===================================== -->
+<h2 id="s6"><span class="num">§6</span> 矩陣的幾何意義：誰是「不被旋轉」的方向？</h2>
+
+<p class="lead">
+  我們即將證明「最佳方向 = 特徵向量」。但<b>特徵向量到底是什麼東西</b>？
+  在跳進 Lagrange 公式之前，先建立這個幾何直覺。
+</p>
+
+<p>任何矩陣 $\mathbf{C}$ 都可以看成<b>一個變換</b>：
+  你給它一個向量 $\mathbf{v}$，它把 $\mathbf{v}$ 變成另一個向量 $\mathbf{C}\mathbf{v}$。
+  如果是 $2 \times 2$ 矩陣，這個變換可以分解為「拉伸 + 旋轉」。</p>
+
+<p>大多數的向量在套用 $\mathbf{C}$ 之後，<b>方向會變</b>（被旋轉了）。
+  但有一些<b>特殊的方向</b>，套用 $\mathbf{C}$ 之後方向<b>完全不變</b>，
+  只是被拉長或縮短——
+  <b>這些方向就是特徵向量</b>，被拉長的倍率就是<b>特徵值</b>。</p>
+
+$$ \mathbf{C}\mathbf{v} = \lambda \mathbf{v} \quad\Longleftrightarrow\quad \mathbf{C} \text{ 把 } \mathbf{v} \text{ 拉成 } \lambda \text{ 倍但方向不變} $$
+
+<div class="card">
+  <h3>互動：套用 C 後誰被旋轉？誰沒被旋轉？</h3>
+  <p>左圖灰色箭頭是<b>單位圓上的一群向量</b>。
+    點「套用 C」按鈕，每個灰色箭頭會變成紫色箭頭——
+    觀察大多紫色箭頭的<b>方向都跟原本不同</b>（被旋轉了）。
+    只有<b>紅色與藍色標出的兩個方向</b>沒被旋轉，只被拉長/縮短——
+    那就是 $\mathbf{C}$ 的兩個特徵向量。</p>
+  <div class="grid-2">
+    <div>
+      <svg class="canvas" id="svgEig" width="100%" viewBox="0 0 420 420"></svg>
+      <div class="controls">
+        <button id="btnEigApply">套用 C 變換</button>
+        <button id="btnEigReset" class="ghost">回到單位圓</button>
+        <button id="btnEigMatrix" class="ghost">換一個 C</button>
+      </div>
+    </div>
+    <div>
+      <h3>當前 C 矩陣</h3>
+      <div id="eigMatShow" class="matrix"></div>
+      <p style="margin-top:10px; font-size:13px; color:var(--muted)">
+        每個紅色與藍色箭頭都是 $\mathbf{C}$ 的特徵向量：
+        $\mathbf{C}\mathbf{v}_1 = \lambda_1 \mathbf{v}_1$，
+        $\mathbf{C}\mathbf{v}_2 = \lambda_2 \mathbf{v}_2$。
+      </p>
+      <div class="stat-row" id="eigMatStats"></div>
+      <div class="callout idea" style="margin-top:14px; font-size:14px">
+        <strong>反過來看：</strong>
+        $\mathbf{w}^\top \mathbf{C}\mathbf{w}$ 在「特徵向量方向」上達到極值：
+        在 $\mathbf{v}_1$ 方向是<b>最大值</b> $\lambda_1$，
+        在 $\mathbf{v}_2$ 方向是<b>最小值</b> $\lambda_2$。
+        這正是 PCA 要找的東西。
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =====================================
+     §7 Lagrange
+     ===================================== -->
+<h2 id="s7"><span class="num">§7</span> 用 Lagrange 乘子法解出最佳方向</h2>
+
+<p>把 §5 的關鍵恆等式代進 §3 的最佳化問題，現在我們要解：</p>
+
+$$ \boxed{\;\max_{\mathbf{w}} \; \mathbf{w}^\top \mathbf{C}\, \mathbf{w} \quad \text{s.t.} \quad \mathbf{w}^\top \mathbf{w} = 1\;} $$
+
+<div class="callout idea">
+  <strong>Lagrange 乘子法的直覺：</strong>
+  假設你在一個圓形操場（約束：$\|\mathbf{w}\|=1$）上找海拔最高的點（目標：$\mathbf{w}^\top \mathbf{C}\mathbf{w}$）。
+  <b>到達山頂時</b>，你會發現「往任何沿著操場的方向走，海拔都不再上升」——
+  也就是說，海拔的<b>梯度</b>必定垂直於操場（否則沿著操場走還能變高）。
+  而「垂直於圓」的方向，就是「圓的法向量」方向。<br><br>
+  數學語言：在最佳解處，
+  <b>目標的梯度 = 某個倍率 λ × 約束的梯度</b>——
+  這個「倍率 $\lambda$」就是 Lagrange 乘子，它的物理意義是「<b>約束帶來的代價</b>」，
+  在 PCA 裡剛好就是<b>特徵值</b>。
+</div>
+
+<p>把約束 $\mathbf{w}^\top \mathbf{w}-1=0$ 用乘子 $\lambda$ 加進目標函數，
+  定義 Lagrangian：</p>
+
+$$ \mathcal{L}(\mathbf{w}, \lambda) = \mathbf{w}^\top \mathbf{C}\, \mathbf{w} - \lambda(\mathbf{w}^\top \mathbf{w} - 1) $$
+
+<p>對 $\mathbf{w}$ 取偏導，令其為零：</p>
+
+$$ \frac{\partial \mathcal{L}}{\partial \mathbf{w}}
+= 2\mathbf{C}\mathbf{w} - 2\lambda\mathbf{w} = \mathbf{0}
+\;\Longrightarrow\;
+\boxed{\;\mathbf{C}\mathbf{w} = \lambda\mathbf{w}\;} $$
+
+<div class="callout idea">
+  <strong>關鍵時刻！</strong>
+  這正是<b>特徵值方程式的標準型</b>。
+  最大化變異數的 $\mathbf{w}$，必定是 $\mathbf{C}$ 的<b>某一個特徵向量</b>，
+  對應的 $\lambda$ 是<b>特徵值</b>。<br><br>
+  這就是為什麼 §6 的幾何直覺重要：當你「最大化 $\mathbf{w}^\top \mathbf{C}\mathbf{w}$」，
+  你其實是在問<b>「哪個方向被 C 拉得最厲害？」</b>
+  而答案就是 C 最大特徵值對應的特徵向量。
+</div>
+
+<p>要選哪一個特徵向量？把 $\mathbf{C}\mathbf{w}=\lambda\mathbf{w}$
+代回目標函數：</p>
+
+$$ \mathbf{w}^\top \mathbf{C}\, \mathbf{w}
+= \mathbf{w}^\top (\lambda\mathbf{w})
+= \lambda \underbrace{\mathbf{w}^\top \mathbf{w}}_{=1} = \lambda $$
+
+<p>所以<b>目標函數的值 = 特徵值</b>。要最大化，就選<b>最大的特徵值</b>對應的特徵向量。
+  那就是 <b>PC1</b>。</p>
+
+<h3>那 PC2、PC3 怎麼來？</h3>
+<p>解完 PC1 後，我們找下一個方向，要求：
+  (a)<b>單位長度</b>，(b)<b>與 PC1 正交</b>，
+  在剩下的空間裡再次最大化變異數。
+  加上正交約束做一樣的 Lagrange 推導，
+  答案就是 $\mathbf{C}$ 的<b>第二大特徵值</b>對應的特徵向量。
+  以此類推：</p>
+
+$$ \text{PC}_k = \mathbf{C} \text{ 的第 } k \text{ 大特徵值對應的特徵向量} $$
+
+<p>因為 $\mathbf{C}$ 是對稱矩陣，<b>譜定理</b>保證它的特徵向量可以選成兩兩正交、
+  構成完整的正交基底，這完美符合 PCA 的需求。</p>
+
+<details>
+  <summary>動手算一遍：5 個點的 PCA</summary>
+  <p>給定 5 個 2D 點：</p>
+  <pre class="code">x: [1, 3, 5, 7, 9]
+y: [2, 3, 7, 8, 10]</pre>
+  <p>步驟 1：均值 $\bar{x} = 5$，$\bar{y} = 6$。</p>
+  <p>步驟 2：中心化後：</p>
+  <pre class="code">x̃: [-4, -2,  0,  2,  4]
+ỹ: [-4, -3,  1,  2,  4]</pre>
+  <p>步驟 3：共變異數矩陣（n-1 = 4）：</p>
+  $$ \mathbf{C} = \frac{1}{4}\begin{pmatrix} \sum \tilde{x}^2 & \sum \tilde{x}\tilde{y} \\ \sum \tilde{x}\tilde{y} & \sum \tilde{y}^2 \end{pmatrix}
+     = \frac{1}{4}\begin{pmatrix} 40 & 38 \\ 38 & 46 \end{pmatrix}
+     = \begin{pmatrix} 10 & 9.5 \\ 9.5 & 11.5 \end{pmatrix} $$
+  <p>步驟 4：解 $\det(\mathbf{C} - \lambda \mathbf{I}) = 0$：</p>
+  $$ (10-\lambda)(11.5-\lambda) - 9.5^2 = 0 \;\Rightarrow\; \lambda^2 - 21.5\lambda + 24.75 = 0 $$
+  $$ \lambda_1 \approx 20.27,\quad \lambda_2 \approx 1.23 $$
+  <p>步驟 5：找特徵向量（代回 $(\mathbf{C}-\lambda\mathbf{I})\mathbf{v}=0$）：</p>
+  $$ \mathbf{v}_1 \approx \begin{pmatrix} 0.681 \\ 0.733 \end{pmatrix},\quad
+     \mathbf{v}_2 \approx \begin{pmatrix} -0.733 \\ 0.681 \end{pmatrix} $$
+  <p>PC1 解釋 $20.27/(20.27+1.23) \approx 94\%$ 的變異——
+    這 5 個點幾乎排在一條斜線上，符合預期。</p>
+</details>
+
+<!-- =====================================
+     §8 SVD
+     ===================================== -->
+<h2 id="s8"><span class="num">§8</span> 特徵值分解、SVD、它們其實是同一件事</h2>
+
+<p>實際在做 PCA 時，幾乎沒人直接算共變異數矩陣的特徵值——
+  大家用 <b>奇異值分解 SVD</b>。為什麼？</p>
+
+<ul>
+  <li><b>數值更穩定</b>：直接計算 $\mathbf{C}=\tilde{\mathbf{X}}^\top\tilde{\mathbf{X}}/(n-1)$ 會放大舍入誤差。</li>
+  <li><b>節省記憶體</b>：當特徵數 $p \gg n$（基因表現的典型情境），
+    形成 $p\times p$ 的 $\mathbf{C}$ 浪費巨大空間，SVD 不必。</li>
+</ul>
+
+<h3>它們是同一件事</h3>
+
+<p>對中心化資料做 SVD：</p>
+
+$$ \tilde{\mathbf{X}} = \mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^\top $$
+
+<p>代入共變異數定義：</p>
+
+$$ \mathbf{C} = \frac{1}{n-1}\tilde{\mathbf{X}}^\top \tilde{\mathbf{X}}
+= \frac{1}{n-1}\mathbf{V}\boldsymbol{\Sigma}^\top \mathbf{U}^\top \mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^\top
+= \mathbf{V}\,\underbrace{\tfrac{1}{n-1}\boldsymbol{\Sigma}^2}_{\boldsymbol{\Lambda}}\,\mathbf{V}^\top $$
+
+<p>這就是 $\mathbf{C}$ 的<b>特徵值分解</b>。對應關係：</p>
+
+<div class="card" style="background:#fff8e6">
+  <table class="compare">
+    <tr>
+      <th>SVD 觀點</th>
+      <th>特徵值分解觀點</th>
+      <th>PCA 的意義</th>
+    </tr>
+    <tr>
+      <td>$\mathbf{V}$ 的第 $k$ 行</td>
+      <td>$\mathbf{C}$ 的第 $k$ 個特徵向量</td>
+      <td><b>第 $k$ 主成分方向</b>（loading）</td>
+    </tr>
+    <tr>
+      <td>$\sigma_k^2 / (n-1)$</td>
+      <td>$\lambda_k$</td>
+      <td><b>PC$_k$ 上的變異數</b></td>
+    </tr>
+    <tr>
+      <td>$\mathbf{U}\boldsymbol{\Sigma}$ 的第 $k$ 行</td>
+      <td>$\tilde{\mathbf{X}}\mathbf{v}_k$</td>
+      <td><b>第 $k$ 主成分得分 (scores)</b></td>
+    </tr>
+  </table>
+</div>
+
+<pre class="code"><span class="c"># Python: sklearn 內部就是這樣做的</span>
+<span class="k">import</span> numpy <span class="k">as</span> np
+<span class="k">from</span> sklearn.decomposition <span class="k">import</span> PCA
+
+X_centered = X - X.mean(axis=<span class="n">0</span>)
+U, S, Vt = np.linalg.svd(X_centered, full_matrices=<span class="k">False</span>)
+
+components    = Vt          <span class="c"># (k, p) — 每列是一個 PC 方向 (loading)</span>
+scores        = U * S       <span class="c"># (n, k) — 投影後座標</span>
+explained_var = (S**<span class="n">2</span>) / (len(X)-<span class="n">1</span>)</pre>
+
+<!-- =====================================
+     §9 投影與重建
+     ===================================== -->
+<h2 id="s9"><span class="num">§9</span> 投影、降維、與重建誤差</h2>
+
+<p>有了主成分方向 $\mathbf{V}=[\mathbf{v}_1, \mathbf{v}_2, \dots, \mathbf{v}_p]$，
+  要把資料降到 $k$ 維就是<b>取前 $k$ 個主成分</b>做投影：</p>
+
+$$ \mathbf{Y} = \tilde{\mathbf{X}}\mathbf{V}_k \in \mathbb{R}^{n\times k} $$
+
+<p>反過來，把降維後的 $\mathbf{Y}$ 重建回原始 $p$ 維空間：</p>
+
+$$ \hat{\tilde{\mathbf{X}}} = \mathbf{Y}\mathbf{V}_k^\top $$
+
+<p>重建誤差是：</p>
+
+$$ \text{誤差} = \|\tilde{\mathbf{X}} - \hat{\tilde{\mathbf{X}}}\|_F^2 = (n-1)\sum_{j>k} \lambda_j $$
+
+<p>也就是<b>「丟掉的特徵值的總和（乘上 $n-1$）」</b>。
+  這同時是著名的 <b>Eckart–Young 定理</b>的結論：
+  在所有秩為 $k$ 的近似中，<b>前 $k$ 主成分給出的重建誤差最小</b>。
+  PCA 不只是「方便」，而是<b>數學上最佳</b>。</p>
+
+<div class="card">
+  <h3>互動：拉動 k 看重建效果</h3>
+  <p>左邊是原始 8 維資料的折線圖；右邊是用前 $k$ 個 PC 重建後的版本疊在上面（紅色）。
+    拉動 $k$，觀察「保留比例」如何變化、重建版本如何越來越貼近原始。</p>
+  <div class="grid-2">
+    <div>
+      <svg class="canvas" id="svgRecon" width="100%" viewBox="0 0 420 320"></svg>
+      <div class="controls">
+        <label>保留主成分數 $k$：
+          <input type="range" id="kSlider" min="1" max="8" value="2" step="1">
+          <span id="kVal" style="font-family:monospace">2</span>
+        </label>
+        <button id="btnReconGen" class="ghost">換一組資料</button>
+      </div>
+    </div>
+    <div>
+      <h3>scree plot（碎石圖）</h3>
+      <svg id="screePlot" width="100%" viewBox="0 0 380 240" style="background:#fff;border:1px solid var(--border);border-radius:6px"></svg>
+      <p style="font-size:13px; color:var(--muted); margin:8px 0">
+        每根長條 = 該 PC 解釋的變異量比例。<br>
+        藍色虛線是「累積比例」，到 $k$ 為止的累積就是你保留的資訊量。
+      </p>
+      <div class="stat-row" id="reconStats"></div>
+    </div>
+  </div>
+</div>
+
+<!-- =====================================
+     §10 3D 三基因範例 (NEW MAJOR)
+     ===================================== -->
+<h2 id="s10"><span class="num">§10</span> 3D 三基因：自由探索 + 演算法步驟導覽</h2>
+
+<p class="lead">
+  這一節是核心。我們進入一個能完全「具象化」的情境：
+  <b>三個基因 (Gene1, Gene2, Gene3) 的表現量恰好就是 3 個座標軸</b>，
+  讓你可以在 3D 空間裡看見資料、看見主成分、看見投影到 2D 的過程。
+</p>
+
+<div class="callout bio">
+  <strong>情境設定：</strong> 你量了 60 個樣本對 3 個基因的表現量。
+  資料是 60×3 的矩陣 $\mathbf{X}$。
+  其中混雜了 3 種細胞型態 A、B、C，
+  每種細胞「自己強烈表現一個基因」：
+  A 型細胞主要表現 Gene1、B 型細胞主要表現 Gene2、C 型細胞主要表現 Gene3。
+  <br>—— 但你<b>不知道</b>哪個樣本屬於哪一型，
+  你只想知道：資料裡有沒有自然分群？
+  <br>（生物學上，這對應到 T 細胞 / 神經元 / 肝細胞各自的 marker gene 例如 CD3D / MAP2 / ALB。）
+</div>
+
+<div class="mode-tabs">
+  <button id="modeFree" class="active">🧭 自由探索（拖曳、點擊看細節）</button>
+  <button id="modeStep">📚 演算法步驟導覽（7 步動畫）</button>
+</div>
+
+<div class="card" id="freeModeCard">
+  <h3>自由探索模式</h3>
+  <p>用滑鼠<b>拖曳整個 3D 圖</b>旋轉視角，用滑鼠<b>點擊任一資料點</b>來選取它——
+    它會在 3D 與 2D 兩個視圖<b>同步點亮</b>，
+    並在下方顯示它的原始 (Gene1, Gene2, Gene3) 表現量、
+    中心化座標、以及在 PC1 / PC2 / PC3 上的得分。</p>
+  <div class="grid-2">
+    <div class="threed-container">
+      <svg class="canvas" id="svg3D" width="100%" viewBox="0 0 480 480"></svg>
+      <div class="controls" style="font-size:13px">
+        <label><input type="checkbox" id="show3DPC" checked> PC 軸</label>
+        <label><input type="checkbox" id="show3DPlane" checked> PC1-PC2 平面</label>
+        <label><input type="checkbox" id="show3DProj" checked> 投影虛線</label>
+        <button id="btn3DReset" class="ghost">重設視角</button>
+        <button id="btn3DSpin" class="ghost">自動旋轉</button>
+      </div>
+      <div class="legend" id="legend3D"></div>
+    </div>
+    <div>
+      <h3 style="margin-top:6px">2D 投影（PC1 × PC2）</h3>
+      <svg class="canvas" id="svg2DProj" width="100%" viewBox="0 0 400 400"></svg>
+      <p style="font-size:13px; color:var(--muted); margin:8px 0">
+        從 3D「沿著 PC3 方向看下來」的視角。
+        3 種細胞自然分成 3 群——
+        PCA 從未拿到細胞型態標籤，但前兩個主成分就把它們區分開。
+      </p>
+      <h4 style="margin-top:16px">三個主成分解釋的變異量</h4>
+      <div id="scree3D"></div>
+    </div>
+  </div>
+  <div class="detail-panel" id="sample3DDetail" style="margin-top:16px">
+    <h4>點擊 3D 或 2D 任一樣本看完整數學細節 ↑</h4>
+    <p style="margin:0; font-size:13px; color:var(--muted)">
+      選取後會顯示：原始 (Gene1, Gene2, Gene3) → 中心化 → PC1/PC2/PC3 得分的完整算式。
+    </p>
+  </div>
+</div>
+
+<div class="card" id="stepModeCard" style="display:none">
+  <h3>演算法步驟導覽模式</h3>
+  <p>點下方「下一步」按鈕，PCA 演算法會在 3D 圖上<b>一步一步展開</b>。
+    左側 3D 視覺化會即時改變，右側顯示當前步驟的<b>數學算式</b>與<b>解釋</b>。</p>
+  <div class="step-nav">
+    <div class="step-num" id="stepNum">0</div>
+    <div class="step-text">
+      <div class="title" id="stepTitle">尚未開始</div>
+      <div class="desc" id="stepDesc">點「下一步」開始 PCA 演算法之旅</div>
+    </div>
+    <button id="stepPrev" class="ghost">← 上一步</button>
+    <button id="stepNext">下一步 →</button>
+    <button id="stepReset" class="ghost">重新開始</button>
+  </div>
+  <div class="grid-2">
+    <div class="threed-container">
+      <svg class="canvas" id="svgStep" width="100%" viewBox="0 0 480 480"></svg>
+      <div class="legend" id="legendStep"></div>
+    </div>
+    <div>
+      <h4 style="margin-top:0">當前步驟的數學</h4>
+      <div class="math-live" id="stepMath" style="min-height:240px"></div>
+      <div class="detail-panel" id="stepNote" style="margin-top:14px"></div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h3>讀 loadings：每個基因對 PC 的貢獻</h3>
+  <p>主成分是<b>三個基因的線性組合</b>。每個 PC 的組合係數叫 <b>loading</b>：</p>
+  <div id="loadings3D"></div>
+  <p style="font-size:13px; color:var(--muted); margin-top:12px">
+    loading 的絕對值大代表「該基因對這個 PC 影響大」；
+    符號表示「同向 / 反向」。
+    讀 loadings 是解讀 PCA 結果的關鍵：
+    它告訴你「在這個資料裡，每個 PC 的生物學意義是什麼」。
+  </p>
+</div>
+
+<div class="card">
+  <h3>互動：調整資料分離程度</h3>
+  <p>用下面的滑桿調整「三種細胞之間的差異強度」與「測量雜訊」。
+    PCA <b>誠實反映資料</b>——分群明顯時它顯示分群、雜訊大時它就分不出來。</p>
+  <div class="controls">
+    <label>細胞型態間差異強度：
+      <input type="range" id="sep3D" min="20" max="100" value="80" step="1">
+      <span id="sep3DVal" style="font-family:monospace">80%</span>
+    </label>
+    <label>每點的測量雜訊：
+      <input type="range" id="noise3D" min="5" max="60" value="20" step="1">
+      <span id="noise3DVal" style="font-family:monospace">20%</span>
+    </label>
+    <button id="btn3DRegen" class="ghost">重新模擬</button>
+  </div>
+</div>
+
+<!-- =====================================
+     §11 高維基因表現
+     ===================================== -->
+<h2 id="s11"><span class="num">§11</span> 推到高維：Gene1 到 Gene20</h2>
+
+<p class="lead">
+  剛才的 3D 範例幫你建立了直覺——但<b>真實 RNA-seq 資料是幾萬維的</b>。
+  好消息是：PCA 的數學完全一樣，只是「3 個軸」變成「20000 個軸」。
+  你的眼睛沒辦法看 20000 維，但 PCA 會幫你把它壓回 2-3 維。
+</p>
+
+<div class="card">
+  <h3>合成資料：3 種細胞型態 × 20 個基因 (Gene1 ~ Gene20) × 60 個樣本</h3>
+  <p>左圖是<b>原始表現矩陣熱圖</b>（紅高、藍低），每一列是一個樣本、
+    每一欄是一個基因。樣本已按真實標籤排好（僅為視覺化清晰），
+    但 PCA 完全不使用標籤。<br>
+    右圖是 PCA 把每個樣本降到 2D 的散佈圖——
+    每個點是一個樣本，顏色是真實型態。
+    PCA 自然把三群分開。</p>
+  <div class="grid-2">
+    <div>
+      <h3 style="margin-top:6px">表現量熱圖</h3>
+      <svg id="heatmap" width="100%" viewBox="0 0 420 360" style="background:#fff;border:1px solid var(--border);border-radius:6px"></svg>
+      <p style="font-size:12px; color:var(--muted); margin:4px 0">
+        列：60 個樣本（左側色條 = 真實細胞型態）<br>
+        欄：20 個基因
+      </p>
+    </div>
+    <div>
+      <h3 style="margin-top:6px">PCA 2D 投影</h3>
+      <svg id="pcaScatter" width="100%" viewBox="0 0 420 360" style="background:#fff;border:1px solid var(--border);border-radius:6px"></svg>
+      <div class="legend" id="cellLegend"></div>
+      <p style="font-size:12px; color:var(--muted); margin:4px 0">
+        PC 由原始 20 維資料計算，未使用標籤。
+      </p>
+    </div>
+  </div>
+  <div class="controls">
+    <button id="btnGeneNew">重新模擬資料</button>
+    <label>細胞型態間差異強度：
+      <input type="range" id="sepSlider" min="0" max="100" value="60" step="1">
+      <span id="sepVal" style="font-family:monospace">60%</span>
+    </label>
+  </div>
+  <div style="margin-top:18px">
+    <h3>scree plot：要保留幾個主成分？</h3>
+    <svg id="geneScree" width="100%" viewBox="0 0 600 220" style="background:#fff;border:1px solid var(--border);border-radius:6px"></svg>
+    <p style="font-size:13px; color:var(--muted); margin:8px 0">
+      只有前 2-3 個主成分有顯著變異量，剩下幾乎是雜訊。
+      這就是為什麼從 20 維降到 2 維幾乎不損失分群資訊。
+    </p>
+  </div>
+</div>
+
+<div class="callout bio">
+  <strong>實務上你會踩到的坑：</strong>
+  <ul style="margin:8px 0">
+    <li><b>標準化基因</b>：高表現基因（如 ribosomal RNA）天然變異大，
+      若不標準化會主宰 PC1。常做 z-score 或 log 轉換。</li>
+    <li><b>批次效應 (batch effect)</b>：若 PC1 主要區分的是「實驗批次」
+      而非生物差異，PCA 會誠實顯示這件事，這是排查資料品質的常用工具。
+      解法包括 ComBat、Harmony、reciprocal PCA 等。</li>
+    <li><b>loadings 解讀</b>：$\mathbf{v}_1$ 的每個分量代表「該基因對 PC1 的貢獻」。
+      絕對值大的基因，就是<b>驅動樣本差異</b>的關鍵基因——
+      這是做 marker gene discovery 的常用起點。</li>
+    <li><b>降維後再分群</b>：常見流程是
+      「PCA 降到 30-50 維 → KNN graph → Leiden / Louvain 分群」（如 Seurat、Scanpy）。
+      PCA 在這條 pipeline 裡擔任<b>去雜訊</b>的角色。</li>
+  </ul>
+</div>
+
+<!-- =====================================
+     §12 整理
+     ===================================== -->
+<h2 id="s12"><span class="num">§12</span> 把整套故事串起來 + 限制與下一步</h2>
+
+<h3>整套推導的核心邏輯</h3>
+
+<ol class="step-list">
+  <li><b>目標</b>：把高維資料壓到低維時，<b>保留最多的「點與點之間的差異」</b>。</li>
+  <li><b>翻譯成數學</b>：找一個單位向量 $\mathbf{w}$，
+    讓投影後的變異數 $\mathrm{Var}(\tilde{\mathbf{X}}\mathbf{w}) = \mathbf{w}^\top \mathbf{C}\mathbf{w}$ 最大。</li>
+  <li><b>Lagrange 乘子法</b>：條件最佳化的 KKT 條件直接導出 $\mathbf{C}\mathbf{w}=\lambda\mathbf{w}$。</li>
+  <li><b>譯回意義</b>：最佳方向 = $\mathbf{C}$ 的特徵向量；
+    該方向上的變異數 = 對應的特徵值。</li>
+  <li><b>實作</b>：對中心化資料做 SVD，數值穩定且支援高維。</li>
+  <li><b>降維</b>：取前 $k$ 個 PC 做投影；
+    Eckart–Young 定理保證重建誤差最小。</li>
+  <li><b>應用</b>：基因表現分群、影像壓縮、雜訊去除、視覺化。</li>
+</ol>
+
+<h3>PCA 的限制（什麼時候不該用 PCA）</h3>
+
+<div class="card">
+  <table class="compare">
+    <tr><th>限制</th><th>原因</th><th>替代方案</th></tr>
+    <tr>
+      <td><b>只能捕捉「線性」結構</b></td>
+      <td>PCA 找的是線性子空間，遇到螺旋、流形結構就失效</td>
+      <td>t-SNE、UMAP、kernel PCA、autoencoder</td>
+    </tr>
+    <tr>
+      <td><b>對離群值敏感</b></td>
+      <td>變異數是平方誤差，極端值會被嚴重放大</td>
+      <td>robust PCA、log 轉換、先除離群值</td>
+    </tr>
+    <tr>
+      <td><b>主成分缺乏可解釋性</b></td>
+      <td>PC 是所有原始特徵的線性組合，不容易翻譯成「人話」</td>
+      <td>sparse PCA、NMF、factor analysis</td>
+    </tr>
+    <tr>
+      <td><b>無法處理類別變數</b></td>
+      <td>共變異數矩陣只對連續變數有意義</td>
+      <td>MCA（對應分析）、autoencoder embedding</td>
+    </tr>
+    <tr>
+      <td><b>不一定保留分群</b></td>
+      <td>PCA 最大化變異，不是最大化分群可分性</td>
+      <td>LDA（已知標籤）、UMAP（保留局部結構）</td>
+    </tr>
+  </table>
+</div>
+
+<h3>下一步建議</h3>
+
+<ul>
+  <li>用 <code class="inline">sklearn.decomposition.PCA</code> 對自己的真實資料跑一次，
+    把 scree plot 畫出來決定 $k$。</li>
+  <li>如果是 RNA-seq 資料，先看 <b>Scanpy</b> 或 <b>Seurat</b> 的 PCA 教學，
+    它們有「先選 high-variance genes」、「先 log-normalize」等慣例。</li>
+  <li>學會看 <b>PCA biplot</b>：把樣本與基因 loading 畫在同一張圖，
+    能同時看「樣本怎麼分群」與「哪些基因驅動了分群」。</li>
+  <li>若資料是非線性結構，下一站學 <b>UMAP</b>；
+    若要嚴格統計推論，學 <b>probabilistic PCA</b> 與 <b>factor analysis</b>。</li>
+</ul>
+
+<p class="footer">
+  互動式教材（增訂版）· 拖動 · 旋轉 · 觀察 · 體會
+</p>
+
+</div>
+
+<script>
+/* ===================================================
+   小型線性代數工具
+   =================================================== */
+function transpose(A) {
+  const m = A.length, n = A[0].length;
+  const T = Array.from({length:n}, ()=>new Array(m));
+  for (let i=0;i<m;i++) for (let j=0;j<n;j++) T[j][i] = A[i][j];
+  return T;
+}
+function matmul(A, B) {
+  const m=A.length, p=B[0].length, k=B.length;
+  const C = Array.from({length:m}, ()=>new Array(p).fill(0));
+  for (let i=0;i<m;i++) for (let j=0;j<p;j++) {
+    let s=0; for (let l=0;l<k;l++) s += A[i][l]*B[l][j];
+    C[i][j] = s;
+  }
+  return C;
+}
+function colMean(X) {
+  const n=X.length, p=X[0].length;
+  const m=new Array(p).fill(0);
+  for (let i=0;i<n;i++) for (let j=0;j<p;j++) m[j]+=X[i][j];
+  return m.map(v=>v/n);
+}
+function centerCols(X) {
+  const m = colMean(X);
+  return X.map(row => row.map((v,j)=>v-m[j]));
+}
+function covariance(Xc) {
+  const n = Xc.length;
+  const Xt = transpose(Xc);
+  const C = matmul(Xt, Xc);
+  return C.map(row=>row.map(v=>v/(n-1)));
+}
+function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
+  const n = Asrc.length;
+  const A = Asrc.map(r=>r.slice());
+  const V = Array.from({length:n}, (_,i)=>{
+    const r = new Array(n).fill(0); r[i]=1; return r;
+  });
+  for (let it=0; it<maxIter; it++) {
+    let p=0, q=1, mx=0;
+    for (let i=0;i<n;i++) for (let j=i+1;j<n;j++) {
+      if (Math.abs(A[i][j])>mx) { mx=Math.abs(A[i][j]); p=i; q=j; }
+    }
+    if (mx < tol) break;
+    const app=A[p][p], aqq=A[q][q], apq=A[p][q];
+    const theta = (aqq - app) / (2*apq);
+    let t;
+    if (Math.abs(theta) > 1e15) t = 1/(2*theta);
+    else {
+      const sgn = theta>=0?1:-1;
+      t = sgn / (Math.abs(theta) + Math.sqrt(1+theta*theta));
+    }
+    const c = 1/Math.sqrt(1+t*t), s = t*c;
+    A[p][p] = app - t*apq;
+    A[q][q] = aqq + t*apq;
+    A[p][q] = 0; A[q][p] = 0;
+    for (let i=0;i<n;i++) if (i!==p && i!==q) {
+      const aip=A[i][p], aiq=A[i][q];
+      A[i][p] = c*aip - s*aiq; A[p][i] = A[i][p];
+      A[i][q] = s*aip + c*aiq; A[q][i] = A[i][q];
+    }
+    for (let i=0;i<n;i++) {
+      const vip=V[i][p], viq=V[i][q];
+      V[i][p] = c*vip - s*viq;
+      V[i][q] = s*vip + c*viq;
+    }
+  }
+  const eigvals = A.map((r,i)=>r[i]);
+  const order = eigvals.map((_,i)=>i).sort((a,b)=>eigvals[b]-eigvals[a]);
+  const sortedVals = order.map(i=>eigvals[i]);
+  const sortedVecs = order.map(i => V.map(row=>row[i]));
+  return { eigenvalues: sortedVals, eigenvectors: sortedVecs };
+}
+
+/* ===================================================
+   §0 故事開始（深入淺出開場）
+   =================================================== */
+(function section0() {
+  // ----- 0-1 原始資料表 -----
+  // 用固定種子的偽資料來確保表格穩定
+  function srand(seed) { let s = seed; return ()=>{ s = (s*9301+49297)%233280; return s/233280; }; }
+  const rng = srand(42);
+  const cellNames = ['A 型', 'B 型', 'C 型'];
+  const cellCols = ['#c0392b', '#27795a', '#2c5aa0'];
+  // 生 60 樣本，3 群
+  const centers = [[2.5,0.5,0.5],[0.5,2.5,0.5],[0.5,0.5,2.5]];
+  const labels = [], rawData = [];
+  for (let g=0; g<3; g++) for (let i=0; i<20; i++) {
+    rawData.push([
+      centers[g][0] + (rng()-0.5)*0.6,
+      centers[g][1] + (rng()-0.5)*0.6,
+      centers[g][2] + (rng()-0.5)*0.6
+    ]);
+    labels.push(g);
+  }
+
+  const rawTable = document.getElementById('s0RawTable');
+  let shownIndices = [];
+  function pickShownIndices() {
+    const indicesByGroup = [[], [], []];
+    for (let i=0; i<labels.length; i++) indicesByGroup[labels[i]].push(i);
+    const picks = [];
+    for (let g=0; g<3; g++) {
+      const pool = indicesByGroup[g].slice().sort(()=>rng()-0.5);
+      const take = g === 2 ? 4 : 3;
+      for (let k=0; k<take && k<pool.length; k++) picks.push(pool[k]);
+    }
+    picks.sort(()=>rng()-0.5);
+    shownIndices = picks;
+  }
+  function renderTable() {
+    let h = '<thead><tr><th>樣本 ID</th><th>Gene1</th><th>Gene2</th><th>Gene3</th><th>細胞型態？</th></tr></thead><tbody>';
+    for (let k=0; k<shownIndices.length; k++) {
+      const i = shownIndices[k];
+      h += `<tr><td>#${(i+1).toString().padStart(2,'0')}</td><td>${rawData[i][0].toFixed(3)}</td><td>${rawData[i][1].toFixed(3)}</td><td>${rawData[i][2].toFixed(3)}</td><td style="color:#888">?</td></tr>`;
+    }
+    h += `<tr><td colspan="5" style="color:#888;text-align:center">⋮（共 60 筆，這只是隨機抽的 10 筆）⋮</td></tr></tbody>`;
+    rawTable.innerHTML = h;
+  }
+  pickShownIndices();
+  renderTable();
+
+  // ----- 0-1 散佈圖（按按鈕後顯示）-----
+  const scatterSvg = document.getElementById('s0Scatter');
+  const vizNote = document.getElementById('s0VizNote');
+  let vizDone = false;
+  function drawPlaceholder() {
+    const W=380, H=380, pad=44;
+    let h = '';
+    h += `<line x1="${pad}" y1="${H-pad}" x2="${W-10}" y2="${H-pad}" stroke="#ccc"/>`;
+    h += `<line x1="${pad}" y1="20" x2="${pad}" y2="${H-pad}" stroke="#ccc"/>`;
+    h += `<text x="${W/2}" y="${H-12}" text-anchor="middle" font-size="13" fill="#aaa">Gene1 表現量</text>`;
+    h += `<text x="14" y="${H/2}" font-size="13" fill="#aaa" transform="rotate(-90 14 ${H/2})" text-anchor="middle">Gene2 表現量</text>`;
+    h += `<text x="${W/2}" y="${H/2 - 8}" text-anchor="middle" font-size="14" fill="#bbb">⌛ 散佈圖會在按按鈕後出現</text>`;
+    h += `<text x="${W/2}" y="${H/2 + 14}" text-anchor="middle" font-size="12" fill="#bbb">先試著從左邊的表格找規律看看…</text>`;
+    scatterSvg.innerHTML = h;
+  }
+  function draw2DScatter() {
+    const W=380, H=380, pad=44;
+    const xs = rawData.map(r=>r[0]), ys = rawData.map(r=>r[1]);
+    const xmin = Math.min(...xs)-0.3, xmax = Math.max(...xs)+0.3;
+    const ymin = Math.min(...ys)-0.3, ymax = Math.max(...ys)+0.3;
+    function sx(v) { return pad + (v-xmin)/(xmax-xmin)*(W-pad-15); }
+    function sy(v) { return H-pad - (v-ymin)/(ymax-ymin)*(H-pad-25); }
+    let h = '';
+    h += `<line x1="${pad}" y1="${H-pad}" x2="${W-10}" y2="${H-pad}" stroke="#999"/>`;
+    h += `<line x1="${pad}" y1="20" x2="${pad}" y2="${H-pad}" stroke="#999"/>`;
+    h += `<text x="${W/2}" y="${H-12}" text-anchor="middle" font-size="13" fill="#666">Gene1 表現量</text>`;
+    h += `<text x="14" y="${H/2}" font-size="13" fill="#666" transform="rotate(-90 14 ${H/2})" text-anchor="middle">Gene2 表現量</text>`;
+    for (let i=0; i<rawData.length; i++) {
+      const isShown = shownIndices.includes(i);
+      h += `<circle cx="${sx(rawData[i][0])}" cy="${sy(rawData[i][1])}" r="${isShown?7:5}" fill="${isShown?cellCols[labels[i]]:'#bbb'}" stroke="${isShown?'#222':'#fff'}" stroke-width="${isShown?2:1}" opacity="${isShown?1:0.55}"/>`;
+    }
+    scatterSvg.innerHTML = h;
+  }
+  document.getElementById('s0VizBtn').onclick = () => {
+    if (vizDone) return;
+    draw2DScatter();
+    vizDone = true;
+    vizNote.innerHTML = '🎯 <b>看見了嗎？</b>同一份 60 筆資料，畫成 (Gene1, Gene2) 散佈圖後，<b>三群點馬上跳出來</b>。' +
+      '<br>表格中你看的那 10 列（外圍黑邊的點）<b>剛好散在三群裡</b>——你之前看不出規律，是因為眼睛不擅長看純數字表格。' +
+      '<br>剩下 50 個點顯示為灰色，因為圖只用了 Gene1, Gene2 兩個維度，還沒做任何 PCA。';
+  };
+  document.getElementById('s0ResetBtn').onclick = () => {
+    pickShownIndices();
+    renderTable();
+    if (vizDone) draw2DScatter();
+  };
+  drawPlaceholder();
+
+  // ----- 0-2 1D 分散感受 -----
+  const spreadSvg = document.getElementById('s0Spread');
+  let spreadPts = [2, 4, 4, 5, 7];
+  function drawSpread() {
+    const W=400, H=160;
+    const xmin = -1, xmax = 11;
+    function sx(v) { return 30 + (v-xmin)/(xmax-xmin)*(W-50); }
+    let h = '';
+    h += `<line x1="30" y1="100" x2="${W-15}" y2="100" stroke="#999"/>`;
+    for (let v=0; v<=10; v+=1) {
+      h += `<line x1="${sx(v)}" y1="100" x2="${sx(v)}" y2="105" stroke="#999"/>`;
+      h += `<text x="${sx(v)}" y="120" text-anchor="middle" font-size="11" fill="#666">${v}</text>`;
+    }
+    // 均值
+    const mean = spreadPts.reduce((a,b)=>a+b,0)/spreadPts.length;
+    h += `<line x1="${sx(mean)}" y1="60" x2="${sx(mean)}" y2="100" stroke="#8e44ad" stroke-width="2" stroke-dasharray="3 2"/>`;
+    h += `<text x="${sx(mean)}" y="50" text-anchor="middle" font-size="11" fill="#8e44ad">均值=${mean.toFixed(2)}</text>`;
+    spreadPts.forEach((v, i) => {
+      const cx = sx(v);
+      h += `<circle class="spt" cx="${cx}" cy="100" r="9" fill="#2c5aa0" stroke="#fff" stroke-width="2" data-idx="${i}" style="cursor:grab"/>`;
+    });
+    // 變異數
+    const variance = spreadPts.reduce((s,v)=>s+(v-mean)**2,0)/(spreadPts.length-1);
+    h += `<text x="${W/2}" y="20" text-anchor="middle" font-size="13" fill="#c0392b" font-weight="700">變異數 = ${variance.toFixed(3)}</text>`;
+    h += `<text x="${W/2}" y="38" text-anchor="middle" font-size="11" fill="#666">（你還不需要懂這個數字怎麼來的，只要感覺它隨著點變分散會變大）</text>`;
+    spreadSvg.innerHTML = h;
+  }
+  let dragS = null;
+  spreadSvg.addEventListener('mousedown', e=>{
+    if (e.target.classList.contains('spt')) dragS = +e.target.dataset.idx;
+  });
+  window.addEventListener('mousemove', e=>{
+    if (dragS===null) return;
+    const rect = spreadSvg.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * (400/rect.width);
+    const v = -1 + (x-30)/(400-50) * 12;
+    spreadPts[dragS] = Math.max(0, Math.min(10, v));
+    drawSpread();
+  });
+  window.addEventListener('mouseup', ()=>dragS=null);
+  document.getElementById('s0SpreadBunch').onclick = () => { spreadPts = [4.4, 4.7, 5.0, 5.3, 5.6]; drawSpread(); };
+  document.getElementById('s0SpreadSpread').onclick = () => { spreadPts = [0.5, 2.5, 5.0, 7.5, 9.5]; drawSpread(); };
+  drawSpread();
+
+  // ----- 0-3 變異數公式四選一 -----
+  const formulaData = [2, 4, 4, 4, 5, 5, 7, 9]; // 經典 mean=5 var=4
+  const formulaCards = [
+    {
+      name: '方案 A',
+      title: '範圍 (max − min)',
+      formula: '\\(\\max(x_i) - \\min(x_i)\\)',
+      compute: () => {
+        const mn = Math.min(...formulaData), mx = Math.max(...formulaData);
+        return { value: mx - mn, steps: [`max = ${mx}`, `min = ${mn}`, `結果 = ${mx} − ${mn} = ${mx-mn}`] };
+      },
+      verdict: '只用到 2 個點',
+      problem: '極端值決定一切，<b>中間的 6 個點完全沒參與計算</b>。如果加一個離群值就完全失準。',
+      bad: true
+    },
+    {
+      name: '方案 B',
+      title: '偏差總和 \\(\\sum (x_i - \\bar{x})\\)',
+      formula: '\\(\\sum_i (x_i - \\bar{x})\\)',
+      compute: () => {
+        const m = formulaData.reduce((a,b)=>a+b,0)/formulaData.length;
+        const devs = formulaData.map(v=>v-m);
+        const sum = devs.reduce((a,b)=>a+b,0);
+        return { value: sum, steps: [`均值 = ${m}`, `偏差 = [${devs.map(d=>d.toFixed(1)).join(', ')}]`, `總和 = ${sum.toFixed(6)}`] };
+      },
+      verdict: '永遠等於 0',
+      problem: '正負偏差<b>會互相抵消</b>。任何資料的偏差總和都是 0（這是「均值」的定義）。所以這個公式根本沒用。',
+      bad: true
+    },
+    {
+      name: '方案 C',
+      title: '絕對偏差總和 \\(\\sum |x_i - \\bar{x}|\\)',
+      formula: '\\(\\frac{1}{n}\\sum_i |x_i - \\bar{x}|\\)',
+      compute: () => {
+        const m = formulaData.reduce((a,b)=>a+b,0)/formulaData.length;
+        const devs = formulaData.map(v=>Math.abs(v-m));
+        const sum = devs.reduce((a,b)=>a+b,0);
+        return { value: sum/formulaData.length, steps: [`均值 = ${m}`, `|偏差| = [${devs.map(d=>d.toFixed(1)).join(', ')}]`, `總和 = ${sum.toFixed(2)}`, `÷ n = ${(sum/formulaData.length).toFixed(3)}`] };
+      },
+      verdict: '不抵消、但不平滑',
+      problem: '解決了抵消問題，但 |x| 在 x=0 處<b>不可微分</b>，後續推導 PCA 時要用最佳化方法（如 Lagrange）會非常麻煩。',
+      bad: false,
+      ok: true
+    },
+    {
+      name: '方案 D',
+      title: '平方偏差 \\(\\sum (x_i - \\bar{x})^2\\)',
+      formula: '\\(\\frac{1}{n-1}\\sum_i (x_i - \\bar{x})^2\\)',
+      compute: () => {
+        const m = formulaData.reduce((a,b)=>a+b,0)/formulaData.length;
+        const devs = formulaData.map(v=>(v-m)*(v-m));
+        const sum = devs.reduce((a,b)=>a+b,0);
+        return { value: sum/(formulaData.length-1), steps: [`均值 = ${m}`, `偏差² = [${devs.map(d=>d.toFixed(2)).join(', ')}]`, `總和 = ${sum.toFixed(2)}`, `÷ (n-1) = ${(sum/(formulaData.length-1)).toFixed(3)}`] };
+      },
+      verdict: '✓ 這就是變異數',
+      problem: '<b>1)</b> 平方一定非負，不會抵消。<b>2)</b> 平方函數處處可微，數學工具豐富。<b>3)</b> 對應到「歐式距離平方」的幾何意義，是 PCA、回歸、最小平方法的共同基礎。',
+      bad: false,
+      best: true
+    }
+  ];
+
+  const cardsEl = document.getElementById('s0FormulaCards');
+  const detailEl = document.getElementById('s0FormulaDetail');
+  let selFormula = -1;
+  function renderCards() {
+    cardsEl.innerHTML = formulaCards.map((c, i) => `
+      <div style="background:${selFormula===i?(c.best?'#effaf3':(c.bad?'#fdecec':'#fff8e6')):'#fff'};
+                  border:2px solid ${selFormula===i?(c.best?'#27795a':(c.bad?'#c0392b':'#f0c419')):'#ddd'};
+                  border-radius:10px; padding:14px; cursor:pointer;
+                  text-align:center" data-card="${i}">
+        <div style="font-size:12px; color:#888; font-weight:600">${c.name}</div>
+        <div style="font-size:14px; margin:8px 0; font-weight:600">${c.title}</div>
+        <div style="font-size:11px; color:${c.best?'#27795a':(c.bad?'#c0392b':'#999')}; font-weight:700">${selFormula===i?(c.best?'✓ 最佳':(c.bad?'✗ 有問題':'△ 有優點但...')):'點擊試試 →'}</div>
+      </div>`).join('');
+    cardsEl.querySelectorAll('[data-card]').forEach(el=>{
+      el.addEventListener('click', e => {
+        selFormula = +e.currentTarget.dataset.card;
+        renderCards();
+        renderDetail();
+        if (window.MathJax && window.MathJax.typesetPromise) window.MathJax.typesetPromise([detailEl, cardsEl]);
+      });
+    });
+  }
+  function renderDetail() {
+    if (selFormula < 0) {
+      detailEl.innerHTML = `<h4>請點上方任一卡片開始探索</h4>
+        <p style="font-size:13px; color:var(--muted); margin:8px 0">
+          資料：8 個樣本 = [${formulaData.join(', ')}]<br>
+          你的任務：點四個卡片試試看，看哪個公式最適合當「分散度」的量度。
+        </p>`;
+      return;
+    }
+    const c = formulaCards[selFormula];
+    const res = c.compute();
+    detailEl.innerHTML = `
+      <h4>${c.name}：${c.title}</h4>
+      <div style="font-family:monospace; font-size:14px; background:#fff; padding:10px; border-radius:6px; margin:8px 0">
+        ${res.steps.map(s=>`<div>${s}</div>`).join('')}
+        <div style="border-top:2px solid #c0392b; margin-top:6px; padding-top:6px; font-weight:700; color:#c0392b">
+          答案 = ${typeof res.value === 'number' ? res.value.toFixed(3) : res.value}
+        </div>
+      </div>
+      <p style="margin:8px 0; font-size:13px"><b>判決：${c.verdict}</b></p>
+      <p style="margin:8px 0; font-size:13px">${c.problem}</p>
+      ${c.best ? '<p style="font-size:13px; color:#27795a; font-weight:600">✓ 這就是「變異數」。從此你可以放心使用這個公式來量分散度。</p>' : ''}`;
+  }
+  renderCards();
+  renderDetail();
+
+  // ----- 0-4 方向投影 -----
+  const projSvg = document.getElementById('s0Proj');
+  const projThetaR = document.getElementById('s0ProjTheta');
+  const projThetaVal = document.getElementById('s0ProjThetaVal');
+  const projStats = document.getElementById('s0ProjStats');
+  // 30 個有結構的資料點
+  const projData = [];
+  for (let i=0;i<30;i++) {
+    const t = (rng()-0.5)*7;
+    const ang = 0.6;
+    const cs = Math.cos(ang), sn = Math.sin(ang);
+    const u = t, v = (rng()-0.5)*1.4;
+    projData.push([cs*u - sn*v, sn*u + cs*v]);
+  }
+  const mean2d = [projData.reduce((s,p)=>s+p[0],0)/projData.length, projData.reduce((s,p)=>s+p[1],0)/projData.length];
+
+  function varAtAngle(th) {
+    const w = [Math.cos(th), Math.sin(th)];
+    let s=0;
+    for (const p of projData) {
+      const r = (p[0]-mean2d[0])*w[0] + (p[1]-mean2d[1])*w[1];
+      s += r*r;
+    }
+    return s/(projData.length-1);
+  }
+  function bestAngle() {
+    let best=0, bv=-1;
+    for (let d=0;d<=180;d++) {
+      const v = varAtAngle(d*Math.PI/180);
+      if (v>bv) { bv=v; best=d; }
+    }
+    return best;
+  }
+
+  function drawProj() {
+    const W=420, H=420, cx=210, cy=210, scale=30;
+    const th = (+projThetaR.value) * Math.PI/180;
+    const cs = Math.cos(th), sn = Math.sin(th);
+    let h = '';
+    for (let x=-7;x<=7;x++) h += `<line stroke="#eee" stroke-width="0.5" x1="${cx+x*scale}" y1="0" x2="${cx+x*scale}" y2="${H}"/>`;
+    for (let y=-7;y<=7;y++) h += `<line stroke="#eee" stroke-width="0.5" x1="0" y1="${cy+y*scale}" x2="${W}" y2="${cy+y*scale}"/>`;
+    h += `<line x1="0" y1="${cy}" x2="${W}" y2="${cy}" stroke="#bbb"/>`;
+    h += `<line x1="${cx}" y1="0" x2="${cx}" y2="${H}" stroke="#bbb"/>`;
+    h += `<text x="390" y="${cy+16}" font-size="12" fill="#444" font-weight="600">Gene1 →</text>`;
+    h += `<text x="${cx+5}" y="14" font-size="12" fill="#444" font-weight="600">↑ Gene2</text>`;
+    // 投影方向線
+    const [mxS, myS] = [cx + mean2d[0]*scale, cy - mean2d[1]*scale];
+    h += `<line x1="${mxS - cs*200}" y1="${myS + sn*200}" x2="${mxS + cs*220}" y2="${myS - sn*220}" stroke="#27795a" stroke-width="3" marker-end="url(#arrowG)"/>`;
+    h += `<text x="${mxS + cs*240}" y="${myS - sn*240}" font-size="13" fill="#27795a" font-weight="700">投影方向</text>`;
+    // 點與投影
+    for (const p of projData) {
+      const sx = cx + p[0]*scale, sy = cy - p[1]*scale;
+      const proj = (p[0]-mean2d[0])*cs + (p[1]-mean2d[1])*sn;
+      const px = cx + (mean2d[0] + proj*cs)*scale;
+      const py = cy - (mean2d[1] + proj*sn)*scale;
+      h += `<line x1="${sx}" y1="${sy}" x2="${px}" y2="${py}" stroke="#aaa" stroke-dasharray="2 2" stroke-width="1"/>`;
+      h += `<circle cx="${sx}" cy="${sy}" r="4" fill="#2c5aa0"/>`;
+      h += `<circle cx="${px}" cy="${py}" r="3.5" fill="#27795a"/>`;
+    }
+    // 均值十字
+    h += `<line x1="${mxS-7}" y1="${myS}" x2="${mxS+7}" y2="${myS}" stroke="#8e44ad" stroke-width="2"/>`;
+    h += `<line x1="${mxS}" y1="${myS-7}" x2="${mxS}" y2="${myS+7}" stroke="#8e44ad" stroke-width="2"/>`;
+    projSvg.innerHTML = h;
+    projThetaVal.textContent = projThetaR.value + '°';
+    const v = varAtAngle(th);
+    const best = bestAngle();
+    const bestV = varAtAngle(best*Math.PI/180);
+    const ratio = v/bestV*100;
+    projStats.innerHTML = `<h4>當前方向的「投影後變異數」</h4>
+      <div class="kv"><span class="k">角度 θ：</span><span class="v">${projThetaR.value}°</span></div>
+      <div class="kv"><span class="k">投影後變異數：</span><span class="v" style="color:#27795a">${v.toFixed(3)}</span></div>
+      <div class="kv"><span class="k">理論最大值：</span><span class="v">${bestV.toFixed(3)} (在 ${best}°)</span></div>
+      <div class="kv"><span class="k">你目前找到：</span><span class="v" style="color:${ratio>95?'#27795a':(ratio>70?'#f0c419':'#c0392b')}">${ratio.toFixed(1)}%</span></div>
+      <p style="margin:10px 0 0; font-size:13px">
+        ${ratio>95?'🎯 太棒了！你已經找到（近似）最佳方向，這個方向就是 <b>PC1</b>。':
+          ratio>70?'再左右調一下滑桿，看是否能讓變異數更大。':
+          '繼續調滑桿，看哪個角度能讓變異數最大。'}
+      </p>`;
+  }
+  projThetaR.oninput = drawProj;
+  document.getElementById('s0ProjBest').onclick = () => {
+    const target = bestAngle();
+    let cur = +projThetaR.value;
+    const step = target > cur ? 1 : -1;
+    const animate = () => {
+      cur += step;
+      projThetaR.value = cur;
+      drawProj();
+      if (cur !== target) requestAnimationFrame(animate);
+    };
+    animate();
+  };
+  drawProj();
+
+  // ----- 0-5 猜 PC1 遊戲 -----
+  const guessSvg = document.getElementById('s0Guess');
+  const guessFeedback = document.getElementById('s0GuessFeedback');
+  let guessData = [];
+  let guessClicks = []; // 0~2 個點
+  let guessRevealed = false;
+
+  function genGuessData() {
+    guessData = [];
+    const ang = (rng()*0.8 + 0.2); // 隨機方向
+    const cs = Math.cos(ang), sn = Math.sin(ang);
+    for (let i=0;i<25;i++) {
+      const u = (rng()-0.5)*7, v = (rng()-0.5)*1.5;
+      guessData.push([cs*u - sn*v, sn*u + cs*v]);
+    }
+  }
+  genGuessData();
+
+  function pcaOfGuess() {
+    const m = [guessData.reduce((s,p)=>s+p[0],0)/guessData.length, guessData.reduce((s,p)=>s+p[1],0)/guessData.length];
+    let sxx=0, syy=0, sxy=0;
+    for (const p of guessData) {
+      sxx += (p[0]-m[0])**2; syy += (p[1]-m[1])**2; sxy += (p[0]-m[0])*(p[1]-m[1]);
+    }
+    sxx /= guessData.length-1; syy /= guessData.length-1; sxy /= guessData.length-1;
+    const tr = sxx + syy, det = sxx*syy - sxy*sxy;
+    const disc = Math.sqrt(Math.max(0, tr*tr/4 - det));
+    const l1 = tr/2 + disc;
+    let v1;
+    if (Math.abs(sxy) > 1e-10) v1 = [sxy, l1 - sxx];
+    else v1 = sxx >= syy ? [1,0] : [0,1];
+    const n1 = Math.hypot(v1[0], v1[1]) || 1;
+    v1 = [v1[0]/n1, v1[1]/n1];
+    return { mean: m, pc1: v1, l1 };
+  }
+
+  function drawGuess() {
+    const W=420, H=420, cx=210, cy=210, scale=30;
+    let h = '';
+    for (let x=-7;x<=7;x++) h += `<line stroke="#eee" stroke-width="0.5" x1="${cx+x*scale}" y1="0" x2="${cx+x*scale}" y2="${H}"/>`;
+    for (let y=-7;y<=7;y++) h += `<line stroke="#eee" stroke-width="0.5" x1="0" y1="${cy+y*scale}" x2="${W}" y2="${cy+y*scale}"/>`;
+    h += `<line x1="0" y1="${cy}" x2="${W}" y2="${cy}" stroke="#bbb"/>`;
+    h += `<line x1="${cx}" y1="0" x2="${cx}" y2="${H}" stroke="#bbb"/>`;
+    h += `<text x="390" y="${cy+16}" font-size="12" fill="#444" font-weight="600">Gene1 →</text>`;
+    h += `<text x="${cx+5}" y="14" font-size="12" fill="#444" font-weight="600">↑ Gene2</text>`;
+    for (const p of guessData) {
+      const sx = cx + p[0]*scale, sy = cy - p[1]*scale;
+      h += `<circle cx="${sx}" cy="${sy}" r="4.5" fill="#2c5aa0" opacity="0.8"/>`;
+    }
+    // 玩家畫的線
+    if (guessClicks.length >= 1) {
+      const p0 = guessClicks[0];
+      h += `<circle cx="${p0.x}" cy="${p0.y}" r="6" fill="#f0c419" stroke="#c0392b" stroke-width="2"/>`;
+    }
+    if (guessClicks.length === 2) {
+      const p0 = guessClicks[0], p1 = guessClicks[1];
+      // 延伸線
+      const dx = p1.x-p0.x, dy = p1.y-p0.y;
+      const len = Math.hypot(dx,dy) || 1;
+      const ux = dx/len, uy = dy/len;
+      h += `<line x1="${p0.x - ux*300}" y1="${p0.y - uy*300}" x2="${p1.x + ux*300}" y2="${p1.y + uy*300}" stroke="#f0c419" stroke-width="3" stroke-dasharray="6 3"/>`;
+      h += `<circle cx="${p1.x}" cy="${p1.y}" r="6" fill="#f0c419" stroke="#c0392b" stroke-width="2"/>`;
+      h += `<text x="${p1.x+8}" y="${p1.y-8}" font-size="12" fill="#c0392b" font-weight="700">你的猜測</text>`;
+    }
+    // 揭曉答案
+    if (guessRevealed) {
+      const { mean, pc1, l1 } = pcaOfGuess();
+      const [mxS, myS] = [cx + mean[0]*scale, cy - mean[1]*scale];
+      const len = Math.sqrt(Math.max(l1,0)) * scale * 2.5;
+      h += `<line x1="${mxS - pc1[0]*len}" y1="${myS + pc1[1]*len}" x2="${mxS + pc1[0]*len}" y2="${myS - pc1[1]*len}" stroke="#c0392b" stroke-width="3"/>`;
+      h += `<text x="${mxS + pc1[0]*len + 6}" y="${myS - pc1[1]*len}" font-size="13" fill="#c0392b" font-weight="700">真正的 PC1</text>`;
+    }
+    h += `<text x="10" y="18" font-size="12" fill="#666">${guessClicks.length===0?'點散佈圖第一下開始畫':(guessClicks.length===1?'再點第二下，畫成一條線':'按「揭曉答案」評分')}</text>`;
+    guessSvg.innerHTML = h;
+  }
+
+  guessSvg.addEventListener('click', e => {
+    if (guessRevealed) return;
+    if (guessClicks.length >= 2) return;
+    const rect = guessSvg.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * (420/rect.width);
+    const y = (e.clientY - rect.top) * (420/rect.height);
+    guessClicks.push({ x, y });
+    drawGuess();
+    if (guessClicks.length === 2) {
+      guessFeedback.innerHTML = `<h4>你已經畫好線了</h4>
+        <p style="font-size:13px">點下方「揭曉答案」看你的猜測有多接近真正的 PC1。</p>`;
+    }
+  });
+
+  document.getElementById('s0GuessReveal').onclick = () => {
+    if (guessClicks.length < 2) {
+      guessFeedback.innerHTML = `<h4 style="color:#c0392b">先在散佈圖上點兩下！</h4>`;
+      return;
+    }
+    guessRevealed = true;
+    drawGuess();
+    // 計算相似度（用 cosine of angle between guess direction and PC1）
+    const p0 = guessClicks[0], p1 = guessClicks[1];
+    // 轉成資料座標方向
+    const gx = (p1.x - p0.x) / 30;
+    const gy = -(p1.y - p0.y) / 30;
+    const gn = Math.hypot(gx, gy) || 1;
+    const gNorm = [gx/gn, gy/gn];
+    const { pc1 } = pcaOfGuess();
+    const cosSim = Math.abs(gNorm[0]*pc1[0] + gNorm[1]*pc1[1]);
+    const angleDeg = Math.acos(Math.min(1, cosSim)) * 180/Math.PI;
+    let medal = '', comment = '';
+    if (cosSim > 0.99) { medal = '🏆 完美'; comment = '幾乎完全對齊！你已經能<b>用肉眼找出 PC1</b> 了。'; }
+    else if (cosSim > 0.95) { medal = '🥇 非常接近'; comment = '誤差不到 18°，眼力很好！'; }
+    else if (cosSim > 0.85) { medal = '🥈 還不錯'; comment = '方向對了，但有點偏。試試「拉長軸方向」更準確。'; }
+    else { medal = '🥉 還可以更好'; comment = '方向偏掉了——PC1 應該沿著「資料雲最拉長」的方向。再試一次！'; }
+    guessFeedback.innerHTML = `<h4>${medal}</h4>
+      <div class="kv"><span class="k">你的方向 vs PC1 的夾角：</span><span class="v">${angleDeg.toFixed(1)}°</span></div>
+      <div class="kv"><span class="k">餘弦相似度 |cos θ|：</span><span class="v" style="color:#c0392b">${cosSim.toFixed(3)}</span></div>
+      <p style="margin:10px 0; font-size:13px">${comment}</p>
+      <p style="margin:10px 0; font-size:12px; color:var(--muted)">
+        💡 <b>觀察重點</b>：真正的 PC1 永遠穿過「資料雲的中心」（紫色十字），方向是讓投影後變異最大的那個。
+        <br>當資料分布像橢圓形，PC1 就是橢圓的<b>長軸</b>。
+      </p>`;
+  };
+  document.getElementById('s0GuessReset').onclick = () => {
+    guessClicks = []; guessRevealed = false; drawGuess();
+    guessFeedback.innerHTML = `<h4>怎麼玩</h4>
+      <p style="font-size:13px; margin:6px 0">在散佈圖上點兩下定義一條線，然後按「揭曉答案」評分。</p>`;
+  };
+  document.getElementById('s0GuessNew').onclick = () => {
+    genGuessData(); guessClicks = []; guessRevealed = false; drawGuess();
+    guessFeedback.innerHTML = `<h4>新的資料，再試一次！</h4><p style="font-size:13px">點兩下畫線。</p>`;
+  };
+  drawGuess();
+})();
+
+/* ===================================================
+   §1 可拖曳 2D 點雲
+   =================================================== */
+(function section1() {
+  const svg = document.getElementById('svgPC');
+  const W = 440, H = 440, cx = 220, cy = 220, scale = 30;
+  const gridG = document.getElementById('gridG');
+  for (let x=-7;x<=7;x++) {
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', cx + x*scale); line.setAttribute('x2', cx + x*scale);
+    line.setAttribute('y1', 0); line.setAttribute('y2', 420);
+    line.setAttribute('class','grid');
+    gridG.appendChild(line);
+  }
+  for (let y=-7;y<=7;y++) {
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('y1', cy + y*scale); line.setAttribute('y2', cy + y*scale);
+    line.setAttribute('x1', 20); line.setAttribute('x2', 440);
+    line.setAttribute('class','grid');
+    gridG.appendChild(line);
+  }
+  let selectedIdx = null;
+  let showShadows = false;
+  let isDragMove = false;
+  let mouseDownTarget = null;
+  let mouseDownPos = null;
+
+  let pts = makeDefaultPts();
+  function makeDefaultPts() {
+    const out = []; const cs = Math.cos(Math.PI/6), sn = Math.sin(Math.PI/6);
+    for (let i=0;i<18;i++) {
+      const u = (Math.random()-0.5)*8, v = (Math.random()-0.5)*1.6;
+      out.push([cs*u-sn*v, sn*u+cs*v]);
+    }
+    return out;
+  }
+  function makeLine() {
+    const out = []; const cs = Math.cos(Math.PI/5), sn = Math.sin(Math.PI/5);
+    for (let i=0;i<18;i++) {
+      const u = (Math.random()-0.5)*9, v = (Math.random()-0.5)*0.3;
+      out.push([cs*u-sn*v, sn*u+cs*v]);
+    }
+    return out;
+  }
+  function makeCircle() {
+    const out = [];
+    for (let i=0;i<18;i++) {
+      const r = Math.sqrt(Math.random())*3.5, t = Math.random()*Math.PI*2;
+      out.push([r*Math.cos(t), r*Math.sin(t)]);
+    }
+    return out;
+  }
+  function makeRandom() {
+    return Array.from({length:18}, ()=>[(Math.random()-0.5)*10, (Math.random()-0.5)*10]);
+  }
+
+  const ptsG = document.getElementById('ptsG');
+  const meanShow = document.getElementById('meanShow');
+  const covShow = document.getElementById('covShow');
+  const eigShow = document.getElementById('eigShow');
+  const screeMini = document.getElementById('screeMini');
+
+  function dataToSvg(p) { return [cx + p[0]*scale, cy - p[1]*scale]; }
+  function svgToData(x, y) { return [(x - cx)/scale, (cy - y)/scale]; }
+
+  function pca2d(arr) {
+    const n = arr.length;
+    const mx = arr.reduce((s,p)=>s+p[0],0)/n;
+    const my = arr.reduce((s,p)=>s+p[1],0)/n;
+    let sxx=0, sxy=0, syy=0;
+    for (const [x,y] of arr) {
+      const dx=x-mx, dy=y-my;
+      sxx += dx*dx; sxy += dx*dy; syy += dy*dy;
+    }
+    sxx /= (n-1); sxy /= (n-1); syy /= (n-1);
+    const tr = sxx + syy;
+    const det = sxx*syy - sxy*sxy;
+    const disc = Math.sqrt(Math.max(0, tr*tr/4 - det));
+    const l1 = tr/2 + disc, l2 = tr/2 - disc;
+    let v1;
+    if (Math.abs(sxy) > 1e-10) v1 = [sxy, l1 - sxx];
+    else v1 = sxx >= syy ? [1, 0] : [0, 1];
+    const norm1 = Math.hypot(v1[0], v1[1]) || 1;
+    v1 = [v1[0]/norm1, v1[1]/norm1];
+    const v2 = [-v1[1], v1[0]];
+    return { mx, my, sxx, sxy, syy, l1, l2, v1, v2 };
+  }
+
+  function render() {
+    const r = pca2d(pts);
+    ptsG.innerHTML = '';
+    // 先畫投影虛線（讓點蓋在上面）
+    if (showShadows) {
+      for (const p of pts) {
+        const rel = [p[0]-r.mx, p[1]-r.my];
+        const t = rel[0]*r.v1[0] + rel[1]*r.v1[1];
+        const proj = [r.mx + t*r.v1[0], r.my + t*r.v1[1]];
+        const [sx1, sy1] = dataToSvg(p);
+        const [sx2, sy2] = dataToSvg(proj);
+        const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+        line.setAttribute('x1', sx1); line.setAttribute('y1', sy1);
+        line.setAttribute('x2', sx2); line.setAttribute('y2', sy2);
+        line.setAttribute('stroke', '#aaa');
+        line.setAttribute('stroke-dasharray', '3 2');
+        line.setAttribute('stroke-width', '1');
+        ptsG.appendChild(line);
+      }
+    }
+    pts.forEach((p, i) => {
+      const [sx, sy] = dataToSvg(p);
+      const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      c.setAttribute('class','pt');
+      c.setAttribute('cx', sx); c.setAttribute('cy', sy); c.setAttribute('r', 5);
+      c.dataset.idx = i;
+      if (i === selectedIdx) {
+        c.setAttribute('fill', '#f0c419');
+        c.setAttribute('stroke', '#c0392b');
+        c.setAttribute('stroke-width', '3');
+        c.setAttribute('r', 7);
+      }
+      ptsG.appendChild(c);
+    });
+    const [msx, msy] = dataToSvg([r.mx, r.my]);
+    let meanG = document.getElementById('meanCross');
+    if (!meanG) {
+      meanG = document.createElementNS('http://www.w3.org/2000/svg','g');
+      meanG.setAttribute('id','meanCross');
+      svg.appendChild(meanG);
+    }
+    meanG.innerHTML = `
+      <line x1="${msx-7}" y1="${msy}" x2="${msx+7}" y2="${msy}" stroke="#8e44ad" stroke-width="2"/>
+      <line x1="${msx}" y1="${msy-7}" x2="${msx}" y2="${msy+7}" stroke="#8e44ad" stroke-width="2"/>`;
+    const len1 = Math.sqrt(Math.max(r.l1,0)) * scale * 2;
+    const len2 = Math.sqrt(Math.max(r.l2,0)) * scale * 2;
+    const pc1 = document.getElementById('pc1L');
+    const pc2 = document.getElementById('pc2L');
+    pc1.setAttribute('x1', msx); pc1.setAttribute('y1', msy);
+    pc1.setAttribute('x2', msx + r.v1[0]*len1);
+    pc1.setAttribute('y2', msy - r.v1[1]*len1);
+    pc2.setAttribute('x1', msx); pc2.setAttribute('y1', msy);
+    pc2.setAttribute('x2', msx + r.v2[0]*len2);
+    pc2.setAttribute('y2', msy - r.v2[1]*len2);
+
+    meanShow.textContent = `Gene1 均值 = ${r.mx.toFixed(2)},  Gene2 均值 = ${r.my.toFixed(2)}`;
+    covShow.innerHTML = `<table>
+      <tr><td style="color:#888;font-size:11px">Var(G1)</td><td style="color:#888;font-size:11px">Cov(G1,G2)</td></tr>
+      <tr><td>${r.sxx.toFixed(2)}</td><td>${r.sxy.toFixed(2)}</td></tr>
+      <tr><td>${r.sxy.toFixed(2)}</td><td>${r.syy.toFixed(2)}</td></tr>
+      <tr><td style="color:#888;font-size:11px">Cov(G1,G2)</td><td style="color:#888;font-size:11px">Var(G2)</td></tr></table>`;
+    const total = r.l1 + r.l2;
+    eigShow.innerHTML = `
+      <div class="item"><span class="lbl">λ₁（PC1）</span><span class="val" style="color:#c0392b">${r.l1.toFixed(2)}</span></div>
+      <div class="item"><span class="lbl">λ₂（PC2）</span><span class="val" style="color:#2c5aa0">${r.l2.toFixed(2)}</span></div>
+      <div class="item"><span class="lbl">PC1 解釋比例</span><span class="val">${total>0?(r.l1/total*100).toFixed(1):'—'}%</span></div>
+      <div class="item"><span class="lbl">PC2 解釋比例</span><span class="val">${total>0?(r.l2/total*100).toFixed(1):'—'}%</span></div>`;
+    const w1 = total>0 ? r.l1/total*200 : 0;
+    const w2 = total>0 ? r.l2/total*200 : 0;
+    screeMini.innerHTML = `
+      <div style="display:flex;gap:6px;align-items:flex-end;height:60px;margin-top:6px">
+        <div style="display:flex;flex-direction:column;align-items:center"><div style="height:${w1*0.3}px;width:30px;background:#c0392b;border-radius:3px 3px 0 0"></div><div style="font-size:11px;color:#666">PC1</div></div>
+        <div style="display:flex;flex-direction:column;align-items:center"><div style="height:${w2*0.3}px;width:30px;background:#2c5aa0;border-radius:3px 3px 0 0"></div><div style="font-size:11px;color:#666">PC2</div></div>
+      </div>`;
+    renderDetail(r);
+  }
+
+  function renderDetail(r) {
+    const panel = document.getElementById('detailS1');
+    if (selectedIdx === null) {
+      panel.innerHTML = `<h4>點擊任一樣本看細節 ↑</h4>
+        <p style="margin:0; font-size:13px; color:var(--muted)">
+          點選某個藍點後，這裡會顯示它的原始基因表現量、
+          以及在 PC1 / PC2 軸上的「新座標」。
+        </p>`;
+      return;
+    }
+    const p = pts[selectedIdx];
+    const rel = [p[0]-r.mx, p[1]-r.my];
+    const pc1score = rel[0]*r.v1[0] + rel[1]*r.v1[1];
+    const pc2score = rel[0]*r.v2[0] + rel[1]*r.v2[1];
+    panel.innerHTML = `<h4>樣本 #${selectedIdx+1} 的細節</h4>
+      <div class="kv"><span class="k">原始 Gene1：</span><span class="v">${p[0].toFixed(3)}</span></div>
+      <div class="kv"><span class="k">原始 Gene2：</span><span class="v">${p[1].toFixed(3)}</span></div>
+      <div class="kv"><span class="k">中心化 Gene1：</span><span class="v">${rel[0].toFixed(3)}</span></div>
+      <div class="kv"><span class="k">中心化 Gene2：</span><span class="v">${rel[1].toFixed(3)}</span></div>
+      <hr style="border:none;border-top:1px dashed #d6c8a0;margin:8px 0">
+      <div class="kv"><span class="k" style="color:#c0392b">PC1 得分：</span><span class="v" style="color:#c0392b">${pc1score.toFixed(3)}</span></div>
+      <div class="kv"><span class="k" style="color:#2c5aa0">PC2 得分：</span><span class="v" style="color:#2c5aa0">${pc2score.toFixed(3)}</span></div>
+      <p style="margin:8px 0 0; font-size:12px; color:var(--muted)">
+        PC1 得分 = (中心化 Gene1)×v₁ₓ + (中心化 Gene2)×v₁ᵧ<br>
+        = ${rel[0].toFixed(2)}×${r.v1[0].toFixed(2)} + ${rel[1].toFixed(2)}×${r.v1[1].toFixed(2)} = <b>${pc1score.toFixed(3)}</b>
+      </p>`;
+  }
+
+  let dragIdx = null;
+  svg.addEventListener('mousedown', e => {
+    if (e.target.classList.contains('pt')) {
+      dragIdx = +e.target.dataset.idx;
+      mouseDownTarget = dragIdx;
+      mouseDownPos = { x: e.clientX, y: e.clientY };
+      isDragMove = false;
+    }
+  });
+  window.addEventListener('mousemove', e => {
+    if (dragIdx === null) return;
+    if (mouseDownPos) {
+      const dx = e.clientX - mouseDownPos.x;
+      const dy = e.clientY - mouseDownPos.y;
+      if (Math.hypot(dx, dy) > 4) isDragMove = true;
+    }
+    if (!isDragMove) return;
+    const rect = svg.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * (W/rect.width);
+    const y = (e.clientY - rect.top) * (H/rect.height);
+    pts[dragIdx] = svgToData(x, y);
+    render();
+  });
+  window.addEventListener('mouseup', () => {
+    if (dragIdx !== null && !isDragMove) {
+      // 純點擊：選取
+      selectedIdx = (selectedIdx === mouseDownTarget) ? null : mouseDownTarget;
+      render();
+    }
+    dragIdx = null;
+    mouseDownTarget = null;
+    mouseDownPos = null;
+    isDragMove = false;
+  });
+  svg.addEventListener('touchstart', e => {
+    if (e.target.classList.contains('pt')) {
+      dragIdx = +e.target.dataset.idx;
+      mouseDownTarget = dragIdx;
+      const t = e.touches[0];
+      mouseDownPos = { x: t.clientX, y: t.clientY };
+      isDragMove = false;
+      e.preventDefault();
+    }
+  });
+  svg.addEventListener('touchmove', e => {
+    if (dragIdx === null) return;
+    const t = e.touches[0];
+    if (mouseDownPos) {
+      const dx = t.clientX - mouseDownPos.x;
+      const dy = t.clientY - mouseDownPos.y;
+      if (Math.hypot(dx, dy) > 6) isDragMove = true;
+    }
+    if (!isDragMove) return;
+    const rect = svg.getBoundingClientRect();
+    const x = (t.clientX - rect.left) * (W/rect.width);
+    const y = (t.clientY - rect.top) * (H/rect.height);
+    pts[dragIdx] = svgToData(x, y);
+    render();
+    e.preventDefault();
+  });
+  svg.addEventListener('touchend', () => {
+    if (dragIdx !== null && !isDragMove) {
+      selectedIdx = (selectedIdx === mouseDownTarget) ? null : mouseDownTarget;
+      render();
+    }
+    dragIdx = null;
+    mouseDownTarget = null;
+    mouseDownPos = null;
+    isDragMove = false;
+  });
+
+  document.getElementById('btnReset').onclick = () => { pts = makeDefaultPts(); selectedIdx = null; render(); };
+  document.getElementById('btnRandom').onclick = () => { pts = makeRandom(); selectedIdx = null; render(); };
+  document.getElementById('btnLine').onclick = () => { pts = makeLine(); selectedIdx = null; render(); };
+  document.getElementById('btnCircle').onclick = () => { pts = makeCircle(); selectedIdx = null; render(); };
+  document.getElementById('showShadows').onchange = (e) => { showShadows = e.target.checked; render(); };
+  render();
+})();
+
+/* ===================================================
+   §2 共變異數視覺化
+   =================================================== */
+(function section2() {
+  const svg = document.getElementById('svgCov');
+  const W=440, H=440, cx=220, cy=220, scale=30;
+  let pts = makePos();
+  let showContrib = true;
+  let hoveredIdx = null;
+  let lockedIdx = null;
+
+  function makePos() {
+    const out = [];
+    for (let i=0;i<10;i++) {
+      const t = (Math.random()-0.5)*8;
+      out.push([t + (Math.random()-0.5)*1.5, t*0.7 + (Math.random()-0.5)*1.5]);
+    }
+    return out;
+  }
+  function makeNeg() {
+    const out = [];
+    for (let i=0;i<10;i++) {
+      const t = (Math.random()-0.5)*8;
+      out.push([t + (Math.random()-0.5)*1.5, -t*0.7 + (Math.random()-0.5)*1.5]);
+    }
+    return out;
+  }
+  function makeZero() {
+    return Array.from({length:10}, ()=>[(Math.random()-0.5)*7, (Math.random()-0.5)*7]);
+  }
+
+  function dataToSvg(p) { return [cx + p[0]*scale, cy - p[1]*scale]; }
+  function svgToData(x, y) { return [(x - cx)/scale, (cy - y)/scale]; }
+
+  const covTable = document.getElementById('covTable');
+  const covSummary = document.getElementById('covSummary');
+
+  function render() {
+    const n = pts.length;
+    const mx = pts.reduce((s,p)=>s+p[0],0)/n;
+    const my = pts.reduce((s,p)=>s+p[1],0)/n;
+    const [cmx, cmy] = dataToSvg([mx, my]);
+    const highlight = hoveredIdx !== null ? hoveredIdx : lockedIdx;
+
+    let h = '';
+    h += `<rect class="quadrant-bg pos" x="${cmx}" y="0" width="${W-cmx}" height="${cmy}"/>`;
+    h += `<rect class="quadrant-bg pos" x="0" y="${cmy}" width="${cmx}" height="${H-cmy}"/>`;
+    h += `<rect class="quadrant-bg neg" x="0" y="0" width="${cmx}" height="${cmy}"/>`;
+    h += `<rect class="quadrant-bg neg" x="${cmx}" y="${cmy}" width="${W-cmx}" height="${H-cmy}"/>`;
+    for (let x=-7;x<=7;x++) h += `<line class="grid" x1="${cx+x*scale}" y1="0" x2="${cx+x*scale}" y2="${H}"/>`;
+    for (let y=-7;y<=7;y++) h += `<line class="grid" x1="0" y1="${cy+y*scale}" x2="${W}" y2="${cy+y*scale}"/>`;
+    h += `<line stroke="#8e44ad" stroke-width="1.5" stroke-dasharray="4 3" x1="0" y1="${cmy}" x2="${W}" y2="${cmy}"/>`;
+    h += `<line stroke="#8e44ad" stroke-width="1.5" stroke-dasharray="4 3" x1="${cmx}" y1="0" x2="${cmx}" y2="${H}"/>`;
+    h += `<line x1="${cmx-7}" y1="${cmy}" x2="${cmx+7}" y2="${cmy}" stroke="#8e44ad" stroke-width="2.5"/>`;
+    h += `<line x1="${cmx}" y1="${cmy-7}" x2="${cmx}" y2="${cmy+7}" stroke="#8e44ad" stroke-width="2.5"/>`;
+    h += `<text x="${cmx+10}" y="${cmy-8}" font-size="11" fill="#8e44ad">(${mx.toFixed(2)}, ${my.toFixed(2)})</text>`;
+    h += `<text x="420" y="236" font-size="12" fill="#444" font-weight="600">Gene1 →</text>`;
+    h += `<text x="225" y="14" font-size="12" fill="#444" font-weight="600">↑ Gene2</text>`;
+    // 點與選中的「展開圖」
+    let contribs = [];
+    let sumContrib = 0;
+    pts.forEach((p, i) => {
+      const [sx, sy] = dataToSvg(p);
+      const contrib = (p[0]-mx)*(p[1]-my);
+      sumContrib += contrib;
+      contribs.push(contrib);
+      const isHi = i === highlight;
+      const r = isHi ? 8 : 5;
+      const stroke = isHi ? 'stroke="#c0392b" stroke-width="2.5"' : '';
+      h += `<circle class="pt" cx="${sx}" cy="${sy}" r="${r}" data-idx="${i}" fill="${isHi?'#f0c419':'#2c5aa0'}" ${stroke}/>`;
+      if (showContrib || isHi) {
+        const sign = contrib > 0 ? '+' : '';
+        const fontSize = isHi ? 13 : 11;
+        h += `<text x="${sx+7}" y="${sy-7}" font-size="${fontSize}" font-weight="700" fill="${contrib>0?'#27795a':'#c0392b'}">${sign}${contrib.toFixed(1)}</text>`;
+      }
+      // 選中時畫出 (Δg1, Δg2) 的長方形示意
+      if (isHi) {
+        h += `<rect x="${Math.min(cmx,sx)}" y="${Math.min(cmy,sy)}" width="${Math.abs(sx-cmx)}" height="${Math.abs(sy-cmy)}" fill="${contrib>0?'rgba(39,121,90,0.18)':'rgba(192,57,43,0.18)'}" stroke="${contrib>0?'#27795a':'#c0392b'}" stroke-width="1" stroke-dasharray="3 2"/>`;
+        h += `<line x1="${sx}" y1="${cmy}" x2="${sx}" y2="${sy}" stroke="#8e44ad" stroke-width="1.5"/>`;
+        h += `<line x1="${cmx}" y1="${sy}" x2="${sx}" y2="${sy}" stroke="#8e44ad" stroke-width="1.5"/>`;
+      }
+    });
+    h += `<text x="10" y="16" font-size="11" fill="#666">綠區=正貢獻；紅區=負貢獻；hover 表格列看單一樣本展開</text>`;
+    svg.innerHTML = h;
+
+    // 渲染表格
+    const cov = sumContrib / (n-1);
+    let tableHtml = `<thead><tr>
+      <th>#</th><th>Gene1</th><th>Gene2</th>
+      <th>Δg1 = g1−μ₁</th><th>Δg2 = g2−μ₂</th>
+      <th>Δg1·Δg2</th></tr></thead><tbody>`;
+    contribs.forEach((c, i) => {
+      const p = pts[i];
+      const dg1 = p[0]-mx, dg2 = p[1]-my;
+      const sign = c>=0 ? '+' : '';
+      const cls = c>=0 ? 'pos' : 'neg';
+      const selCls = i === lockedIdx ? ' selected' : '';
+      tableHtml += `<tr data-idx="${i}" class="${selCls.trim()}">
+        <td>${i+1}</td>
+        <td>${p[0].toFixed(2)}</td>
+        <td>${p[1].toFixed(2)}</td>
+        <td class="${dg1>=0?'pos':'neg'}">${dg1>=0?'+':''}${dg1.toFixed(2)}</td>
+        <td class="${dg2>=0?'pos':'neg'}">${dg2>=0?'+':''}${dg2.toFixed(2)}</td>
+        <td class="${cls}"><b>${sign}${c.toFixed(2)}</b></td></tr>`;
+    });
+    tableHtml += `<tr class="sum-row"><td colspan="5" style="text-align:right">總和 Σ</td><td><b>${sumContrib.toFixed(2)}</b></td></tr>`;
+    tableHtml += `<tr class="sum-row"><td colspan="5" style="text-align:right">÷ (n−1) = ${sumContrib.toFixed(2)} / ${n-1} =</td><td style="color:${cov>=0?'#27795a':'#c0392b'}"><b>${cov.toFixed(3)}</b></td></tr>`;
+    tableHtml += '</tbody>';
+    covTable.innerHTML = tableHtml;
+    // 表格列 hover / click 事件
+    covTable.querySelectorAll('tbody tr[data-idx]').forEach(tr => {
+      tr.addEventListener('mouseenter', () => { hoveredIdx = +tr.dataset.idx; render(); });
+      tr.addEventListener('mouseleave', () => { hoveredIdx = null; render(); });
+      tr.addEventListener('click', () => { lockedIdx = (lockedIdx === +tr.dataset.idx) ? null : +tr.dataset.idx; render(); });
+    });
+
+    // 摘要
+    const posCount = contribs.filter(c=>c>0).length;
+    const negCount = contribs.filter(c=>c<0).length;
+    const cor = (() => {
+      const sxx = pts.reduce((s,p)=>s+(p[0]-mx)**2,0);
+      const syy = pts.reduce((s,p)=>s+(p[1]-my)**2,0);
+      return sumContrib / Math.sqrt(sxx*syy + 1e-12);
+    })();
+    covSummary.innerHTML = `
+      <h4>結果</h4>
+      <div class="kv"><span class="k">正貢獻樣本：</span><span class="v" style="color:#27795a">${posCount}</span></div>
+      <div class="kv"><span class="k">負貢獻樣本：</span><span class="v" style="color:#c0392b">${negCount}</span></div>
+      <div class="kv"><span class="k">Cov(Gene1, Gene2)：</span><span class="v" style="color:${cov>=0?'#27795a':'#c0392b'}">${cov.toFixed(3)}</span></div>
+      <div class="kv"><span class="k">相關係數 r：</span><span class="v">${cor.toFixed(3)}</span></div>`;
+  }
+
+  let dragIdx = null;
+  let mdPos = null, isDrag = false;
+  svg.addEventListener('mousedown', e => {
+    if (e.target.classList.contains('pt')) {
+      dragIdx = +e.target.dataset.idx;
+      mdPos = { x: e.clientX, y: e.clientY };
+      isDrag = false;
+    }
+  });
+  window.addEventListener('mousemove', e => {
+    if (dragIdx === null) return;
+    if (mdPos && Math.hypot(e.clientX-mdPos.x, e.clientY-mdPos.y) > 4) isDrag = true;
+    if (!isDrag) return;
+    const rect = svg.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * (W/rect.width);
+    const y = (e.clientY - rect.top) * (H/rect.height);
+    pts[dragIdx] = svgToData(x, y);
+    render();
+  });
+  window.addEventListener('mouseup', () => {
+    if (dragIdx !== null && !isDrag) {
+      lockedIdx = (lockedIdx === dragIdx) ? null : dragIdx;
+      render();
+    }
+    dragIdx = null; mdPos = null; isDrag = false;
+  });
+
+  document.getElementById('btnCovReset').onclick = () => { pts = makePos(); lockedIdx=null; render(); };
+  document.getElementById('btnCovPos').onclick = () => { pts = makePos(); lockedIdx=null; render(); };
+  document.getElementById('btnCovNeg').onclick = () => { pts = makeNeg(); lockedIdx=null; render(); };
+  document.getElementById('btnCovZero').onclick = () => { pts = makeZero(); lockedIdx=null; render(); };
+  document.getElementById('showContrib').onchange = (e) => { showContrib = e.target.checked; render(); };
+  render();
+})();
+
+/* ===================================================
+   §3 旋轉投影方向
+   =================================================== */
+(function section3() {
+  const svg = document.getElementById('svgRot');
+  const W=420, H=420, cx=W/2, cy=H/2, scale=30;
+  let pts = [];
+  function gen() {
+    pts = [];
+    const cs = Math.cos(0.7), sn = Math.sin(0.7);
+    for (let i=0;i<30;i++) {
+      const u = (Math.random()-0.5)*8, v = (Math.random()-0.5)*1.4;
+      pts.push([cs*u-sn*v, sn*u+cs*v]);
+    }
+  }
+  gen();
+
+  const thetaR = document.getElementById('thetaR');
+  const thetaV = document.getElementById('thetaV');
+
+  function varAt(theta) {
+    const w = [Math.cos(theta), Math.sin(theta)];
+    let mx=0, my=0;
+    for (const p of pts) { mx+=p[0]; my+=p[1]; }
+    mx/=pts.length; my/=pts.length;
+    let s=0;
+    for (const p of pts) {
+      const proj = (p[0]-mx)*w[0] + (p[1]-my)*w[1];
+      s += proj*proj;
+    }
+    return s/(pts.length-1);
+  }
+
+  function render() {
+    let h = '';
+    for (let x=-7;x<=7;x++) h += `<line class="grid" x1="${cx+x*scale}" y1="0" x2="${cx+x*scale}" y2="${H}"/>`;
+    for (let y=-7;y<=7;y++) h += `<line class="grid" x1="0" y1="${cy+y*scale}" x2="${W}" y2="${cy+y*scale}"/>`;
+    h += `<line class="axis" x1="0" y1="${cy}" x2="${W}" y2="${cy}"/>`;
+    h += `<line class="axis" x1="${cx}" y1="0" x2="${cx}" y2="${H}"/>`;
+    h += `<text x="395" y="${cy+16}" font-size="12" fill="#444" font-weight="600">Gene1 →</text>`;
+    h += `<text x="${cx+5}" y="14" font-size="12" fill="#444" font-weight="600">↑ Gene2</text>`;
+    const theta = (+thetaR.value) * Math.PI/180;
+    const cs = Math.cos(theta), sn = Math.sin(theta);
+    h += `<line x1="${cx - cs*250}" y1="${cy + sn*250}" x2="${cx + cs*250}" y2="${cy - sn*250}" stroke="#27795a" stroke-width="3"/>`;
+    let mx=0,my=0;
+    for (const p of pts) { mx+=p[0]; my+=p[1]; }
+    mx/=pts.length; my/=pts.length;
+    for (const p of pts) {
+      const sx = cx + p[0]*scale, sy = cy - p[1]*scale;
+      const proj = (p[0]-mx)*cs + (p[1]-my)*sn;
+      const px = cx + (mx + proj*cs)*scale;
+      const py = cy - (my + proj*sn)*scale;
+      h += `<line x1="${sx}" y1="${sy}" x2="${px}" y2="${py}" stroke="#aaa" stroke-dasharray="2 2" stroke-width="1"/>`;
+      h += `<circle cx="${sx}" cy="${sy}" r="4" fill="#2c5aa0"/>`;
+      h += `<circle cx="${px}" cy="${py}" r="4" fill="#27795a"/>`;
+    }
+    const v = varAt(theta);
+    h += `<text x="14" y="22" font-size="13" fill="#27795a" font-weight="600">變異數 = ${v.toFixed(2)}</text>`;
+    svg.innerHTML = h;
+    thetaV.textContent = thetaR.value + '°';
+    drawCurve(theta);
+  }
+
+  const curve = document.getElementById('varCurve');
+  function drawCurve(currentTheta) {
+    let h = '';
+    const cw=400, ch=220, pad=30;
+    h += `<line x1="${pad}" y1="${ch-pad}" x2="${cw-10}" y2="${ch-pad}" stroke="#aaa"/>`;
+    h += `<line x1="${pad}" y1="10" x2="${pad}" y2="${ch-pad}" stroke="#aaa"/>`;
+    h += `<text x="${cw/2}" y="${ch-6}" font-size="11" text-anchor="middle" fill="#666">θ (度)</text>`;
+    h += `<text x="6" y="14" font-size="11" fill="#666">變異數</text>`;
+    const ys = [];
+    for (let d=0; d<=180; d+=2) ys.push(varAt(d*Math.PI/180));
+    const mx = Math.max(...ys), mn = Math.min(...ys);
+    const xs = ys.map((_,i)=>pad + (i/90)*(cw-pad-10));
+    const yp = ys.map(y=>ch-pad - ((y-mn)/(mx-mn+1e-9))*(ch-pad-20));
+    const path = xs.map((x,i)=>(i?'L':'M')+x+','+yp[i]).join(' ');
+    h += `<path d="${path}" stroke="#2c5aa0" stroke-width="2" fill="none"/>`;
+    const idx = Math.round((currentTheta*180/Math.PI)/2);
+    if (idx >= 0 && idx < xs.length) {
+      h += `<circle cx="${xs[idx]}" cy="${yp[idx]}" r="6" fill="#c0392b"/>`;
+    }
+    let maxIdx = 0; for (let i=1;i<ys.length;i++) if (ys[i]>ys[maxIdx]) maxIdx=i;
+    h += `<line x1="${xs[maxIdx]}" y1="10" x2="${xs[maxIdx]}" y2="${ch-pad}" stroke="#27795a" stroke-dasharray="3 3"/>`;
+    h += `<text x="${xs[maxIdx]+4}" y="20" font-size="11" fill="#27795a">最大 ${(maxIdx*2)}°</text>`;
+    for (let d=0; d<=180; d+=30) {
+      const x = pad + (d/180)*(cw-pad-10);
+      h += `<line x1="${x}" y1="${ch-pad}" x2="${x}" y2="${ch-pad+4}" stroke="#aaa"/>`;
+      h += `<text x="${x}" y="${ch-pad+16}" font-size="10" text-anchor="middle" fill="#666">${d}</text>`;
+    }
+    curve.innerHTML = h;
+  }
+
+  thetaR.oninput = render;
+  document.getElementById('btnFindMax').onclick = () => {
+    let best=0, bestV=-1;
+    for (let d=0; d<=180; d++) {
+      const v = varAt(d*Math.PI/180);
+      if (v > bestV) { bestV=v; best=d; }
+    }
+    let cur = +thetaR.value;
+    const step = best > cur ? 1 : -1;
+    const tick = () => {
+      cur += step;
+      thetaR.value = cur;
+      render();
+      if (cur !== best) requestAnimationFrame(tick);
+    };
+    tick();
+  };
+  render();
+})();
+
+/* ===================================================
+   §5 共變異數矩陣逐元素建構
+   =================================================== */
+(function section5() {
+  const dataTable = document.getElementById('s5Data');
+  const matrixSvg = document.getElementById('s5Matrix');
+  const mathLive = document.getElementById('s5Math');
+  const note = document.getElementById('s5Note');
+  // 6 個樣本 × 3 基因
+  const X = [
+    [2.1, 5.3, 1.8],
+    [3.4, 4.0, 2.5],
+    [1.7, 6.1, 1.4],
+    [4.5, 3.2, 3.1],
+    [2.8, 4.8, 2.0],
+    [3.9, 3.5, 2.7]
+  ];
+  const geneNames = ['Gene1', 'Gene2', 'Gene3'];
+  const n = X.length, p = 3;
+  const mean = colMean(X);
+  const Xc = X.map(row => row.map((v, j) => v - mean[j]));
+
+  // 計算所有 C[i][j]，但我們會逐步揭露
+  function covIJ(i, j) {
+    let s = 0;
+    for (let k=0;k<n;k++) s += Xc[k][i]*Xc[k][j];
+    return s/(n-1);
+  }
+  const Cfull = [];
+  for (let i=0;i<p;i++) { Cfull.push([]); for (let j=0;j<p;j++) Cfull[i].push(covIJ(i,j)); }
+
+  // 步驟：0=尚未開始；1..9 = C[0][0], C[0][1], ..., C[2][2] (按 row-major 順序)
+  // 但因為對稱，C[1][0]=C[0][1] 等等。我們仍逐格展示讓使用者了解。
+  let step = 0;
+  const totalSteps = p*p; // 9
+
+  function stepToIJ(s) {
+    const idx = s - 1;
+    return [Math.floor(idx/p), idx%p];
+  }
+
+  function render() {
+    // 資料表（高亮當前正在被乘的兩欄）
+    let hi = step >= 1 ? stepToIJ(step) : null;
+    let html = '<thead><tr><th>樣本</th>';
+    for (let j=0;j<p;j++) {
+      const isHi = hi && (j===hi[0] || j===hi[1]);
+      html += `<th style="background:${isHi?'#f0c419':'#2c5aa0'};color:${isHi?'#222':'#fff'}">${geneNames[j]}</th>`;
+    }
+    html += `<th style="background:#666">中心化</th></tr></thead><tbody>`;
+    for (let k=0;k<n;k++) {
+      html += `<tr><td>#${k+1}</td>`;
+      for (let j=0;j<p;j++) {
+        const isHi = hi && (j===hi[0] || j===hi[1]);
+        html += `<td style="${isHi?'background:#fff8e6;font-weight:700':''}">${X[k][j].toFixed(2)}</td>`;
+      }
+      // 中心化欄位（顯示當前計算的兩個值）
+      if (hi) {
+        const dgi = Xc[k][hi[0]], dgj = Xc[k][hi[1]];
+        html += `<td style="font-family:monospace;font-size:11px">
+          Δ${hi[0]+1}=${dgi.toFixed(2)}, Δ${hi[1]+1}=${dgj.toFixed(2)}<br>
+          積=<b style="color:${dgi*dgj>=0?'#27795a':'#c0392b'}">${(dgi*dgj).toFixed(3)}</b></td>`;
+      } else {
+        html += `<td style="color:#888">—</td>`;
+      }
+      html += '</tr>';
+    }
+    if (hi) {
+      const sum = Xc.reduce((s,row)=>s+row[hi[0]]*row[hi[1]], 0);
+      html += `<tr class="sum-row"><td colspan="${p+1}" style="text-align:right">Σ 乘積</td><td><b>${sum.toFixed(3)}</b></td></tr>`;
+      html += `<tr class="sum-row"><td colspan="${p+1}" style="text-align:right">÷ (n−1) = ${sum.toFixed(3)} / ${n-1}</td><td><b style="color:#c0392b">= ${covIJ(hi[0],hi[1]).toFixed(3)}</b></td></tr>`;
+    }
+    html += '</tbody>';
+    dataTable.innerHTML = html;
+
+    // 矩陣 SVG
+    const M = 300, cs = M/p;
+    let mh = `<rect x="0" y="0" width="${M}" height="${M}" fill="#fff" stroke="#999"/>`;
+    for (let i=0;i<p;i++) {
+      for (let j=0;j<p;j++) {
+        const filled = (i*p+j+1) <= step;
+        const isHi = hi && hi[0]===i && hi[1]===j;
+        const bg = isHi ? '#f0c419' : (filled ? '#eaf4ff' : '#fafafa');
+        mh += `<rect x="${j*cs}" y="${i*cs}" width="${cs}" height="${cs}" fill="${bg}" stroke="#999"/>`;
+        if (filled) {
+          mh += `<text x="${j*cs+cs/2}" y="${i*cs+cs/2-6}" text-anchor="middle" font-size="11" fill="#666">C[${i+1},${j+1}]</text>`;
+          mh += `<text x="${j*cs+cs/2}" y="${i*cs+cs/2+14}" text-anchor="middle" font-size="16" font-weight="700" fill="#222">${Cfull[i][j].toFixed(2)}</text>`;
+        } else {
+          mh += `<text x="${j*cs+cs/2}" y="${i*cs+cs/2+5}" text-anchor="middle" font-size="20" fill="#bbb">?</text>`;
+        }
+      }
+    }
+    matrixSvg.innerHTML = mh;
+
+    // 動態公式說明
+    if (step === 0) {
+      mathLive.innerHTML = `<span class="lbl"># 點「下一格」開始算 C[1,1]，也就是 Gene1 的變異數</span>\n<span class="lbl">n = ${n}, p = ${p} (3 個基因)</span>\n<span class="lbl">均值 μ = (${mean.map(m=>m.toFixed(2)).join(', ')})</span>`;
+      note.innerHTML = `<h4>共變異數矩陣是什麼形狀？</h4>
+        <p style="margin:6px 0; font-size:13px">這是一個 <b>3×3</b> 矩陣，因為有 3 個基因。
+        <br>對角線是「該基因自己的變異數」，
+        非對角線是「兩兩基因之間的共變異數」。
+        <br>因為 Cov(A,B) = Cov(B,A)，矩陣<b>對稱</b>。</p>`;
+    } else {
+      const [i, j] = stepToIJ(step);
+      const cval = Cfull[i][j];
+      const terms = Xc.map(row => row[i]*row[j]);
+      const sum = terms.reduce((a,b)=>a+b, 0);
+      mathLive.innerHTML = `<span class="hl"># C[${i+1},${j+1}] = ${i===j?'Var':'Cov'}(${geneNames[i]}${i===j?'':', '+geneNames[j]})</span>\n` +
+        `<span class="lbl">公式：(1/(n-1)) × Σ (Δ${geneNames[i]})·(Δ${geneNames[j]})</span>\n` +
+        `<span class="lbl">逐筆乘積：</span>\n` +
+        terms.map((t,k)=>` 樣本${k+1}: (${Xc[k][i].toFixed(2)})·(${Xc[k][j].toFixed(2)}) = <span class="num">${t.toFixed(3)}</span>`).join('\n') + '\n' +
+        `<span class="lbl">總和 = </span><span class="num">${sum.toFixed(3)}</span>\n` +
+        `<span class="hl">÷ ${n-1} = ${cval.toFixed(3)}</span>`;
+      const desc = i===j ?
+        `<b>對角線元素</b> C[${i+1},${i+1}] = <b>${geneNames[i]} 的變異數</b>。它衡量 ${geneNames[i]} 在所有樣本之間「自己」變化的劇烈程度。值越大，這個基因在樣本間的差異越明顯。` :
+        `<b>非對角線元素</b> C[${i+1},${j+1}] = <b>Cov(${geneNames[i]}, ${geneNames[j]})</b>。它告訴我們這兩個基因「是否傾向一起變動」：正值表示同向變化，負值表示反向變化，接近 0 表示獨立。`;
+      note.innerHTML = `<h4>${i===j?'對角線':'非對角線'} · C[${i+1},${j+1}] = ${cval.toFixed(3)}</h4><p style="margin:6px 0; font-size:13px">${desc}</p>`;
+    }
+  }
+
+  document.getElementById('s5Next').onclick = () => { if (step < totalSteps) { step++; render(); } };
+  document.getElementById('s5Prev').onclick = () => { if (step > 0) { step--; render(); } };
+  document.getElementById('s5Reset').onclick = () => { step = 0; render(); };
+  render();
+})();
+
+/* ===================================================
+   §6 矩陣作為變換、特徵向量
+   =================================================== */
+(function section6() {
+  const svg = document.getElementById('svgEig');
+  const W=420, H=420, cx=W/2, cy=H/2, scale=80;
+  const matShow = document.getElementById('eigMatShow');
+  const matStats = document.getElementById('eigMatStats');
+
+  const Cmatrices = [
+    [[2, 0.8], [0.8, 1]],
+    [[1.5, -0.5], [-0.5, 2.5]],
+    [[3, 1.2], [1.2, 1.5]],
+    [[2, 0], [0, 0.5]]
+  ];
+  let Cidx = 0;
+  let phase = 'before'; // before, after
+
+  function render() {
+    const C = Cmatrices[Cidx];
+    const eig = jacobiEig(C);
+    const v1 = eig.eigenvectors[0], v2 = eig.eigenvectors[1];
+    const l1 = eig.eigenvalues[0], l2 = eig.eigenvalues[1];
+
+    let h = '';
+    for (let x=-3;x<=3;x++) h += `<line class="grid" x1="${cx+x*scale}" y1="0" x2="${cx+x*scale}" y2="${H}"/>`;
+    for (let y=-3;y<=3;y++) h += `<line class="grid" x1="0" y1="${cy+y*scale}" x2="${W}" y2="${cy+y*scale}"/>`;
+    h += `<line class="axis" x1="0" y1="${cy}" x2="${W}" y2="${cy}"/>`;
+    h += `<line class="axis" x1="${cx}" y1="0" x2="${cx}" y2="${H}"/>`;
+
+    // 單位圓 vs 變換後橢圓
+    const n = 24;
+    if (phase === 'before') {
+      // 單位圓
+      h += `<circle cx="${cx}" cy="${cy}" r="${scale}" fill="none" stroke="#bbb" stroke-width="1.5" stroke-dasharray="3 3"/>`;
+      for (let i=0;i<n;i++) {
+        const t = i/n * Math.PI*2;
+        const v = [Math.cos(t), Math.sin(t)];
+        const sx = cx + v[0]*scale, sy = cy - v[1]*scale;
+        h += `<line x1="${cx}" y1="${cy}" x2="${sx}" y2="${sy}" stroke="#bbb" stroke-width="1" opacity="0.7"/>`;
+        h += `<circle cx="${sx}" cy="${sy}" r="3" fill="#999"/>`;
+      }
+    } else {
+      // 變換後
+      h += `<circle cx="${cx}" cy="${cy}" r="${scale}" fill="none" stroke="#ddd" stroke-width="1" stroke-dasharray="2 3"/>`;
+      // 橢圓 (參數: λ1*v1 cos t + λ2*v2 sin t)
+      const ellipsePts = [];
+      for (let i=0; i<=64; i++) {
+        const t = i/64 * Math.PI*2;
+        const ex = (l1*v1[0]*Math.cos(t) + l2*v2[0]*Math.sin(t));
+        const ey = (l1*v1[1]*Math.cos(t) + l2*v2[1]*Math.sin(t));
+        ellipsePts.push([cx + ex*scale, cy - ey*scale]);
+      }
+      const epath = ellipsePts.map((p,i)=>(i?'L':'M')+p[0]+','+p[1]).join(' ');
+      h += `<path d="${epath}" fill="rgba(142,68,173,0.06)" stroke="#8e44ad" stroke-width="1.5" stroke-dasharray="3 3"/>`;
+      // 變換後的箭頭
+      for (let i=0;i<n;i++) {
+        const t = i/n * Math.PI*2;
+        const v = [Math.cos(t), Math.sin(t)];
+        // C*v
+        const cv = [C[0][0]*v[0]+C[0][1]*v[1], C[1][0]*v[0]+C[1][1]*v[1]];
+        const sx = cx + cv[0]*scale, sy = cy - cv[1]*scale;
+        // 判斷是否為特徵方向 (與 v1 或 v2 平行)
+        const d1 = Math.abs(v[0]*v1[1] - v[1]*v1[0]);
+        const d2 = Math.abs(v[0]*v2[1] - v[1]*v2[0]);
+        const isEig = d1 < 0.04 || d2 < 0.04;
+        const color = isEig ? (d1<d2 ? '#c0392b' : '#2c5aa0') : '#8e44ad';
+        const sw = isEig ? 2 : 1;
+        h += `<line x1="${cx}" y1="${cy}" x2="${sx}" y2="${sy}" stroke="${color}" stroke-width="${sw}" opacity="${isEig?1:0.65}"/>`;
+        h += `<circle cx="${sx}" cy="${sy}" r="${isEig?4:3}" fill="${color}"/>`;
+      }
+    }
+    // 永遠標出特徵向量方向 (在原始單位圓上)
+    const e1len = scale; // 特徵向量在單位圓上的位置
+    const v1x = cx + v1[0]*e1len, v1y = cy - v1[1]*e1len;
+    const v2x = cx + v2[0]*e1len, v2y = cy - v2[1]*e1len;
+    h += `<line x1="${cx}" y1="${cy}" x2="${v1x}" y2="${v1y}" stroke="#c0392b" stroke-width="3" marker-end="url(#arrowR)"/>`;
+    h += `<line x1="${cx}" y1="${cy}" x2="${v2x}" y2="${v2y}" stroke="#2c5aa0" stroke-width="3" marker-end="url(#arrowB)"/>`;
+    h += `<text x="${v1x+5}" y="${v1y-3}" font-size="12" fill="#c0392b" font-weight="600">v₁</text>`;
+    h += `<text x="${v2x+5}" y="${v2y-3}" font-size="12" fill="#2c5aa0" font-weight="600">v₂</text>`;
+    // 變換後的特徵向量
+    if (phase === 'after') {
+      const e1x = cx + v1[0]*scale*l1, e1y = cy - v1[1]*scale*l1;
+      const e2x = cx + v2[0]*scale*l2, e2y = cy - v2[1]*scale*l2;
+      h += `<line x1="${cx}" y1="${cy}" x2="${e1x}" y2="${e1y}" stroke="#c0392b" stroke-width="4" opacity="0.5" marker-end="url(#arrowR)"/>`;
+      h += `<line x1="${cx}" y1="${cy}" x2="${e2x}" y2="${e2y}" stroke="#2c5aa0" stroke-width="4" opacity="0.5" marker-end="url(#arrowB)"/>`;
+    }
+
+    h += `<text x="10" y="18" font-size="12" fill="#666">${phase==='before'?'單位圓上的向量（套用 C 前）':'套用 C 後 (淡色橢圓為形狀)'}</text>`;
+    svg.innerHTML = h;
+
+    matShow.innerHTML = `<table>
+      <tr><td>${C[0][0].toFixed(2)}</td><td>${C[0][1].toFixed(2)}</td></tr>
+      <tr><td>${C[1][0].toFixed(2)}</td><td>${C[1][1].toFixed(2)}</td></tr></table>`;
+    matStats.innerHTML = `
+      <div class="item"><span class="lbl">λ₁ (紅)</span><span class="val" style="color:#c0392b">${l1.toFixed(3)}</span></div>
+      <div class="item"><span class="lbl">λ₂ (藍)</span><span class="val" style="color:#2c5aa0">${l2.toFixed(3)}</span></div>
+      <div class="item"><span class="lbl">v₁</span><span class="val" style="font-size:14px">(${v1[0].toFixed(2)}, ${v1[1].toFixed(2)})</span></div>
+      <div class="item"><span class="lbl">v₂</span><span class="val" style="font-size:14px">(${v2[0].toFixed(2)}, ${v2[1].toFixed(2)})</span></div>`;
+  }
+
+  document.getElementById('btnEigApply').onclick = () => {
+    phase = phase === 'before' ? 'after' : 'before';
+    render();
+  };
+  document.getElementById('btnEigReset').onclick = () => { phase = 'before'; render(); };
+  document.getElementById('btnEigMatrix').onclick = () => {
+    Cidx = (Cidx+1) % Cmatrices.length;
+    phase = 'before';
+    render();
+  };
+  render();
+})();
+
+/* ===================================================
+   §9 投影與重建
+   =================================================== */
+(function section9() {
+  const svg = document.getElementById('svgRecon');
+  const screePlot = document.getElementById('screePlot');
+  const reconStats = document.getElementById('reconStats');
+  const kSlider = document.getElementById('kSlider');
+  const kVal = document.getElementById('kVal');
+  let data = null;
+  let pca = null;
+
+  function generate() {
+    const n = 60, p = 8;
+    data = [];
+    for (let i=0;i<n;i++) {
+      const f1 = Math.random()*4 - 2;
+      const f2 = (Math.random()*2 - 1);
+      const f3 = (Math.random()*0.5 - 0.25);
+      const row = [];
+      for (let j=0;j<p;j++) {
+        const a = Math.cos(j*0.9+1.0)*f1 + Math.sin(j*1.3)*f2 + 0.3*Math.cos(j*0.4)*f3;
+        const noise = (Math.random()-0.5)*0.4;
+        row.push(a + noise);
+      }
+      data.push(row);
+    }
+    const Xc = centerCols(data);
+    const C = covariance(Xc);
+    pca = jacobiEig(C);
+    pca.Xc = Xc;
+  }
+
+  function render() {
+    const k = +kSlider.value;
+    kVal.textContent = k;
+    const p = pca.eigenvectors[0].length;
+    const V = pca.eigenvectors;
+    const Vk = V.slice(0, k);
+    const Vmat = [];
+    for (let j=0;j<p;j++) Vmat.push(Vk.map(v=>v[j]));
+    const scores = matmul(pca.Xc, Vmat);
+    const VmatT = transpose(Vmat);
+    const Xhat = matmul(scores, VmatT);
+
+    const W=420, H=320, padL=36, padR=16, padT=24, padB=30;
+    let html = '';
+    html += `<text x="${W/2}" y="16" text-anchor="middle" font-size="13" fill="#333">原始 8 個基因表現（細）vs 用前 ${k} 個 PC 重建（粗）</text>`;
+    const xPos = j => padL + j*((W-padL-padR)/(p-1));
+    let mn=Infinity, mx=-Infinity;
+    for (const row of pca.Xc) for (const v of row) { if (v<mn) mn=v; if (v>mx) mx=v; }
+    const yPos = v => padT + (1-(v-mn)/(mx-mn+1e-9))*(H-padT-padB);
+    for (let j=0;j<p;j++) {
+      html += `<line x1="${xPos(j)}" y1="${padT}" x2="${xPos(j)}" y2="${H-padB}" stroke="#eee"/>`;
+      html += `<text x="${xPos(j)}" y="${H-padB+14}" text-anchor="middle" font-size="11" fill="#666">G${j+1}</text>`;
+    }
+    for (let i=0;i<Math.min(pca.Xc.length, 12);i++) {
+      const row = pca.Xc[i];
+      const d = row.map((v,j)=>(j?'L':'M')+xPos(j)+','+yPos(v)).join(' ');
+      html += `<path d="${d}" stroke="#bbb" stroke-width="1" fill="none" opacity="0.6"/>`;
+    }
+    for (let i=0;i<Math.min(Xhat.length, 12);i++) {
+      const row = Xhat[i];
+      const d = row.map((v,j)=>(j?'L':'M')+xPos(j)+','+yPos(v)).join(' ');
+      html += `<path d="${d}" stroke="#c0392b" stroke-width="1.6" fill="none" opacity="0.85"/>`;
+    }
+    svg.innerHTML = html;
+
+    const total = pca.eigenvalues.reduce((a,b)=>a+b,0);
+    const sw=380, sh=240, sp=34;
+    let sh_html = '';
+    sh_html += `<line x1="${sp}" y1="${sh-30}" x2="${sw-10}" y2="${sh-30}" stroke="#aaa"/>`;
+    sh_html += `<line x1="${sp}" y1="10" x2="${sp}" y2="${sh-30}" stroke="#aaa"/>`;
+    sh_html += `<text x="6" y="14" font-size="11" fill="#666">比例</text>`;
+    const bw = (sw-sp-10)/p;
+    let cum = 0;
+    const cumX = [], cumY = [];
+    for (let i=0;i<p;i++) {
+      const r = pca.eigenvalues[i]/total;
+      cum += r;
+      const x = sp + i*bw + 4;
+      const h = r * (sh-50);
+      const y = sh-30-h;
+      const color = i < k ? '#c0392b' : '#aac';
+      sh_html += `<rect x="${x}" y="${y}" width="${bw-8}" height="${h}" fill="${color}" rx="2"/>`;
+      sh_html += `<text x="${x+(bw-8)/2}" y="${sh-16}" text-anchor="middle" font-size="10" fill="#666">PC${i+1}</text>`;
+      sh_html += `<text x="${x+(bw-8)/2}" y="${y-3}" text-anchor="middle" font-size="10" fill="#333">${(r*100).toFixed(0)}%</text>`;
+      cumX.push(x+(bw-8)/2);
+      cumY.push(sh-30-cum*(sh-50));
+    }
+    const cumPath = cumX.map((x,i)=>(i?'L':'M')+x+','+cumY[i]).join(' ');
+    sh_html += `<path d="${cumPath}" stroke="#2c5aa0" stroke-width="2" fill="none" stroke-dasharray="4 3"/>`;
+    cumX.forEach((x,i)=>{
+      sh_html += `<circle cx="${x}" cy="${cumY[i]}" r="3" fill="#2c5aa0"/>`;
+    });
+    sh_html += `<text x="${sw-90}" y="22" font-size="11" fill="#2c5aa0">━ 累積比例</text>`;
+    screePlot.innerHTML = sh_html;
+
+    const kept = pca.eigenvalues.slice(0,k).reduce((a,b)=>a+b,0);
+    const ratio = kept/total;
+    const lost = total - kept;
+    const fnorm = Math.sqrt(lost * (pca.Xc.length-1));
+    reconStats.innerHTML = `
+      <div class="item"><span class="lbl">保留變異比例</span><span class="val" style="color:#c0392b">${(ratio*100).toFixed(1)}%</span></div>
+      <div class="item"><span class="lbl">重建誤差 (Frobenius)</span><span class="val">${fnorm.toFixed(2)}</span></div>`;
+  }
+
+  document.getElementById('btnReconGen').onclick = () => { generate(); render(); };
+  kSlider.oninput = render;
+  generate(); render();
+})();
+
+/* ===================================================
+   §10 3D 三基因範例
+   =================================================== */
+(function section10() {
+  const svg3D = document.getElementById('svg3D');
+  const svg2D = document.getElementById('svg2DProj');
+  const svgStep = document.getElementById('svgStep');
+  const W=480, H=480, cx=W/2, cy=H/2, scale=60;
+  const W2=400, H2=400, cx2=W2/2, cy2=H2/2;
+
+  const sep3D = document.getElementById('sep3D');
+  const sep3DVal = document.getElementById('sep3DVal');
+  const noise3D = document.getElementById('noise3D');
+  const noise3DVal = document.getElementById('noise3DVal');
+
+  let yaw = 0.6, pitch = 0.4;
+  let isDragging = false;
+  let dragStart = null;
+  let mouseDownInfo = null;
+  let isDragMove = false;
+  let spinId = null;
+  let selectedIdx = null;
+
+  // 模式
+  let currentMode = 'free';
+
+  // 步驟導覽狀態
+  let stepIdx = 0;
+  let stepYaw = 0.6, stepPitch = 0.4;
+
+  const cellNames = ['細胞型態 A（Gene1 高）', '細胞型態 B（Gene2 高）', '細胞型態 C（Gene3 高）'];
+  const cellColors = ['#c0392b', '#27795a', '#2c5aa0'];
+  const geneNames = ['Gene1', 'Gene2', 'Gene3'];
+
+  let data = [], labels = [];
+  let pca = null;
+
+  function generate() {
+    const sep = (+sep3D.value)/100;  // 0.2 ~ 1
+    const noise = (+noise3D.value)/100;  // 0.05 ~ 0.6
+    const N_PER = 20;
+    data = []; labels = [];
+    // 三個質心
+    const lo = 0.5 - sep*0.4;
+    const hi = 0.5 + sep*2.0;
+    const centers = [
+      [hi, lo, lo],
+      [lo, hi, lo],
+      [lo, lo, hi]
+    ];
+    for (let g=0; g<3; g++) {
+      for (let i=0; i<N_PER; i++) {
+        data.push([
+          centers[g][0] + (Math.random()-0.5)*noise*2,
+          centers[g][1] + (Math.random()-0.5)*noise*2,
+          centers[g][2] + (Math.random()-0.5)*noise*2
+        ]);
+        labels.push(g);
+      }
+    }
+    const Xc = centerCols(data);
+    const C = covariance(Xc);
+    pca = jacobiEig(C);
+    pca.Xc = Xc;
+    pca.mean = colMean(data);
+  }
+
+  function rotMat(yaw, pitch) {
+    const cy_ = Math.cos(yaw), sy = Math.sin(yaw);
+    const cp = Math.cos(pitch), sp = Math.sin(pitch);
+    return [
+      [cy_,     0,    sy],
+      [sp*sy,   cp,  -sp*cy_],
+      [-cp*sy,  sp,   cp*cy_]
+    ];
+  }
+  function rot(R, p) {
+    return [
+      R[0][0]*p[0] + R[0][1]*p[1] + R[0][2]*p[2],
+      R[1][0]*p[0] + R[1][1]*p[1] + R[1][2]*p[2],
+      R[2][0]*p[0] + R[2][1]*p[1] + R[2][2]*p[2]
+    ];
+  }
+
+  function buildSvg3D(targetSvg, options) {
+    // options: { yaw, pitch, showPC, showPlane, showProj, phase, selectedIdx, hideAxes, hideLabels }
+    const { showPC=true, showPlane=true, showProj=true, phase=null, selIdx=null } = options;
+    const yaw_ = options.yaw, pitch_ = options.pitch;
+
+    const R = rotMat(yaw_, pitch_);
+    const m = pca.mean;
+    const v1 = pca.eigenvectors[0], v2 = pca.eigenvectors[1], v3 = pca.eigenvectors[2];
+
+    // 在步驟模式下，根據 phase 決定資料點要顯示在「原始位置」、「中心化後」或「投影到平面」
+    let pointSrc = data; // 預設顯示原始資料
+    let useCenter = m;   // 視覺中心
+    if (phase !== null) {
+      if (phase >= 2 && phase < 7) { // 中心化之後
+        pointSrc = pca.Xc;
+        useCenter = [0, 0, 0];
+      } else if (phase === 7) { // 投影到平面
+        pointSrc = pca.Xc.map(rel => {
+          const s1 = rel[0]*v1[0] + rel[1]*v1[1] + rel[2]*v1[2];
+          const s2 = rel[0]*v2[0] + rel[1]*v2[1] + rel[2]*v2[2];
+          return [s1*v1[0]+s2*v2[0], s1*v1[1]+s2*v2[1], s1*v1[2]+s2*v2[2]];
+        });
+        useCenter = [0, 0, 0];
+      }
+    }
+
+    function projPt(p) {
+      const rel = [p[0]-useCenter[0], p[1]-useCenter[1], p[2]-useCenter[2]];
+      const r = rot(R, rel);
+      return [cx + r[0]*scale, cy - r[1]*scale, r[2]];
+    }
+    function projAxis(axis, length) {
+      const v = [0,0,0]; v[axis] = length;
+      return projPt(v);
+    }
+    function projOrigin() {
+      return projPt([0,0,0]);
+    }
+
+    const projectedData = pointSrc.map((p,i)=>{
+      const pr = projPt(p);
+      return { sx: pr[0], sy: pr[1], depth: pr[2], idx: i };
+    });
+    projectedData.sort((a,b)=>a.depth - b.depth);
+
+    const [ox, oy] = projOrigin();
+    const maxCoord = 3.5;
+    const [axX, axY] = projAxis(0, maxCoord);
+    const [ayX, ayY] = projAxis(1, maxCoord);
+    const [azX, azY] = projAxis(2, maxCoord);
+
+    let h = '';
+    h += `<rect x="0" y="0" width="${W}" height="${H}" fill="#fcfcfa"/>`;
+    if (!options.hideAxes) {
+      h += `<line x1="${ox}" y1="${oy}" x2="${axX}" y2="${axY}" stroke="#999" stroke-width="1.5"/>`;
+      h += `<line x1="${ox}" y1="${oy}" x2="${ayX}" y2="${ayY}" stroke="#999" stroke-width="1.5"/>`;
+      h += `<line x1="${ox}" y1="${oy}" x2="${azX}" y2="${azY}" stroke="#999" stroke-width="1.5"/>`;
+      h += `<text x="${axX+5}" y="${axY+4}" font-size="13" fill="#333" font-weight="600">${geneNames[0]}</text>`;
+      h += `<text x="${ayX+5}" y="${ayY+4}" font-size="13" fill="#333" font-weight="600">${geneNames[1]}</text>`;
+      h += `<text x="${azX+5}" y="${azY+4}" font-size="13" fill="#333" font-weight="600">${geneNames[2]}</text>`;
+    }
+
+    // 步驟模式 phase 1：顯示均值十字
+    if (phase === 1) {
+      const [mxS, myS] = projPt(m);
+      h += `<circle cx="${mxS}" cy="${myS}" r="9" fill="none" stroke="#8e44ad" stroke-width="2.5"/>`;
+      h += `<line x1="${mxS-12}" y1="${myS}" x2="${mxS+12}" y2="${myS}" stroke="#8e44ad" stroke-width="2.5"/>`;
+      h += `<line x1="${mxS}" y1="${myS-12}" x2="${mxS}" y2="${myS+12}" stroke="#8e44ad" stroke-width="2.5"/>`;
+      h += `<text x="${mxS+14}" y="${myS-10}" font-size="13" fill="#8e44ad" font-weight="700">均值 μ = (${m[0].toFixed(2)}, ${m[1].toFixed(2)}, ${m[2].toFixed(2)})</text>`;
+    }
+
+    if (showPlane && (phase === null || phase >= 5)) {
+      const s1 = Math.sqrt(pca.eigenvalues[0]) * 2.4;
+      const s2 = Math.sqrt(pca.eigenvalues[1]) * 2.4;
+      const corners = phase >= 2 ? [
+        [ s1*v1[0]+ s2*v2[0],  s1*v1[1]+ s2*v2[1],  s1*v1[2]+ s2*v2[2]],
+        [ s1*v1[0]- s2*v2[0],  s1*v1[1]- s2*v2[1],  s1*v1[2]- s2*v2[2]],
+        [-s1*v1[0]- s2*v2[0], -s1*v1[1]- s2*v2[1], -s1*v1[2]- s2*v2[2]],
+        [-s1*v1[0]+ s2*v2[0], -s1*v1[1]+ s2*v2[1], -s1*v1[2]+ s2*v2[2]]
+      ] : [
+        [m[0]+ s1*v1[0]+ s2*v2[0], m[1]+ s1*v1[1]+ s2*v2[1], m[2]+ s1*v1[2]+ s2*v2[2]],
+        [m[0]+ s1*v1[0]- s2*v2[0], m[1]+ s1*v1[1]- s2*v2[1], m[2]+ s1*v1[2]- s2*v2[2]],
+        [m[0]- s1*v1[0]- s2*v2[0], m[1]- s1*v1[1]- s2*v2[1], m[2]- s1*v1[2]- s2*v2[2]],
+        [m[0]- s1*v1[0]+ s2*v2[0], m[1]- s1*v1[1]+ s2*v2[1], m[2]- s1*v1[2]+ s2*v2[2]]
+      ];
+      const projCorners = corners.map(c=>projPt(c));
+      const path = projCorners.map((p,i)=>(i?'L':'M')+p[0]+','+p[1]).join(' ') + ' Z';
+      h += `<path d="${path}" fill="#f0c419" fill-opacity="0.18" stroke="#c19510" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+    }
+
+    if (showProj && phase === null) {
+      for (const p of data) {
+        const rel = [p[0]-m[0], p[1]-m[1], p[2]-m[2]];
+        const s1 = rel[0]*v1[0] + rel[1]*v1[1] + rel[2]*v1[2];
+        const s2 = rel[0]*v2[0] + rel[1]*v2[1] + rel[2]*v2[2];
+        const planePt = [m[0]+s1*v1[0]+s2*v2[0], m[1]+s1*v1[1]+s2*v2[1], m[2]+s1*v1[2]+s2*v2[2]];
+        const [px, py] = projPt(p);
+        const [qx, qy] = projPt(planePt);
+        h += `<line x1="${px}" y1="${py}" x2="${qx}" y2="${qy}" stroke="#999" stroke-width="0.8" stroke-dasharray="2 2" opacity="0.6"/>`;
+      }
+    }
+    if (phase === 6) {
+      for (const rel of pca.Xc) {
+        const s1 = rel[0]*v1[0]+rel[1]*v1[1]+rel[2]*v1[2];
+        const s2 = rel[0]*v2[0]+rel[1]*v2[1]+rel[2]*v2[2];
+        const planePt = [s1*v1[0]+s2*v2[0], s1*v1[1]+s2*v2[1], s1*v1[2]+s2*v2[2]];
+        const [px, py] = projPt(rel);
+        const [qx, qy] = projPt(planePt);
+        h += `<line x1="${px}" y1="${py}" x2="${qx}" y2="${qy}" stroke="#c0392b" stroke-width="1.3" stroke-dasharray="3 2" opacity="0.85"/>`;
+        h += `<circle cx="${qx}" cy="${qy}" r="2.5" fill="#c0392b" opacity="0.6"/>`;
+      }
+    }
+
+    const showPC1 = showPC && (phase === null || phase >= 3);
+    const showPC2 = showPC && (phase === null || phase >= 4);
+    const showPC3 = showPC && (phase === null || phase >= 5);
+    if (showPC1 || showPC2 || showPC3) {
+      const arrowLen = 1.8;
+      const mFor = phase >= 2 ? [0,0,0] : m;
+      const [mx_, my_] = projPt(mFor);
+      if (showPC1) {
+        const [p1x, p1y] = projPt([mFor[0]+v1[0]*arrowLen, mFor[1]+v1[1]*arrowLen, mFor[2]+v1[2]*arrowLen]);
+        h += `<line x1="${mx_}" y1="${my_}" x2="${p1x}" y2="${p1y}" stroke="#c0392b" stroke-width="3.5" marker-end="url(#arrowR)"/>`;
+        h += `<text x="${p1x+4}" y="${p1y-3}" font-size="13" fill="#c0392b" font-weight="700">PC1 (λ=${pca.eigenvalues[0].toFixed(2)})</text>`;
+      }
+      if (showPC2) {
+        const [p2x, p2y] = projPt([mFor[0]+v2[0]*arrowLen, mFor[1]+v2[1]*arrowLen, mFor[2]+v2[2]*arrowLen]);
+        h += `<line x1="${mx_}" y1="${my_}" x2="${p2x}" y2="${p2y}" stroke="#2c5aa0" stroke-width="3.5" marker-end="url(#arrowB)"/>`;
+        h += `<text x="${p2x+4}" y="${p2y-3}" font-size="13" fill="#2c5aa0" font-weight="700">PC2 (λ=${pca.eigenvalues[1].toFixed(2)})</text>`;
+      }
+      if (showPC3) {
+        const [p3x, p3y] = projPt([mFor[0]+v3[0]*arrowLen, mFor[1]+v3[1]*arrowLen, mFor[2]+v3[2]*arrowLen]);
+        h += `<line x1="${mx_}" y1="${my_}" x2="${p3x}" y2="${p3y}" stroke="#27795a" stroke-width="3" stroke-dasharray="4 3" marker-end="url(#arrowG)"/>`;
+        h += `<text x="${p3x+4}" y="${p3y-3}" font-size="13" fill="#27795a" font-weight="700">PC3 (λ=${pca.eigenvalues[2].toFixed(3)})</text>`;
+      }
+    }
+
+    for (const p of projectedData) {
+      const r = 5 + p.depth*0.5;
+      const isSel = p.idx === selIdx;
+      const fillC = cellColors[labels[p.idx]];
+      const strokeC = isSel ? '#f0c419' : '#fff';
+      const strokeW = isSel ? 3.5 : 1.2;
+      const radius = isSel ? Math.max(8, r+3) : Math.max(3, r);
+      h += `<circle class="s3dpt" data-idx="${p.idx}" cx="${p.sx}" cy="${p.sy}" r="${radius}" fill="${fillC}" stroke="${strokeC}" stroke-width="${strokeW}" opacity="0.95" style="cursor:pointer"/>`;
+    }
+
+    if (!options.hideLabels) {
+      h += `<text x="10" y="18" font-size="12" fill="#666">${phase===null?'拖曳旋轉 ✋ ｜ 點擊樣本選取':'步驟 '+phase+' / 7'} | yaw=${(yaw_*180/Math.PI).toFixed(0)}°, pitch=${(pitch_*180/Math.PI).toFixed(0)}°</text>`;
+    }
+
+    targetSvg.innerHTML = h;
+  }
+
+  function render() {
+    sep3DVal.textContent = sep3D.value + '%';
+    noise3DVal.textContent = noise3D.value + '%';
+    const showPC = document.getElementById('show3DPC').checked;
+    const showPlane = document.getElementById('show3DPlane').checked;
+    const showProj = document.getElementById('show3DProj').checked;
+    buildSvg3D(svg3D, { yaw, pitch, showPC, showPlane, showProj, phase: null, selIdx: selectedIdx });
+
+    // legend
+    document.getElementById('legend3D').innerHTML = cellNames.map((n,i)=>
+      `<span><span class="dot" style="background:${cellColors[i]};width:12px;height:12px;border-radius:50%"></span>${n}</span>`
+    ).join('');
+
+    // 2D 投影
+    render2D();
+    renderScree();
+    renderLoadings();
+  }
+
+  function render2D() {
+    const v1 = pca.eigenvectors[0], v2 = pca.eigenvectors[1];
+    const scores = pca.Xc.map(p=>[
+      p[0]*v1[0]+p[1]*v1[1]+p[2]*v1[2],
+      p[0]*v2[0]+p[1]*v2[1]+p[2]*v2[2]
+    ]);
+    let mn1=Infinity, mx1=-Infinity, mn2=Infinity, mx2=-Infinity;
+    for (const s of scores) {
+      if (s[0]<mn1) mn1=s[0]; if (s[0]>mx1) mx1=s[0];
+      if (s[1]<mn2) mn2=s[1]; if (s[1]>mx2) mx2=s[1];
+    }
+    const pad = 40;
+    function sx(v) { return pad + (v-mn1)/(mx1-mn1+1e-9)*(W2-pad*2); }
+    function sy(v) { return H2-pad - (v-mn2)/(mx2-mn2+1e-9)*(H2-pad*2); }
+    let h = '';
+    h += `<line x1="${pad}" y1="${H2-pad}" x2="${W2-10}" y2="${H2-pad}" stroke="#999"/>`;
+    h += `<line x1="${pad}" y1="20" x2="${pad}" y2="${H2-pad}" stroke="#999"/>`;
+    const total = pca.eigenvalues.reduce((a,b)=>a+b,0);
+    h += `<text x="${W2/2}" y="${H2-12}" text-anchor="middle" font-size="12" fill="#666">PC1 (${(pca.eigenvalues[0]/total*100).toFixed(1)}%)</text>`;
+    h += `<text x="14" y="${H2/2}" font-size="12" fill="#666" transform="rotate(-90 14 ${H2/2})" text-anchor="middle">PC2 (${(pca.eigenvalues[1]/total*100).toFixed(1)}%)</text>`;
+    // 原點十字
+    h += `<line x1="${sx(0)}" y1="${sy(0)-6}" x2="${sx(0)}" y2="${sy(0)+6}" stroke="#8e44ad" stroke-width="1"/>`;
+    h += `<line x1="${sx(0)-6}" y1="${sy(0)}" x2="${sx(0)+6}" y2="${sy(0)}" stroke="#8e44ad" stroke-width="1"/>`;
+    scores.forEach((s, i) => {
+      const isSel = i === selectedIdx;
+      const stroke = isSel ? '#f0c419' : '#fff';
+      const strokeW = isSel ? 3 : 1.2;
+      const r = isSel ? 9 : 6;
+      h += `<circle class="s2dpt" data-idx="${i}" cx="${sx(s[0])}" cy="${sy(s[1])}" r="${r}" fill="${cellColors[labels[i]]}" stroke="${stroke}" stroke-width="${strokeW}" style="cursor:pointer"/>`;
+    });
+    svg2D.innerHTML = h;
+    // 2D 點擊
+    svg2D.querySelectorAll('.s2dpt').forEach(c => {
+      c.addEventListener('click', e => {
+        const idx = +e.currentTarget.dataset.idx;
+        selectedIdx = (selectedIdx === idx) ? null : idx;
+        render(); renderSampleDetail();
+      });
+    });
+  }
+
+  function renderSampleDetail() {
+    const panel = document.getElementById('sample3DDetail');
+    if (selectedIdx === null) {
+      panel.innerHTML = `<h4>點擊 3D 或 2D 任一樣本看完整數學細節 ↑</h4>
+        <p style="margin:0; font-size:13px; color:var(--muted)">
+          選取後會顯示：原始 (Gene1, Gene2, Gene3) → 中心化 → PC1/PC2/PC3 得分的完整算式。
+        </p>`;
+      return;
+    }
+    const i = selectedIdx;
+    const p = data[i];
+    const m = pca.mean;
+    const rel = [p[0]-m[0], p[1]-m[1], p[2]-m[2]];
+    const v1 = pca.eigenvectors[0], v2 = pca.eigenvectors[1], v3 = pca.eigenvectors[2];
+    const s1 = rel[0]*v1[0]+rel[1]*v1[1]+rel[2]*v1[2];
+    const s2 = rel[0]*v2[0]+rel[1]*v2[1]+rel[2]*v2[2];
+    const s3 = rel[0]*v3[0]+rel[1]*v3[1]+rel[2]*v3[2];
+    panel.innerHTML = `<h4>樣本 #${i+1}（${cellNames[labels[i]]}）的完整 PCA 計算</h4>
+      <div class="grid-2" style="gap:14px">
+        <div>
+          <div class="kv"><span class="k">原始 (G1, G2, G3)：</span></div>
+          <div class="kv"><span class="k" style="padding-left:12px">Gene1：</span><span class="v">${p[0].toFixed(3)}</span></div>
+          <div class="kv"><span class="k" style="padding-left:12px">Gene2：</span><span class="v">${p[1].toFixed(3)}</span></div>
+          <div class="kv"><span class="k" style="padding-left:12px">Gene3：</span><span class="v">${p[2].toFixed(3)}</span></div>
+          <hr style="border:none;border-top:1px dashed #d6c8a0;margin:8px 0">
+          <div class="kv"><span class="k">減均值 (μ=${m.map(v=>v.toFixed(2)).join(', ')})：</span></div>
+          <div class="kv"><span class="k" style="padding-left:12px">Δg1：</span><span class="v">${rel[0].toFixed(3)}</span></div>
+          <div class="kv"><span class="k" style="padding-left:12px">Δg2：</span><span class="v">${rel[1].toFixed(3)}</span></div>
+          <div class="kv"><span class="k" style="padding-left:12px">Δg3：</span><span class="v">${rel[2].toFixed(3)}</span></div>
+        </div>
+        <div>
+          <div class="kv"><span class="k" style="color:#c0392b">PC1 得分：</span><span class="v" style="color:#c0392b">${s1.toFixed(3)}</span></div>
+          <p style="margin:2px 0 12px; font-size:11px; color:var(--muted); font-family:monospace">
+            = ${rel[0].toFixed(2)}×${v1[0].toFixed(2)} + ${rel[1].toFixed(2)}×${v1[1].toFixed(2)} + ${rel[2].toFixed(2)}×${v1[2].toFixed(2)}
+          </p>
+          <div class="kv"><span class="k" style="color:#2c5aa0">PC2 得分：</span><span class="v" style="color:#2c5aa0">${s2.toFixed(3)}</span></div>
+          <p style="margin:2px 0 12px; font-size:11px; color:var(--muted); font-family:monospace">
+            = ${rel[0].toFixed(2)}×${v2[0].toFixed(2)} + ${rel[1].toFixed(2)}×${v2[1].toFixed(2)} + ${rel[2].toFixed(2)}×${v2[2].toFixed(2)}
+          </p>
+          <div class="kv"><span class="k" style="color:#27795a">PC3 得分：</span><span class="v" style="color:#27795a">${s3.toFixed(3)}</span></div>
+          <p style="margin:2px 0; font-size:11px; color:var(--muted)">
+            （PC3 得分通常很小 → 表示這個點幾乎落在 PC1-PC2 平面上）
+          </p>
+        </div>
+      </div>`;
+  }
+
+  function renderScree() {
+    const total = pca.eigenvalues.reduce((a,b)=>a+b,0);
+    const cont = document.getElementById('scree3D');
+    cont.innerHTML = ['PC1', 'PC2', 'PC3'].map((label, i)=>{
+      const r = pca.eigenvalues[i]/total*100;
+      const color = ['#c0392b', '#2c5aa0', '#27795a'][i];
+      return `
+        <div style="display:flex;align-items:center;gap:10px;margin:6px 0">
+          <div style="width:40px;font-weight:600;color:${color}">${label}</div>
+          <div style="flex:1;background:#f0f0e8;border-radius:4px;height:22px;position:relative">
+            <div style="height:100%;background:${color};border-radius:4px;width:${r}%;transition:width 0.3s"></div>
+            <div style="position:absolute;top:2px;right:8px;font-size:12px;font-weight:600;color:#333">${r.toFixed(1)}%</div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function renderLoadings() {
+    const cont = document.getElementById('loadings3D');
+    const labels_ = geneNames;
+    let html = '<table class="compare" style="margin-top:8px"><tr><th>基因</th><th>PC1 loading</th><th>PC2 loading</th><th>PC3 loading</th></tr>';
+    for (let g=0; g<3; g++) {
+      html += '<tr>';
+      html += `<td><b>${labels_[g]}</b></td>`;
+      for (let pcI=0; pcI<3; pcI++) {
+        const v = pca.eigenvectors[pcI][g];
+        const color = v > 0 ? '#27795a' : '#c0392b';
+        const sign = v > 0 ? '+' : '';
+        // 條形顯示
+        const w = Math.abs(v) * 100;
+        html += `<td style="position:relative">
+          <div style="position:absolute;left:0;top:0;bottom:0;width:${w}%;background:${color};opacity:0.18"></div>
+          <span style="position:relative;font-family:monospace">${sign}${v.toFixed(3)}</span>
+        </td>`;
+      }
+      html += '</tr>';
+    }
+    html += '</table>';
+    cont.innerHTML = html;
+  }
+
+  // 拖曳（區分點擊與拖曳）
+  svg3D.addEventListener('mousedown', e => {
+    isDragging = true;
+    isDragMove = false;
+    const clickedIdx = e.target.classList.contains('s3dpt') ? +e.target.dataset.idx : null;
+    mouseDownInfo = { x: e.clientX, y: e.clientY, clickedIdx };
+    dragStart = { x: e.clientX, y: e.clientY, yaw, pitch };
+    svg3D.classList.add('dragging');
+    if (spinId) { cancelAnimationFrame(spinId); spinId = null; }
+  });
+  window.addEventListener('mousemove', e => {
+    if (!isDragging) return;
+    const dx = e.clientX - dragStart.x;
+    const dy = e.clientY - dragStart.y;
+    if (Math.hypot(dx, dy) > 4) isDragMove = true;
+    if (!isDragMove) return;
+    yaw = dragStart.yaw + dx * 0.01;
+    pitch = Math.max(-Math.PI/2+0.05, Math.min(Math.PI/2-0.05, dragStart.pitch + dy * 0.01));
+    render();
+  });
+  window.addEventListener('mouseup', e => {
+    if (isDragging && !isDragMove && mouseDownInfo && mouseDownInfo.clickedIdx !== null) {
+      selectedIdx = (selectedIdx === mouseDownInfo.clickedIdx) ? null : mouseDownInfo.clickedIdx;
+      render(); renderSampleDetail();
+    }
+    isDragging = false;
+    isDragMove = false;
+    mouseDownInfo = null;
+    svg3D.classList.remove('dragging');
+  });
+  svg3D.addEventListener('touchstart', e => {
+    isDragging = true;
+    isDragMove = false;
+    const t = e.touches[0];
+    const clickedIdx = e.target.classList.contains('s3dpt') ? +e.target.dataset.idx : null;
+    mouseDownInfo = { x: t.clientX, y: t.clientY, clickedIdx };
+    dragStart = { x: t.clientX, y: t.clientY, yaw, pitch };
+    e.preventDefault();
+  });
+  svg3D.addEventListener('touchmove', e => {
+    if (!isDragging) return;
+    const t = e.touches[0];
+    const dx = t.clientX - dragStart.x;
+    const dy = t.clientY - dragStart.y;
+    if (Math.hypot(dx, dy) > 6) isDragMove = true;
+    if (!isDragMove) return;
+    yaw = dragStart.yaw + dx * 0.01;
+    pitch = Math.max(-Math.PI/2+0.05, Math.min(Math.PI/2-0.05, dragStart.pitch + dy * 0.01));
+    render();
+    e.preventDefault();
+  });
+  svg3D.addEventListener('touchend', () => {
+    if (isDragging && !isDragMove && mouseDownInfo && mouseDownInfo.clickedIdx !== null) {
+      selectedIdx = (selectedIdx === mouseDownInfo.clickedIdx) ? null : mouseDownInfo.clickedIdx;
+      render(); renderSampleDetail();
+    }
+    isDragging = false;
+    isDragMove = false;
+    mouseDownInfo = null;
+  });
+
+  document.getElementById('btn3DReset').onclick = () => {
+    yaw = 0.6; pitch = 0.4;
+    if (spinId) { cancelAnimationFrame(spinId); spinId = null; }
+    render();
+  };
+  document.getElementById('btn3DSpin').onclick = () => {
+    if (spinId) {
+      cancelAnimationFrame(spinId); spinId = null;
+      return;
+    }
+    const spin = () => {
+      yaw += 0.008;
+      render();
+      spinId = requestAnimationFrame(spin);
+    };
+    spin();
+  };
+  document.getElementById('show3DPC').onchange = render;
+  document.getElementById('show3DPlane').onchange = render;
+  document.getElementById('show3DProj').onchange = render;
+  document.getElementById('btn3DRegen').onclick = () => { generate(); selectedIdx = null; render(); renderSampleDetail(); };
+  sep3D.oninput = () => { generate(); selectedIdx = null; render(); renderSampleDetail(); if (currentMode === 'step') renderStep(); };
+  noise3D.oninput = () => { generate(); selectedIdx = null; render(); renderSampleDetail(); if (currentMode === 'step') renderStep(); };
+
+  // ============= 步驟導覽模式 =============
+  const steps = [
+    { title: '原始 3D 資料', desc: '60 個樣本，每個有 (Gene1, Gene2, Gene3) 三個表現量' },
+    { title: '步驟 1：計算均值', desc: '對每個基因算所有樣本的平均值，得到中心 μ' },
+    { title: '步驟 2：中心化', desc: '每個樣本減掉 μ，整團點被搬到原點附近' },
+    { title: '步驟 3：第一主成分 PC1', desc: '解 C·w=λw，最大 λ₁ 的特徵向量就是 PC1' },
+    { title: '步驟 4：第二主成分 PC2', desc: '第二大 λ₂ 對應的特徵向量，與 PC1 正交' },
+    { title: '步驟 5：第三主成分 PC3', desc: '第三大 λ₃ 對應的特徵向量；變異最小、可丟棄' },
+    { title: '步驟 6：投影到 PC1-PC2 平面', desc: '每個 3D 點垂直投影到「最有資訊的 2D 平面」' },
+    { title: '步驟 7：壓平成 2D', desc: '把 PC3 維度丟掉，得到降維後的 2D 結果' }
+  ];
+
+  function renderStep() {
+    const step = steps[stepIdx];
+    document.getElementById('stepNum').textContent = stepIdx;
+    document.getElementById('stepTitle').textContent = step.title;
+    document.getElementById('stepDesc').textContent = step.desc;
+    document.getElementById('stepPrev').disabled = (stepIdx === 0);
+    document.getElementById('stepNext').disabled = (stepIdx === steps.length - 1);
+
+    // 步驟 7 的時候自動旋轉到俯瞰 PC1-PC2 平面
+    if (stepIdx === 7) {
+      // 解析地求出讓 PC3 對齊 +z 軸的 (yaw, pitch)
+      const v3 = pca.eigenvectors[2];
+      stepYaw = Math.atan2(-v3[0], v3[2]);
+      stepPitch = Math.atan2(v3[1], Math.sqrt(v3[0]*v3[0] + v3[2]*v3[2]));
+    } else if (stepIdx === 0) {
+      stepYaw = 0.6; stepPitch = 0.4;
+    }
+
+    buildSvg3D(svgStep, {
+      yaw: stepYaw, pitch: stepPitch,
+      showPC: stepIdx >= 3, showPlane: stepIdx >= 5, showProj: false,
+      phase: stepIdx, selIdx: null
+    });
+
+    document.getElementById('legendStep').innerHTML = cellNames.map((n,i)=>
+      `<span><span class="dot" style="background:${cellColors[i]};width:12px;height:12px;border-radius:50%"></span>${n}</span>`
+    ).join('');
+
+    // 數學內容
+    const m = pca.mean;
+    const C = covariance(pca.Xc);
+    const eigvals = pca.eigenvalues, eigvecs = pca.eigenvectors;
+    const total = eigvals.reduce((a,b)=>a+b, 0);
+    let math = '', note = '';
+    if (stepIdx === 0) {
+      math = `<span class="lbl"># 原始資料矩陣 X 的前 6 列</span>\n`;
+      for (let i=0;i<6;i++) math += `  X[${i+1}] = (${data[i].map(v=>v.toFixed(2)).join(', ')})\n`;
+      math += `<span class="lbl">  ... 共 ${data.length} 筆樣本</span>\n<span class="lbl">  維度: ${data.length} × 3</span>`;
+      note = `<h4>什麼是 PCA 的輸入？</h4>
+        <p style="margin:6px 0; font-size:13px">輸入是一個 $n \\times p$ 矩陣：$n$ 個樣本，每個樣本有 $p$ 個量測值（這裡 $p=3$）。
+        我們的目標是找一組「新座標軸」(PC1, PC2, PC3)，
+        讓資料的主要變化被前幾個軸捕捉。</p>`;
+    } else if (stepIdx === 1) {
+      math = `<span class="hl"># 步驟 1：計算每個基因的平均</span>\n` +
+        `μ_Gene1 = (1/n) Σ X[i,1] = <span class="num">${m[0].toFixed(3)}</span>\n` +
+        `μ_Gene2 = (1/n) Σ X[i,2] = <span class="num">${m[1].toFixed(3)}</span>\n` +
+        `μ_Gene3 = (1/n) Σ X[i,3] = <span class="num">${m[2].toFixed(3)}</span>\n` +
+        `\n<span class="lbl">μ 是資料的「中心」，是個 3 維向量</span>`;
+      note = `<h4>為什麼要算均值？</h4>
+        <p style="margin:6px 0; font-size:13px">PCA 要找「資料分散的方向」，方向是相對於中心而言的。
+        如果不先扣掉均值，第一主成分會被「資料離原點多遠」這件事拉走，
+        而不是反映資料內部的變化。</p>`;
+    } else if (stepIdx === 2) {
+      math = `<span class="hl"># 步驟 2：每個樣本減掉均值</span>\n` +
+        `<span class="lbl">X̃[i] = X[i] - μ</span>\n\n` +
+        `例：第 1 個樣本 X[1] = (${data[0].map(v=>v.toFixed(2)).join(', ')})\n` +
+        `     X̃[1] = (${pca.Xc[0].map(v=>v.toFixed(2)).join(', ')})\n\n` +
+        `<span class="lbl">中心化後，整團點以原點為中心</span>\n` +
+        `<span class="lbl">所有後續推導都假設資料已中心化</span>`;
+      note = `<h4>視覺上發生了什麼？</h4>
+        <p style="margin:6px 0; font-size:13px">原本「漂浮在 3D 某處」的資料雲，
+        被平移到坐標原點。
+        資料的「形狀」完全沒變——只是位置變了。</p>`;
+    } else if (stepIdx === 3) {
+      math = `<span class="hl"># 步驟 3：解最佳化問題 max w⊤Cw，‖w‖=1</span>\n` +
+        `\n<span class="lbl"># 共變異數矩陣 C = (1/(n-1)) X̃⊤ X̃</span>\n` +
+        `C = [[<span class="num">${C[0][0].toFixed(3)}</span>, <span class="num">${C[0][1].toFixed(3)}</span>, <span class="num">${C[0][2].toFixed(3)}</span>],\n` +
+        `     [<span class="num">${C[1][0].toFixed(3)}</span>, <span class="num">${C[1][1].toFixed(3)}</span>, <span class="num">${C[1][2].toFixed(3)}</span>],\n` +
+        `     [<span class="num">${C[2][0].toFixed(3)}</span>, <span class="num">${C[2][1].toFixed(3)}</span>, <span class="num">${C[2][2].toFixed(3)}</span>]]\n\n` +
+        `<span class="lbl"># Lagrange 推導 → C·w = λw（特徵值問題）</span>\n` +
+        `<span class="pc1"># PC1 = 最大 λ₁ = ${eigvals[0].toFixed(3)} 對應的特徵向量</span>\n` +
+        `<span class="pc1">v₁ = (${eigvecs[0].map(v=>v.toFixed(3)).join(', ')})</span>\n` +
+        `<span class="pc1">解釋變異 = λ₁/Σλ = ${(eigvals[0]/total*100).toFixed(1)}%</span>`;
+      note = `<h4>PC1 = 資料變化最大的方向</h4>
+        <p style="margin:6px 0; font-size:13px">紅色箭頭就是 PC1。
+        它的方向是「<b>把所有資料投影到這條軸上後，得到的變異數最大</b>」的那個方向。
+        在 3D 圖中，你可以看見它穿過資料雲最「拉長」的方向。</p>`;
+    } else if (stepIdx === 4) {
+      math = `<span class="hl"># 步驟 4：第二大特徵值對應的特徵向量</span>\n` +
+        `<span class="lbl"># 加正交約束 w ⊥ v₁，再次最大化變異</span>\n\n` +
+        `<span class="pc2">PC2 = λ₂ = ${eigvals[1].toFixed(3)} 對應的特徵向量</span>\n` +
+        `<span class="pc2">v₂ = (${eigvecs[1].map(v=>v.toFixed(3)).join(', ')})</span>\n` +
+        `<span class="pc2">解釋變異 = ${(eigvals[1]/total*100).toFixed(1)}%</span>\n\n` +
+        `<span class="lbl">驗證 v₁ ⊥ v₂：</span>\n` +
+        `  v₁·v₂ = ${(eigvecs[0][0]*eigvecs[1][0]+eigvecs[0][1]*eigvecs[1][1]+eigvecs[0][2]*eigvecs[1][2]).toFixed(6)} ≈ 0 ✓`;
+      note = `<h4>為什麼 PC2 一定垂直於 PC1？</h4>
+        <p style="margin:6px 0; font-size:13px">因為 C 是對稱矩陣，<b>譜定理</b>保證它的特徵向量可以選成兩兩正交。
+        加上我們在解 PC2 時明確要求「與 PC1 正交」，
+        所以 PC1、PC2 一定構成一個 2D 平面的正交基底。</p>`;
+    } else if (stepIdx === 5) {
+      math = `<span class="hl"># 步驟 5：第三主成分</span>\n` +
+        `<span class="pc3">PC3 = λ₃ = ${eigvals[2].toFixed(3)} 對應的特徵向量</span>\n` +
+        `<span class="pc3">v₃ = (${eigvecs[2].map(v=>v.toFixed(3)).join(', ')})</span>\n` +
+        `<span class="pc3">解釋變異 = ${(eigvals[2]/total*100).toFixed(1)}%</span>\n\n` +
+        `<span class="lbl">三個 PC 構成 3D 空間的正交基底</span>\n` +
+        `<span class="lbl">λ₃ 極小 → PC3 方向幾乎沒資訊</span>\n` +
+        `<span class="lbl">→ 黃色平面（PC1-PC2）就出現了！</span>`;
+      note = `<h4>為什麼可以「丟掉」PC3？</h4>
+        <p style="margin:6px 0; font-size:13px">因為 PC3 上的變異數 λ₃ 很小——
+        意思是「資料在 PC3 方向幾乎沒展開」。
+        三個細胞群的質心張開一個 2D 平面（PC1-PC2 平面），
+        垂直於那個平面的方向就是 PC3，自然變異最小。</p>`;
+    } else if (stepIdx === 6) {
+      math = `<span class="hl"># 步驟 6：投影到 PC1-PC2 平面</span>\n` +
+        `<span class="lbl"># 對每個中心化的樣本 X̃[i]：</span>\n` +
+        `<span class="lbl">  s1[i] = X̃[i] · v₁  （PC1 得分）</span>\n` +
+        `<span class="lbl">  s2[i] = X̃[i] · v₂  （PC2 得分）</span>\n` +
+        `<span class="lbl">  s3[i] = X̃[i] · v₃  （PC3 得分，丟掉）</span>\n\n` +
+        `<span class="lbl">投影到平面 = 把 s3 設為 0</span>\n` +
+        `<span class="lbl">紅色虛線 = 樣本與其投影之間的距離</span>\n` +
+        `<span class="lbl">= |s3[i]| = 被丟掉的資訊量</span>`;
+      note = `<h4>Eckart-Young 定理</h4>
+        <p style="margin:6px 0; font-size:13px">在所有秩為 2 的近似中，
+        前 2 個主成分給出的<b>重建誤差最小</b>。
+        所以 PCA 不僅「方便」，而是<b>數學上最佳</b>的線性降維。
+        重建誤差 = $\\sqrt{(n-1) \\cdot \\lambda_3} = ${Math.sqrt((data.length-1)*eigvals[2]).toFixed(3)}$。</p>`;
+    } else if (stepIdx === 7) {
+      math = `<span class="hl"># 步驟 7：得到 2D 結果</span>\n` +
+        `<span class="lbl"># 視角已自動旋轉到 PC3 方向</span>\n` +
+        `<span class="lbl"># 你看到的 2D 就是 PC1×PC2 平面</span>\n\n` +
+        `Y = X̃ · V_{2}  (shape: ${data.length}×2)\n\n` +
+        `<span class="lbl">前 2 PC 累積解釋變異：</span>\n` +
+        `  <span class="hl">${((eigvals[0]+eigvals[1])/total*100).toFixed(2)}%</span>\n\n` +
+        `<span class="lbl">三群細胞自然分開——</span>\n` +
+        `<span class="lbl">PCA 從未拿到標籤，卻找到了結構！</span>`;
+      note = `<h4>PCA 完成</h4>
+        <p style="margin:6px 0; font-size:13px">我們從 3D 降到 2D，
+        丟掉了 ${(eigvals[2]/total*100).toFixed(2)}% 的變異，
+        但 <b>3 種細胞型態仍然能在 2D 上區分</b>。
+        這就是 PCA 在實務上最有價值的能力：
+        <b>把高維資料壓到 2-3 維讓人類能看見其中的結構</b>。</p>`;
+    }
+    document.getElementById('stepMath').innerHTML = math;
+    document.getElementById('stepNote').innerHTML = note;
+    if (window.MathJax && window.MathJax.typesetPromise) {
+      window.MathJax.typesetPromise([document.getElementById('stepNote')]);
+    }
+  }
+
+  document.getElementById('stepNext').onclick = () => { if (stepIdx < steps.length-1) { stepIdx++; renderStep(); } };
+  document.getElementById('stepPrev').onclick = () => { if (stepIdx > 0) { stepIdx--; renderStep(); } };
+  document.getElementById('stepReset').onclick = () => { stepIdx = 0; renderStep(); };
+
+  // 模式切換
+  document.getElementById('modeFree').onclick = () => {
+    currentMode = 'free';
+    document.getElementById('modeFree').classList.add('active');
+    document.getElementById('modeStep').classList.remove('active');
+    document.getElementById('freeModeCard').style.display = '';
+    document.getElementById('stepModeCard').style.display = 'none';
+  };
+  document.getElementById('modeStep').onclick = () => {
+    currentMode = 'step';
+    document.getElementById('modeFree').classList.remove('active');
+    document.getElementById('modeStep').classList.add('active');
+    document.getElementById('freeModeCard').style.display = 'none';
+    document.getElementById('stepModeCard').style.display = '';
+    renderStep();
+  };
+
+  generate(); render(); renderSampleDetail();
+})();
+
+/* ===================================================
+   §11 高維基因表現
+   =================================================== */
+(function section11() {
+  const heatmap = document.getElementById('heatmap');
+  const scatter = document.getElementById('pcaScatter');
+  const screeG = document.getElementById('geneScree');
+  const legend = document.getElementById('cellLegend');
+  const sepSlider = document.getElementById('sepSlider');
+  const sepVal = document.getElementById('sepVal');
+  let X = [], labels = [];
+  const N_PER_GROUP = 20, N_GENES = 20, N_GROUPS = 3;
+  const colors = ['#c0392b','#27795a','#2c5aa0'];
+  const cellNames = ['細胞型態 A','細胞型態 B','細胞型態 C'];
+
+  function generate() {
+    const sep = (+sepSlider.value)/100 * 3.5;
+    X = []; labels = [];
+    const baseline = Array.from({length:N_GENES}, () =>
+      Array.from({length:N_GROUPS}, ()=>(Math.random()-0.5)*sep*2));
+    for (let g=0; g<N_GROUPS; g++) {
+      for (let i=0; i<N_PER_GROUP; i++) {
+        const row = [];
+        for (let j=0; j<N_GENES; j++) row.push(baseline[j][g] + (Math.random()-0.5)*1.4);
+        X.push(row); labels.push(g);
+      }
+    }
+  }
+
+  function heatColor(v, range) {
+    const t = Math.max(-1, Math.min(1, v/range));
+    if (t >= 0) {
+      const g = Math.round(255*(1-t)*0.85+38*t);
+      return 'rgb(255,'+g+','+g+')';
+    } else {
+      const r = Math.round(255*(1+t)*0.85+44*(-t));
+      const g = Math.round(255*(1+t)*0.85+90*(-t));
+      const b = Math.round(255*(1+t)*0.85+160*(-t));
+      return 'rgb('+r+','+g+','+b+')';
+    }
+  }
+
+  function render() {
+    sepVal.textContent = (+sepSlider.value) + '%';
+    const Xt = transpose(X);
+    const Xz = transpose(Xt.map(col => {
+      const m = col.reduce((a,b)=>a+b,0)/col.length;
+      const v = col.reduce((a,b)=>a+(b-m)*(b-m),0)/(col.length-1);
+      const sd = Math.sqrt(v) || 1;
+      return col.map(c=>(c-m)/sd);
+    }));
+    const Xc = centerCols(Xz);
+    const C = covariance(Xc);
+    const { eigenvalues, eigenvectors } = jacobiEig(C);
+
+    drawHeatmap(Xz, eigenvalues);
+    drawScatter(Xc, eigenvectors, eigenvalues);
+    drawScree(eigenvalues);
+
+    legend.innerHTML = colors.map((c,i)=>
+      '<span><span class="dot" style="background:'+c+';width:12px;height:12px;border-radius:50%"></span>'+cellNames[i]+'</span>').join('');
+  }
+
+  function drawHeatmap(Xz, eigenvalues) {
+    const W=420, H=360, padL=36, padT=14, padB=20;
+    const cellW = (W-padL-10)/N_GENES;
+    const cellH = (H-padT-padB)/X.length;
+    let mn = Infinity, mx = -Infinity;
+    for (const r of Xz) for (const v of r) { if (v<mn) mn=v; if (v>mx) mx=v; }
+    const range = Math.max(Math.abs(mn), Math.abs(mx));
+    let hh = '';
+    for (let i=0;i<X.length;i++) {
+      for (let j=0;j<N_GENES;j++) {
+        hh += '<rect x="'+(padL+j*cellW)+'" y="'+(padT+i*cellH)+'" width="'+cellW+'" height="'+cellH+'" fill="'+heatColor(Xz[i][j], range)+'" stroke="#fff" stroke-width="0.5"/>';
+      }
+      hh += '<rect x="'+(padL-10)+'" y="'+(padT+i*cellH)+'" width="6" height="'+cellH+'" fill="'+colors[labels[i]]+'"/>';
+    }
+    hh += '<text x="'+padL+'" y="'+(H-6)+'" font-size="11" fill="#666">Gene1 → Gene'+N_GENES+' →</text>';
+    hh += '<text x="6" y="'+(padT+10)+'" font-size="11" fill="#666">樣本 ↓</text>';
+    heatmap.innerHTML = hh;
+  }
+
+  function drawScatter(Xc, eigenvectors, eigenvalues) {
+    const sw=420, sh=360, sp=42;
+    const Vmat = [];
+    for (let j=0;j<N_GENES;j++) Vmat.push([eigenvectors[0][j], eigenvectors[1][j]]);
+    const scores = matmul(Xc, Vmat);
+    const xs1 = scores.map(s=>s[0]), xs2 = scores.map(s=>s[1]);
+    const x1mn = Math.min.apply(null, xs1), x1mx = Math.max.apply(null, xs1);
+    const x2mn = Math.min.apply(null, xs2), x2mx = Math.max.apply(null, xs2);
+    function sx(v) { return sp + (v-x1mn)/(x1mx-x1mn+1e-9)*(sw-sp-10); }
+    function sy(v) { return sh-sp - (v-x2mn)/(x2mx-x2mn+1e-9)*(sh-sp-20); }
+    const total = eigenvalues.reduce((a,b)=>a+b,0);
+    let h = '';
+    h += '<line x1="'+sp+'" y1="'+(sh-sp)+'" x2="'+(sw-10)+'" y2="'+(sh-sp)+'" stroke="#999"/>';
+    h += '<line x1="'+sp+'" y1="20" x2="'+sp+'" y2="'+(sh-sp)+'" stroke="#999"/>';
+    h += '<text x="'+(sw/2)+'" y="'+(sh-6)+'" text-anchor="middle" font-size="12" fill="#666">PC1 ('+(eigenvalues[0]/total*100).toFixed(1)+'%)</text>';
+    h += '<text x="14" y="'+(sh/2)+'" font-size="12" fill="#666" transform="rotate(-90 14 '+(sh/2)+')" text-anchor="middle">PC2 ('+(eigenvalues[1]/total*100).toFixed(1)+'%)</text>';
+    for (let i=0;i<scores.length;i++) {
+      h += '<circle cx="'+sx(xs1[i])+'" cy="'+sy(xs2[i])+'" r="6" fill="'+colors[labels[i]]+'" stroke="#fff" stroke-width="1.5"/>';
+    }
+    scatter.innerHTML = h;
+  }
+
+  function drawScree(eigenvalues) {
+    const gw=600, gh=220, gp=40;
+    const total = eigenvalues.reduce((a,b)=>a+b,0);
+    const bw = (gw-gp-10)/N_GENES;
+    let cum = 0;
+    const cumX=[], cumY=[];
+    let g = '';
+    g += '<line x1="'+gp+'" y1="'+(gh-30)+'" x2="'+(gw-10)+'" y2="'+(gh-30)+'" stroke="#999"/>';
+    g += '<line x1="'+gp+'" y1="10" x2="'+gp+'" y2="'+(gh-30)+'" stroke="#999"/>';
+    for (let i=0;i<N_GENES;i++) {
+      const r = eigenvalues[i]/total;
+      cum += r;
+      const x = gp + i*bw + 2;
+      const h = r * (gh-50);
+      const y = gh-30-h;
+      g += '<rect x="'+x+'" y="'+y+'" width="'+(bw-4)+'" height="'+h+'" fill="'+(i<3?'#c0392b':'#bbc')+'" rx="1"/>';
+      if (i<3 || i===N_GENES-1) {
+        g += '<text x="'+(x+(bw-4)/2)+'" y="'+(y-3)+'" text-anchor="middle" font-size="9" fill="#333">'+(r*100).toFixed(0)+'%</text>';
+      }
+      g += '<text x="'+(x+(bw-4)/2)+'" y="'+(gh-16)+'" text-anchor="middle" font-size="9" fill="#666">'+(i+1)+'</text>';
+      cumX.push(x+(bw-4)/2);
+      cumY.push(gh-30-cum*(gh-50));
+    }
+    const cumPath = cumX.map((x,i)=>(i?'L':'M')+x+','+cumY[i]).join(' ');
+    g += '<path d="'+cumPath+'" stroke="#2c5aa0" stroke-width="2" fill="none" stroke-dasharray="4 3"/>';
+    g += '<text x="'+(gw-130)+'" y="22" font-size="11" fill="#2c5aa0">━ 累積解釋變異</text>';
+    g += '<text x="'+(gw/2)+'" y="'+(gh-2)+'" text-anchor="middle" font-size="11" fill="#666">主成分編號</text>';
+    screeG.innerHTML = g;
+  }
+
+  document.getElementById('btnGeneNew').onclick = () => { generate(); render(); };
+  sepSlider.oninput = () => { generate(); render(); };
+  generate(); render();
+})();
+</script>
+</body>
+</html>
