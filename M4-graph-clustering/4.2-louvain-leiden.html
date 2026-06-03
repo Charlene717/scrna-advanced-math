@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>4.2 Louvain &amp; Leiden — scRNA-seq Advanced Math</title><link rel="stylesheet" href="../styles.css">
+<script>MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] } };</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
+</head><body>
+<nav class="top-nav"><div class="top-nav-inner">
+  <a href="../index.html" class="top-nav-brand"><span>🧬</span><span data-lang="zh">scRNA-seq 進階數學</span><span data-lang="en">scRNA-seq Advanced Math</span><span class="badge-math">MATH</span></a>
+  <ul class="top-nav-links"><li><a href="../index.html#M1">M1</a></li><li><a href="../index.html#M2">M2</a></li><li><a href="../index.html#M3">M3</a></li><li><a href="../index.html#M4" class="active">M4</a></li><li><a href="../index.html#M5">M5</a></li><li><a href="../index.html#M6">M6</a></li><li><a href="../index.html" data-lang="zh">🏠 回首頁</a><span data-lang="en">🏠 Home</span></li></ul>
+  <div class="lang-switch"><button data-lang-btn="zh" class="active">中文</button><button data-lang-btn="en">EN</button></div>
+</div></nav>
+<header class="page-hero"><div class="page-hero-inner">
+  <div class="page-badge">M4.2 · GRAPH &amp; CLUSTERING</div>
+  <h1 data-lang="zh">Louvain 與 Leiden 演算法</h1><h1 as data-lang="en">Louvain &amp; Leiden</h1>
+  <p class="subtitle" data-lang="zh">Modularity 在優化什麼？Louvain 的「斷裂群」問題與 Leiden 如何修。resolution 參數的數學意義。</p>
+  <p class="subtitle" data-lang="en">What modularity optimizes. Louvain's "disconnected community" bug and Leiden's fix. The math of resolution.</p>
+</div></header>
+
+<main class="content-wrap">
+
+<section class="section">
+  <span class="section-label intuition">直覺 / Intuition</span>
+  <div data-lang="zh"><p>「好的分群」= 群內連接多、群外連接少。<b>Modularity</b> 把這件事量化成一個數字，讓我們可以「優化它」。</p></div>
+  <div data-lang="en"><p>"Good clustering" = many within-edges, few between-edges. <b>Modularity</b> quantifies this for optimization.</p></div>
+</section>
+
+<section class="section">
+  <span class="section-label math">核心數學 / Math</span>
+  <h3>Modularity</h3>
+  <div class="math-block">
+  $$Q = \frac{1}{2m} \sum_{i,j} \left[ A_{ij} - \gamma \frac{k_i k_j}{2m} \right] \delta(c_i, c_j)$$
+  <div class="formula-caption" data-lang="zh">$A_{ij}$ = 邊權重；$k_i$ = 節點度數；$m$ = 邊總權重；$\gamma$ = resolution；$\delta(c_i, c_j)=1$ 若同群</div>
+  <div class="formula-caption" data-lang="en">$A_{ij}$ = edge weight; $k_i$ = degree; $m$ = total weight; $\gamma$ = resolution; $\delta=1$ if same cluster</div>
+  </div>
+  <p data-lang="zh"><b>解讀</b>：「實際邊權重」− 「在隨機圖中的期望邊權重」。Q 越大表示分群越「不像隨機」。</p>
+  <p data-lang="en"><b>Interpretation</b>: "actual edge weight" minus "expected in random graph". Larger Q = clustering further from random.</p>
+
+  <h3 data-lang="zh">resolution 參數 γ</h3><h3 data-lang="en">Resolution parameter γ</h3>
+  <ul data-lang="zh">
+    <li>$\gamma > 1$：對「隨機期望」加重——只接受很顯著的群 → <b>較多、較小的群</b></li>
+    <li>$\gamma < 1$：放寬期望 → <b>較少、較大的群</b></li>
+    <li>$\gamma = 1$：原始 Newman-Girvan modularity</li>
+  </ul>
+  <ul data-lang="en">
+    <li>$\gamma > 1$: stricter random penalty → more, smaller clusters</li>
+    <li>$\gamma < 1$: relaxed → fewer, larger clusters</li>
+    <li>$\gamma = 1$: original Newman-Girvan</li>
+  </ul>
+  <p data-lang="zh">scRNA-seq 常用 0.5–1.5，但「正確 resolution」需要生物學判斷。</p>
+  <p data-lang="en">scRNA-seq typical range 0.5–1.5; "correct" choice requires biological judgment.</p>
+
+  <h3>Louvain <span data-lang="zh">演算法</span><span data-lang="en">algorithm</span></h3>
+  <div class="algo-block">
+<span class="comment"># Two-phase iterative</span>
+<span class="keyword">while</span> Q improves:
+    <span class="step"># Phase 1: local moving</span>
+    <span class="keyword">for</span> v <span class="keyword">in</span> nodes (random order):
+        c* = argmax ΔQ(move v <span class="keyword">to</span> c)
+        assign v <span class="keyword">to</span> c*
+    <span class="step"># Phase 2: aggregation</span>
+    contract each community <span class="keyword">to</span> a single super-node
+    new edges = sum of inter-community weights
+  </div>
+
+  <div class="callout callout-warn">
+    <strong data-lang="zh">⚠️ Louvain 的 bug：斷裂群</strong>
+    <strong data-lang="en">⚠️ Louvain bug: disconnected communities</strong>
+    <p data-lang="zh">Phase 1 可能讓「群 c 中的關鍵節點」移走，剩下的節點被分成兩個<b>實際斷開</b>的子圖——但 Louvain 不會察覺！這在 scRNA-seq 大數據集很常見。</p>
+    <p data-lang="en">Phase 1 may remove a "bridge node", leaving a community split into <b>actually disconnected</b> subgraphs — Louvain doesn't notice! Common in large scRNA-seq data.</p>
+  </div>
+
+  <h3>Leiden <span data-lang="zh">的修正</span><span data-lang="en">fix</span></h3>
+  <p data-lang="zh">在 Phase 1 與 Phase 2 之間插入 <b>refinement phase</b>：把每個群拆成「保證連通」的子群，再聚合。</p>
+  <p data-lang="en">Insert a <b>refinement phase</b> between Phase 1 and 2: split each community into guaranteed-connected sub-communities before aggregating.</p>
+  <p data-lang="zh">Traag et al. 2019 證明 Leiden 保證：(1) 所有群連通；(2) 每個節點都「最佳對應」其群。<b>現在所有主流 scRNA-seq 工具預設都是 Leiden</b>。</p>
+  <p data-lang="en">Traag et al. (2019) prove: (1) all communities connected; (2) every node "optimally assigned". <b>All modern tools default to Leiden now</b>.</p>
+</section>
+
+<section class="section">
+  <span class="section-label code">程式碼 / Code</span>
+  <div class="code-tabs"><div class="code-tab-btns"><button class="code-tab-btn active" onclick="switchTab(this,'py11')">Python</button><button class="code-tab-btn" onclick="switchTab(this,'r11')">R</button></div>
+    <div class="code-tab-content active" id="py11"><pre>sc.tl.leiden(adata, resolution=<span class="num">1.0</span>, random_state=<span class="num">42</span>)
+sc.pl.umap(adata, color=<span class="str">"leiden"</span>)
+
+<span class="comment"># 試多種 resolution</span>
+<span class="keyword">for</span> r <span class="keyword">in</span> [<span class="num">0.5</span>, <span class="num">0.8</span>, <span class="num">1.0</span>, <span class="num">1.5</span>]:
+    sc.tl.leiden(adata, resolution=r, key_added=<span class="str">f"leiden_r{r}"</span>)
+</pre></div>
+    <div class="code-tab-content" id="r11"><pre>pbmc &lt;- <span class="func">FindClusters</span>(pbmc, resolution = <span class="num">0.5</span>, algorithm = <span class="num">4</span>)
+<span class="comment"># algorithm = 4 是 Leiden；預設 1 是 Louvain</span>
+</pre></div>
+  </div>
+</section>
+
+<section class="section">
+  <span class="section-label">參考 / References</span>
+  <ul class="refs-list">
+    <li><div class="ref-title">Newman, M.E.J. (2006). Modularity and community structure in networks.</div><div class="ref-meta">PNAS 103. <a href="https://doi.org/10.1073/pnas.0601602103">10.1073/pnas.0601602103</a></div></li>
+    <li><div class="ref-title">Blondel, V.D. et al. (2008). Fast unfolding of communities in large networks.</div><div class="ref-meta">J Stat Mech. Louvain 原始論文。</div></li>
+    <li><div class="ref-title">Traag, V.A., Waltman, L., van Eck, N.J. (2019). From Louvain to Leiden.</div><div class="ref-meta">Sci Reports 9. <a href="https://doi.org/10.1038/s41598-019-41695-z">10.1038/s41598-019-41695-z</a></div></li>
+  </ul>
+</section>
+
+<div class="cross-links">
+  <a href="4.1-knn-graph.html" class="cross-link"><div class="cross-label" data-lang="zh">← 上一篇</div><div class="cross-label" data-lang="en">← PREV</div><div class="cross-title"><span class="cross-id">M4.1</span> KNN graph</div></a>
+  <a href="../M5-statistics/5.1-de-tests.html" class="cross-link"><div class="cross-label" data-lang="zh">下一個模塊 →</div><div class="cross-label" data-lang="en">NEXT MODULE →</div><div class="cross-title"><span class="cross-id">M5.1</span> DE Tests</div></a>
+</div>
+
+</main>
+<footer class="site-footer"><p>© Charlene</p></footer>
+<script src="../i18n.js"></script>
+<script>function switchTab(b,id){const p=b.closest(".code-tabs");p.querySelectorAll(".code-tab-btn").forEach(x=>x.classList.remove("active"));p.querySelectorAll(".code-tab-content").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(id).classList.add("active");}</script>
+</body></html>

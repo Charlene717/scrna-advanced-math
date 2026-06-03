@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>4.1 KNN Graph &amp; HNSW — scRNA-seq Advanced Math</title><link rel="stylesheet" href="../styles.css">
+<script>MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] } };</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
+</head><body>
+<nav class="top-nav"><div class="top-nav-inner">
+  <a href="../index.html" class="top-nav-brand"><span>🧬</span><span data-lang="zh">scRNA-seq 進階數學</span><span data-lang="en">scRNA-seq Advanced Math</span><span class="badge-math">MATH</span></a>
+  <ul class="top-nav-links"><li><a href="../index.html#M1">M1</a></li><li><a href="../index.html#M2">M2</a></li><li><a href="../index.html#M3">M3</a></li><li><a href="../index.html#M4" class="active">M4</a></li><li><a href="../index.html#M5">M5</a></li><li><a href="../index.html#M6">M6</a></li><li><a href="../index.html" data-lang="zh">🏠 回首頁</a><span data-lang="en">🏠 Home</span></li></ul>
+  <div class="lang-switch"><button data-lang-btn="zh" class="active">中文</button><button data-lang-btn="en">EN</button></div>
+</div></nav>
+<header class="page-hero"><div class="page-hero-inner">
+  <div class="page-badge">M4.1 · GRAPH &amp; CLUSTERING</div>
+  <h1 data-lang="zh">KNN graph 與 HNSW 加速</h1><h1 data-lang="en">KNN Graph &amp; HNSW</h1>
+  <p class="subtitle" data-lang="zh">在 30 維、100 萬個細胞中找 15 個近鄰要花多久？HNSW 怎麼把 O(n²) 降到 O(n log n)？</p>
+  <p class="subtitle" data-lang="en">Finding 15-NN among 1M cells in 30D. How HNSW reduces O(n²) to O(n log n).</p>
+</div></header>
+
+<main class="content-wrap">
+
+<section class="section">
+  <span class="section-label intuition">直覺 / Intuition</span>
+  <div data-lang="zh"><p>分群、UMAP、Pseudotime 全部都要 KNN graph。但暴力法（每對細胞算距離）對 100 萬細胞要算 $5 \times 10^{11}$ 對——大概要算到天荒地老。</p>
+    <p>所以實務上用「近似」演算法：<b>HNSW (Hierarchical Navigable Small World)</b>。</p></div>
+  <div data-lang="en"><p>Clustering, UMAP, pseudotime all need KNN. Brute force on 1M cells is $5 \times 10^{11}$ pairs. We use approximate algorithms — <b>HNSW</b>.</p></div>
+</section>
+
+<section class="section">
+  <span class="section-label math">核心數學 / Math</span>
+  <h3 data-lang="zh">KNN graph 定義</h3><h3 data-lang="en">KNN graph definition</h3>
+  <div class="math-block">$$\mathcal{N}_k(i) = \arg\min_{S \subset V, |S|=k} \sum_{j \in S} \|x_i - x_j\|$$</div>
+  <p data-lang="zh">「鄰居」可以是有向（i→j 表示 j 是 i 的近鄰）或無向（mutual KNN）。Seurat 用 mutual + Jaccard 加權，Scanpy 用 UMAP 風格的 fuzzy 加權。</p>
+  <p data-lang="en">Edges can be directed (j is i's neighbor) or mutual (mNN). Seurat uses mutual + Jaccard; Scanpy uses UMAP-style fuzzy weights.</p>
+
+  <h3>HNSW <span data-lang="zh">的兩個核心想法</span><span data-lang="en">two core ideas</span></h3>
+  <ol data-lang="zh">
+    <li><b>Navigable Small World</b>：每個節點有少數「長程連結」+ 多數「短程連結」。從任何點都能 $O(\log n)$ 跳到目標。</li>
+    <li><b>Hierarchy</b>：建多層圖。上層稀疏，搜尋從上層開始「粗找」，逐層下沉「細找」。</li>
+  </ol>
+  <ol data-lang="en">
+    <li><b>Navigable Small World</b>: few long edges + many short edges → reach any target in $O(\log n)$.</li>
+    <li><b>Hierarchy</b>: multi-layer graph. Sparse top for coarse search, descend for refinement.</li>
+  </ol>
+
+  <h3 data-lang="zh">搜尋複雜度</h3><h3 data-lang="en">Search complexity</h3>
+  <div class="math-block">$$T_{\text{search}} = O(\log n)$$</div>
+  <p data-lang="zh">建構成本 $O(n \log n)$，記憶體 $O(n \cdot M)$（$M$ = 每節點連結數，典型 16）。</p>
+  <p data-lang="en">Build: $O(n \log n)$. Memory: $O(n \cdot M)$ ($M$ ≈ 16 connections per node).</p>
+
+  <h3 data-lang="zh">Jaccard 邊權重（Seurat）</h3><h3 data-lang="en">Jaccard edge weights (Seurat)</h3>
+  <div class="math-block">$$w_{ij} = \frac{|\mathcal{N}_k(i) \cap \mathcal{N}_k(j)|}{|\mathcal{N}_k(i) \cup \mathcal{N}_k(j)|}$$</div>
+  <p data-lang="zh">兩個細胞「共同鄰居」越多權重越大。比單純距離更穩健。</p>
+  <p data-lang="en">More shared neighbors → higher weight. More robust than raw distance.</p>
+</section>
+
+<section class="section">
+  <span class="section-label algo">演算法 / Algorithm</span>
+  <div class="algo-block">
+<span class="comment"># HNSW Search</span>
+<span class="keyword">def</span> <span class="func">search_knn</span>(q, k):
+    ep = entry_point          <span class="comment"># 最上層的進入點</span>
+    <span class="keyword">for</span> level <span class="keyword">in</span> reversed(range(<span class="num">1</span>, max_level)):
+        ep = greedy_search(q, ep, level)   <span class="comment"># 在該層找最近的</span>
+    <span class="keyword">return</span> beam_search(q, ep, level=<span class="num">0</span>, k=k)
+  </div>
+</section>
+
+<section class="section">
+  <span class="section-label code">程式碼 / Code</span>
+  <div class="code-tabs"><div class="code-tab-btns"><button class="code-tab-btn active" onclick="switchTab(this,'py10')">Python</button><button class="code-tab-btn" onclick="switchTab(this,'r10')">R</button></div>
+    <div class="code-tab-content active" id="py10"><pre><span class="comment"># Scanpy 預設用 PyNNDescent (基於 NN-descent)，可選 hnswlib</span>
+sc.pp.neighbors(adata, n_neighbors=<span class="num">15</span>, n_pcs=<span class="num">30</span>, method=<span class="str">"umap"</span>)
+adata.obsp[<span class="str">"connectivities"</span>]   <span class="comment"># 稀疏圖</span>
+
+<span class="comment"># 直接用 hnswlib</span>
+<span class="keyword">import</span> hnswlib
+p = hnswlib.Index(space=<span class="str">"l2"</span>, dim=<span class="num">30</span>)
+p.init_index(max_elements=<span class="num">1000000</span>, ef_construction=<span class="num">200</span>, M=<span class="num">16</span>)
+p.add_items(adata.obsm[<span class="str">"X_pca"</span>])
+labels, distances = p.knn_query(adata.obsm[<span class="str">"X_pca"</span>], k=<span class="num">15</span>)
+</pre></div>
+    <div class="code-tab-content" id="r10"><pre>pbmc &lt;- <span class="func">FindNeighbors</span>(pbmc, dims = <span class="num">1</span>:<span class="num">30</span>, k.param = <span class="num">15</span>,
+                       annoy.metric = <span class="str">"euclidean"</span>)
+<span class="comment"># Seurat 用 Annoy (Spotify) 或 RcppHNSW</span>
+</pre></div>
+  </div>
+</section>
+
+<section class="section">
+  <span class="section-label">參考 / References</span>
+  <ul class="refs-list">
+    <li><div class="ref-title">Malkov, Y.A. &amp; Yashunin, D.A. (2018). Efficient and Robust Approximate Nearest Neighbor Search Using Hierarchical Navigable Small World Graphs.</div><div class="ref-meta">IEEE TPAMI. <a href="https://doi.org/10.1109/TPAMI.2018.2889473">10.1109/TPAMI.2018.2889473</a></div></li>
+    <li><div class="ref-title">Dong, W., Charikar, M., Li, K. (2011). NN-Descent.</div><div class="ref-meta">WWW. PyNNDescent 基礎。</div></li>
+  </ul>
+</section>
+
+<div class="cross-links">
+  <a href="../PCA/PCA_互動教材.html" class="cross-link"><div class="cross-label" data-lang="zh">← 降維 PCA</div><div class="cross-label" data-lang="en">← PCA</div><div class="cross-title"><span class="cross-id">M3.1</span> PCA</div></a>
+  <a href="4.2-louvain-leiden.html" class="cross-link"><div class="cross-label" data-lang="zh">下一篇 →</div><div class="cross-label" data-lang="en">NEXT →</div><div class="cross-title"><span class="cross-id">M4.2</span> Leiden</div></a>
+</div>
+
+</main>
+<footer class="site-footer"><p>© Charlene</p></footer>
+<script src="../i18n.js"></script>
+<script>function switchTab(b,id){const p=b.closest(".code-tabs");p.querySelectorAll(".code-tab-btn").forEach(x=>x.classList.remove("active"));p.querySelectorAll(".code-tab-content").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(id).classList.add("active");}</script>
+</body></html>
