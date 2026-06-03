@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>5.2 Multiple Testing &amp; FDR — scRNA-seq Advanced Math</title><link rel="stylesheet" href="../styles.css">
+<script>MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] } };</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
+</head><body>
+<nav class="top-nav"><div class="top-nav-inner">
+  <a href="../index.html" class="top-nav-brand"><span>🧬</span><span data-lang="zh">scRNA-seq 進階數學</span><span data-lang="en">scRNA-seq Advanced Math</span><span class="badge-math">MATH</span></a>
+  <ul class="top-nav-links"><li><a href="../index.html#M1">M1</a></li><li><a href="../index.html#M2">M2</a></li><li><a href="../index.html#M3">M3</a></li><li><a href="../index.html#M4">M4</a></li><li><a href="../index.html#M5" class="active">M5</a></li><li><a href="../index.html#M6">M6</a></li><li><a href="../index.html" data-lang="zh">🏠 回首頁</a><span data-lang="en">🏠 Home</span></li></ul>
+  <div class="lang-switch"><button data-lang-btn="zh" class="active">中文</button><button data-lang-btn="en">EN</button></div>
+</div></nav>
+<header class="page-hero"><div class="page-hero-inner">
+  <div class="page-badge">M5.2 · STATISTICAL INFERENCE</div>
+  <h1 data-lang="zh">多重檢定校正：FDR</h1><h1 data-lang="en">Multiple Testing &amp; FDR</h1>
+  <p class="subtitle" data-lang="zh">2 萬個基因做 t 檢定為什麼會「滿地都是顯著」？FWER vs FDR、BH 程序的證明。</p>
+  <p class="subtitle" data-lang="en">Why 20k simultaneous tests yield bogus significance. FWER vs FDR. Proof sketch of BH.</p>
+</div></header>
+
+<main class="content-wrap">
+
+<section class="section">
+  <span class="section-label intuition">直覺 / Intuition</span>
+  <div data-lang="zh"><p>對 2 萬個基因每個做 t 檢定，<b>即使沒有真實差異，仍會有 1,000 個 p &lt; 0.05</b>（純粹巧合）。如果不校正，DE 結果幾乎全是假陽性。</p></div>
+  <div data-lang="en"><p>20,000 t-tests yield ~1,000 false positives at α=0.05 even under null. Without correction, DE results are mostly noise.</p></div>
+</section>
+
+<section class="section">
+  <span class="section-label math">核心數學 / Math</span>
+  <h3>FWER (Family-Wise Error Rate)</h3>
+  <div class="math-block">$$\text{FWER} = P(\text{至少一個假陽性 / at least one FP})$$</div>
+  <p data-lang="zh"><b>Bonferroni 校正</b>：要 FWER ≤ α，每個檢定用 $\alpha/m$ 當門檻。</p>
+  <p data-lang="en"><b>Bonferroni</b>: for FWER ≤ α, threshold each test at $\alpha/m$.</p>
+  <div class="math-block">$$\text{Bonferroni: reject } H_i \iff p_i \leq \alpha / m$$</div>
+  <p data-lang="zh"><b>問題</b>：太嚴格。$m=20,000$ 時 Bonferroni 要 $p_i \leq 2.5 \times 10^{-6}$——真的差異也常被砍掉。</p>
+  <p data-lang="en"><b>Issue</b>: too strict. With $m=20,000$, requires $p_i \leq 2.5 \times 10^{-6}$ — kills real signal.</p>
+
+  <h3>FDR (False Discovery Rate)</h3>
+  <div class="math-block">$$\text{FDR} = E\left[\frac{V}{R}\right]$$<div class="formula-caption" data-lang="zh">$V$ = 假陽性數、$R$ = 被宣告陽性數</div><div class="formula-caption" data-lang="en">$V$ = false positives, $R$ = declared positives</div></div>
+  <p data-lang="zh">控制「<b>被宣告為陽性中，假陽性的比例</b>」——不是「有沒有假陽性」。
+  生物學家更在意這個——「我手上這 100 個 DE genes，期望有幾個是真的」。</p>
+  <p data-lang="en">Controls "<b>fraction of declared positives that are false</b>" — not "any false positive at all". Biologically meaningful.</p>
+
+  <h3>Benjamini-Hochberg <span data-lang="zh">程序</span><span data-lang="en">procedure</span></h3>
+  <div class="algo-block">
+<span class="comment"># Step 1: 排序 p-values</span>
+p_(1) ≤ p_(2) ≤ ... ≤ p_(m)
+
+<span class="comment"># Step 2: 找最大的 k 使得</span>
+<span class="keyword">find</span> max k s.t.  p_(k) ≤ k · α / m
+
+<span class="comment"># Step 3: 拒絕前 k 個假設</span>
+<span class="keyword">reject</span> H_(1), ..., H_(k)
+  </div>
+  <p data-lang="zh"><b>BH 的證明（直覺）</b>：在獨立或正相關下，BH 程序保證 $\text{FDR} \leq \alpha$。<br>
+  關鍵想法：把 $p_{(k)}$ 與 $k\alpha/m$ 比較相當於問「前 k 個發現中，預期會有多少是隨機產生的」。</p>
+  <p data-lang="en"><b>BH proof intuition</b>: under independence or PRDS, $\text{FDR} \leq \alpha$. Comparing $p_{(k)}$ vs $k\alpha/m$ asks "among top k discoveries, how many are expected by chance".</p>
+
+  <h3>q-value <span data-lang="zh">的解讀</span><span data-lang="en">interpretation</span></h3>
+  <p data-lang="zh">每個基因的 BH-adjusted p-value 稱 q-value。<b>q = 0.05</b> 意義是：「把此 q 值當門檻，期望中有 5% 的『陽性』其實是假的」。</p>
+  <p data-lang="en">BH-adjusted p-value = q-value. <b>q = 0.05</b> means: "thresholding at this q, expected FDR is 5%".</p>
+
+  <div class="callout callout-note">
+    <strong data-lang="zh">📝 Storey q-value 改進</strong><strong data-lang="en">📝 Storey q-value refinement</strong>
+    <p data-lang="zh">Storey (2002) 引入 $\hat\pi_0$（真實 null 假設的比例估計），把 BH 程序改良為：$q_i = \hat\pi_0 \cdot p_i \cdot m / k_i$。在 scRNA-seq 高比例「無差異基因」情境下更不保守。</p>
+    <p data-lang="en">Storey (2002) introduces $\hat\pi_0$ (proportion of true nulls), refining BH as $q_i = \hat\pi_0 \cdot p_i \cdot m / k_i$. Less conservative when many true nulls exist.</p>
+  </div>
+</section>
+
+<section class="section">
+  <span class="section-label code">程式碼 / Code</span>
+  <div class="code-tabs"><div class="code-tab-btns"><button class="code-tab-btn active" onclick="switchTab(this,'py13')">Python</button><button class="code-tab-btn" onclick="switchTab(this,'r13')">R</button></div>
+    <div class="code-tab-content active" id="py13"><pre><span class="keyword">from</span> statsmodels.stats.multitest <span class="keyword">import</span> multipletests
+reject, pvals_adj, _, _ = multipletests(pvals, alpha=<span class="num">0.05</span>, method=<span class="str">"fdr_bh"</span>)
+
+<span class="comment"># Scanpy 自動加 padj</span>
+sc.tl.rank_genes_groups(adata, <span class="str">"leiden"</span>, method=<span class="str">"wilcoxon"</span>)
+<span class="comment"># adata.uns["rank_genes_groups"]["pvals_adj"]</span>
+</pre></div>
+    <div class="code-tab-content" id="r13"><pre><span class="comment"># Base R</span>
+padj &lt;- <span class="func">p.adjust</span>(pvals, method = <span class="str">"BH"</span>)
+
+<span class="comment"># Storey q-value</span>
+<span class="keyword">library</span>(qvalue)
+qobj &lt;- <span class="func">qvalue</span>(pvals)
+qobj$qvalues
+qobj$pi0       <span class="comment"># 估計的真實 null 比例</span>
+</pre></div>
+  </div>
+</section>
+
+<section class="section">
+  <span class="section-label">參考 / References</span>
+  <ul class="refs-list">
+    <li><div class="ref-title">Benjamini, Y. &amp; Hochberg, Y. (1995). Controlling the FDR.</div><div class="ref-meta">JRSS-B 57.</div></li>
+    <li><div class="ref-title">Storey, J.D. (2002). A direct approach to false discovery rates.</div><div class="ref-meta">JRSS-B 64.</div></li>
+    <li><div class="ref-title">Efron, B. (2010). Large-Scale Inference.</div><div class="ref-meta">Cambridge. 經典參考書。</div></li>
+  </ul>
+</section>
+
+<div class="cross-links">
+  <a href="5.1-de-tests.html" class="cross-link"><div class="cross-label" data-lang="zh">← 上一篇</div><div class="cross-label" data-lang="en">← PREV</div><div class="cross-title"><span class="cross-id">M5.1</span> DE Tests</div></a>
+  <a href="5.3-classifier.html" class="cross-link"><div class="cross-label" data-lang="zh">下一篇 →</div><div class="cross-label" data-lang="en">NEXT →</div><div class="cross-title"><span class="cross-id">M5.3</span> Classifier</div></a>
+</div>
+
+</main>
+<footer class="site-footer"><p>© Charlene</p></footer>
+<script src="../i18n.js"></script>
+<script>function switchTab(b,id){const p=b.closest(".code-tabs");p.querySelectorAll(".code-tab-btn").forEach(x=>x.classList.remove("active"));p.querySelectorAll(".code-tab-content").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(id).classList.add("active");}</script>
+</body></html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>5.3 Cell Type Classifier — scRNA-seq Advanced Math</title><link rel="stylesheet" href="../styles.css">
+<script>MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] } };</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
+</head><body>
+<nav class="top-nav"><div class="top-nav-inner">
+  <a href="../index.html" class="top-nav-brand"><span>🧬</span><span data-lang="zh">scRNA-seq 進階數學</span><span data-lang="en">scRNA-seq Advanced Math</span><span class="badge-math">MATH</span></a>
+  <ul class="top-nav-links"><li><a href="../index.html#M1">M1</a></li><li><a href="../index.html#M2">M2</a></li><li><a href="../index.html#M3">M3</a></li><li><a href="../index.html#M4">M4</a></li><li><a href="../index.html#M5" class="active">M5</a></li><li><a href="../index.html#M6">M6</a></li><li><a href="../index.html" data-lang="zh">🏠 回首頁</a><span data-lang="en">🏠 Home</span></li></ul>
+  <div class="lang-switch"><button data-lang-btn="zh" class="active">中文</button><button data-lang-btn="en">EN</button></div>
+</div></nav>
+<header class="page-hero"><div class="page-hero-inner">
+  <div class="page-badge">M5.3 · STATISTICAL INFERENCE</div>
+  <h1 data-lang="zh">細胞型態分類器</h1><h1 data-lang="en">Cell Type Classifiers</h1>
+  <p class="subtitle" data-lang="zh">怎麼從「reference 資料集」變成可用的分類器？SingleR、CellTypist、scANVI 的數學原理。</p>
+  <p class="subtitle" data-lang="en">Turning reference datasets into classifiers. The math of SingleR, CellTypist, scANVI.</p>
+</div></header>
+
+<main class="content-wrap">
+
+<section class="section">
+  <span class="section-label intuition">直覺 / Intuition</span>
+  <div data-lang="zh"><p>Annotation 有兩條路：(1) marker-based（手工挑 marker genes 評分）；(2) reference-based（用標好的 atlas 訓練分類器）。後者是現代主流。</p></div>
+  <div data-lang="en"><p>Two routes: (1) marker-based (score curated markers); (2) reference-based (train classifier from annotated atlas). The latter is modern default.</p></div>
+</section>
+
+<section class="section">
+  <span class="section-label math">核心數學 / Math</span>
+  <h3>① SingleR <span data-lang="zh">— Spearman 相關性</span><span data-lang="en">— Spearman correlation</span></h3>
+  <p data-lang="zh">把 query 細胞與 reference 中每個細胞型態的「典型表現量」算 Spearman 相關，最高分為分類。然後用「fine-tuning」迭代縮小候選集。</p>
+  <p data-lang="en">Spearman correlation between query cell and "typical expression" of each reference cell type. Highest score wins. Iterative fine-tuning refines candidates.</p>
+  <div class="math-block">$$\hat{c}(q) = \arg\max_c \, \rho_{\text{Spearman}}(q, \bar{r}_c)$$</div>
+
+  <h3>② CellTypist <span data-lang="zh">— 邏輯回歸 + SGD</span></h3>
+  <p data-lang="zh">每個細胞型態訓練一個 one-vs-rest 邏輯回歸：</p>
+  <p data-lang="en">One-vs-rest logistic regression per cell type:</p>
+  <div class="math-block">
+  $$P(y = c \mid \mathbf{x}) = \sigma(\mathbf{w}_c^\top \mathbf{x} + b_c), \quad \sigma(z) = \frac{1}{1+e^{-z}}$$
+  $$\hat{c}(\mathbf{x}) = \arg\max_c P(y = c \mid \mathbf{x})$$
+  </div>
+  <p data-lang="zh">參數用 L2 正則化 SGD 訓練，可處理百萬細胞 atlas。</p>
+  <p data-lang="en">Trained with L2-regularized SGD, scales to million-cell atlases.</p>
+
+  <h3>③ scANVI <span data-lang="zh">— 半監督 VAE</span><span data-lang="en">— semi-supervised VAE</span></h3>
+  <p data-lang="zh">擴展 scVI（M6 會用到的深度模型）讓<b>未標註細胞也參與訓練</b>。核心是 ELBO 加上分類損失：</p>
+  <p data-lang="en">Extends scVI to use unlabeled cells. ELBO with classification term:</p>
+  <div class="math-block">
+  $$\mathcal{L} = \underbrace{\mathbb{E}_{q(z|x)}[\log p(x|z)] - \text{KL}(q(z|x) \| p(z))}_{\text{ELBO}} + \alpha \cdot \mathbb{E}[\log p(y|z)]$$
+  </div>
+  <p data-lang="zh">$z$ = 潛在表示（拿掉 batch effect 後）、$y$ = 細胞型態標籤。對於未標註細胞只用 ELBO 那部分。</p>
+  <p data-lang="en">$z$ = latent representation (batch-corrected); $y$ = cell type. Unlabeled cells only contribute to ELBO.</p>
+</section>
+
+<section class="section">
+  <span class="section-label">比較 / Comparison</span>
+  <table class="compare-table">
+    <tr><th></th><th>SingleR</th><th>CellTypist</th><th>scANVI</th></tr>
+    <tr><td data-lang="zh">模型</td><td data-lang="en">Model</td><td>Spearman相關</td><td>Logistic regression</td><td>半監督 VAE</td></tr>
+    <tr><td data-lang="zh">速度</td><td data-lang="en">Speed</td><td class="meh">中</td><td class="good">快（GPU）</td><td class="bad">慢（訓練）</td></tr>
+    <tr><td data-lang="zh">處理 batch</td><td data-lang="en">Batch handling</td><td class="bad">需先校正</td><td class="meh">部分</td><td class="good">內建</td></tr>
+    <tr><td data-lang="zh">罕見細胞</td><td data-lang="en">Rare types</td><td class="good">好</td><td class="meh">中</td><td class="meh">中</td></tr>
+    <tr><td data-lang="zh">未知細胞偵測</td><td data-lang="en">Unknown detection</td><td class="meh">delta score</td><td class="good">probability</td><td class="good">model uncertainty</td></tr>
+  </table>
+</section>
+
+<section class="section">
+  <span class="section-label code">程式碼 / Code</span>
+  <div class="code-tabs"><div class="code-tab-btns"><button class="code-tab-btn active" onclick="switchTab(this,'py14')">Python</button><button class="code-tab-btn" onclick="switchTab(this,'r14')">R</button></div>
+    <div class="code-tab-content active" id="py14"><pre><span class="keyword">import</span> celltypist
+predictions = celltypist.annotate(adata, model=<span class="str">"Immune_All_Low.pkl"</span>)
+adata.obs[<span class="str">"celltypist"</span>] = predictions.predicted_labels
+
+<span class="comment"># scANVI</span>
+<span class="keyword">import</span> scvi
+scvi.model.SCANVI.setup_anndata(adata, labels_key=<span class="str">"cell_type"</span>, unlabeled_category=<span class="str">"Unknown"</span>)
+model = scvi.model.SCANVI(adata)
+model.train()
+</pre></div>
+    <div class="code-tab-content" id="r14"><pre><span class="keyword">library</span>(SingleR); <span class="keyword">library</span>(celldex)
+ref &lt;- <span class="func">HumanPrimaryCellAtlasData</span>()
+pred &lt;- <span class="func">SingleR</span>(test = <span class="func">as.SingleCellExperiment</span>(pbmc), ref = ref, labels = ref$label.main)
+pbmc$cell_type &lt;- pred$labels
+</pre></div>
+  </div>
+</section>
+
+<section class="section">
+  <span class="section-label">參考 / References</span>
+  <ul class="refs-list">
+    <li><div class="ref-title">Aran, D. et al. (2019). SingleR.</div><div class="ref-meta">Nat Immunol 20. <a href="https://doi.org/10.1038/s41590-018-0276-y">10.1038/s41590-018-0276-y</a></div></li>
+    <li><div class="ref-title">Domínguez Conde, C. et al. (2022). Cross-tissue immune cell analysis (CellTypist).</div><div class="ref-meta">Science 376. <a href="https://doi.org/10.1126/science.abl5197">10.1126/science.abl5197</a></div></li>
+    <li><div class="ref-title">Xu, C. et al. (2021). scANVI.</div><div class="ref-meta">Mol Syst Biol 17. <a href="https://doi.org/10.15252/msb.20209620">10.15252/msb.20209620</a></div></li>
+  </ul>
+</section>
+
+<div class="cross-links">
+  <a href="5.2-multiple-testing.html" class="cross-link"><div class="cross-label" data-lang="zh">← 上一篇</div><div class="cross-label" data-lang="en">← PREV</div><div class="cross-title"><span class="cross-id">M5.2</span> FDR</div></a>
+  <a href="../M6-advanced/6.1-integration.html" class="cross-link"><div class="cross-label" data-lang="zh">進階 →</div><div class="cross-label" data-lang="en">ADVANCED →</div><div class="cross-title"><span class="cross-id">M6.1</span> Integration</div></a>
+</div>
+
+</main>
+<footer class="site-footer"><p>© Charlene</p></footer>
+<script src="../i18n.js"></script>
+<script>function switchTab(b,id){const p=b.closest(".code-tabs");p.querySelectorAll(".code-tab-btn").forEach(x=>x.classList.remove("active"));p.querySelectorAll(".code-tab-content").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(id).classList.add("active");}</script>
+</body></html>

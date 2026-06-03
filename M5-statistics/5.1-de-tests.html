@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>5.1 DE Tests — scRNA-seq Advanced Math</title><link rel="stylesheet" href="../styles.css">
+<script>MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] } };</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
+</head><body>
+<nav class="top-nav"><div class="top-nav-inner">
+  <a href="../index.html" class="top-nav-brand"><span>🧬</span><span data-lang="zh">scRNA-seq 進階數學</span><span data-lang="en">scRNA-seq Advanced Math</span><span class="badge-math">MATH</span></a>
+  <ul class="top-nav-links"><li><a href="../index.html#M1">M1</a></li><li><a href="../index.html#M2">M2</a></li><li><a href="../index.html#M3">M3</a></li><li><a href="../index.html#M4">M4</a></li><li><a href="../index.html#M5" class="active">M5</a></li><li><a href="../index.html#M6">M6</a></li><li><a href="../index.html" data-lang="zh">🏠 回首頁</a><span data-lang="en">🏠 Home</span></li></ul>
+  <div class="lang-switch"><button data-lang-btn="zh" class="active">中文</button><button data-lang-btn="en">EN</button></div>
+</div></nav>
+<header class="page-hero"><div class="page-hero-inner">
+  <div class="page-badge">M5.1 · STATISTICAL INFERENCE</div>
+  <h1 data-lang="zh">DE 檢定：Wilcoxon · MAST · DESeq2</h1><h1 data-lang="en">DE Tests</h1>
+  <p class="subtitle" data-lang="zh">三大主流方法的數學差異。為什麼 Wilcoxon 是 Seurat 預設？MAST 的 hurdle model 怎麼處理零？</p>
+  <p class="subtitle" data-lang="en">The math of three mainstream methods. Why Wilcoxon is Seurat default. How MAST's hurdle handles zeros.</p>
+</div></header>
+
+<main class="content-wrap">
+
+<section class="section">
+  <span class="section-label intuition">直覺 / Intuition</span>
+  <div data-lang="zh"><p>分群之後最常問：「<b>哪些基因在 cluster A 跟 cluster B 之間有差異？</b>」這是 DE 分析的核心問題。三大方法有不同假設與適用情境。</p></div>
+  <div data-lang="en"><p>After clustering: <b>which genes differ between cluster A and B?</b> Three mainstream tests with different assumptions.</p></div>
+</section>
+
+<section class="section">
+  <span class="section-label math">核心數學 / Math</span>
+  <h3>① Wilcoxon rank-sum test <span data-lang="zh">（Seurat 預設）</span></h3>
+  <p data-lang="zh">完全<b>無分布假設</b>。把兩組所有表現量混合排序，然後比較兩組的「排名總和」。</p>
+  <p data-lang="en">Fully <b>distribution-free</b>. Merge and rank all expressions, compare rank sums.</p>
+  <div class="math-block">
+  $$U = R_1 - \frac{n_1(n_1+1)}{2}, \quad Z = \frac{U - n_1 n_2 / 2}{\sqrt{n_1 n_2 (n_1 + n_2 + 1)/12}}$$
+  </div>
+  <p data-lang="zh"><b>優點</b>：穩健、快、不需擔心分布。<br><b>缺點</b>：忽略「強度」資訊，只看排名；計數中大量零讓排名平手很多。</p>
+  <p data-lang="en"><b>Pros</b>: robust, fast, distribution-free. <b>Cons</b>: ignores magnitude; many ties from zeros.</p>
+
+  <h3>② MAST <span data-lang="zh">的 hurdle 模型</span></h3>
+  <p data-lang="zh">scRNA-seq 計數有兩個成分：「是否表達」(0/非 0)、「表達多少」(正值)。MAST 用兩個模型分別建模：</p>
+  <p data-lang="en">scRNA-seq counts have two components: expressed (0 vs nonzero) and magnitude. MAST fits two models:</p>
+  <div class="math-block">
+  $$\underbrace{P(X_{ij} > 0) = \text{logit}^{-1}(\alpha_0 + \alpha_1 \cdot g_j + \alpha_2 \cdot \text{CDR}_j)}_{\text{discrete: expressed or not}}$$
+  $$\underbrace{X_{ij} \mid X_{ij} > 0 \sim \mathcal{N}(\beta_0 + \beta_1 g_j + \beta_2 \text{CDR}_j, \sigma^2)}_{\text{continuous: how much}}$$
+  <div class="formula-caption" data-lang="zh">CDR = cellular detection rate（細胞檢測率），用來控制 cell-level 變異</div>
+  <div class="formula-caption" data-lang="en">CDR = cellular detection rate (controls cell-level variation)</div>
+  </div>
+  <p data-lang="zh">兩個 likelihood 相乘做聯合檢定。<b>優點</b>：明確區分「該不該表達」與「表達多少」、能加 covariate。</p>
+  <p data-lang="en">Joint LRT on combined likelihood. <b>Pros</b>: separates "expressed?" from "how much"; supports covariates.</p>
+
+  <h3>③ DESeq2 <span data-lang="zh">負二項 GLM</span></h3>
+  <div class="math-block">
+  $$x_{ij} \sim \text{NB}(\mu_{ij}, \theta_j), \quad \log(\mu_{ij}) = \log(s_i) + \beta_0^{(j)} + \beta_1^{(j)} \cdot g_i$$
+  <div class="formula-caption" data-lang="zh">$s_i$ = size factor；$\beta_1^{(j)}$ = log fold change；$\theta_j$ 用 empirical Bayes 估計</div>
+  <div class="formula-caption" data-lang="en">$s_i$ = size factor; $\beta_1^{(j)}$ = log fold change; $\theta_j$ via empirical Bayes</div>
+  </div>
+  <p data-lang="zh">用 Wald test 檢驗 $H_0: \beta_1^{(j)} = 0$。<b>適合 pseudo-bulk 分析</b>（先把同 cluster 細胞加總），不直接用在 single-cell。</p>
+  <p data-lang="en">Wald test on $H_0: \beta_1^{(j)} = 0$. <b>Best for pseudo-bulk</b> (sum cells per cluster), not raw single-cell.</p>
+
+  <div class="callout callout-warn">
+    <strong data-lang="zh">⚠️ Pseudo-bulk 是現代共識</strong>
+    <strong data-lang="en">⚠️ Pseudo-bulk is the modern consensus</strong>
+    <p data-lang="zh">Squair et al. 2021、Murphy &amp; Skene 2022 都顯示：<b>單獨用 single-cell DE 會嚴重高估 p-value 顯著性</b>，因為它把同一個體內的細胞當作獨立樣本。建議：先做<b>pseudo-bulk</b>（個體層級加總），再用 DESeq2 / edgeR / limma。</p>
+    <p data-lang="en">Squair et al. (2021), Murphy &amp; Skene (2022): <b>cell-level DE inflates significance</b> by treating cells from one individual as independent. Modern advice: <b>pseudo-bulk</b> first (sum per donor), then DESeq2/edgeR/limma.</p>
+  </div>
+</section>
+
+<section class="section">
+  <span class="section-label">比較 / Comparison</span>
+  <table class="compare-table">
+    <tr><th></th><th>Wilcoxon</th><th>MAST</th><th>DESeq2 (bulk)</th></tr>
+    <tr><td data-lang="zh">分布假設</td><td data-lang="en">Assumption</td><td class="good">無</td><td class="meh">高斯 + 邏輯</td><td class="meh">NB</td></tr>
+    <tr><td>Covariates</td><td>Covariates</td><td class="bad">不可</td><td class="good">可</td><td class="good">可</td></tr>
+    <tr><td data-lang="zh">速度</td><td data-lang="en">Speed</td><td class="good">最快</td><td class="meh">中</td><td class="meh">中</td></tr>
+    <tr><td data-lang="zh">適用</td><td data-lang="en">Suitable for</td><td>初步篩選</td><td>單細胞層級，有 covariates</td><td>pseudo-bulk 層級</td></tr>
+  </table>
+</section>
+
+<section class="section">
+  <span class="section-label code">程式碼 / Code</span>
+  <div class="code-tabs"><div class="code-tab-btns"><button class="code-tab-btn active" onclick="switchTab(this,'py12')">Python</button><button class="code-tab-btn" onclick="switchTab(this,'r12')">R</button></div>
+    <div class="code-tab-content active" id="py12"><pre>sc.tl.rank_genes_groups(adata, <span class="str">"leiden"</span>, method=<span class="str">"wilcoxon"</span>)
+sc.pl.rank_genes_groups(adata)
+
+<span class="comment"># Pseudo-bulk + DESeq2 流程</span>
+<span class="keyword">import</span> decoupler <span class="keyword">as</span> dc
+pb = dc.get_pseudobulk(adata, sample_col=<span class="str">"donor"</span>, groups_col=<span class="str">"leiden"</span>)
+</pre></div>
+    <div class="code-tab-content" id="r12"><pre><span class="comment"># Wilcoxon (Seurat 預設)</span>
+markers &lt;- <span class="func">FindAllMarkers</span>(pbmc, test.use = <span class="str">"wilcox"</span>)
+
+<span class="comment"># MAST</span>
+markers &lt;- <span class="func">FindAllMarkers</span>(pbmc, test.use = <span class="str">"MAST"</span>,
+                          latent.vars = <span class="str">"nCount_RNA"</span>)
+
+<span class="comment"># Pseudo-bulk + DESeq2</span>
+<span class="keyword">library</span>(DESeq2)
+agg &lt;- <span class="func">AggregateExpression</span>(pbmc, group.by = <span class="func">c</span>(<span class="str">"donor"</span>, <span class="str">"seurat_clusters"</span>))
+dds &lt;- <span class="func">DESeqDataSetFromMatrix</span>(agg$RNA, colData, ~ cluster + donor)
+res &lt;- <span class="func">DESeq</span>(dds)
+</pre></div>
+  </div>
+</section>
+
+<section class="section">
+  <span class="section-label">參考 / References</span>
+  <ul class="refs-list">
+    <li><div class="ref-title">Finak, G. et al. (2015). MAST.</div><div class="ref-meta">Genome Biology 16. <a href="https://doi.org/10.1186/s13059-015-0844-5">10.1186/s13059-015-0844-5</a></div></li>
+    <li><div class="ref-title">Love, M.I., Huber, W., Anders, S. (2014). DESeq2.</div><div class="ref-meta">Genome Biology 15. <a href="https://doi.org/10.1186/s13059-014-0550-8">10.1186/s13059-014-0550-8</a></div></li>
+    <li><div class="ref-title">Squair, J.W. et al. (2021). Confronting false discoveries in single-cell DE.</div><div class="ref-meta">Nat Commun 12. <a href="https://doi.org/10.1038/s41467-021-25960-2">10.1038/s41467-021-25960-2</a></div></li>
+    <li><div class="ref-title">Murphy, A.E. &amp; Skene, N.G. (2022). pseudo-bulk benchmark.</div><div class="ref-meta">Nat Methods 19. <a href="https://doi.org/10.1038/s41592-022-01615-y">10.1038/s41592-022-01615-y</a></div></li>
+  </ul>
+</section>
+
+<div class="cross-links">
+  <a href="../M4-graph-clustering/4.2-louvain-leiden.html" class="cross-link"><div class="cross-label" data-lang="zh">← 聚類</div><div class="cross-label" data-lang="en">← CLUSTERING</div><div class="cross-title"><span class="cross-id">M4.2</span> Leiden</div></a>
+  <a href="5.2-multiple-testing.html" class="cross-link"><div class="cross-label" data-lang="zh">下一篇 →</div><div class="cross-label" data-lang="en">NEXT →</div><div class="cross-title"><span class="cross-id">M5.2</span> FDR</div></a>
+</div>
+
+</main>
+<footer class="site-footer"><p>© Charlene</p></footer>
+<script src="../i18n.js"></script>
+<script>function switchTab(b,id){const p=b.closest(".code-tabs");p.querySelectorAll(".code-tab-btn").forEach(x=>x.classList.remove("active"));p.querySelectorAll(".code-tab-content").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(id).classList.add("active");}</script>
+</body></html>
