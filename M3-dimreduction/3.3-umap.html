@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>3.3 UMAP — scRNA-seq Advanced Math</title><link rel="stylesheet" href="../styles.css">
+<script>MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] } };</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
+</head><body>
+<nav class="top-nav"><div class="top-nav-inner">
+  <a href="../index.html" class="top-nav-brand"><span>🧬</span><span data-lang="zh">scRNA-seq 進階數學</span><span data-lang="en">scRNA-seq Advanced Math</span><span class="badge-math">MATH</span></a>
+  <ul class="top-nav-links"><li><a href="../index.html#M1">M1</a></li><li><a href="../index.html#M2">M2</a></li><li><a href="../index.html#M3" class="active">M3</a></li><li><a href="../index.html#M4">M4</a></li><li><a href="../index.html#M5">M5</a></li><li><a href="../index.html#M6">M6</a></li><li><a href="../index.html" data-lang="zh">🏠 回首頁</a><span data-lang="en">🏠 Home</span></li></ul>
+  <div class="lang-switch"><button data-lang-btn="zh" class="active">中文</button><button data-lang-btn="en">EN</button></div>
+</div></nav>
+<header class="page-hero"><div class="page-hero-inner">
+  <div class="page-badge">M3.3 · DIMENSIONALITY REDUCTION</div>
+  <h1 data-lang="zh">UMAP：流形學習與模糊單純複形</h1><h1 data-lang="en">UMAP: Manifold Learning &amp; Fuzzy Simplicial Sets</h1>
+  <p class="subtitle" data-lang="zh">UMAP 的範疇論基礎其實不嚇人。為什麼它比 t-SNE 更保留全局結構？cross-entropy 從哪來？</p>
+  <p class="subtitle" data-lang="en">UMAP's category theory isn't scary. Why it preserves global structure better than t-SNE. Where does cross-entropy come from?</p>
+</div></header>
+
+<main class="content-wrap">
+
+<section class="section">
+  <span class="section-label intuition">直覺 / Intuition</span>
+  <h2 data-lang="zh">兩個關鍵假設</h2><h2 data-lang="en">Two key assumptions</h2>
+  <div data-lang="zh"><ol>
+    <li><b>資料在低維流形上</b>：高維資料其實「住在」一個低維彎曲表面</li>
+    <li><b>流形局部均勻分布</b>：所以可以用「最近鄰距離」當作「局部尺度」校正</li>
+  </ol></div>
+  <div data-lang="en"><ol>
+    <li><b>Data lie on a low-D manifold</b>: high-D data live on a low-D curved surface</li>
+    <li><b>Manifold is locally uniform</b>: nearest-neighbor distances give a local scale correction</li>
+  </ol></div>
+</section>
+
+<section class="section">
+  <span class="section-label math">核心數學 / Math</span>
+  <h3 data-lang="zh">高維圖：fuzzy simplicial set</h3><h3 data-lang="en">High-D graph: fuzzy simplicial set</h3>
+  <p data-lang="zh">對每個點 $i$，定義「邊權重」：</p>
+  <p data-lang="en">For each point $i$, define edge weights:</p>
+  <div class="math-block">
+  $$w_{j|i} = \exp\left(-\frac{\max(0, d(x_i, x_j) - \rho_i)}{\sigma_i}\right)$$
+  <div class="formula-caption" data-lang="zh">$\rho_i$ = 第 1 近鄰的距離（「局部尺度」），$\sigma_i$ 用二分搜尋讓 $\sum_j w_{j|i} = \log_2(k)$</div>
+  <div class="formula-caption" data-lang="en">$\rho_i$ = distance to 1st neighbor (local scale); $\sigma_i$ tuned so $\sum_j w_{j|i} = \log_2(k)$</div>
+  </div>
+  <p data-lang="zh">對稱化（fuzzy union）：</p>
+  <p data-lang="en">Symmetrize (fuzzy union):</p>
+  <div class="math-block">
+  $$\mu_{ij} = w_{j|i} + w_{i|j} - w_{j|i} \cdot w_{i|j}$$
+  </div>
+  <p data-lang="zh">這個 $\mu_{ij} \in [0, 1]$ 解讀為「邊 $(i,j)$ 屬於『流形圖』的<b>模糊隸屬度</b>」。</p>
+  <p data-lang="en">$\mu_{ij} \in [0,1]$ is the "fuzzy membership" of edge $(i,j)$ in the manifold graph.</p>
+
+  <div class="callout callout-deep">
+    <strong data-lang="zh">📐 為什麼用「減第一近鄰距離」？</strong>
+    <strong data-lang="en">📐 Why subtract first-neighbor distance?</strong>
+    <p data-lang="zh">這是<b>流形假設的關鍵</b>。如果 $i$ 周圍非常密，那麼「跟最近鄰差不多遠的點」應該都算「同樣親近」。$\rho_i$ 把局部密度差異消除，所有局部都被「重新校準成同樣尺度」。</p>
+    <p data-lang="en">Key manifold assumption. If $i$'s neighborhood is dense, points "as far as the nearest neighbor" all count as "equally close". $\rho_i$ normalizes local density variations.</p>
+  </div>
+
+  <h3 data-lang="zh">低維邊權重</h3><h3 data-lang="en">Low-D edge weights</h3>
+  <div class="math-block">
+  $$\nu_{ij} = \left(1 + a \|y_i - y_j\|^{2b}\right)^{-1}$$
+  <div class="formula-caption" data-lang="zh">$a, b$ 預設由 <code>min_dist</code> 與 <code>spread</code> 擬合決定</div>
+  <div class="formula-caption" data-lang="en">$a, b$ fitted from <code>min_dist</code> and <code>spread</code></div>
+  </div>
+
+  <h3 data-lang="zh">目標：cross-entropy</h3><h3 data-lang="en">Objective: cross-entropy</h3>
+  <div class="math-block">
+  $$\text{CE}(\mu, \nu) = \sum_{i \neq j} \left[ \mu_{ij} \log \frac{\mu_{ij}}{\nu_{ij}} + (1-\mu_{ij}) \log \frac{1-\mu_{ij}}{1-\nu_{ij}} \right]$$
+  </div>
+  <p data-lang="zh">兩項：第一項拉近真正鄰居（attractive force），第二項推開非鄰居（repulsive force）。比 t-SNE 的 KL 多了第二項，這是 UMAP <b>保留全局結構</b>更好的關鍵。</p>
+  <p data-lang="en">Two terms: attractive (real neighbors), repulsive (non-neighbors). The second term — absent in t-SNE's KL — is why UMAP preserves global structure better.</p>
+
+  <h3 data-lang="zh">優化：負取樣 + SGD</h3><h3 data-lang="en">Optimization: negative sampling + SGD</h3>
+  <p data-lang="zh">不用算全部 $n^2$ 對。每步隨機選一條真實邊（吸引）+ 5 個隨機點（排斥），用 SGD 更新位置。複雜度 $O(n \cdot k)$，遠快於 t-SNE。</p>
+  <p data-lang="en">Avoids $n^2$ pairs. Each step: one real edge (attraction) + 5 random points (repulsion), SGD update. Complexity $O(n \cdot k)$, far faster than t-SNE.</p>
+</section>
+
+<section class="section">
+  <span class="section-label">比較 / Comparison</span>
+  <h2 data-lang="zh">UMAP vs t-SNE</h2><h2 data-lang="en">UMAP vs t-SNE</h2>
+  <table class="compare-table">
+    <tr><th></th><th>t-SNE</th><th>UMAP</th></tr>
+    <tr><td data-lang="zh">理論基底</td><td data-lang="en">Theoretical basis</td><td>KL between Gaussian/Student-t</td><td>Fuzzy simplicial sets, cross-entropy</td></tr>
+    <tr><td data-lang="zh">速度</td><td data-lang="en">Speed</td><td class="meh">中</td><td class="good">~3-10× 較快</td></tr>
+    <tr><td data-lang="zh">全局結構</td><td data-lang="en">Global structure</td><td class="bad">破壞</td><td class="good">部分保留</td></tr>
+    <tr><td data-lang="zh">新資料投影</td><td data-lang="en">Project new data</td><td class="bad">不能</td><td class="good">可以 (parametric)</td></tr>
+    <tr><td data-lang="zh">下游分群依賴</td><td data-lang="en">For clustering</td><td class="bad">不適合</td><td class="meh">仍建議在 PCA 空間做</td></tr>
+  </table>
+</section>
+
+<section class="section">
+  <span class="section-label code">程式碼 / Code</span>
+  <div class="code-tabs"><div class="code-tab-btns"><button class="code-tab-btn active" onclick="switchTab(this,'py8')">Python</button><button class="code-tab-btn" onclick="switchTab(this,'r8')">R</button></div>
+    <div class="code-tab-content active" id="py8"><pre>sc.pp.neighbors(adata, n_neighbors=<span class="num">15</span>, n_pcs=<span class="num">30</span>)
+sc.tl.umap(adata, min_dist=<span class="num">0.5</span>, spread=<span class="num">1.0</span>)
+sc.pl.umap(adata, color=<span class="str">"leiden"</span>)
+</pre></div>
+    <div class="code-tab-content" id="r8"><pre>pbmc &lt;- <span class="func">RunUMAP</span>(pbmc, dims = <span class="num">1</span>:<span class="num">30</span>, n.neighbors = <span class="num">15</span>, min.dist = <span class="num">0.3</span>)
+<span class="func">DimPlot</span>(pbmc, reduction = <span class="str">"umap"</span>)
+</pre></div>
+  </div>
+</section>
+
+<section class="section">
+  <span class="section-label">參考 / References</span>
+  <ul class="refs-list">
+    <li><div class="ref-title">McInnes, L., Healy, J., Melville, J. (2018). UMAP.</div><div class="ref-meta">arXiv:1802.03426</div></li>
+    <li><div class="ref-title">Becht, E. et al. (2019). Dimensionality reduction for visualizing single-cell data using UMAP.</div><div class="ref-meta">Nat Biotech 37. <a href="https://doi.org/10.1038/nbt.4314">10.1038/nbt.4314</a></div></li>
+    <li><div class="ref-title">Kobak, D. &amp; Linderman, G.C. (2021). Initialization is critical for preserving global structure.</div><div class="ref-meta">Nat Biotech. <a href="https://doi.org/10.1038/s41587-020-00809-z">10.1038/s41587-020-00809-z</a></div></li>
+    <li><div class="ref-title">Coenen, A. &amp; Pearce, A. (2019). Understanding UMAP (interactive).</div><div class="ref-meta">PAIR. <a href="https://pair-code.github.io/understanding-umap/">pair-code.github.io</a></div></li>
+  </ul>
+</section>
+
+<div class="cross-links">
+  <a href="3.2-tsne.html" class="cross-link"><div class="cross-label" data-lang="zh">← 上一篇</div><div class="cross-label" data-lang="en">← PREV</div><div class="cross-title"><span class="cross-id">M3.2</span> t-SNE</div></a>
+  <a href="3.4-diffusion-map.html" class="cross-link"><div class="cross-label" data-lang="zh">下一篇 →</div><div class="cross-label" data-lang="en">NEXT →</div><div class="cross-title"><span class="cross-id">M3.4</span> Diffusion Maps</div></a>
+</div>
+
+</main>
+<footer class="site-footer"><p>© Charlene</p></footer>
+<script src="../i18n.js"></script>
+<script>function switchTab(b,id){const p=b.closest(".code-tabs");p.querySelectorAll(".code-tab-btn").forEach(x=>x.classList.remove("active"));p.querySelectorAll(".code-tab-content").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(id).classList.add("active");}</script>
+</body></html>

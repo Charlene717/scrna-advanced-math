@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>3.2 t-SNE — scRNA-seq Advanced Math</title><link rel="stylesheet" href="../styles.css">
+<script>MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] } };</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
+</head><body>
+<nav class="top-nav"><div class="top-nav-inner">
+  <a href="../index.html" class="top-nav-brand"><span>🧬</span><span data-lang="zh">scRNA-seq 進階數學</span><span data-lang="en">scRNA-seq Advanced Math</span><span class="badge-math">MATH</span></a>
+  <ul class="top-nav-links"><li><a href="../index.html#M1">M1</a></li><li><a href="../index.html#M2">M2</a></li><li><a href="../index.html#M3" class="active">M3</a></li><li><a href="../index.html#M4">M4</a></li><li><a href="../index.html#M5">M5</a></li><li><a href="../index.html#M6">M6</a></li><li><a href="../index.html" data-lang="zh">🏠 回首頁</a><span data-lang="en">🏠 Home</span></li></ul>
+  <div class="lang-switch"><button data-lang-btn="zh" class="active">中文</button><button data-lang-btn="en">EN</button></div>
+</div></nav>
+<header class="page-hero"><div class="page-hero-inner">
+  <div class="page-badge">M3.2 · DIMENSIONALITY REDUCTION</div>
+  <h1 data-lang="zh">t-SNE 的機率擴散</h1><h1 data-lang="en">t-SNE: Probabilistic Embedding</h1>
+  <p class="subtitle" data-lang="zh">SNE → t-SNE 的核心修正。Perplexity 在量什麼？為什麼 t 分布解決了 SNE 的 crowding problem？</p>
+  <p class="subtitle" data-lang="en">SNE → t-SNE's key fix. What perplexity measures. Why t-distribution solved SNE's crowding problem.</p>
+</div></header>
+
+<main class="content-wrap">
+
+<section class="section">
+  <span class="section-label intuition">直覺 / Intuition</span>
+  <h2 data-lang="zh">用「機率」描述鄰近關係</h2><h2 data-lang="en">Probability-based neighborhood</h2>
+  <div data-lang="zh"><p>t-SNE 不直接保留距離，而是保留<b>「鄰居機率」</b>：在高維空間裡 $i, j$ 是鄰居的機率，跟在 2D 嵌入空間中是鄰居的機率，要<b>盡量一致</b>。</p></div>
+  <div data-lang="en"><p>t-SNE preserves <b>neighborhood probabilities</b>: probability that $i, j$ are neighbors in high-D ≈ probability in 2D embedding.</p></div>
+</section>
+
+<section class="section">
+  <span class="section-label math">核心數學 / Math</span>
+  <h3 data-lang="zh">高維空間的鄰居機率</h3><h3 data-lang="en">High-D neighbor probability</h3>
+  <div class="math-block">
+  $$p_{j|i} = \frac{\exp(-\|x_i - x_j\|^2 / 2\sigma_i^2)}{\sum_{k \neq i} \exp(-\|x_i - x_k\|^2 / 2\sigma_i^2)}, \quad p_{ij} = \frac{p_{j|i} + p_{i|j}}{2n}$$
+  <div class="formula-caption" data-lang="zh">用高斯核以 $x_i$ 為中心估計鄰居機率，對稱化後得 $p_{ij}$</div>
+  <div class="formula-caption" data-lang="en">Gaussian kernel centered at $x_i$, symmetrized to $p_{ij}$</div>
+  </div>
+
+  <h3>Perplexity <span data-lang="zh">的數學意義</span><span data-lang="en">— what it measures</span></h3>
+  <div class="math-block">
+  $$\text{Perp}(P_i) = 2^{H(P_i)}, \quad H(P_i) = -\sum_j p_{j|i} \log_2 p_{j|i}$$
+  </div>
+  <p data-lang="zh"><b>解讀</b>：「<b>每個點的『有效鄰居數』</b>」。Perplexity = 30 表示每個點被視為跟約 30 個其他點是「鄰居」。<br>
+  $\sigma_i$ 是用二分搜尋讓 $\text{Perp}(P_i) = $ 使用者設定值（典型 5-50）。</p>
+  <p data-lang="en"><b>Interpretation</b>: "effective number of neighbors". Perp = 30 → each point treats ~30 others as neighbors. $\sigma_i$ is binary-searched so $\text{Perp}(P_i) = $ user value.</p>
+
+  <h3 data-lang="zh">低維空間：為什麼用 t 分布？</h3><h3 data-lang="en">Why t-distribution in low-D?</h3>
+  <div class="math-block">
+  $$q_{ij} = \frac{(1 + \|y_i - y_j\|^2)^{-1}}{\sum_{k \neq l} (1 + \|y_k - y_l\|^2)^{-1}}$$
+  <div class="formula-caption" data-lang="zh">$(1+r^2)^{-1}$ 是自由度 = 1 的 Student-t 分布核（Cauchy）</div>
+  <div class="formula-caption" data-lang="en">$(1+r^2)^{-1}$ is the Student-t kernel with df=1 (Cauchy)</div>
+  </div>
+  <p data-lang="zh"><b>關鍵：t 分布尾巴比高斯重很多</b>。在 2D 用高斯（SNE 原版）會出現「crowding problem」——遠距離的點被擠在一起。t 分布讓「中等距離」的點獲得較大斥力，幫不同 cluster 分開。</p>
+  <p data-lang="en"><b>Key: t-distribution has much heavier tails than Gaussian</b>. Plain SNE (Gaussian in 2D) suffers from "crowding". t-tails provide stronger repulsion at medium distances, separating clusters.</p>
+
+  <h3>KL <span data-lang="zh">目標函數與梯度</span><span data-lang="en">objective and gradient</span></h3>
+  <div class="math-block">
+  $$C = \text{KL}(P \,\|\, Q) = \sum_{i \neq j} p_{ij} \log \frac{p_{ij}}{q_{ij}}$$
+  $$\frac{\partial C}{\partial y_i} = 4 \sum_{j} (p_{ij} - q_{ij})(y_i - y_j)(1 + \|y_i - y_j\|^2)^{-1}$$
+  </div>
+  <p data-lang="zh">用梯度下降優化。$(p_{ij}-q_{ij})$ 是「該靠近還是該推開」的訊號。</p>
+  <p data-lang="en">Optimized via gradient descent. $(p_{ij}-q_{ij})$ signals attraction vs repulsion.</p>
+
+  <h3>Barnes-Hut <span data-lang="zh">加速</span><span data-lang="en">acceleration</span></h3>
+  <p data-lang="zh">每步梯度是 $O(n^2)$。Barnes-Hut 用 quadtree 把遠處的點視為「一團」近似，降到 $O(n \log n)$。</p>
+  <p data-lang="en">Naive gradient is $O(n^2)$. Barnes-Hut uses quadtrees to approximate distant clusters, reducing to $O(n \log n)$.</p>
+</section>
+
+<section class="section">
+  <span class="section-label algo">演算法 / Algorithm</span>
+  <div class="algo-block">
+<span class="comment"># Input: X (n × d), perplexity p</span>
+<span class="comment"># Output: Y (n × 2)</span>
+
+<span class="step"># 1.</span> <span class="keyword">for each</span> i: binary search σ_i so that Perp(P_i) = p
+<span class="step"># 2.</span> compute p_ij from σ_i
+<span class="step"># 3.</span> Y ← random_normal(0, 0.0001, (n, 2))    <span class="comment"># tiny init</span>
+<span class="step"># 4.</span> <span class="keyword">for</span> t = 1 ... T:
+       compute q_ij from current Y
+       compute gradient ∂C/∂y_i
+       Y ← Y - η · gradient + momentum
+       <span class="comment"># early exaggeration: multiply p_ij by 4 for first 250 iters</span>
+  </div>
+</section>
+
+<section class="section">
+  <span class="section-label">注意事項 / Caveats</span>
+  <div class="callout callout-warn">
+    <strong data-lang="zh">t-SNE 的五大陷阱（Wattenberg 2016）</strong>
+    <strong data-lang="en">5 t-SNE pitfalls (Wattenberg 2016)</strong>
+    <ol data-lang="zh">
+      <li><b>群之間的距離無意義</b>——只看誰跟誰是鄰居</li>
+      <li><b>群的大小無意義</b>——t-SNE 會把所有群展開到差不多大</li>
+      <li><b>隨機性高</b>——不同 seed 看起來不同</li>
+      <li><b>perplexity 影響大</b>——5 跟 50 結果差很多</li>
+      <li><b>不要過度詮釋 2D 視覺</b>——它不是真實結構</li>
+    </ol>
+    <ol data-lang="en">
+      <li><b>Cluster distances are meaningless</b> — only neighborhoods matter</li>
+      <li><b>Cluster sizes are meaningless</b> — t-SNE inflates all to similar size</li>
+      <li><b>Highly stochastic</b> — different seeds, different views</li>
+      <li><b>Perplexity matters a lot</b> — 5 vs 50 yield very different layouts</li>
+      <li><b>Don't over-interpret 2D</b> — it's not "real" structure</li>
+    </ol>
+  </div>
+</section>
+
+<section class="section">
+  <span class="section-label code">程式碼 / Code</span>
+  <div class="code-tabs"><div class="code-tab-btns"><button class="code-tab-btn active" onclick="switchTab(this,'py7')">Python</button><button class="code-tab-btn" onclick="switchTab(this,'r7')">R</button></div>
+    <div class="code-tab-content active" id="py7"><pre>sc.tl.tsne(adata, n_pcs=<span class="num">30</span>, perplexity=<span class="num">30</span>, random_state=<span class="num">42</span>)
+sc.pl.tsne(adata, color=<span class="str">"leiden"</span>)
+
+<span class="comment"># openTSNE: 更現代、更快、可投影新資料</span>
+<span class="keyword">from</span> openTSNE <span class="keyword">import</span> TSNE
+embedding = TSNE(perplexity=<span class="num">30</span>, n_jobs=-<span class="num">1</span>).fit(adata.obsm[<span class="str">"X_pca"</span>])
+</pre></div>
+    <div class="code-tab-content" id="r7"><pre>pbmc &lt;- <span class="func">RunTSNE</span>(pbmc, dims = <span class="num">1</span>:<span class="num">30</span>, perplexity = <span class="num">30</span>)
+<span class="func">DimPlot</span>(pbmc, reduction = <span class="str">"tsne"</span>)
+</pre></div>
+  </div>
+</section>
+
+<section class="section">
+  <span class="section-label">參考 / References</span>
+  <ul class="refs-list">
+    <li><div class="ref-title">van der Maaten, L. &amp; Hinton, G. (2008). Visualizing data using t-SNE.</div><div class="ref-meta">JMLR 9. 原始論文。</div></li>
+    <li><div class="ref-title">van der Maaten, L. (2014). Accelerating t-SNE using Tree-Based Algorithms.</div><div class="ref-meta">JMLR 15. Barnes-Hut。</div></li>
+    <li><div class="ref-title">Wattenberg, M. et al. (2016). How to Use t-SNE Effectively.</div><div class="ref-meta">Distill. <a href="https://distill.pub/2016/misread-tsne/">distill.pub</a></div></li>
+    <li><div class="ref-title">Kobak, D. &amp; Berens, P. (2019). The art of using t-SNE for single-cell transcriptomics.</div><div class="ref-meta">Nature Communications. <a href="https://doi.org/10.1038/s41467-019-13056-x">10.1038/s41467-019-13056-x</a></div></li>
+  </ul>
+</section>
+
+<div class="cross-links">
+  <a href="../PCA/PCA_互動教材.html" class="cross-link"><div class="cross-label" data-lang="zh">← 上一篇</div><div class="cross-label" data-lang="en">← PREV</div><div class="cross-title"><span class="cross-id">M3.1</span> PCA</div></a>
+  <a href="3.3-umap.html" class="cross-link"><div class="cross-label" data-lang="zh">下一篇 →</div><div class="cross-label" data-lang="en">NEXT →</div><div class="cross-title"><span class="cross-id">M3.3</span> UMAP</div></a>
+</div>
+
+</main>
+<footer class="site-footer"><p>© Charlene</p></footer>
+<script src="../i18n.js"></script>
+<script>function switchTab(b,id){const p=b.closest(".code-tabs");p.querySelectorAll(".code-tab-btn").forEach(x=>x.classList.remove("active"));p.querySelectorAll(".code-tab-content").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(id).classList.add("active");}</script>
+</body></html>

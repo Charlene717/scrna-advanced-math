@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>3.4 Diffusion Maps — scRNA-seq Advanced Math</title><link rel="stylesheet" href="../styles.css">
+<script>MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] } };</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
+</head><body>
+<nav class="top-nav"><div class="top-nav-inner">
+  <a href="../index.html" class="top-nav-brand"><span>🧬</span><span data-lang="zh">scRNA-seq 進階數學</span><span data-lang="en">scRNA-seq Advanced Math</span><span class="badge-math">MATH</span></a>
+  <ul class="top-nav-links"><li><a href="../index.html#M1">M1</a></li><li><a href="../index.html#M2">M2</a></li><li><a href="../index.html#M3" class="active">M3</a></li><li><a href="../index.html#M4">M4</a></li><li><a href="../index.html#M5">M5</a></li><li><a href="../index.html#M6">M6</a></li><li><a href="../index.html" data-lang="zh">🏠 回首頁</a><span data-lang="en">🏠 Home</span></li></ul>
+  <div class="lang-switch"><button data-lang-btn="zh" class="active">中文</button><button data-lang-btn="en">EN</button></div>
+</div></nav>
+<header class="page-hero"><div class="page-hero-inner">
+  <div class="page-badge">M3.4 · DIMENSIONALITY REDUCTION</div>
+  <h1 data-lang="zh">Diffusion Maps：圖 Laplacian 與隨機行走</h1><h1 data-lang="en">Diffusion Maps</h1>
+  <p class="subtitle" data-lang="zh">隨機行走的特徵向量為什麼能當降維座標？Diffusion Pseudotime（M6.2）的基礎。</p>
+  <p class="subtitle" data-lang="en">Why random walk eigenvectors serve as embedding coordinates — the foundation of DPT (M6.2).</p>
+</div></header>
+
+<main class="content-wrap">
+
+<section class="section">
+  <span class="section-label intuition">直覺 / Intuition</span>
+  <div data-lang="zh"><p>想像從每個細胞出發的「隨機行走」——下一步跳到相似細胞的機率高、跳到差異大的細胞機率低。經過 $t$ 步之後，「能不能彼此到達」就是一個距離。</p>
+    <p>結論：<b>圖的隨機行走轉移矩陣的特徵向量</b>就是降維後的座標。發育軌跡分析用這個是因為「逐步演化」剛好對應「隨機行走」。</p></div>
+  <div data-lang="en"><p>Imagine random walks from each cell — high probability to jump to similar cells. After $t$ steps, "mutual reachability" defines a distance. Random walk transition matrix's eigenvectors give the embedding. Perfect for developmental trajectories.</p></div>
+</section>
+
+<section class="section">
+  <span class="section-label math">核心數學 / Math</span>
+  <h3 data-lang="zh">步驟 1：相似度核</h3><h3 data-lang="en">Step 1: similarity kernel</h3>
+  <div class="math-block">$$K_{ij} = \exp(-\|x_i - x_j\|^2 / \sigma^2)$$</div>
+
+  <h3 data-lang="zh">步驟 2：歸一化為轉移矩陣</h3><h3 data-lang="en">Step 2: normalize to transition matrix</h3>
+  <div class="math-block">$$D_{ii} = \sum_j K_{ij}, \quad P = D^{-1} K$$</div>
+  <p data-lang="zh">$P_{ij}$ = 從 $i$ 一步走到 $j$ 的機率。每列總和為 1。</p>
+  <p data-lang="en">$P_{ij}$ = probability of one-step transition $i \to j$. Rows sum to 1.</p>
+
+  <h3 data-lang="zh">步驟 3：特徵分解</h3><h3 data-lang="en">Step 3: eigendecomposition</h3>
+  <div class="math-block">$$P \psi_k = \lambda_k \psi_k, \quad 1 = \lambda_0 > \lambda_1 \geq \lambda_2 \geq \ldots$$</div>
+
+  <h3 data-lang="zh">步驟 4：擴散嵌入</h3><h3 data-lang="en">Step 4: diffusion embedding</h3>
+  <div class="math-block">$$\Psi_t(x_i) = \left( \lambda_1^t \psi_1(i), \lambda_2^t \psi_2(i), \ldots, \lambda_d^t \psi_d(i) \right)$$</div>
+  <p data-lang="zh"><b>$t$ 越大特徵值被指數壓得越小</b>，只剩主要的「擴散方向」。對應「長程結構」。</p>
+  <p data-lang="en">Larger $t$ shrinks eigenvalues exponentially, leaving only main "diffusion directions" — long-range structure.</p>
+
+  <h3 data-lang="zh">Diffusion distance</h3><h3 data-lang="en">Diffusion distance</h3>
+  <div class="math-block">$$D_t^2(x_i, x_j) = \sum_{k \geq 1} \lambda_k^{2t} (\psi_k(i) - \psi_k(j))^2 = \|\Psi_t(x_i) - \Psi_t(x_j)\|^2$$</div>
+  <p data-lang="zh">是「真正的」嵌入距離——不像歐式距離容易被高維噪音干擾。</p>
+  <p data-lang="en">A true embedding distance — more noise-robust than Euclidean.</p>
+
+  <h3 data-lang="zh">與圖 Laplacian 的關係</h3><h3 data-lang="en">Relation to graph Laplacian</h3>
+  <div class="math-block">$$L_{\text{rw}} = I - P, \quad L_{\text{sym}} = I - D^{-1/2} K D^{-1/2}$$</div>
+  <p data-lang="zh">$P$ 與圖 Laplacian 共享特徵向量。「spectral clustering」與 diffusion map 本質上是同一個機制。</p>
+  <p data-lang="en">$P$ shares eigenvectors with graph Laplacian. Spectral clustering and diffusion maps share the same mechanism.</p>
+</section>
+
+<section class="section">
+  <span class="section-label code">程式碼 / Code</span>
+  <div class="code-tabs"><div class="code-tab-btns"><button class="code-tab-btn active" onclick="switchTab(this,'py9')">Python</button><button class="code-tab-btn" onclick="switchTab(this,'r9')">R</button></div>
+    <div class="code-tab-content active" id="py9"><pre>sc.tl.diffmap(adata, n_comps=<span class="num">15</span>)
+sc.pl.diffmap(adata, color=<span class="str">"leiden"</span>, components=<span class="str">"1,2"</span>)
+
+<span class="comment"># Diffusion Pseudotime (M6.2 的基礎)</span>
+adata.uns[<span class="str">"iroot"</span>] = root_cell_idx
+sc.tl.dpt(adata)
+</pre></div>
+    <div class="code-tab-content" id="r9"><pre><span class="keyword">library</span>(destiny)
+sce &lt;- <span class="func">as.SingleCellExperiment</span>(pbmc)
+dm &lt;- <span class="func">DiffusionMap</span>(<span class="func">t</span>(<span class="func">logcounts</span>(sce)))
+<span class="func">plot</span>(dm)
+</pre></div>
+  </div>
+</section>
+
+<section class="section">
+  <span class="section-label">參考 / References</span>
+  <ul class="refs-list">
+    <li><div class="ref-title">Coifman, R.R. &amp; Lafon, S. (2006). Diffusion maps.</div><div class="ref-meta">Applied and Computational Harmonic Analysis 21.</div></li>
+    <li><div class="ref-title">Haghverdi, L. et al. (2016). Diffusion pseudotime robustly reconstructs lineage branching.</div><div class="ref-meta">Nat Methods 13. <a href="https://doi.org/10.1038/nmeth.3971">10.1038/nmeth.3971</a></div></li>
+    <li><div class="ref-title">Angerer, P. et al. (2016). destiny: diffusion maps for large-scale single-cell data in R.</div><div class="ref-meta">Bioinformatics. <a href="https://doi.org/10.1093/bioinformatics/btv715">10.1093/bioinformatics/btv715</a></div></li>
+  </ul>
+</section>
+
+<div class="cross-links">
+  <a href="3.3-umap.html" class="cross-link"><div class="cross-label" data-lang="zh">← 上一篇</div><div class="cross-label" data-lang="en">← PREV</div><div class="cross-title"><span class="cross-id">M3.3</span> UMAP</div></a>
+  <a href="../M6-advanced/6.2-pseudotime.html" class="cross-link"><div class="cross-label" data-lang="zh">應用 →</div><div class="cross-label" data-lang="en">APPLICATION →</div><div class="cross-title"><span class="cross-id">M6.2</span> Pseudotime / DPT</div></a>
+</div>
+
+</main>
+<footer class="site-footer"><p>© Charlene</p></footer>
+<script src="../i18n.js"></script>
+<script>function switchTab(b,id){const p=b.closest(".code-tabs");p.querySelectorAll(".code-tab-btn").forEach(x=>x.classList.remove("active"));p.querySelectorAll(".code-tab-content").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(id).classList.add("active");}</script>
+</body></html>
