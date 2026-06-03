@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>6.2 Pseudotime · DPT &amp; Slingshot — scRNA-seq Advanced Math</title><link rel="stylesheet" href="../styles.css">
+<script>MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] } };</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
+</head><body>
+<nav class="top-nav"><div class="top-nav-inner">
+  <a href="../index.html" class="top-nav-brand"><span>🧬</span><span data-lang="zh">scRNA-seq 進階數學</span><span data-lang="en">scRNA-seq Advanced Math</span><span class="badge-math">MATH</span></a>
+  <ul class="top-nav-links"><li><a href="../index.html#M1">M1</a></li><li><a href="../index.html#M2">M2</a></li><li><a href="../index.html#M3">M3</a></li><li><a href="../index.html#M4">M4</a></li><li><a href="../index.html#M5">M5</a></li><li><a href="../index.html#M6" class="active">M6</a></li><li><a href="../index.html" data-lang="zh">🏠 回首頁</a><span data-lang="en">🏠 Home</span></li></ul>
+  <div class="lang-switch"><button data-lang-btn="zh" class="active">中文</button><button data-lang-btn="en">EN</button></div>
+</div></nav>
+<header class="page-hero"><div class="page-hero-inner">
+  <div class="page-badge">M6.2 · ADVANCED</div>
+  <h1 data-lang="zh">Pseudotime · DPT &amp; Slingshot</h1><h1 data-lang="en">Pseudotime · DPT &amp; Slingshot</h1>
+  <p class="subtitle" data-lang="zh">如何從 snapshot 資料推估時間順序？DPT 的擴散距離、Slingshot 的 principal curves、PAGA 圖簡化。</p>
+  <p class="subtitle" data-lang="en">Inferring temporal order from snapshot data. DPT diffusion distance, Slingshot principal curves, PAGA.</p>
+</div></header>
+
+<main class="content-wrap">
+
+<section class="section">
+  <span class="section-label intuition">直覺 / Intuition</span>
+  <div data-lang="zh"><p>細胞發育是<b>連續過程</b>：幹細胞 → 中間態 → 成熟態。實驗只能拍「快照」，但發育中的細胞混在一起。<b>Pseudotime</b> 就是要從這個混雜快照重建出時間順序。</p></div>
+  <div data-lang="en"><p>Differentiation is continuous: stem → intermediate → mature. Snapshots capture mixed states. <b>Pseudotime</b> reconstructs temporal order.</p></div>
+</section>
+
+<section class="section">
+  <span class="section-label math">核心數學 / Math</span>
+  <h3>① DPT (Diffusion Pseudotime) <span data-lang="zh">— Haghverdi 2016</span></h3>
+  <p data-lang="zh">建立在 <a href="../M3-dimreduction/3.4-diffusion-map.html">Diffusion Maps</a> 之上。給定 root cell $x_r$，pseudotime 是擴散距離：</p>
+  <p data-lang="en">Built on <a href="../M3-dimreduction/3.4-diffusion-map.html">Diffusion Maps</a>. Given root cell $x_r$, pseudotime is diffusion distance:</p>
+  <div class="math-block">$$\text{dpt}(x_r, x_i) = \|\Psi_t(x_r) - \Psi_t(x_i)\|$$</div>
+  <p data-lang="zh">用「累積轉移機率矩陣」$M = \sum_{t=1}^{\infty} (T - \mathbf{1}\boldsymbol{\pi}^\top)^t$ 算更穩定。</p>
+  <p data-lang="en">Numerically stabilized via cumulative transition matrix $M$.</p>
+
+  <h3>② Slingshot <span data-lang="zh">— principal curves</span></h3>
+  <p data-lang="zh">兩階段：</p>
+  <p data-lang="en">Two stages:</p>
+  <ol data-lang="zh">
+    <li><b>骨幹圖</b>：對 cluster 質心做最小生成樹 (MST)，找分歧點</li>
+    <li><b>Principal curves</b>：對每條 lineage 擬合「平滑曲線」<br>
+    $\mathbf{f}: [0, 1] \to \mathbb{R}^d$ 最小化 $\sum_i \|x_i - \mathbf{f}(\lambda_i)\|^2$，其中 $\lambda_i$ 是 $x_i$ 在曲線上的投影位置</li>
+  </ol>
+  <ol data-lang="en">
+    <li><b>Skeleton</b>: MST on cluster centroids, find branching</li>
+    <li><b>Principal curves</b>: smooth $\mathbf{f}: [0,1] \to \mathbb{R}^d$ minimizing $\sum_i \|x_i - \mathbf{f}(\lambda_i)\|^2$</li>
+  </ol>
+  <p data-lang="zh">Pseudotime = 投影位置 $\lambda_i$。優點：能<b>明確處理 lineage 分支</b>。</p>
+  <p data-lang="en">Pseudotime = projection $\lambda_i$. Handles branching explicitly.</p>
+
+  <h3>③ PAGA <span data-lang="zh">— Wolf 2019</span></h3>
+  <p data-lang="zh">把細胞分群後，把「群與群之間的連通性」量化為圖。簡化複雜流形成可解讀的拓撲圖。</p>
+  <p data-lang="en">Cluster cells, quantify "connectivity between groups" into a simplified graph topology.</p>
+  <div class="math-block">$$w_{kl} = \frac{|E(C_k, C_l)|}{E_{\text{expected}}(C_k, C_l)}$$</div>
+  <p data-lang="zh">$E(C_k, C_l)$ = 跨 cluster 邊數；分母 = 隨機期望邊數。權重 > 1 表示連結比隨機強。</p>
+  <p data-lang="en">$E(C_k, C_l)$ = inter-cluster edges; denominator = random expectation. Weight &gt; 1 → stronger than chance.</p>
+
+  <div class="callout callout-warn">
+    <strong data-lang="zh">⚠️ Pseudotime 的詮釋陷阱</strong><strong data-lang="en">⚠️ Interpretation pitfalls</strong>
+    <p data-lang="zh">(1) <b>不是真實時間</b>——只是「順序」；(2) <b>對 root cell 選擇敏感</b>；(3) <b>不同方法結果可能差很多</b>（Saelens et al. 2019 benchmarked &gt;30 methods）。</p>
+    <p data-lang="en">(1) <b>Not real time</b> — only order; (2) <b>Sensitive to root choice</b>; (3) <b>Methods disagree</b> (Saelens et al. 2019 benchmarked 30+).</p>
+  </div>
+</section>
+
+<section class="section">
+  <span class="section-label code">程式碼 / Code</span>
+  <div class="code-tabs"><div class="code-tab-btns"><button class="code-tab-btn active" onclick="switchTab(this,'py16')">Python</button><button class="code-tab-btn" onclick="switchTab(this,'r16')">R</button></div>
+    <div class="code-tab-content active" id="py16"><pre><span class="comment"># DPT</span>
+sc.tl.diffmap(adata)
+adata.uns[<span class="str">"iroot"</span>] = np.flatnonzero(adata.obs[<span class="str">"cell_type"</span>] == <span class="str">"stem"</span>)[<span class="num">0</span>]
+sc.tl.dpt(adata)
+sc.pl.umap(adata, color=<span class="str">"dpt_pseudotime"</span>)
+
+<span class="comment"># PAGA</span>
+sc.tl.paga(adata, groups=<span class="str">"leiden"</span>)
+sc.pl.paga(adata)
+</pre></div>
+    <div class="code-tab-content" id="r16"><pre><span class="keyword">library</span>(slingshot)
+sce &lt;- <span class="func">slingshot</span>(sce, clusterLabels = <span class="str">"leiden"</span>, reducedDim = <span class="str">"UMAP"</span>,
+                start.clus = <span class="str">"stem"</span>)
+<span class="func">slingPseudotime</span>(sce)
+</pre></div>
+  </div>
+</section>
+
+<section class="section">
+  <span class="section-label">參考 / References</span>
+  <ul class="refs-list">
+    <li><div class="ref-title">Haghverdi, L. et al. (2016). DPT.</div><div class="ref-meta">Nat Methods 13. <a href="https://doi.org/10.1038/nmeth.3971">10.1038/nmeth.3971</a></div></li>
+    <li><div class="ref-title">Street, K. et al. (2018). Slingshot.</div><div class="ref-meta">BMC Genomics 19. <a href="https://doi.org/10.1186/s12864-018-4772-0">10.1186/s12864-018-4772-0</a></div></li>
+    <li><div class="ref-title">Wolf, F.A. et al. (2019). PAGA.</div><div class="ref-meta">Genome Biology 20. <a href="https://doi.org/10.1186/s13059-019-1663-x">10.1186/s13059-019-1663-x</a></div></li>
+    <li><div class="ref-title">Saelens, W. et al. (2019). A comparison of single-cell trajectory inference methods.</div><div class="ref-meta">Nat Biotech 37. <a href="https://doi.org/10.1038/s41587-019-0071-9">10.1038/s41587-019-0071-9</a></div></li>
+  </ul>
+</section>
+
+<div class="cross-links">
+  <a href="6.1-integration.html" class="cross-link"><div class="cross-label" data-lang="zh">← 上一篇</div><div class="cross-label" data-lang="en">← PREV</div><div class="cross-title"><span class="cross-id">M6.1</span> Integration</div></a>
+  <a href="6.3-cellchat.html" class="cross-link"><div class="cross-label" data-lang="zh">下一篇 →</div><div class="cross-label" data-lang="en">NEXT →</div><div class="cross-title"><span class="cross-id">M6.3</span> CellChat</div></a>
+</div>
+
+</main>
+<footer class="site-footer"><p>© Charlene</p></footer>
+<script src="../i18n.js"></script>
+<script>function switchTab(b,id){const p=b.closest(".code-tabs");p.querySelectorAll(".code-tab-btn").forEach(x=>x.classList.remove("active"));p.querySelectorAll(".code-tab-content").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(id).classList.add("active");}</script>
+</body></html>

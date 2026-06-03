@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>6.1 Integration · Harmony — scRNA-seq Advanced Math</title><link rel="stylesheet" href="../styles.css">
+<script>MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] } };</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
+</head><body>
+<nav class="top-nav"><div class="top-nav-inner">
+  <a href="../index.html" class="top-nav-brand"><span>🧬</span><span data-lang="zh">scRNA-seq 進階數學</span><span data-lang="en">scRNA-seq Advanced Math</span><span class="badge-math">MATH</span></a>
+  <ul class="top-nav-links"><li><a href="../index.html#M1">M1</a></li><li><a href="../index.html#M2">M2</a></li><li><a href="../index.html#M3">M3</a></li><li><a href="../index.html#M4">M4</a></li><li><a href="../index.html#M5">M5</a></li><li><a href="../index.html#M6" class="active">M6</a></li><li><a href="../index.html" data-lang="zh">🏠 回首頁</a><span data-lang="en">🏠 Home</span></li></ul>
+  <div class="lang-switch"><button data-lang-btn="zh" class="active">中文</button><button data-lang-btn="en">EN</button></div>
+</div></nav>
+<header class="page-hero"><div class="page-hero-inner">
+  <div class="page-badge">M6.1 · ADVANCED</div>
+  <h1 data-lang="zh">Integration · Harmony</h1><h1 data-lang="en">Integration · Harmony</h1>
+  <p class="subtitle" data-lang="zh">為什麼 batch effect 可以在 PCA 空間用「軟分群 + 偏移修正」消除？CCA、MNN、Harmony 的數學。</p>
+  <p class="subtitle" data-lang="en">Why batch effects can be removed in PCA space via "soft clustering + shift correction". The math of CCA, MNN, Harmony.</p>
+</div></header>
+
+<main class="content-wrap">
+
+<section class="section">
+  <span class="section-label intuition">直覺 / Intuition</span>
+  <div data-lang="zh"><p>不同批次/平台/個體做的 scRNA-seq 會產生「<b>同細胞型態被分成兩堆</b>」的人為效應（batch effect）。整合（integration）就是要消除這個。</p>
+    <p>核心想法：<b>在低維空間裡，找到「同一細胞型態的不同 batch 細胞」，把它們拉在一起</b>。三大方法用不同數學工具達成這件事。</p></div>
+  <div data-lang="en"><p>Different batches/platforms/donors create artifact "<b>same cell type split into two clouds</b>". Integration removes this. Idea: in low-D, find same-type cells across batches and align them.</p></div>
+</section>
+
+<section class="section">
+  <span class="section-label math">核心數學 / Math</span>
+  <h3>① CCA (Canonical Correlation Analysis) <span data-lang="zh">— Seurat v2/v3</span></h3>
+  <p data-lang="zh">找兩個 batch 投影方向 $\mathbf{u}, \mathbf{v}$，最大化兩 batch 的「典型相關」：</p>
+  <p data-lang="en">Find projection directions $\mathbf{u}, \mathbf{v}$ maximizing canonical correlation:</p>
+  <div class="math-block">$$\max_{\mathbf{u}, \mathbf{v}} \frac{\mathbf{u}^\top \mathbf{X}_1^\top \mathbf{X}_2 \mathbf{v}}{\sqrt{(\mathbf{u}^\top \mathbf{X}_1^\top \mathbf{X}_1 \mathbf{u})(\mathbf{v}^\top \mathbf{X}_2^\top \mathbf{X}_2 \mathbf{v})}}$$</div>
+  <p data-lang="zh">CCA 找出「兩 batch 共有的變異方向」（生物訊號），忽略 batch 專屬變異。</p>
+  <p data-lang="en">CCA finds shared variation (biology), ignores batch-specific variation.</p>
+
+  <h3>② MNN (Mutual Nearest Neighbors) <span data-lang="zh">— Haghverdi 2018</span></h3>
+  <div class="math-block">$$\text{MNN}(i, j) \iff i \in \mathcal{N}_k^{(B_2)}(j) \,\wedge\, j \in \mathcal{N}_k^{(B_1)}(i)$$</div>
+  <p data-lang="zh">細胞 $i$（batch 1）跟細胞 $j$（batch 2）<b>互相</b>是對方的 KNN——它們很可能是同細胞型態。<br>
+  從 MNN 對計算「校正向量」：$\mathbf{c}_i = \frac{1}{|M_i|}\sum_{j \in M_i} (\mathbf{x}_j - \mathbf{x}_i)$，把 batch 1 拉向 batch 2。</p>
+  <p data-lang="en">Cells $i$ (batch 1) and $j$ (batch 2) are <b>mutually</b> KNN — likely same cell type. Compute correction vectors $\mathbf{c}_i = \frac{1}{|M_i|}\sum_{j \in M_i} (\mathbf{x}_j - \mathbf{x}_i)$.</p>
+
+  <h3>③ Harmony <span data-lang="zh">— Korsunsky 2019</span></h3>
+  <p data-lang="zh">在 PCA 空間迭代執行兩步：</p>
+  <p data-lang="en">Iterate two steps in PCA space:</p>
+
+  <div class="algo-block">
+<span class="step"># Step 1: soft clustering (modified k-means)</span>
+maximize Σ_k Σ_i R_{ik} · ⟨z_i, μ_k⟩
+       - σ Σ_i,k R_{ik} log R_{ik}              <span class="comment"># entropy regularization</span>
+       + θ Σ_b Σ_k R_{ik} · I(b_i = b)           <span class="comment"># diversity penalty</span>
+
+<span class="step"># Step 2: linear correction</span>
+<span class="keyword">for each</span> cluster k:
+    <span class="keyword">for each</span> batch b:
+        β_{k,b} = mean_{i ∈ k, batch b}(z_i) - mean_{i ∈ k}(z_i)
+        z_i ← z_i - R_{ik} · β_{k,b_i}     <span class="comment"># 對每個細胞做加權偏移</span>
+
+<span class="comment"># 迭代到收斂</span>
+  </div>
+
+  <p data-lang="zh"><b>關鍵巧思</b>：「diversity penalty」項 $\theta \sum_b R_{ik} \cdot I(b_i = b)$ 懲罰「某一 cluster 只屬於某一 batch」——強迫每個 cluster 內 batch 比例接近全局比例。<br>
+  Harmony 的整個算法都是<b>線性</b>的，速度極快（百萬細胞分鐘級）。</p>
+  <p data-lang="en"><b>Key trick</b>: diversity penalty $\theta \sum_b R_{ik} \cdot I(b_i = b)$ punishes "cluster dominated by one batch", forcing batch ratios to match global. Entire algorithm linear, very fast.</p>
+
+  <div class="callout callout-deep">
+    <strong data-lang="zh">📊 BBKNN — 圖層級整合</strong><strong data-lang="en">📊 BBKNN — graph-level integration</strong>
+    <p data-lang="zh">不修改 PCA 座標，而是<b>修改 KNN graph</b>：對每個細胞，<b>從每個 batch 各選 $k_{\text{batch}}$ 個近鄰</b>，強迫圖跨 batch 連結。最簡單最快的整合方法。</p>
+    <p data-lang="en">Doesn't modify PCA coords; instead modifies KNN graph: pick $k_{\text{batch}}$ nearest neighbors <b>per batch</b> for each cell. Forces cross-batch connections.</p>
+  </div>
+</section>
+
+<section class="section">
+  <span class="section-label">比較 / Comparison</span>
+  <table class="compare-table">
+    <tr><th></th><th>Seurat CCA</th><th>MNN</th><th>Harmony</th><th>BBKNN</th></tr>
+    <tr><td data-lang="zh">速度</td><td data-lang="en">Speed</td><td class="bad">慢</td><td class="meh">中</td><td class="good">快</td><td class="good">最快</td></tr>
+    <tr><td data-lang="zh">記憶體</td><td data-lang="en">Memory</td><td class="bad">高</td><td class="meh">中</td><td class="good">低</td><td class="good">低</td></tr>
+    <tr><td data-lang="zh">過度校正風險</td><td data-lang="en">Over-correction</td><td class="meh">中</td><td class="meh">中</td><td class="good">θ 可調</td><td class="meh">中</td></tr>
+    <tr><td data-lang="zh">百萬細胞</td><td data-lang="en">Million cells</td><td class="bad">不行</td><td class="meh">勉強</td><td class="good">可</td><td class="good">可</td></tr>
+  </table>
+</section>
+
+<section class="section">
+  <span class="section-label code">程式碼 / Code</span>
+  <div class="code-tabs"><div class="code-tab-btns"><button class="code-tab-btn active" onclick="switchTab(this,'py15')">Python</button><button class="code-tab-btn" onclick="switchTab(this,'r15')">R</button></div>
+    <div class="code-tab-content active" id="py15"><pre><span class="keyword">import</span> scanpy.external <span class="keyword">as</span> sce
+sce.pp.harmony_integrate(adata, key=<span class="str">"batch"</span>)
+sc.pp.neighbors(adata, use_rep=<span class="str">"X_pca_harmony"</span>)
+
+<span class="comment"># BBKNN</span>
+sce.pp.bbknn(adata, batch_key=<span class="str">"batch"</span>)
+</pre></div>
+    <div class="code-tab-content" id="r15"><pre><span class="keyword">library</span>(harmony)
+pbmc &lt;- <span class="func">RunHarmony</span>(pbmc, group.by.vars = <span class="str">"batch"</span>)
+pbmc &lt;- <span class="func">FindNeighbors</span>(pbmc, reduction = <span class="str">"harmony"</span>, dims = <span class="num">1</span>:<span class="num">30</span>)
+
+<span class="comment"># Seurat CCA-based</span>
+list &lt;- <span class="func">SplitObject</span>(pbmc, split.by = <span class="str">"batch"</span>)
+anchors &lt;- <span class="func">FindIntegrationAnchors</span>(list, dims = <span class="num">1</span>:<span class="num">30</span>)
+integrated &lt;- <span class="func">IntegrateData</span>(anchors)
+</pre></div>
+  </div>
+</section>
+
+<section class="section">
+  <span class="section-label">參考 / References</span>
+  <ul class="refs-list">
+    <li><div class="ref-title">Korsunsky, I. et al. (2019). Fast, sensitive and accurate integration of single-cell data with Harmony.</div><div class="ref-meta">Nat Methods 16. <a href="https://doi.org/10.1038/s41592-019-0619-0">10.1038/s41592-019-0619-0</a></div></li>
+    <li><div class="ref-title">Haghverdi, L., Lun, A.T.L., Morgan, M.D., Marioni, J.C. (2018). Batch effects in scRNA-seq corrected by MNN.</div><div class="ref-meta">Nat Biotech 36. <a href="https://doi.org/10.1038/nbt.4091">10.1038/nbt.4091</a></div></li>
+    <li><div class="ref-title">Polański, K. et al. (2019). BBKNN.</div><div class="ref-meta">Bioinformatics. <a href="https://doi.org/10.1093/bioinformatics/btz625">10.1093/bioinformatics/btz625</a></div></li>
+    <li><div class="ref-title">Luecken, M.D. et al. (2022). Benchmarking atlas-level integration.</div><div class="ref-meta">Nat Methods 19. <a href="https://doi.org/10.1038/s41592-021-01336-8">10.1038/s41592-021-01336-8</a></div></li>
+  </ul>
+</section>
+
+<div class="cross-links">
+  <a href="../M5-statistics/5.3-classifier.html" class="cross-link"><div class="cross-label" data-lang="zh">← 上一篇</div><div class="cross-label" data-lang="en">← PREV</div><div class="cross-title"><span class="cross-id">M5.3</span> Classifier</div></a>
+  <a href="6.2-pseudotime.html" class="cross-link"><div class="cross-label" data-lang="zh">下一篇 →</div><div class="cross-label" data-lang="en">NEXT →</div><div class="cross-title"><span class="cross-id">M6.2</span> Pseudotime</div></a>
+</div>
+
+</main>
+<footer class="site-footer"><p>© Charlene</p></footer>
+<script src="../i18n.js"></script>
+<script>function switchTab(b,id){const p=b.closest(".code-tabs");p.querySelectorAll(".code-tab-btn").forEach(x=>x.classList.remove("active"));p.querySelectorAll(".code-tab-content").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(id).classList.add("active");}</script>
+</body></html>

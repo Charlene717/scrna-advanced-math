@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>6.3 CellChat — scRNA-seq Advanced Math</title><link rel="stylesheet" href="../styles.css">
+<script>MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] } };</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
+</head><body>
+<nav class="top-nav"><div class="top-nav-inner">
+  <a href="../index.html" class="top-nav-brand"><span>🧬</span><span data-lang="zh">scRNA-seq 進階數學</span><span data-lang="en">scRNA-seq Advanced Math</span><span class="badge-math">MATH</span></a>
+  <ul class="top-nav-links"><li><a href="../index.html#M1">M1</a></li><li><a href="../index.html#M2">M2</a></li><li><a href="../index.html#M3">M3</a></li><li><a href="../index.html#M4">M4</a></li><li><a href="../index.html#M5">M5</a></li><li><a href="../index.html#M6" class="active">M6</a></li><li><a href="../index.html" data-lang="zh">🏠 回首頁</a><span data-lang="en">🏠 Home</span></li></ul>
+  <div class="lang-switch"><button data-lang-btn="zh" class="active">中文</button><button data-lang-btn="en">EN</button></div>
+</div></nav>
+<header class="page-hero"><div class="page-hero-inner">
+  <div class="page-badge">M6.3 · ADVANCED</div>
+  <h1 data-lang="zh">CellChat 細胞通訊</h1><h1 data-lang="en">CellChat: Cell-Cell Communication</h1>
+  <p class="subtitle" data-lang="zh">怎麼把基因表現量轉成「通訊機率」？Hill function、permutation test、與其他工具 (CellPhoneDB) 的差別。</p>
+  <p class="subtitle" data-lang="en">Turning expression into "communication probability". Hill function, permutation tests, vs CellPhoneDB.</p>
+</div></header>
+
+<main class="content-wrap">
+
+<section class="section">
+  <span class="section-label intuition">直覺 / Intuition</span>
+  <div data-lang="zh"><p>細胞之間透過「<b>ligand-receptor 配對</b>」溝通：A 細胞分泌 ligand → B 細胞表面 receptor 接收。要量化「A → B 用 pathway P 通訊的強度」，我們需要：(1) 已知 L-R 對的資料庫；(2) 把 A 的 ligand 表現量 + B 的 receptor 表現量轉成一個機率。</p></div>
+  <div data-lang="en"><p>Cells communicate via <b>ligand-receptor pairs</b>: cell A secretes ligand, cell B's receptor receives. Need: (1) curated L-R database; (2) function to combine A's ligand + B's receptor into probability.</p></div>
+</section>
+
+<section class="section">
+  <span class="section-label math">核心數學 / Math</span>
+  <h3 data-lang="zh">通訊機率公式</h3><h3 data-lang="en">Communication probability</h3>
+  <div class="math-block">$$P_{i \to j}^{LR} = \frac{L_i \cdot R_j}{K_h + L_i \cdot R_j}$$<div class="formula-caption" data-lang="zh">Hill function 形式，$K_h$ 是 half-saturation 常數</div><div class="formula-caption" data-lang="en">Hill function, $K_h$ = half-saturation constant</div></div>
+  <p data-lang="zh">$L_i$ = cluster $i$ 平均 ligand 表現、$R_j$ = cluster $j$ 平均 receptor 表現。Hill function 是飽和曲線——表現量低時近 0、高時近 1。</p>
+  <p data-lang="en">$L_i$ = ligand mean in cluster $i$, $R_j$ = receptor mean in $j$. Hill saturates: ~0 at low, ~1 at high.</p>
+
+  <h3 data-lang="zh">考慮 cofactor / agonist / antagonist</h3>
+  <div class="math-block">$$P_{i \to j}^{LR} = \frac{L_i \cdot R_j \cdot (1 + AG_i)^{n}}{K_h + L_i \cdot R_j \cdot (1 + AN_j)^{n}}$$</div>
+  <p data-lang="zh">$AG$ 是 agonist（增強）、$AN$ 是 antagonist（抑制）。CellChat 的 L-R 資料庫已包含這些 cofactor 資訊。</p>
+  <p data-lang="en">$AG$ enhances, $AN$ inhibits. CellChat's L-R database includes cofactors.</p>
+
+  <h3 data-lang="zh">Permutation test 找顯著通訊</h3><h3 data-lang="en">Permutation test for significance</h3>
+  <div class="algo-block">
+<span class="comment"># Null hypothesis: cluster identities are random</span>
+<span class="keyword">for</span> r <span class="keyword">in</span> range(<span class="num">1000</span>):
+    shuffled_labels = random.permutation(cluster_labels)
+    P_null[r] = compute_probability(L, R, shuffled_labels)
+
+p_value = mean(P_null &gt;= P_observed)
+  </div>
+
+  <h3 data-lang="zh">Pathway 層級聚合</h3><h3 data-lang="en">Pathway aggregation</h3>
+  <div class="math-block">$$P_{i \to j}^{\text{pathway}} = \sum_{LR \in \text{pathway}} P_{i \to j}^{LR}$$</div>
+  <p data-lang="zh">同一 pathway 內多個 L-R 對加總，得到 pathway 層級通訊強度。</p>
+  <p data-lang="en">Sum across L-R pairs in same pathway for pathway-level strength.</p>
+
+  <h3 data-lang="zh">與 CellPhoneDB 的差別</h3><h3 data-lang="en">Vs CellPhoneDB</h3>
+  <ul data-lang="zh">
+    <li><b>CellPhoneDB</b>：用「平均表現量乘積」+ permutation。簡單但忽略飽和。</li>
+    <li><b>CellChat</b>：Hill function + cofactor，更生物學。多種「通訊角色」分析（sender、receiver、mediator、influencer）。</li>
+    <li><b>NicheNet</b>：考慮下游轉錄因子訊號傳遞，最接近因果。</li>
+  </ul>
+  <ul data-lang="en">
+    <li><b>CellPhoneDB</b>: mean × mean + permutation. Simple, ignores saturation.</li>
+    <li><b>CellChat</b>: Hill + cofactors, more biological. Multiple roles analysis.</li>
+    <li><b>NicheNet</b>: includes downstream TF signaling, closest to causality.</li>
+  </ul>
+</section>
+
+<section class="section">
+  <span class="section-label code">程式碼 / Code</span>
+  <div class="code-tabs"><div class="code-tab-btns"><button class="code-tab-btn active" onclick="switchTab(this,'r17')">R / CellChat</button><button class="code-tab-btn" onclick="switchTab(this,'py17')">Python / cellchat</button></div>
+    <div class="code-tab-content active" id="r17"><pre><span class="keyword">library</span>(CellChat)
+cc &lt;- <span class="func">createCellChat</span>(<span class="func">GetAssayData</span>(pbmc, slot=<span class="str">"data"</span>),
+                     meta=pbmc@meta.data, group.by=<span class="str">"cell_type"</span>)
+<span class="func">setIdent</span>(cc, ident.use=<span class="str">"cell_type"</span>)
+cc@DB &lt;- CellChatDB.human
+
+cc &lt;- <span class="func">subsetData</span>(cc) %&gt;% <span class="func">identifyOverExpressedGenes</span>() %&gt;%
+      <span class="func">identifyOverExpressedInteractions</span>()
+cc &lt;- <span class="func">computeCommunProb</span>(cc)      <span class="comment"># 主要算法</span>
+cc &lt;- <span class="func">computeCommunProbPathway</span>(cc)
+cc &lt;- <span class="func">aggregateNet</span>(cc)
+
+<span class="func">netVisual_circle</span>(cc@net$weight)
+</pre></div>
+    <div class="code-tab-content" id="py17"><pre><span class="comment"># Python 端目前較常用 cellrank / liana</span>
+<span class="keyword">import</span> liana <span class="keyword">as</span> li
+li.mt.rank_aggregate(adata, groupby=<span class="str">"cell_type"</span>, resource_name=<span class="str">"consensus"</span>)
+</pre></div>
+  </div>
+</section>
+
+<section class="section">
+  <span class="section-label">參考 / References</span>
+  <ul class="refs-list">
+    <li><div class="ref-title">Jin, S. et al. (2021). CellChat.</div><div class="ref-meta">Nat Commun 12. <a href="https://doi.org/10.1038/s41467-021-21246-9">10.1038/s41467-021-21246-9</a></div></li>
+    <li><div class="ref-title">Efremova, M. et al. (2020). CellPhoneDB.</div><div class="ref-meta">Nat Protocols 15. <a href="https://doi.org/10.1038/s41596-020-0292-x">10.1038/s41596-020-0292-x</a></div></li>
+    <li><div class="ref-title">Browaeys, R., Saelens, W., Saeys, Y. (2020). NicheNet.</div><div class="ref-meta">Nat Methods 17. <a href="https://doi.org/10.1038/s41592-019-0667-5">10.1038/s41592-019-0667-5</a></div></li>
+    <li><div class="ref-title">Dimitrov, D. et al. (2022). Comparison of methods and resources for cell-cell communication inference from single-cell RNA-Seq data.</div><div class="ref-meta">Nat Commun 13. <a href="https://doi.org/10.1038/s41467-022-30755-0">10.1038/s41467-022-30755-0</a></div></li>
+  </ul>
+</section>
+
+<div class="cross-links">
+  <a href="6.2-pseudotime.html" class="cross-link"><div class="cross-label" data-lang="zh">← 上一篇</div><div class="cross-label" data-lang="en">← PREV</div><div class="cross-title"><span class="cross-id">M6.2</span> Pseudotime</div></a>
+  <a href="../index.html" class="cross-link"><div class="cross-label" data-lang="zh">🏠 回首頁</div><div class="cross-label" data-lang="en">🏠 HOME</div><div class="cross-title" data-lang="zh">完成全部 18 主題</div><div class="cross-title" data-lang="en">All 18 topics done</div></a>
+</div>
+
+</main>
+<footer class="site-footer"><p>© Charlene</p></footer>
+<script src="../i18n.js"></script>
+<script>function switchTab(b,id){const p=b.closest(".code-tabs");p.querySelectorAll(".code-tab-btn").forEach(x=>x.classList.remove("active"));p.querySelectorAll(".code-tab-content").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.getElementById(id).classList.add("active");}</script>
+</body></html>
