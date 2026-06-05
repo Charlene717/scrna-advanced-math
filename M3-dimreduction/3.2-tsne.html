@@ -3,1516 +3,784 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>3.2 t-SNE — scRNA-seq 進階數學深入互動版</title>
-<link rel="stylesheet" href="../styles.css">
-<script>MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] }, svg: { fontCache: 'global' } };</script>
+<title>3.2 t-SNE：從鄰居機率到 KL 散度 — Deep Interactive</title>
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
+</script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
 <style>
-  .story-card { background:#fff; border-radius:14px; padding:24px 28px; margin:24px 0; box-shadow:var(--c-card-shadow); }
-  .story-card h3 { color:var(--c-accent); margin-top:0; }
-  .interact-box { background:linear-gradient(180deg,#f6f8fc 0%,#eef2f9 100%); border:1px solid #dfe4f0; border-radius:14px; padding:22px; margin:20px 0; }
-  .interact-box h4 { color:var(--c-formula); margin-top:0; font-size:15px; text-transform:uppercase; letter-spacing:1px; }
-  .control-row { display:flex; gap:18px; flex-wrap:wrap; align-items:center; margin:12px 0; }
-  .control-item { display:flex; flex-direction:column; gap:4px; min-width:140px; }
-  .control-item label { font-size:12px; color:var(--c-ink-soft); font-weight:600; }
-  .control-item input[type=range] { width:100%; }
-  .control-item .val { font-family:var(--font-code); font-size:14px; font-weight:700; color:var(--c-formula); }
-  .control-item button { background:var(--c-accent); color:#fff; border:0; padding:7px 14px; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600; }
-  .control-item button:hover { background:#3b6ad0; }
-  .control-item button.ghost { background:#fff; color:var(--c-accent); border:1px solid var(--c-accent); }
-  .live-readout { background:#fff; padding:12px 16px; border-radius:8px; margin-top:12px; font-family:var(--font-code); font-size:13px; border-left:3px solid var(--c-accent); }
-  .live-readout .lbl { color:var(--c-ink-mute); }
-  .live-readout .val-hl { color:var(--c-formula); font-weight:700; }
-  .twin-view { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:14px 0; }
-  .twin-view .panel { background:#fff; border-radius:8px; padding:12px; }
-  .twin-view .panel h5 { margin:0 0 8px; font-size:13px; color:var(--c-ink); }
-  @media (max-width:720px){.twin-view{grid-template-columns:1fr;}}
-  .step-walkthrough { background:#1a2347; color:#fff; border-radius:14px; padding:22px 24px; margin:24px 0; }
-  .step-walkthrough .step-nav-bar { display:flex; gap:10px; align-items:center; margin-bottom:14px; }
-  .step-walkthrough .step-nav-bar button { background:var(--c-accent); color:#fff; border:0; padding:8px 16px; border-radius:6px; font-weight:700; cursor:pointer; font-size:13px; }
-  .step-walkthrough .step-nav-bar button:disabled { background:#555; cursor:not-allowed; }
-  .step-walkthrough .step-nav-bar button.ghost { background:transparent; border:1px solid #4f7df4; color:#c5cee8; }
-  .step-walkthrough .step-indicator { display:flex; gap:6px; flex:1; justify-content:center; }
-  .step-walkthrough .step-dot { width:30px; height:30px; border-radius:50%; background:#2d3a6b; color:#c5cee8; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; cursor:pointer; transition:all .2s; }
-  .step-walkthrough .step-dot.active { background:#ffd564; color:#1a2347; transform:scale(1.15); }
-  .step-walkthrough .step-dot.done { background:var(--c-success); color:#fff; }
-  .step-walkthrough .step-content { display:grid; grid-template-columns:1.3fr 1fr; gap:18px; }
-  @media (max-width:760px){.step-walkthrough .step-content{grid-template-columns:1fr;}}
-  .step-walkthrough .step-vis { background:#0d1631; border-radius:8px; padding:10px; min-height:300px; }
-  .step-walkthrough .step-vis svg { width:100%; }
-  .step-walkthrough .step-explain { background:rgba(255,255,255,.05); border-radius:8px; padding:18px; backdrop-filter:blur(8px); }
-  .step-walkthrough .step-title { color:#ffd564; font-size:17px; font-weight:800; margin-bottom:10px; }
-  .step-walkthrough .step-math { background:#0d1631; padding:12px 14px; border-radius:6px; margin:10px 0; font-family:var(--font-code); font-size:13px; line-height:1.7; }
-  .formula-anatomy { background:linear-gradient(135deg,#f8f5ff,#f4eeff); border:1px solid #e0d4f7; border-left:5px solid var(--c-formula); padding:18px 22px; border-radius:0 10px 10px 0; margin:18px 0; }
-  .formula-anatomy table { width:100%; margin-top:10px; font-size:13px; }
-  .formula-anatomy table td { padding:6px 8px; border-bottom:1px dashed #d8c8f0; }
-  .formula-anatomy table td:first-child { color:var(--c-formula); font-family:var(--font-math); font-weight:700; width:80px; }
-  .quiz-mini { background:#fff8db; border-left:4px solid var(--c-warn); padding:14px 18px; border-radius:0 8px 8px 0; margin:18px 0; }
-  .quiz-mini h4 { color:#92590e; margin:0 0 8px; }
-  .quiz-mini .quiz-opt { background:#fff; padding:8px 12px; margin:6px 0; border-radius:6px; cursor:pointer; border:1px solid #f3d98a; transition:.2s; }
-  .quiz-mini .quiz-opt:hover { background:#fffbed; border-color:var(--c-warn); }
-  .quiz-mini .quiz-opt.correct { background:#d1f7e0; border-color:var(--c-success); }
-  .quiz-mini .quiz-opt.wrong { background:#fed7d7; border-color:var(--c-danger); }
-  .quiz-mini .quiz-feedback { font-size:13px; margin-top:10px; color:#444; }
-  .worked-example { background:#fff; border:2px solid var(--c-formula); border-radius:14px; padding:24px; margin:24px 0; }
-  .worked-step { background:#faf8ff; padding:14px 18px; border-radius:8px; margin:10px 0; border-left:4px solid var(--c-formula); }
-  .worked-step .step-label { color:var(--c-formula); font-weight:700; font-size:13px; letter-spacing:1px; }
-  .nav-pages { display:flex; gap:8px; margin:30px 0; padding:14px; background:#1a2347; border-radius:10px; align-items:center; flex-wrap:wrap; }
-  .nav-pages a { color:#c5cee8; text-decoration:none; padding:6px 12px; border-radius:6px; font-size:13px; font-weight:600; transition:.2s; }
-  .nav-pages a:hover { background:rgba(255,255,255,.1); color:#fff; }
-  .nav-pages a.active { background:var(--c-accent); color:#fff; }
-  .nav-pages .label { color:#8990a8; font-size:11px; letter-spacing:1px; font-weight:700; margin-right:8px; }
-  .pitfall-card { background:#fff; border-left:4px solid var(--c-danger); border-radius:0 8px 8px 0; padding:16px 20px; margin:12px 0; box-shadow:var(--c-card-shadow); }
-  .pitfall-card .pf-num { background:var(--c-danger); color:#fff; padding:2px 10px; border-radius:4px; font-size:12px; font-weight:700; }
-  .pitfall-card h4 { margin:8px 0 6px; color:var(--c-ink); }
+  :root {
+    --bg: #fafaf7; --fg: #1a1a1a; --muted: #666;
+    --accent: #c0392b; --accent2: #2c5aa0;
+    --green: #27795a; --purple: #8e44ad; --yellow: #f0c419;
+    --rose-deep: #9f1239;
+    --card: #ffffff; --border: #e0e0d8; --code: #f4f1ea;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Helvetica Neue", "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif; background: var(--bg); color: var(--fg); line-height: 1.75; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 40px 28px 120px; }
+  header.cover { margin: 20px 0 60px; padding: 52px 40px;
+    background: linear-gradient(135deg, #4c0519 0%, #9f1239 55%, #fda4af 100%);
+    color: #fff; border-radius: 16px; box-shadow: 0 14px 40px rgba(76,5,25,0.18); }
+  header.cover h1 { margin: 0 0 14px; font-size: 36px; }
+  header.cover .sub { font-size: 17px; opacity: 0.92; line-height: 1.65; }
+  header.cover .badge { display: inline-block; background: rgba(255,255,255,0.18);
+    padding: 4px 12px; border-radius: 20px; font-size: 13px; margin-bottom: 16px; }
+  h2 { margin-top: 70px; padding-bottom: 8px; border-bottom: 3px solid var(--rose-deep);
+    font-size: 26px; display: flex; align-items: baseline; gap: 12px; }
+  h2 .num { color: var(--rose-deep); font-weight: 800; font-size: 20px; }
+  h3 { margin-top: 36px; font-size: 19px; color: var(--accent2); }
+  h4 { margin-top: 22px; font-size: 16px; color: var(--accent); }
+  p { margin: 14px 0; }
+  .lead { font-size: 17px; color: #2a2a2a; }
+  .callout { background: #fff8e6; border-left: 4px solid var(--yellow); padding: 14px 18px; border-radius: 6px; margin: 22px 0; }
+  .callout.idea { background: #eaf4ff; border-left-color: var(--accent2); }
+  .callout.warn { background: #fdecec; border-left-color: var(--accent); }
+  .callout.bio  { background: #effaf3; border-left-color: var(--green); }
+  .callout.prog { background: #ffe4e6; border-left-color: var(--rose-deep); }
+  .card { background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px 26px; margin: 26px 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+  .card h3 { margin-top: 0; }
+  .controls { display: flex; flex-wrap: wrap; gap: 14px 22px;
+    align-items: center; margin: 14px 0; padding: 12px 16px;
+    background: #f4f1ea; border-radius: 8px; font-size: 14px; }
+  .controls label { display: flex; align-items: center; gap: 8px; }
+  button { background: var(--rose-deep); color: #fff; border: 0;
+    padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 14px;
+    font-family: inherit; }
+  button:hover { background: #6e0a26; }
+  button.ghost { background: #fff; color: var(--rose-deep); border: 1px solid var(--rose-deep); }
+  input[type="range"] { width: 180px; vertical-align: middle; }
+  svg.canvas { background: #fcfcfa; border: 1px solid var(--border); border-radius: 8px; display: block; }
+  svg.canvas .axis { stroke: #bbb; stroke-width: 1; }
+  svg.canvas .grid { stroke: #ececea; stroke-width: 0.5; }
+  svg.canvas text.lbl { font-size: 12px; fill: #333; }
+  .stat-row { display: flex; flex-wrap: wrap; gap: 22px; margin: 14px 0; font-size: 14px; }
+  .stat-row .item { display: flex; flex-direction: column; }
+  .stat-row .item .lbl { color: var(--muted); font-size: 12px; }
+  .stat-row .item .val { font-family: "JetBrains Mono", monospace; font-size: 18px; }
+  details { margin: 16px 0; }
+  details summary { cursor: pointer; font-weight: 600; color: var(--accent2); padding: 6px 0; }
+  .toc { background: #fff; border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 28px; margin: 30px 0; }
+  .toc h4 { margin: 0 0 10px; color: var(--rose-deep); }
+  .toc ol { margin: 6px 0; padding-left: 24px; line-height: 1.9; }
+  .toc a { color: var(--accent2); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .toc .new { background: var(--rose-deep); color: #fff; font-size: 11px;
+    padding: 1px 8px; border-radius: 10px; margin-left: 6px; }
+  code.inline { background: var(--code); padding: 2px 6px; border-radius: 4px;
+    font-size: 13px; font-family: "JetBrains Mono", "Consolas", monospace; }
+  pre.code { background: #1e1e1e; color: #dcdcdc;
+    padding: 14px 18px; border-radius: 8px; overflow-x: auto; font-size: 13px;
+    font-family: "JetBrains Mono", "Consolas", monospace; line-height: 1.55; }
+  pre.code .k { color: #569cd6; }
+  pre.code .s { color: #ce9178; }
+  pre.code .c { color: #6a9955; }
+  pre.code .n { color: #b5cea8; }
+  table.compare { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.compare th, table.compare td { border: 1px solid var(--border); padding: 8px 12px; }
+  table.compare th { background: #f4f1ea; text-align: left; }
+  .math-block { background: #fff; border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 18px; margin: 18px 0; }
+  .math-block.boxed { border: 2px solid var(--rose-deep); background: #ffe4e6; }
+  .formula-caption { font-size: 12.5px; color: var(--muted); text-align: center; margin-top: 6px; }
+  .footer { text-align: center; color: var(--muted); margin-top: 80px; font-size: 13px; }
+  .top-nav { background: #4c0519; color: #fff; padding: 14px 28px;
+    position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(76,5,25,0.25); }
+  .top-nav-inner { max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; gap: 28px; }
+  .top-nav-brand { color: #fff; text-decoration: none;
+    font-weight: 700; font-size: 17px;
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .top-nav-brand .badge-math { background: #9f1239; color: #fff;
+    padding: 3px 9px; border-radius: 4px; font-size: 11px; }
+  .top-nav-links { list-style: none; margin: 0; padding: 0;
+    display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+  .top-nav-links a { color: #fecdd3; text-decoration: none;
+    padding: 6px 11px; border-radius: 6px; font-size: 13px; font-weight: 500;
+    transition: 0.2s; }
+  .top-nav-links a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .top-nav-links a.active { background: #9f1239; color: #fff; }
+  .top-nav-links li.dropdown { position: relative; }
+  .top-nav-links li.dropdown > a::after { content: ' ▾';
+    font-size: 10px; opacity: 0.7; margin-left: 3px;
+    display: inline-block; transition: transform 0.2s; }
+  .top-nav-links li.dropdown:hover > a::after,
+  .top-nav-links li.dropdown.open > a::after { transform: rotate(180deg); }
+  .top-nav-links .dropdown-menu { display: none; position: absolute; top: 100%; left: 0;
+    background: #65142e; border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px; padding: 6px 0; min-width: 230px;
+    list-style: none; z-index: 200;
+    box-shadow: 0 8px 28px rgba(76,5,25,0.5); margin: 6px 0 0; }
+  .top-nav-links li.dropdown:hover > .dropdown-menu,
+  .top-nav-links li.dropdown.open > .dropdown-menu { display: block; }
+  .top-nav-links .dropdown-menu li { display: block; }
+  .top-nav-links .dropdown-menu li a { display: block; padding: 9px 18px;
+    border-radius: 0; font-size: 13px; white-space: nowrap; color: #fecdd3; }
+  .top-nav-links .dropdown-menu li a:hover { background: rgba(159,18,57,0.3); color: #fff; }
+  .top-nav-links .dropdown-menu li a.active-sub { background: #9f1239; color: #fff; font-weight: 700; }
+  .top-nav-links .dropdown-menu .sub-label { font-size: 10px; color: #fda4af;
+    letter-spacing: 1px; padding: 4px 18px 2px; text-transform: uppercase; }
+  .lang-switch { display: flex; gap: 4px;
+    background: rgba(255,255,255,0.08); padding: 4px; border-radius: 6px; flex-shrink: 0; }
+  .lang-switch button { background: transparent; border: 0; color: #fecdd3;
+    font-size: 12px; font-weight: 700; padding: 5px 10px;
+    border-radius: 4px; cursor: pointer; font-family: inherit; }
+  .lang-switch button.active { background: #9f1239; color: #fff; }
+  .nav-pages { display: flex; gap: 8px; margin: 24px 0; padding: 14px;
+    background: #65142e; border-radius: 10px; align-items: center; flex-wrap: wrap; }
+  .nav-pages a { color: #fecdd3; text-decoration: none;
+    padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600;
+    transition: 0.2s; }
+  .nav-pages a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .nav-pages .label { color: #fda4af; font-size: 11px;
+    letter-spacing: 1px; font-weight: 700; margin-right: 8px; }
+  [data-lang="en"] { display: none; }
+  body.lang-en [data-lang="zh"] { display: none; }
+  body.lang-en [data-lang="en"] { display: initial; }
+  body.lang-en h1[data-lang="en"], body.lang-en h2[data-lang="en"],
+  body.lang-en h3[data-lang="en"], body.lang-en h4[data-lang="en"],
+  body.lang-en p[data-lang="en"], body.lang-en div[data-lang="en"],
+  body.lang-en ol[data-lang="en"], body.lang-en ul[data-lang="en"] { display: block; }
+  body.lang-en li[data-lang="en"] { display: list-item; }
+  body.lang-en span[data-lang="en"] { display: inline; }
+  body.lang-en tspan[data-lang="en"] { display: inline; }
 </style>
 </head>
 <body>
 
-<nav class="top-nav">
-  <div class="top-nav-inner">
-    <a href="../index.html" class="top-nav-brand">
-      <span>🧬</span>
-      <span data-lang="zh">scRNA-seq 進階數學</span>
-      <span data-lang="en">scRNA-seq Advanced Math</span>
-      <span class="badge-math">MATH</span>
-    </a>
-    <ul class="top-nav-links">
-      <li class="dropdown">
-        <a href="../index.html#M1">M1</a>
-        <ul class="dropdown-menu">
-          <li class="sub-label" data-lang="zh">基礎</li><li class="sub-label" data-lang="en">FOUNDATIONS</li>
-          <li><a href="../M1-foundations/1.1-sparse-matrix.html">1.1 <span data-lang="zh">稀疏矩陣</span><span data-lang="en">Sparse Matrix</span></a></li>
-          <li><a href="../M1-foundations/1.2-count-distributions.html">1.2 <span data-lang="zh">計數分布</span><span data-lang="en">Count Distributions</span></a></li>
-        </ul>
-      </li>
-      <li class="dropdown">
-        <a href="../index.html#M2">M2</a>
-        <ul class="dropdown-menu">
-          <li class="sub-label" data-lang="zh">前處理</li><li class="sub-label" data-lang="en">PREPROCESSING</li>
-          <li><a href="../M2-preprocessing/2.1-qc-statistics.html">2.1 QC <span data-lang="zh">統計</span><span data-lang="en">Statistics</span></a></li>
-          <li><a href="../M2-preprocessing/2.2-normalization.html">2.2 Normalization</a></li>
-          <li><a href="../M2-preprocessing/2.3-hvg-selection.html">2.3 HVG <span data-lang="zh">選擇</span><span data-lang="en">Selection</span></a></li>
-          <li><a href="../M2-preprocessing/2.4-scaling.html">2.4 Scaling</a></li>
-        </ul>
-      </li>
-      <li class="dropdown">
-        <a href="../index.html#M3" class="active">M3</a>
-        <ul class="dropdown-menu">
-          <li class="sub-label" data-lang="zh">降維</li><li class="sub-label" data-lang="en">DIM. REDUCTION</li>
-          <li><a href="3.1-pca.html">3.1 PCA ⭐</a></li>
-          <li><a href="3.2-tsne.html" class="active-sub">3.2 t-SNE <span data-lang="zh">(本頁)</span><span data-lang="en">(here)</span></a></li>
-          <li><a href="3.3-umap.html">3.3 UMAP</a></li>
-          <li><a href="3.4-diffusion-map.html">3.4 Diffusion Maps</a></li>
-        </ul>
-      </li>
-      <li class="dropdown">
-        <a href="../index.html#M4">M4</a>
-        <ul class="dropdown-menu">
-          <li class="sub-label" data-lang="zh">圖與聚類</li><li class="sub-label" data-lang="en">GRAPH &amp; CLUSTERING</li>
-          <li><a href="../M4-graph-clustering/4.1-knn-graph.html">4.1 KNN Graph + HNSW</a></li>
-          <li><a href="../M4-graph-clustering/4.2-louvain-leiden.html">4.2 Louvain &amp; Leiden</a></li>
-        </ul>
-      </li>
-      <li class="dropdown">
-        <a href="../index.html#M5">M5</a>
-        <ul class="dropdown-menu">
-          <li class="sub-label" data-lang="zh">統計推論</li><li class="sub-label" data-lang="en">STATS</li>
-          <li><a href="../M5-statistics/5.1-de-tests.html">5.1 DE Tests</a></li>
-          <li><a href="../M5-statistics/5.2-multiple-testing.html">5.2 Multiple Testing / FDR</a></li>
-          <li><a href="../M5-statistics/5.3-classifier.html">5.3 <span data-lang="zh">細胞分類器</span><span data-lang="en">Cell Classifier</span></a></li>
-        </ul>
-      </li>
-      <li class="dropdown">
-        <a href="../index.html#M6">M6</a>
-        <ul class="dropdown-menu">
-          <li class="sub-label" data-lang="zh">進階</li><li class="sub-label" data-lang="en">ADVANCED</li>
-          <li><a href="../M6-advanced/6.1-integration.html">6.1 Integration / Harmony</a></li>
-          <li><a href="../M6-advanced/6.2-pseudotime.html">6.2 Pseudotime / DPT</a></li>
-          <li><a href="../M6-advanced/6.3-cellchat.html">6.3 CellChat</a></li>
-        </ul>
-      </li>
-      <li><a href="../index.html" data-lang="zh">🏠 回首頁</a><span data-lang="en">🏠 Home</span></li>
-    </ul>
-    <div class="lang-switch">
-      <button data-lang-btn="zh" class="active">中文</button>
-      <button data-lang-btn="en">EN</button>
-    </div>
+<nav class="top-nav"><div class="top-nav-inner">
+  <a href="../index.html" class="top-nav-brand">
+    <span>🧬</span>
+    <span data-lang="zh">scRNA-seq 進階數學</span>
+    <span data-lang="en">scRNA-seq Advanced Math</span>
+    <span class="badge-math">MATH</span>
+  </a>
+  <ul class="top-nav-links">
+    <li class="dropdown"><a href="../index.html#M1">M1</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">基礎 / FOUNDATIONS</li>
+        <li><a href="../M1-foundations/1.1-sparse-matrix.html">1.1 稀疏矩陣</a></li>
+        <li><a href="../M1-foundations/1.2-count-distributions.html">1.2 計數分布</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M2">M2</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">前處理 / PREPROCESSING</li>
+        <li><a href="../M2-preprocessing/2.1-qc-statistics.html">2.1 QC 統計</a></li>
+        <li><a href="../M2-preprocessing/2.2-normalization.html">2.2 Normalization</a></li>
+        <li><a href="../M2-preprocessing/2.3-hvg-selection.html">2.3 HVG 選擇</a></li>
+        <li><a href="../M2-preprocessing/2.4-scaling.html">2.4 Scaling</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M3" class="active">M3</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">降維 / DIM. REDUCTION</li>
+        <li><a href="3.1-pca.html">3.1 PCA</a></li>
+        <li><a href="3.2-tsne.html" class="active-sub">3.2 t-SNE ⭐ (本頁)</a></li>
+        <li><a href="3.3-umap.html">3.3 UMAP</a></li>
+        <li><a href="3.4-diffusion-map.html">3.4 Diffusion Maps</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M4">M4</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">圖與聚類 / GRAPH &amp; CLUSTERING</li>
+        <li><a href="../M4-graph-clustering/4.1-knn-graph.html">4.1 KNN Graph + HNSW</a></li>
+        <li><a href="../M4-graph-clustering/4.2-louvain-leiden.html">4.2 Louvain &amp; Leiden</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M5">M5</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">統計推論 / STATS</li>
+        <li><a href="../M5-statistics/5.1-de-tests.html">5.1 DE 檢定</a></li>
+        <li><a href="../M5-statistics/5.2-multiple-testing.html">5.2 多重檢定 / FDR</a></li>
+        <li><a href="../M5-statistics/5.3-classifier.html">5.3 細胞分類器</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M6">M6</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">進階 / ADVANCED</li>
+        <li><a href="../M6-advanced/6.1-integration.html">6.1 Integration</a></li>
+        <li><a href="../M6-advanced/6.2-pseudotime.html">6.2 Pseudotime</a></li>
+        <li><a href="../M6-advanced/6.3-cellchat.html">6.3 CellChat</a></li>
+      </ul></li>
+    <li><a href="../index.html"><span data-lang="zh">🏠 回首頁</span><span data-lang="en">🏠 Home</span></a></li>
+  </ul>
+  <div class="lang-switch">
+    <button data-lang-btn="zh" class="active">中文</button>
+    <button data-lang-btn="en">EN</button>
   </div>
-</nav>
+</div></nav>
 
-<header class="page-hero">
-  <div class="page-hero-inner">
-    <div class="page-badge">M3.2 · DIMENSIONALITY REDUCTION · 深入互動版</div>
-    <h1 data-lang="zh">t-SNE：從擠擁舞會到 KL 散度</h1>
-    <h1 data-lang="en">t-SNE: From the Crowded Ballroom to KL Divergence</h1>
-    <p class="subtitle" data-lang="zh">為什麼降到 2D 時鄰居會「擠不下」？「t」是哪個 t？perplexity 到底是什麼？
-      我們從一場擠擁的舞會開始，一步一步走到 t-SNE 完整數學，每章都有互動可以親手玩。</p>
-    <p class="subtitle" data-lang="en">Why do neighbors "overflow" in 2D? Which "t" is the t? What is perplexity really? Starting from a crowded ballroom, we walk to t-SNE's full math — interactive at every step.</p>
+<div class="wrap">
+
+<div class="nav-pages">
+  <span class="label" data-lang="zh">本頁章節</span><span class="label" data-lang="en">CHAPTERS</span>
+  <a href="#s0"><span data-lang="zh">§0 故事</span><span data-lang="en">§0 Story</span></a>
+  <a href="#s1"><span data-lang="zh">§1 鄰居機率</span><span data-lang="en">§1 neighbor prob</span></a>
+  <a href="#s2"><span data-lang="zh">§2 高維 P</span><span data-lang="en">§2 high-D P</span></a>
+  <a href="#s3"><span data-lang="zh">§3 互動 perplexity</span><span data-lang="en">§3 perplexity</span></a>
+  <a href="#s4"><span data-lang="zh">§4 低維 Q (Student-t)</span><span data-lang="en">§4 low-D Q (Student-t)</span></a>
+  <a href="#s5"><span data-lang="zh">§5 KL + 梯度</span><span data-lang="en">§5 KL + gradient</span></a>
+  <a href="#s6"><span data-lang="zh">§6 互動 t-SNE</span><span data-lang="en">§6 Interactive t-SNE</span></a>
+  <a href="#s7"><span data-lang="zh">§7 hyperparams</span><span data-lang="en">§7 hyperparams</span></a>
+  <a href="#s8"><span data-lang="zh">§8 限制</span><span data-lang="en">§8 Limits</span></a>
+</div>
+
+<header class="cover">
+  <div class="badge"><span data-lang="zh">深入互動版 · 從直覺到數學</span><span data-lang="en">Deep Interactive · From Intuition to Math</span></div>
+  <h1 data-lang="zh">t-SNE：從鄰居機率到 KL 散度</h1>
+  <h1 data-lang="en">t-SNE: from neighbor probabilities to KL divergence</h1>
+  <div class="sub" data-lang="zh">
+    PCA 是線性投影：把高維資料的「最大變異方向」當座標。但細胞型態之間的關係<b>不是線性</b>——
+    高維空間中糾結的彎曲流形，PCA 拉直後常常把不同細胞型態混在一起。<br><br>
+    t-SNE（van der Maaten & Hinton 2008）改用<b>機率角度</b>：
+    在高維空間定義「i 跟 j 是鄰居的機率」$P_{ij}$，
+    在低維空間找一組座標讓「低維鄰居機率」$Q_{ij}$ 跟 $P_{ij}$ 一樣（用 KL 散度衡量）。
+    本節從這個機率直覺出發，理解 perplexity、Student-t 重尾為何避免擁擠問題，
+    最後用互動模擬看 t-SNE 怎麼從散亂初始位置收斂到清楚 cluster。
+  </div>
+  <div class="sub" data-lang="en">
+    PCA is linear: take high-D max-variance directions as coordinates. But cell-type relationships are <b>not linear</b> —
+    twisted manifolds in high-D get mixed when PCA flattens them.<br><br>
+    t-SNE (van der Maaten & Hinton 2008) takes a <b>probability view</b>:
+    define "probability i and j are neighbors" $P_{ij}$ in high-D,
+    find low-D coordinates whose neighbor probabilities $Q_{ij}$ match $P_{ij}$ (measured by KL divergence).
+    Starting from this probability intuition, we explain perplexity, why Student-t heavy tails fix the crowding problem,
+    and watch t-SNE converge from random init to clean clusters interactively.
   </div>
 </header>
 
-<div class="content-wrap">
-<div class="nav-pages">
-  <span class="label" data-lang="zh">本頁章節</span><span class="label" data-lang="en">CHAPTERS</span>
-  <a href="#s0" data-lang="zh">§0 故事</a><span data-lang="en">§0 Story</span>
-  <a href="#s1" data-lang="zh">§1 SNE 直覺</a><span data-lang="en">§1 SNE Intuition</span>
-  <a href="#s2" data-lang="zh">§2 高維 P</a><span data-lang="en">§2 High-D P</span>
-  <a href="#s3" data-lang="zh">§3 Perplexity</a><span data-lang="en">§3 Perplexity</span>
-  <a href="#s4" data-lang="zh">§4 對稱化</a><span data-lang="en">§4 Symmetrization</span>
-  <a href="#s5" data-lang="zh">§5 擠擁問題</a><span data-lang="en">§5 Crowding</span>
-  <a href="#s6" data-lang="zh">§6 t 分布救援</a><span data-lang="en">§6 t Saves the Day</span>
-  <a href="#s7" data-lang="zh">§7 KL + 梯度</a><span data-lang="en">§7 KL &amp; Gradient</span>
-  <a href="#s8" data-lang="zh">§8 演算法 7 步</a><span data-lang="en">§8 7-Step Walkthrough</span>
-  <a href="#s9" data-lang="zh">§9 vs UMAP</a><span data-lang="en">§9 vs UMAP</span>
-  <a href="#s10" data-lang="zh">§10 手算 5 點</a><span data-lang="en">§10 Worked Example</span>
-  <a href="#s11" data-lang="zh">§11 5 陷阱</a><span data-lang="en">§11 5 Pitfalls</span>
+<div class="toc">
+  <h4 data-lang="zh">目錄</h4>
+  <h4 data-lang="en">Table of Contents</h4>
+  <ol start="0">
+    <li><a href="#s0"><span data-lang="zh">故事：PCA 把細胞型態揉成一團</span><span data-lang="en">Story: PCA mashes cell types together</span></a><span class="new" data-lang="zh">新增</span><span class="new" data-lang="en">NEW</span></li>
+    <li><a href="#s1"><span data-lang="zh">「鄰居機率」的直覺</span><span data-lang="en">"Neighbor probability" intuition</span></a></li>
+    <li><a href="#s2"><span data-lang="zh">高維 $P_{ij}$：Gaussian + perplexity</span><span data-lang="en">High-D $P_{ij}$: Gaussian + perplexity</span></a></li>
+    <li><a href="#s3"><span data-lang="zh">互動：perplexity 怎麼影響鄰居</span><span data-lang="en">Interactive: perplexity vs neighbors</span></a></li>
+    <li><a href="#s4"><span data-lang="zh">低維 $Q_{ij}$：Student-t 重尾</span><span data-lang="en">Low-D $Q_{ij}$: Student-t heavy tail</span></a><span class="new" data-lang="zh">核心</span><span class="new" data-lang="en">CORE</span></li>
+    <li><a href="#s5"><span data-lang="zh">KL 散度與梯度下降</span><span data-lang="en">KL divergence & gradient descent</span></a></li>
+    <li><a href="#s6"><span data-lang="zh">互動：t-SNE 收斂動畫</span><span data-lang="en">Interactive t-SNE animation</span></a></li>
+    <li><a href="#s7"><span data-lang="zh">Perplexity / learning rate 影響</span><span data-lang="en">Perplexity / LR effects</span></a></li>
+    <li><a href="#s8"><span data-lang="zh">限制：t-SNE 不該看「群距」</span><span data-lang="en">Limits: don't read inter-cluster distance</span></a></li>
+  </ol>
 </div>
 
-<!-- ====================================================== §0 ====================================================== -->
-<section class="section" id="s0">
-  <span class="section-label intuition">§0 · 故事開場 / STORY</span>
-  <h2 data-lang="zh">想像你在一場擠擁的舞會</h2>
-  <h2 data-lang="en">Imagine you're at a crowded ballroom</h2>
+<h2 id="s0"><span class="num">§0</span> <span data-lang="zh">故事：PCA 把細胞型態揉成一團</span><span data-lang="en">Story: PCA mashes cell types together</span></h2>
 
-  <div data-lang="zh">
-    <p>舞池有 200 個人，你想知道「誰跟你關係好」。如果你有<b>整個立體三維空間</b>可以走動（樓上樓下、前後左右），
-      你可以站在 5 個朋友的<b>中間</b>——他們圍著你，每人都恰好等距。</p>
-    <p>但現在管理員說：「請大家排成<b>2D 平面</b>。」你想保持「我跟 5 個朋友等距」的關係——
-      但 2D 平面上，<b>最多只能放 3 個朋友均勻圍著你</b>（正三角形的頂點），第 4 個就破壞了等距。
-      還剩兩個朋友怎麼辦？只好被推到「比較遠」的位置——這就是「<b>擠擁問題 (crowding problem)</b>」。</p>
-    <p><b>t-SNE 的答案</b>：與其硬把所有鄰居都擠進 2D，不如允許他們「離得稍遠」一些。
-      用 <b>Student-t 分布</b>取代 Gaussian 作為低維距離核——
-      t 分布的「長尾」讓「中等距離」獲得比 Gaussian 更高的機率，
-      變相給了被擠開的朋友一個「安全距離」。</p>
+<p class="lead" data-lang="zh">
+  你做完 PCA，PC1 vs PC2 plot 出來。理想情況：T cell 一群、B cell 一群、monocyte 一群。
+  現實情況：T cell 跟 B cell 的「<b>低維線性投影</b>」可能重疊，因為它們在高維空間中沿著不同<b>非線性方向</b>分開——
+  PC1/PC2 是線性，看不到這些彎曲。
+</p>
+<p class="lead" data-lang="en">
+  After PCA, plot PC1 vs PC2. Ideally: T cells in one group, B cells in another, monocytes elsewhere.
+  Reality: T and B cell <b>linear projections</b> often overlap, because their high-D separation runs along <b>nonlinear directions</b> —
+  PC1/PC2 is linear, can't see the curves.
+</p>
+
+<div class="card">
+  <h3 data-lang="zh">§0-1 線性 vs 非線性投影</h3>
+  <h3 data-lang="en">§0-1 Linear vs nonlinear projection</h3>
+  <svg class="canvas" id="s0svg" viewBox="0 0 800 380" width="100%"></svg>
+  <div class="callout idea">
+    <strong data-lang="zh">關鍵差別</strong><strong data-lang="en">Key difference</strong>:
+    <span data-lang="zh">PCA <b>保留全域變異</b>但<b>強迫線性</b>；t-SNE <b>保留局部鄰居關係</b>，允許非線性扭曲。代價：失去全域距離資訊（兩 cluster 看起來「相距 1」或「相距 100」沒有意義）。</span>
+    <span data-lang="en">PCA <b>preserves global variance</b> but <b>forces linearity</b>; t-SNE <b>preserves local neighbors</b>, allows nonlinear distortion. Cost: loses global distance (two clusters at "distance 1" vs "100" in t-SNE is meaningless).</span>
   </div>
-  <div data-lang="en">
-    <p>You're in a ballroom with 200 people. In <b>3D space</b>, you can stand at the center of 5 equidistant friends. But if the manager says "everyone to <b>2D</b>"... a flat plane fits only 3 equidistant points around you (triangle vertices). The other 2 friends must be pushed farther — this is the <b>crowding problem</b>.</p>
-    <p><b>t-SNE's answer</b>: instead of cramming all neighbors into 2D, allow them to be "slightly farther". Use <b>Student-t distribution</b> in low-D — its long tails give medium distances higher probability, giving pushed-away friends a "safe zone".</p>
-  </div>
-
-  <div class="story-card">
-    <h3>📌 <span data-lang="zh">0-1 親眼看「擠擁問題」</span><span data-lang="en">0-1 See the crowding problem</span></h3>
-    <div data-lang="zh"><p>下面有 10 個藍點圍著紫色「我」。在<b>3D</b>裡（左圖）可以全部等距；強制變到 <b>2D</b>（右圖）時，外圈只能放 6 個等距點（正六邊形），剩下 4 個只能被推遠。
-      拖動「強迫等距」滑桿從 0 → 1，看 t-SNE 怎麼妥協這個矛盾。</p></div>
-    <div data-lang="en"><p>10 blue points around purple "me". In 3D (left): all equidistant. Force to 2D (right): only 6 can be equidistant; the rest pushed away. Drag the "force equidistance" slider to see t-SNE's compromise.</p></div>
-    <div class="control-row">
-      <div class="control-item"><label data-lang="zh">壓縮到 2D 的力度</label><label data-lang="en">Compression to 2D</label><input type="range" id="crowdR" min="0" max="100" value="0" step="2"><span class="val" id="crowdV">0%</span></div>
-    </div>
-    <svg id="crowdSvg" viewBox="0 0 800 320" style="background:#fff; border-radius:10px; width:100%"></svg>
-    <div class="live-readout" id="crowdReadout"></div>
-  </div>
-
-  <div class="story-card">
-    <h3>📌 <span data-lang="zh">0-2 Gaussian vs t 分布：尾巴的長短</span><span data-lang="en">0-2 Gaussian vs t-distribution: tail length</span></h3>
-    <div data-lang="zh"><p>Student-t 分布最關鍵的特點是「<b>長尾</b>」——遠離中心的機率比 Gaussian 高很多。這就是為什麼 t-SNE 能解決擠擁問題：
-      允許低維中「中等距離」獲得不可忽略的機率，讓被推開的鄰居不會被視為「完全不相關」。</p>
-      <p>把游標移到曲線上看任意 $r$ 處兩分布的數值差。</p></div>
-    <div data-lang="en"><p>Student-t's key property: <b>heavy tails</b> — much higher probability at large distances than Gaussian. This is why t-SNE solves crowding: medium-distance neighbors get non-negligible weight.</p></div>
-    <svg id="tailSvg" viewBox="0 0 700 300" style="background:#fff; border-radius:10px; width:100%; cursor:crosshair"></svg>
-    <div class="live-readout" id="tailReadout"></div>
-  </div>
-
-  <div class="story-card">
-    <h3>📌 <span data-lang="zh">0-3 三句話總結：t-SNE 在做什麼</span><span data-lang="en">0-3 t-SNE in three sentences</span></h3>
-    <ol data-lang="zh" style="font-size:15px; line-height:2">
-      <li>在高維算「鄰居機率 $p_{ij}$」（用 Gaussian 核 + perplexity 控制鄰居數）。</li>
-      <li>在低維算「鄰居機率 $q_{ij}$」（用 Student-t 核解決擠擁）。</li>
-      <li>用 <b>KL 散度</b>強迫 $q \approx p$，讓低維結構複製高維結構。</li>
-    </ol>
-    <ol data-lang="en" style="font-size:15px; line-height:2">
-      <li>High-D probabilities $p_{ij}$ (Gaussian kernel, perplexity-controlled).</li>
-      <li>Low-D probabilities $q_{ij}$ (Student-t kernel — crowding solved).</li>
-      <li>Minimize <b>KL divergence</b> to make $q \approx p$.</li>
-    </ol>
-    <div class="callout callout-note" style="margin-top:14px">
-      <strong data-lang="zh">🔗 跟 UMAP 的對應</strong><strong data-lang="en">🔗 Map to UMAP</strong>
-      <p data-lang="zh">如果你已經讀過 <a href="3.3-umap.html">M3.3 UMAP</a>，這三句話聽起來眼熟——是的，UMAP 的高層架構幾乎相同。差別在：
-      <b>t-SNE 用 KL 散度（只有吸引力）</b>，<b>UMAP 用 cross-entropy（吸引 + 排斥）</b>。這個差別讓兩者行為大不同（§9 詳細對比）。</p>
-      <p data-lang="en">If you've read M3.3 UMAP, the architecture sounds familiar. Key difference: <b>t-SNE uses KL (attractive only)</b>; <b>UMAP uses cross-entropy (attractive + repulsive)</b>. This produces very different behavior (compared in §9).</p>
-    </div>
-  </div>
-</section>
-
-<!-- ====================================================== §1 ====================================================== -->
-<section class="section" id="s1">
-  <span class="section-label intuition">§1 · SNE 直覺 / FIRST INTUITION</span>
-  <h2 data-lang="zh">先理解 SNE：t-SNE 的前身</h2>
-  <h2 data-lang="en">Understand SNE first: t-SNE's predecessor</h2>
-
-  <div data-lang="zh">
-    <p><b>SNE (Stochastic Neighbor Embedding)</b> 是 Hinton 在 2002 年提出的方法，t-SNE (2008) 是它的改進版。理解 SNE 才知道 t-SNE 解決了什麼問題。</p>
-    <p>SNE 的核心想法：<b>把「鄰居」轉成「機率」</b>。對每個高維點 $x_i$，給每個其他點 $x_j$ 一個「是 $i$ 的鄰居」的機率 $p_{j|i}$。
-      然後在低維把點 $y_i$ 散開，讓低維機率 $q_{j|i}$ 盡量符合高維機率。</p>
-    <p>為什麼用機率而不直接保留距離？因為機率<b>自然處理了「鄰居關係的不確定性」</b>——
-      $p_{j|i} = 0.7$ 比「距離 = 1.43」更穩健、更不依賴尺度。</p>
-  </div>
-  <div data-lang="en">
-    <p><b>SNE (Stochastic Neighbor Embedding)</b>, proposed by Hinton (2002), is t-SNE's predecessor (2008).</p>
-    <p>SNE's core idea: <b>turn "neighbor" into "probability"</b>. Probabilities are scale-robust and naturally handle neighborhood uncertainty.</p>
-  </div>
-
-  <div class="interact-box">
-    <h4 data-lang="zh">互動 1.1 · 從距離到機率</h4>
-    <h4 data-lang="en">Interactive 1.1 · From distance to probability</h4>
-    <p data-lang="zh">5 個藍點圍著紫色「中心點」。下方滑桿是「中心點的 σ」。試著調整 σ 看：「最近的點」獲得最高的 $p_{j|i}$、遠的點機率指數衰減。
-      然後試「拉伸資料」按鈕——把所有點距離乘 5——觀察<b>機率分布幾乎不變</b>。這就是「機率比距離穩健」的具體展示。</p>
-    <p data-lang="en">5 blue points around purple center. σ slider. Try "stretch": all distances × 5 — probabilities barely change. Probabilities are scale-robust.</p>
-    <div class="control-row">
-      <div class="control-item"><label>σ</label><input type="range" id="s1sigR" min="0.3" max="5" step="0.1" value="1.5"><span class="val" id="s1sigV">1.5</span></div>
-      <div class="control-item"><button id="s1stretch" data-lang="zh">距離 × 5</button><button id="s1stretch_en" data-lang="en">distance × 5</button></div>
-      <div class="control-item"><button id="s1reset" class="ghost">↺</button></div>
-    </div>
-    <svg id="s1Svg" viewBox="0 0 700 260" style="background:#fff; border-radius:10px; width:100%"></svg>
-    <div class="live-readout" id="s1Readout"></div>
-  </div>
-</section>
-
-<!-- ====================================================== §2 ====================================================== -->
-<section class="section" id="s2">
-  <span class="section-label math">§2 · 核心數學 / HIGH-D PROBABILITY</span>
-  <h2 data-lang="zh">高維機率分布 P</h2>
-  <h2 data-lang="en">High-D probability distribution P</h2>
-
-  <div data-lang="zh">
-    <p>SNE 對每個點 $x_i$ 用<b>高斯核</b>定義「鄰居條件機率」：</p>
-  </div>
-  <div data-lang="en"><p>SNE defines conditional neighbor probability using a Gaussian kernel:</p></div>
-
-  <div class="formula-anatomy">
-    $$\boxed{\;p_{j|i} = \frac{\exp\left(-\|x_i - x_j\|^2 / 2\sigma_i^2\right)}{\sum_{k \neq i} \exp\left(-\|x_i - x_k\|^2 / 2\sigma_i^2\right)}\;}$$
-    <table>
-      <tr><td>$\|x_i - x_j\|^2$</td><td data-lang="zh">$x_i$ 到 $x_j$ 的歐式距離平方</td><td data-lang="en">Squared Euclidean distance</td></tr>
-      <tr><td>$\sigma_i$</td><td data-lang="zh">$x_i$ 專屬的「鄰居尺度」</td><td data-lang="en">Per-point bandwidth</td></tr>
-      <tr><td data-lang="zh">分母</td><td data-lang="en">Denominator</td><td data-lang="zh">所有可能 $k$ 的和，讓 $\sum_j p_{j|i} = 1$</td><td data-lang="en">Sum over all $k$, ensures $\sum_j p_{j|i} = 1$</td></tr>
-    </table>
-  </div>
-
-  <div data-lang="zh">
-    <p>幾個重點：</p>
-    <ul>
-      <li>$p_{i|i} = 0$（自己不是自己的鄰居）</li>
-      <li>分母是「歸一化常數」(softmax)——讓 $p$ 變成有效的機率分布</li>
-      <li>$\sigma_i$ 是<b>每個點獨立</b>的——密集區的點 $\sigma$ 小、稀疏區的點 $\sigma$ 大</li>
-      <li>$p_{j|i}$ 越大 → $x_j$ 越像 $x_i$ 的鄰居</li>
-    </ul>
-  </div>
-  <div data-lang="en">
-    <p>Key points: (1) $p_{i|i} = 0$; (2) denominator is softmax normalization; (3) $\sigma_i$ is per-point; (4) larger $p_{j|i}$ means $x_j$ is a "stronger" neighbor of $x_i$.</p>
-  </div>
-
-  <div class="callout callout-deep">
-    <strong data-lang="zh">🔑 跟 UMAP 的 $w_{j|i}$ 有何不同？</strong>
-    <strong data-lang="en">🔑 How does this differ from UMAP's $w_{j|i}$?</strong>
-    <p data-lang="zh">UMAP 的 $w_{j|i} = \exp(-\max(0, d - \rho_i)/\sigma_i)$ 多了 $\rho_i$ 局部尺度修正，且沒有 softmax 歸一化。
-      <b>t-SNE 沒有 $\rho_i$、有 softmax</b>；UMAP 反之。這個差別讓 t-SNE 對局部密度差異更敏感，是兩者性能差異的數學根源之一。</p>
-    <p data-lang="en">UMAP has $\rho_i$ local-scale subtraction + no softmax. t-SNE has no $\rho_i$ + softmax. This is one root of behavioral differences.</p>
-  </div>
-
-  <div class="interact-box">
-    <h4 data-lang="zh">互動 2.1 · $\sigma_i$ 怎麼影響 P 分布</h4>
-    <h4 data-lang="en">Interactive 2.1 · How $\sigma_i$ shapes P</h4>
-    <p data-lang="zh">10 個鄰居距離 $x_i$ 不同。拖動 σ 看「softmax 後的 $p_{j|i}$」怎麼變：σ 小 → 只有最近的點獲高機率（局部）；σ 大 → 機率分布變平（全局）。</p>
-    <p data-lang="en">10 neighbors at varying distances. σ slider: small σ → peaked on nearest; large σ → uniform.</p>
-    <div class="control-row">
-      <div class="control-item"><label>σ</label><input type="range" id="s2sigR" min="0.3" max="6" step="0.1" value="1.0"><span class="val" id="s2sigV">1.0</span></div>
-    </div>
-    <svg id="s2Svg" viewBox="0 0 700 280" style="background:#fff; border-radius:10px; width:100%"></svg>
-    <div class="live-readout" id="s2Readout"></div>
-  </div>
-</section>
-
-<!-- ====================================================== §3 Perplexity ====================================================== -->
-<section class="section" id="s3">
-  <span class="section-label math">§3 · 關鍵超參數 / PERPLEXITY</span>
-  <h2 data-lang="zh">Perplexity：「有效鄰居數」</h2>
-  <h2 data-lang="en">Perplexity: "Effective neighbor count"</h2>
-
-  <div data-lang="zh">
-    <p>$\sigma_i$ 不是隨便給的——它由<b>使用者設定的 perplexity</b> 反推：</p>
-  </div>
-  <div data-lang="en"><p>$\sigma_i$ is determined by user-set perplexity:</p></div>
-
-  <div class="formula-anatomy">
-    $$\boxed{\;\mathrm{Perp}(P_i) = 2^{H(P_i)}, \quad H(P_i) = -\sum_j p_{j|i} \log_2 p_{j|i}\;}$$
-    <table>
-      <tr><td>$H(P_i)$</td><td data-lang="zh">分布 $P_i$ 的「Shannon 熵」(對數底為 2 → 單位 bits)</td><td data-lang="en">Shannon entropy of $P_i$ (base 2)</td></tr>
-      <tr><td>$2^{H}$</td><td data-lang="zh">「有效鄰居數」——若分布完美均勻於 $k$ 個點，$\mathrm{Perp} = k$</td><td data-lang="en">"Effective neighbor count"; if uniform over $k$, $\mathrm{Perp}=k$</td></tr>
-    </table>
-  </div>
-
-  <div data-lang="zh">
-    <p><b>具體做法</b>：使用者指定 <code>perplexity = 30</code>（典型值），UMAP/t-SNE 對每個 $i$ <b>二分搜尋 $\sigma_i$</b>，使得 $\mathrm{Perp}(P_i) = 30$。
-      意思是「對每個點，把它的鄰居強度分散成『相當於 30 個均勻鄰居』」。</p>
-    <p>為什麼用 $2^H$ 而不直接用 $H$？因為「鄰居數」這個概念對人類更直觀。<b>perplexity = 30 ≈ 「30 個鄰居對我有同等影響」</b>。</p>
-  </div>
-  <div data-lang="en">
-    <p>User sets <code>perplexity = 30</code> (typical); binary search $\sigma_i$ so $\mathrm{Perp}(P_i) = 30$ for each $i$. Means: "for each point, neighbor influence is equivalent to 30 uniform neighbors."</p>
-  </div>
-
-  <div class="interact-box">
-    <h4 data-lang="zh">互動 3.1 · Perplexity 與 $\sigma_i$ 二分搜尋</h4>
-    <h4 data-lang="en">Interactive 3.1 · Perplexity ↔ $\sigma_i$ binary search</h4>
-    <p data-lang="zh">下方有 15 個鄰居。拖動 σ 看「當前 perplexity」。試著移動 σ 讓 perplexity 達到目標值（綠色標靶）——
-      這就是二分搜尋在做的事，只是它自動而你手動。</p>
-    <p data-lang="en">15 neighbors. Drag σ to reach target perplexity (green target). This is what binary search does, manually.</p>
-    <div class="control-row">
-      <div class="control-item"><label>σ</label><input type="range" id="s3sigR" min="0.2" max="8" step="0.05" value="1.0"><span class="val" id="s3sigV">1.00</span></div>
-      <div class="control-item"><label data-lang="zh">目標 perplexity</label><label data-lang="en">Target perplexity</label><input type="range" id="s3perpR" min="3" max="50" step="1" value="10"><span class="val" id="s3perpV">10</span></div>
-    </div>
-    <svg id="s3Svg" viewBox="0 0 700 280" style="background:#fff; border-radius:10px; width:100%"></svg>
-    <div class="live-readout" id="s3Readout"></div>
-  </div>
-
-  <div class="quiz-mini">
-    <h4 data-lang="zh">📝 小測驗</h4><h4 data-lang="en">📝 Quick check</h4>
-    <p data-lang="zh">下列何者<b>正確</b>？</p>
-    <p data-lang="en">Which is <b>correct</b>?</p>
-    <div class="quiz-opt" data-ans="0"><span data-lang="zh">A. perplexity 越大，鄰居影響越「局部」</span><span data-lang="en">A. Larger perplexity → more local</span></div>
-    <div class="quiz-opt" data-ans="0"><span data-lang="zh">B. perplexity 不影響 $\sigma_i$</span><span data-lang="en">B. Perplexity doesn't affect $\sigma_i$</span></div>
-    <div class="quiz-opt" data-ans="1"><span data-lang="zh">C. perplexity ≈「有效鄰居數」；典型值 5-50</span><span data-lang="en">C. Perplexity ≈ "effective neighbor count"; typical 5-50</span></div>
-    <div class="quiz-opt" data-ans="0"><span data-lang="zh">D. perplexity 只影響低維 Q，不影響高維 P</span><span data-lang="en">D. Perplexity affects Q only, not P</span></div>
-    <div class="quiz-feedback"></div>
-  </div>
-</section>
-
-<!-- ====================================================== §4 對稱化 ====================================================== -->
-<section class="section" id="s4">
-  <span class="section-label math">§4 · 對稱化 / SYMMETRIZATION</span>
-  <h2 data-lang="zh">為什麼要對稱化？</h2>
-  <h2 data-lang="en">Why symmetrize?</h2>
-
-  <div data-lang="zh">
-    <p>$p_{j|i}$ 是條件機率——它<b>不對稱</b>：$p_{j|i} \neq p_{i|j}$（因為 $\sigma_i \neq \sigma_j$）。
-      但「$i$ 和 $j$ 是不是邊」應該是對稱關係。早期 SNE 用條件機率所以梯度公式很醜，t-SNE 改成<b>聯合機率</b>：</p>
-  </div>
-  <div data-lang="en"><p>$p_{j|i}$ is asymmetric since $\sigma_i \neq \sigma_j$. Early SNE used conditionals (ugly gradient). t-SNE switched to <b>joint</b> probabilities:</p></div>
-
-  <div class="formula-anatomy">
-    $$\boxed{\;p_{ij} = \frac{p_{j|i} + p_{i|j}}{2n}\;}$$
-    <table>
-      <tr><td>$+$</td><td data-lang="zh">兩個方向求和，使其對稱</td><td data-lang="en">Sum both directions for symmetry</td></tr>
-      <tr><td>$/2n$</td><td data-lang="zh">歸一化使 $\sum_{i,j} p_{ij} = 1$（$n$ 是樣本數）</td><td data-lang="en">Normalize so $\sum_{i,j} p_{ij} = 1$</td></tr>
-    </table>
-  </div>
-
-  <div data-lang="zh">
-    <p><b>注意</b>：t-SNE 的對稱化跟 UMAP 不同：</p>
-    <ul>
-      <li><b>t-SNE</b>：$p_{ij} = (p_{j|i} + p_{i|j}) / 2n$（平均後再歸一化）</li>
-      <li><b>UMAP</b>：$\mu_{ij} = w_{j|i} + w_{i|j} - w_{j|i} w_{i|j}$（fuzzy union）</li>
-    </ul>
-    <p>兩種都讓結果對稱，但用了不同數學工具：t-SNE 用算術平均、UMAP 用「至少一個方向是鄰居」的容斥原理。</p>
-  </div>
-  <div data-lang="en">
-    <p>t-SNE: arithmetic mean. UMAP: fuzzy union (inclusion-exclusion). Both yield symmetry via different mechanisms.</p>
-  </div>
-
-  <div class="callout callout-warn">
-    <strong data-lang="zh">⚠️ 一個常見誤解</strong><strong data-lang="en">⚠️ Common misconception</strong>
-    <p data-lang="zh">很多人以為「對稱化只是技術細節」。其實這是 t-SNE 跟 SNE 的<b>關鍵差別</b>之一，讓梯度公式變得超級簡單（§7 會看到）。
-      symmetric SNE 仍用 Gaussian 低維核，但梯度形式更乾淨——已經是 t-SNE 的一半了。</p>
-    <p data-lang="en">Many think symmetrization is just bookkeeping. Actually it's a key t-SNE vs SNE difference, dramatically simplifying gradient (see §7).</p>
-  </div>
-</section>
-
-<!-- ====================================================== §5 擠擁問題 ====================================================== -->
-<section class="section" id="s5">
-  <span class="section-label math">§5 · 核心問題 / CROWDING</span>
-  <h2 data-lang="zh">擠擁問題：為什麼 SNE 不夠用</h2>
-  <h2 data-lang="en">The Crowding Problem: Why SNE alone fails</h2>
-
-  <div data-lang="zh">
-    <p>假設我們用「Gaussian 在高維、Gaussian 在低維」（這就是<b>對稱 SNE</b>）。為什麼結果不好？
-      回到 §0 的舞會：在 $d$ 維空間有「中等距離」的點數量是 $O(d^{d-1})$（球殼體積），但在 2D 只有 $O(1)$。
-      所以「中等距離鄰居」在低維有<b>系統性的容量不足</b>。</p>
-    <p>結果：SNE 強迫 $q_{ij}$ 像 $p_{ij}$，於是「中等距離鄰居」的 $q$ 必須跟 $p$ 一樣高——
-      但 Gaussian 在中距離衰減太快，做不到。SNE 只能「<b>把所有鄰居都擠到一起</b>」。</p>
-  </div>
-  <div data-lang="en">
-    <p>Use "Gaussian in high-D, Gaussian in low-D" (= symmetric SNE). Why does it fail?</p>
-    <p>In $d$ dimensions, the number of "medium-distance" points is $O(d^{d-1})$ (shell volume); in 2D only $O(1)$. Systematic capacity shortage. Gaussian's fast decay can't compensate — SNE crowds everything together.</p>
-  </div>
-
-  <div class="interact-box">
-    <h4 data-lang="zh">互動 5.1 · 球殼容量隨維度爆炸</h4>
-    <h4 data-lang="en">Interactive 5.1 · Shell capacity explodes with dimension</h4>
-    <p data-lang="zh">在半徑 $r$ 到 $r+\Delta r$ 的「球殼」中可容納的點數量。拖動「維度」滑桿，看在高維時「中距離鄰居」量多大、在 2D 時多小。</p>
-    <p data-lang="en">Capacity of shells between $r$ and $r+\Delta r$. Watch how medium distances explode in high-D, vanish in 2D.</p>
-    <div class="control-row">
-      <div class="control-item"><label data-lang="zh">維度 d</label><label data-lang="en">Dimension d</label><input type="range" id="dimR" min="2" max="50" step="1" value="2"><span class="val" id="dimV">2</span></div>
-    </div>
-    <svg id="dimSvg" viewBox="0 0 700 280" style="background:#fff; border-radius:10px; width:100%"></svg>
-    <div class="live-readout" id="dimReadout"></div>
-  </div>
-
-  <div class="callout callout-deep">
-    <strong data-lang="zh">💡 直覺重點</strong><strong data-lang="en">💡 Intuition</strong>
-    <p data-lang="zh">在高維「中距離」是常態（最多點落在這裡）；在 2D「中距離」很稀少（被擠到「近」或「遠」兩極化）。
-      要把高維結構複製到 2D，我們需要<b>讓「中距離」在低維也有不可忽略的機率</b>——這就是 Student-t 進場的地方。</p>
-    <p data-lang="en">In high-D, medium distance is the norm. In 2D, it's rare. We need a low-D kernel that keeps medium-distance probability non-trivial — Student-t to the rescue.</p>
-  </div>
-</section>
-
-<!-- ====================================================== §6 t-distribution ====================================================== -->
-<section class="section" id="s6">
-  <span class="section-label math">§6 · 解決方案 / t SAVES THE DAY</span>
-  <h2 data-lang="zh">Student-t 分布：長尾解決擠擁</h2>
-  <h2 data-lang="en">Student-t: long tails to the rescue</h2>
-
-  <div data-lang="zh">
-    <p>t-SNE 把<b>低維機率</b>從 Gaussian 換成<b>自由度 1 的 Student-t</b>（也就是 Cauchy 分布）：</p>
-  </div>
-  <div data-lang="en"><p>t-SNE replaces low-D Gaussian with Student-t (df = 1, equivalent to Cauchy):</p></div>
-
-  <div class="formula-anatomy">
-    $$\boxed{\;q_{ij} = \frac{(1 + \|y_i - y_j\|^2)^{-1}}{\sum_{k \neq l} (1 + \|y_k - y_l\|^2)^{-1}}\;}$$
-    <table>
-      <tr><td>$(1+r^2)^{-1}$</td><td data-lang="zh">Cauchy 分布核 — 沒有指數衰減</td><td data-lang="en">Cauchy kernel — no exponential decay</td></tr>
-      <tr><td data-lang="zh">分母</td><td data-lang="en">Denominator</td><td data-lang="zh">所有點對 $(k,l)$ 的和，歸一化</td><td data-lang="en">Sum over all pairs $(k,l)$ for normalization</td></tr>
-    </table>
-  </div>
-
-  <div data-lang="zh">
-    <p>為什麼是「自由度 1」的 t？因為它的尾巴<b>最長</b>（df 越大越接近 Gaussian）。
-      具體形狀：$q \propto (1+r^2)^{-1}$ — 在 $r$ 大時只衰減為 $1/r^2$，而 Gaussian 是 $e^{-r^2}$ 指數衰減（快很多）。</p>
-  </div>
-  <div data-lang="en">
-    <p>Why df = 1? It has the heaviest tail (larger df → closer to Gaussian). Decay is $1/r^2$ (polynomial) vs Gaussian's exponential — much slower.</p>
-  </div>
-
-  <div class="interact-box">
-    <h4 data-lang="zh">互動 6.1 · Gaussian vs t — 機率怎麼重分配</h4>
-    <h4 data-lang="en">Interactive 6.1 · Gaussian vs t probability reallocation</h4>
-    <p data-lang="zh">兩條曲線都被歸一化到積分 = 1（公平比較）。觀察：t 分布在「中距離」($r \approx 2 \sim 5$) 機率明顯高於 Gaussian。
-      這就是 t 分布<b>給中距離鄰居「安全位置」</b>的數學形式。</p>
-    <p data-lang="en">Both curves normalized to integral = 1. t-distribution gives much higher probability at medium distances — the safe zone for displaced neighbors.</p>
-    <svg id="s6Svg" viewBox="0 0 700 300" style="background:#fff; border-radius:10px; width:100%; cursor:crosshair"></svg>
-    <div class="live-readout" id="s6Readout"></div>
-  </div>
-</section>
-
-<!-- ====================================================== §7 KL + Gradient ====================================================== -->
-<section class="section" id="s7">
-  <span class="section-label math">§7 · 目標函數 / KL OBJECTIVE</span>
-  <h2 data-lang="zh">KL 散度與優雅的梯度</h2>
-  <h2 data-lang="en">KL Divergence and the Elegant Gradient</h2>
-
-  <div data-lang="zh">
-    <p>t-SNE 要讓 $q$ 盡量接近 $p$，用 <b>KL 散度</b>量化「兩個分布的距離」：</p>
-  </div>
-  <div data-lang="en"><p>t-SNE minimizes KL divergence between $p$ and $q$:</p></div>
-
-  <div class="formula-anatomy">
-    $$\boxed{\;C = \mathrm{KL}(P \,\|\, Q) = \sum_{i \neq j} p_{ij} \log\frac{p_{ij}}{q_{ij}}\;}$$
-    <table>
-      <tr><td>$p_{ij}$</td><td data-lang="zh">高維「真實」分布（固定）</td><td data-lang="en">High-D "ground truth" (fixed)</td></tr>
-      <tr><td>$q_{ij}$</td><td data-lang="zh">低維「當前」分布（被優化）</td><td data-lang="en">Low-D current distribution (optimized)</td></tr>
-      <tr><td>$\log \frac{p}{q}$</td><td data-lang="zh">「資訊差」——$q$ 跟 $p$ 不一致就吃虧</td><td data-lang="en">Information gap — penalty for mismatch</td></tr>
-    </table>
-  </div>
-
-  <div data-lang="zh">
-    <p><b>關鍵性質</b>：KL 散度是<b>非對稱</b>的。$\mathrm{KL}(P \| Q) \neq \mathrm{KL}(Q \| P)$。
-      t-SNE 選的方向 $P \| Q$ 意思是：「<b>$p_{ij}$ 大但 $q_{ij}$ 小</b>」會受重罰，但「$p_{ij}$ 小但 $q_{ij}$ 大」幾乎不被罰。
-      結果：t-SNE 強烈傾向<b>保留局部結構（讓真鄰居在低維也是鄰居）</b>，但對「不該是鄰居卻在低維變近」沒辦法處理——
-      這就是它「<b>全局結構差</b>」的根本原因。</p>
-  </div>
-  <div data-lang="en">
-    <p><b>KL is asymmetric</b>. $\mathrm{KL}(P\|Q) \neq \mathrm{KL}(Q\|P)$. The choice $P\|Q$ heavily penalizes large $p$ + small $q$ (missing real neighbors), but barely penalizes small $p$ + large $q$ (false neighbors). Hence t-SNE preserves local structure well but global structure poorly.</p>
-  </div>
-
-  <h3 data-lang="zh">梯度：吸引力與排斥力</h3>
-  <h3 data-lang="en">Gradient: attractive and repulsive forces</h3>
-
-  <div class="math-block">
-  $$\frac{\partial C}{\partial y_i} = 4 \sum_{j \neq i} \underbrace{(p_{ij} - q_{ij})}_{\text{誰大?}} \underbrace{(y_i - y_j) (1 + \|y_i - y_j\|^2)^{-1}}_{\text{方向 × 衰減}}$$
-  <div class="formula-caption" data-lang="zh">梯度只依賴 $p - q$ 差和當前距離 — 數學上「優雅」就是這意思</div>
-  <div class="formula-caption" data-lang="en">Gradient depends only on $p - q$ and current distance — mathematically "elegant"</div>
-  </div>
-
-  <div data-lang="zh">
-    <ul>
-      <li>當 $p_{ij} > q_{ij}$（高維是鄰居但低維太遠）→ 力把 $y_i, y_j$ <b>拉近</b>（吸引）</li>
-      <li>當 $p_{ij} < q_{ij}$（高維不是鄰居但低維太近）→ 力把 $y_i, y_j$ <b>推開</b>（排斥）</li>
-      <li>距離係數 $(1 + r^2)^{-1}$ 讓「遠距離點對」貢獻不會炸開</li>
-    </ul>
-  </div>
-  <div data-lang="en">
-    <ul>
-      <li>$p > q$ → attractive force</li>
-      <li>$p < q$ → repulsive force</li>
-      <li>$(1+r^2)^{-1}$ factor keeps distant pairs from exploding</li>
-    </ul>
-  </div>
-
-  <div class="interact-box">
-    <h4 data-lang="zh">互動 7.1 · 兩個點對之間的力</h4>
-    <h4 data-lang="en">Interactive 7.1 · Force between two points</h4>
-    <p data-lang="zh">設定高維「真實」$p_{ij}$、調整當前低維距離 $r$，即時看吸引/排斥力的大小與方向。</p>
-    <p data-lang="en">Set high-D target $p_{ij}$, vary low-D distance $r$, see net force.</p>
-    <div class="control-row">
-      <div class="control-item"><label>$p_{ij}$ (target)</label><input type="range" id="s7pR" min="0.001" max="0.5" step="0.001" value="0.05"><span class="val" id="s7pV">0.050</span></div>
-      <div class="control-item"><label>low-D $r$</label><input type="range" id="s7rR" min="0.1" max="6" step="0.1" value="1.5"><span class="val" id="s7rV">1.5</span></div>
-    </div>
-    <svg id="s7Svg" viewBox="0 0 700 240" style="background:#fff; border-radius:10px; width:100%"></svg>
-    <div class="live-readout" id="s7Readout"></div>
-  </div>
-</section>
-
-<!-- ====================================================== §8 演算法 7 步 ====================================================== -->
-<section class="section" id="s8">
-  <span class="section-label algo">§8 · 演算法步驟導覽 / 7-STEP WALKTHROUGH</span>
-  <h2 data-lang="zh">t-SNE 演算法 — 7 個步驟逐個攤開</h2>
-  <h2 data-lang="en">t-SNE Algorithm — 7 steps</h2>
-
-  <div class="step-walkthrough">
-    <div class="step-nav-bar">
-      <button id="stepPrev" class="ghost">← <span data-lang="zh">上一步</span><span data-lang="en">Prev</span></button>
-      <div class="step-indicator">
-        <div class="step-dot active" data-step="1">1</div>
-        <div class="step-dot" data-step="2">2</div>
-        <div class="step-dot" data-step="3">3</div>
-        <div class="step-dot" data-step="4">4</div>
-        <div class="step-dot" data-step="5">5</div>
-        <div class="step-dot" data-step="6">6</div>
-        <div class="step-dot" data-step="7">7</div>
-      </div>
-      <button id="stepNext"><span data-lang="zh">下一步</span><span data-lang="en">Next</span> →</button>
-      <button id="stepReset" class="ghost"><span data-lang="zh">重設</span><span data-lang="en">Reset</span></button>
-    </div>
-    <div class="step-content">
-      <div class="step-vis"><svg id="stepSvg" viewBox="0 0 500 300"></svg></div>
-      <div class="step-explain">
-        <div class="step-title" id="stepTitle"></div>
-        <div id="stepDesc"></div>
-        <div class="step-math" id="stepMath"></div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ====================================================== §9 vs UMAP ====================================================== -->
-<section class="section" id="s9">
-  <span class="section-label">§9 · 對比 / vs UMAP</span>
-  <h2 data-lang="zh">t-SNE vs UMAP：完整對照</h2>
-  <h2 data-lang="en">t-SNE vs UMAP: full comparison</h2>
-
-  <table class="compare-table">
-    <tr><th></th><th>t-SNE</th><th>UMAP</th></tr>
-    <tr><td data-lang="zh">高維核</td><td data-lang="en">High-D kernel</td>
-      <td>Gaussian + softmax 歸一化</td>
-      <td>Gaussian + $\rho_i$ 減法 + $\sum w = \log_2 k$</td></tr>
-    <tr><td data-lang="zh">高維對稱化</td><td data-lang="en">High-D symmetrization</td>
-      <td>$(p_{j|i}+p_{i|j})/2n$（算術平均）</td>
-      <td>$w + w - w\cdot w$（fuzzy union）</td></tr>
-    <tr><td data-lang="zh">低維核</td><td data-lang="en">Low-D kernel</td>
-      <td>$(1+r^2)^{-1}$ (Cauchy, df=1)</td>
-      <td>$(1+a r^{2b})^{-1}$ (可調 a, b)</td></tr>
-    <tr><td data-lang="zh">目標函數</td><td data-lang="en">Objective</td>
-      <td>KL($P\|Q$)：只懲罰 $p$ 大 $q$ 小</td>
-      <td class="good">Cross-entropy：對稱懲罰</td></tr>
-    <tr><td data-lang="zh">優化</td><td data-lang="en">Optimization</td>
-      <td>梯度下降 + early exaggeration</td>
-      <td class="good">SGD + 負取樣（更快）</td></tr>
-    <tr><td data-lang="zh">局部結構</td><td data-lang="en">Local structure</td>
-      <td class="good">優秀</td><td class="good">優秀</td></tr>
-    <tr><td data-lang="zh">全局結構</td><td data-lang="en">Global structure</td>
-      <td class="bad">差（KL 不對稱）</td><td class="meh">部分保留</td></tr>
-    <tr><td data-lang="zh">複雜度</td><td data-lang="en">Complexity</td>
-      <td>$O(n \log n)$ via Barnes-Hut</td><td class="good">$O(n \cdot k)$</td></tr>
-    <tr><td data-lang="zh">1M 細胞速度</td><td data-lang="en">1M cells</td>
-      <td class="meh">~1 hour</td><td class="good">~10 min</td></tr>
-    <tr><td data-lang="zh">超參數</td><td data-lang="en">Hyperparameters</td>
-      <td>perplexity（敏感）</td><td>n_neighbors, min_dist</td></tr>
-    <tr><td data-lang="zh">新資料投影</td><td data-lang="en">Project new</td>
-      <td class="bad">不能（須重訓）</td><td class="good">支援 (parametric)</td></tr>
-    <tr><td data-lang="zh">scRNA-seq 現況</td><td data-lang="en">scRNA-seq usage</td>
-      <td>2010s 主流</td><td class="good">2020s 預設</td></tr>
-  </table>
-
-  <div class="callout callout-note">
-    <strong data-lang="zh">📌 何時還會用 t-SNE？</strong>
-    <strong data-lang="en">📌 When to still use t-SNE?</strong>
-    <p data-lang="zh">UMAP 雖然優勢明顯，但 t-SNE 仍適合：
-      <b>(1) 小資料集</b>（&lt; 50K 細胞，差異不明顯）；
-      <b>(2) 需要極致的局部結構展示</b>（FlowJo 仍用 t-SNE）；
-      <b>(3) 與舊文獻對照</b>（很多 2015-2019 paper 用 t-SNE）。</p>
-    <p data-lang="en">t-SNE still suits: small datasets (&lt;50K), maximal local detail, comparing with older papers.</p>
-  </div>
-</section>
-
-<!-- ====================================================== §10 Worked Example ====================================================== -->
-<section class="section" id="s10">
-  <span class="section-label math">§10 · 手算 / WORKED EXAMPLE</span>
-  <h2 data-lang="zh">親手算一遍：5 個點的 t-SNE</h2>
-  <h2 data-lang="en">Compute t-SNE by hand: 5 points</h2>
-
-  <div class="worked-example">
-    <div data-lang="zh"><p>5 個 2D 點：$x_1 = (0,0)$、$x_2 = (1,0)$、$x_3 = (3,0)$、$x_4 = (3,1)$、$x_5 = (5,5)$。Perplexity = 2。</p></div>
-    <div data-lang="en"><p>5 points; perplexity = 2.</p></div>
-
-    <div class="worked-step">
-      <span class="step-label" data-lang="zh">步驟 1：高維距離平方矩陣</span><span class="step-label" data-lang="en">Step 1: Squared distance matrix</span>
-      <pre style="font-family:var(--font-code); font-size:13px; background:#fff; padding:10px; border-radius:6px; margin:8px 0">
-       x1     x2     x3     x4     x5
-x1     0      1      9     10     50
-x2     1      0      4      5     41
-x3     9      4      0      1     29
-x4    10      5      1      0     20
-x5    50     41     29     20      0</pre>
-    </div>
-
-    <div class="worked-step">
-      <span class="step-label" data-lang="zh">步驟 2：對每個 $i$ 二分搜尋 $\sigma_i$ 達 perplexity = 2</span><span class="step-label" data-lang="en">Step 2: Binary search $\sigma_i$</span>
-      <div data-lang="zh">以 $x_1$ 為例，假設 $\sigma_1 = 1.5$ 試試：</div>
-      <div data-lang="en">For $x_1$, try $\sigma_1 = 1.5$:</div>
-      <pre style="font-family:var(--font-code); font-size:13px; background:#fff; padding:10px; border-radius:6px; margin:8px 0">
-        exp(-d²/(2σ²)) = exp(-d²/4.5)
-        x2: exp(-1/4.5) = 0.801
-        x3: exp(-9/4.5) = 0.135
-        x4: exp(-10/4.5) = 0.108
-        x5: exp(-50/4.5) ≈ 0.0000139
-
-        分母 sum = 0.801 + 0.135 + 0.108 + 0.0000139 ≈ 1.044
-
-        p_{2|1} = 0.801/1.044 = 0.767
-        p_{3|1} = 0.135/1.044 = 0.129
-        p_{4|1} = 0.108/1.044 = 0.103
-        p_{5|1} = 0.0000133
-
-        H(P_1) = -Σ p log₂ p ≈ 1.12 bits
-        Perp(P_1) = 2^1.12 ≈ 2.17  (太接近 2，σ_1 ≈ 1.45 即可)
-      </pre>
-      <div data-lang="zh">同理算 $\sigma_2, \ldots, \sigma_5$。實作上是自動二分搜尋（log 範圍）。</div>
-    </div>
-
-    <div class="worked-step">
-      <span class="step-label" data-lang="zh">步驟 3：對稱化得 $p_{ij}$</span><span class="step-label" data-lang="en">Step 3: Symmetrize</span>
-      <pre style="font-family:var(--font-code); font-size:13px; background:#fff; padding:10px; border-radius:6px; margin:8px 0">
-p_{12} = (p_{2|1} + p_{1|2}) / (2·5)
-       = (0.767 + 0.823) / 10  ≈ 0.159
-
-p_{13} = (0.129 + 0.060) / 10  ≈ 0.019
-p_{45} = (0.001 + 0.002) / 10  ≈ 0.0003
-... 共 C(5,2) = 10 個非零 p_{ij}</pre>
-    </div>
-
-    <div class="worked-step">
-      <span class="step-label" data-lang="zh">步驟 4：初始化低維 + early exaggeration</span><span class="step-label" data-lang="en">Step 4: Init + early exaggeration</span>
-      <div data-lang="zh">$y_1 \ldots y_5$ 初始為 $\mathcal{N}(0, 10^{-4})$ 的隨機 2D 點。前 250 個 epochs 把 $p_{ij}$ 乘以 12（「early exaggeration」），
-        強迫鄰居拼命靠近，幫助形成「群」結構。</div>
-      <div data-lang="en">$y_i \sim \mathcal{N}(0, 10^{-4})$. First 250 epochs: multiply $p_{ij}$ by 12 ("early exaggeration") to form clusters.</div>
-    </div>
-
-    <div class="worked-step">
-      <span class="step-label" data-lang="zh">步驟 5：梯度下降 1000 epochs</span><span class="step-label" data-lang="en">Step 5: Gradient descent 1000 epochs</span>
-      <pre style="font-family:var(--font-code); font-size:13px; background:#fff; padding:10px; border-radius:6px; margin:8px 0">
-for epoch in 1..1000:
-    Q ← compute q_{ij} from current Y
-    grad_i = 4 Σ_j (p_{ij} - q_{ij}) (y_i - y_j) (1 + ||y_i - y_j||²)⁻¹
-    Y ← Y - lr · grad + momentum · prev_velocity
-
-    if epoch == 250: p ← p / 12  # end early exaggeration
-</pre>
-    </div>
-
-    <div class="callout callout-intuition" style="margin-top:14px">
-      <strong data-lang="zh">🎯 觀察</strong><strong data-lang="en">🎯 Observe</strong>
-      <p data-lang="zh">手算讓你看見演算法的每一步。實務上 scikit-learn 或 openTSNE 用 C++ 實作，10K 細胞秒級完成。
-        理解這 5 步之後，你看 source code 就不會迷失。</p>
-      <p data-lang="en">Hand calc reveals each step. Production: scikit-learn / openTSNE in C++, seconds for 10K cells.</p>
-    </div>
-  </div>
-</section>
-
-<!-- ====================================================== §11 5 陷阱 ====================================================== -->
-<section class="section" id="s11">
-  <span class="section-label warn">§11 · Wattenberg 的 5 大陷阱 / 5 PITFALLS</span>
-  <h2 data-lang="zh">Wattenberg 等人 (2016) 的 5 大 t-SNE 陷阱</h2>
-  <h2 data-lang="en">5 t-SNE pitfalls (Wattenberg et al. 2016)</h2>
-
-  <div data-lang="zh"><p>Distill 的經典文章「How to Use t-SNE Effectively」整理出 5 個最常見的誤詮釋：</p></div>
-  <div data-lang="en"><p>The classic Distill article identifies 5 common misinterpretations:</p></div>
-
-  <div class="pitfall-card">
-    <span class="pf-num">陷阱 1 · PITFALL 1</span>
-    <h4 data-lang="zh">群之間的距離不重要</h4>
-    <h4 data-lang="en">Cluster distances are meaningless</h4>
-    <p data-lang="zh">看到 t-SNE 圖上 A 群跟 B 群相隔很遠、A 群跟 C 群相鄰，<b>不能</b>得出「A 跟 C 比較像」的結論。
-      t-SNE 只保留「誰是誰的鄰居」，群間距離是 KL 優化過程的副產物，沒有意義。</p>
-    <p data-lang="en">Don't conclude "A is more like C than B" from inter-cluster distances. t-SNE preserves only neighborhood, not global distance.</p>
-  </div>
-
-  <div class="pitfall-card">
-    <span class="pf-num">陷阱 2 · PITFALL 2</span>
-    <h4 data-lang="zh">群的大小不重要</h4>
-    <h4 data-lang="en">Cluster sizes are meaningless</h4>
-    <p data-lang="zh">t-SNE 會把所有群「氣球化」到差不多大。原本資料中很緊密的群可能在 t-SNE 圖上跟很鬆散的群看起來一樣大。</p>
-    <p data-lang="en">t-SNE balloons all clusters to similar size. Tight high-D clusters appear same size as loose ones.</p>
-  </div>
-
-  <div class="pitfall-card">
-    <span class="pf-num">陷阱 3 · PITFALL 3</span>
-    <h4 data-lang="zh">隨機 init 讓不同 seed 結果不一樣</h4>
-    <h4 data-lang="en">Random init: different seeds → different results</h4>
-    <p data-lang="zh">梯度下降的隨機初始化讓不同 seed 產生「<b>同樣分群結構但位置不同</b>」的圖。要嚴格比較必須固定 seed。
-      Kobak &amp; Linderman (2021) 建議用 PCA init 取代隨機，可大幅改善全局結構。</p>
-    <p data-lang="en">Random gradient descent yields layouts that differ across seeds. Fix seed for comparison. Kobak &amp; Linderman (2021): use PCA init.</p>
-  </div>
-
-  <div class="pitfall-card">
-    <span class="pf-num">陷阱 4 · PITFALL 4</span>
-    <h4 data-lang="zh">Perplexity 對結果影響極大</h4>
-    <h4 data-lang="en">Perplexity dramatically affects results</h4>
-    <p data-lang="zh">perplexity = 5 跟 perplexity = 50 看起來像兩個完全不同的世界——前者偏局部、後者偏全局。
-      實務上至少測 3 個值 (5, 30, 50)，看哪個結構穩定。</p>
-    <p data-lang="en">Perplexity 5 vs 50 yield wildly different views. Try multiple values in practice.</p>
-  </div>
-
-  <div class="pitfall-card">
-    <span class="pf-num">陷阱 5 · PITFALL 5</span>
-    <h4 data-lang="zh">「看起來有結構」不代表真的有</h4>
-    <h4 data-lang="en">"Looks like structure" ≠ real structure</h4>
-    <p data-lang="zh">t-SNE 對<b>隨機高斯雲</b>（沒有任何結構的資料）有時也會「擠」出看似的小群——
-      這只是優化過程的副產物。看 t-SNE 圖前，先檢查資料的 elbow plot / PCA scree，
-      確認真的有低維結構再用。</p>
-    <p data-lang="en">t-SNE may "find" clusters in noise. Verify real structure via elbow / PCA scree first.</p>
-  </div>
-
-  <h3 style="margin-top:30px" data-lang="zh">📦 程式碼範例</h3>
-  <h3 style="margin-top:30px" data-lang="en">📦 Code Examples</h3>
-  <div class="code-tabs">
-    <div class="code-tab-btns">
-      <button class="code-tab-btn active" onclick="switchTab(this,'pyT')">Python / Scanpy</button>
-      <button class="code-tab-btn" onclick="switchTab(this,'rT')">R / Seurat</button>
-      <button class="code-tab-btn" onclick="switchTab(this,'otT')">openTSNE</button>
-    </div>
-    <div class="code-tab-content active" id="pyT"><pre><span class="comment"># scRNA-seq 標準流程</span>
-sc.tl.tsne(adata, n_pcs=<span class="num">30</span>, perplexity=<span class="num">30</span>, random_state=<span class="num">42</span>)
-sc.pl.tsne(adata, color=<span class="str">"leiden"</span>)
-
-<span class="comment"># 對比不同 perplexity</span>
-<span class="keyword">for</span> p <span class="keyword">in</span> [<span class="num">5</span>, <span class="num">30</span>, <span class="num">50</span>, <span class="num">100</span>]:
-    sc.tl.tsne(adata, perplexity=p, key_added=<span class="str">f"tsne_p{p}"</span>)
-</pre></div>
-    <div class="code-tab-content" id="rT"><pre>pbmc &lt;- <span class="func">RunTSNE</span>(pbmc, dims = <span class="num">1</span>:<span class="num">30</span>,
-                perplexity = <span class="num">30</span>, seed.use = <span class="num">42</span>)
-<span class="func">DimPlot</span>(pbmc, reduction = <span class="str">"tsne"</span>)
-</pre></div>
-    <div class="code-tab-content" id="otT"><pre><span class="comment"># openTSNE: 更現代、更快、支援新資料投影</span>
-<span class="keyword">from</span> openTSNE <span class="keyword">import</span> TSNE
-<span class="keyword">from</span> openTSNE.initialization <span class="keyword">import</span> pca
-
-<span class="comment"># PCA init (Kobak &amp; Linderman 2021 推薦)</span>
-init = pca(X_pca, random_state=<span class="num">42</span>)
-embedding = TSNE(perplexity=<span class="num">30</span>, initialization=init).fit(X_pca)
-
-<span class="comment"># 投影新資料 (傳統 scikit-learn t-SNE 做不到)</span>
-new_emb = embedding.transform(X_new)
-</pre></div>
-  </div>
-</section>
-
-<!-- ====================================================== §12 整理 ====================================================== -->
-<section class="section" id="s12">
-  <span class="section-label">§12 · 整理 / SUMMARY</span>
-  <h2 data-lang="zh">把整套故事串起來</h2>
-  <h2 data-lang="en">The whole story</h2>
-
-  <div class="callout callout-deep">
-    <p data-lang="zh"><b>t-SNE 的 7 個核心思想</b>：</p>
-    <ol data-lang="zh">
-      <li><b>機率取代距離</b>：對尺度穩健、便於後續優化（§1）</li>
-      <li><b>高維 Gaussian + softmax</b>：定義 $p_{j|i}$，每個點獨立 $\sigma_i$（§2）</li>
-      <li><b>Perplexity 控制有效鄰居數</b>：典型 5-50，二分搜尋 $\sigma$（§3）</li>
-      <li><b>對稱化</b>：$p_{ij} = (p_{j|i}+p_{i|j})/2n$，讓梯度公式變優雅（§4）</li>
-      <li><b>擠擁問題</b>：高維中距離鄰居在 2D「容不下」（§5）</li>
-      <li><b>Student-t 救援</b>：長尾給中距離安全位置（§6）</li>
-      <li><b>KL 散度 + 優雅梯度</b>：吸引/排斥力推動嵌入（§7）</li>
-    </ol>
-    <p data-lang="en"><b>t-SNE's 7 ideas</b>: (1) Probability over distance, (2) Gaussian + softmax in high-D, (3) Perplexity, (4) Symmetrization, (5) Crowding problem, (6) Student-t to the rescue, (7) KL with elegant gradient.</p>
-  </div>
-
-  <h3 data-lang="zh">📚 參考文獻</h3>
-  <h3 data-lang="en">📚 References</h3>
-  <ul class="refs-list">
-    <li><div class="ref-title">van der Maaten, L. &amp; Hinton, G. (2008). Visualizing Data using t-SNE.</div><div class="ref-meta">JMLR 9. 原始論文。</div></li>
-    <li><div class="ref-title">van der Maaten, L. (2014). Accelerating t-SNE using Tree-Based Algorithms.</div><div class="ref-meta">JMLR 15. Barnes-Hut.</div></li>
-    <li><div class="ref-title">Wattenberg, M., Viégas, F., Johnson, I. (2016). How to Use t-SNE Effectively.</div><div class="ref-meta">Distill. <a href="https://distill.pub/2016/misread-tsne/">distill.pub</a></div></li>
-    <li><div class="ref-title">Kobak, D. &amp; Berens, P. (2019). The art of using t-SNE for single-cell transcriptomics.</div><div class="ref-meta">Nat Commun 10. <a href="https://doi.org/10.1038/s41467-019-13056-x">10.1038/s41467-019-13056-x</a></div></li>
-    <li><div class="ref-title">Kobak, D. &amp; Linderman, G.C. (2021). Initialization is critical for preserving global data structure in both t-SNE and UMAP.</div><div class="ref-meta">Nat Biotech 39. <a href="https://doi.org/10.1038/s41587-020-00809-z">10.1038/s41587-020-00809-z</a></div></li>
-    <li><div class="ref-title">Damrich, S., Böhm, J., Hamprecht, F. (2022). Contrastive t-SNE and other clarifications.</div><div class="ref-meta">arXiv:2206.01816</div></li>
-  </ul>
-</section>
-
-<div class="cross-links">
-  <a href="3.1-pca.html" class="cross-link">
-    <div class="cross-label" data-lang="zh">← 上一篇</div><div class="cross-label" data-lang="en">← PREV</div>
-    <div class="cross-title"><span class="cross-id">M3.1</span> PCA</div>
-  </a>
-  <a href="3.3-umap.html" class="cross-link">
-    <div class="cross-label" data-lang="zh">下一篇 →</div><div class="cross-label" data-lang="en">NEXT →</div>
-    <div class="cross-title"><span class="cross-id">M3.3</span> UMAP</div>
-  </a>
 </div>
 
+<h2 id="s1"><span class="num">§1</span> <span data-lang="zh">「鄰居機率」的直覺</span><span data-lang="en">"Neighbor probability" intuition</span></h2>
+
+<p data-lang="zh">
+  t-SNE 的核心想法：別管「距離」是多少，問「<b>j 是不是 i 的鄰居</b>」這個機率有多大。
+  在高維空間定義 $P_{ij}$，在低維空間定義 $Q_{ij}$，
+  目標是找一組低維座標讓 $Q_{ij} \approx P_{ij}$。
+</p>
+<p data-lang="en">
+  t-SNE's core idea: forget "distance" magnitudes — ask "<b>is j a neighbor of i</b>" as a probability.
+  Define $P_{ij}$ in high-D, $Q_{ij}$ in low-D; find low-D coordinates so $Q_{ij} \approx P_{ij}$.
+</p>
+
+<div class="callout idea">
+  <strong data-lang="zh">為何用機率?</strong><strong data-lang="en">Why probabilities?</strong>
+  <span data-lang="zh">機率是<b>標準化</b>的——每個 $i$ 的「鄰居機率分布」加總 = 1，跟原始距離尺度無關。這讓 t-SNE 對 input scale 不敏感、能保留<b>局部結構</b>而忽略「大尺度距離」。</span>
+  <span data-lang="en">Probabilities are <b>normalized</b> — each $i$'s "neighbor distribution" sums to 1, independent of raw distance scale. Makes t-SNE scale-insensitive, preserving <b>local structure</b> while ignoring "large-scale distances".</span>
 </div>
 
-<footer class="site-footer">
-  <p>© Charlene · <span data-lang="zh">scRNA-seq 進階數學教程 · t-SNE 深入互動版</span><span data-lang="en">scRNA-seq Advanced Math · t-SNE Deep Interactive</span></p>
-</footer>
+<h2 id="s2"><span class="num">§2</span> <span data-lang="zh">高維 $P_{ij}$：Gaussian + perplexity</span><span data-lang="en">High-D $P_{ij}$: Gaussian + perplexity</span></h2>
+
+<h3 data-lang="zh">2.1 從 i 看 j 的條件機率</h3>
+<h3 data-lang="en">2.1 Conditional probability j given i</h3>
+
+<div class="math-block">
+  $$p_{j|i} = \frac{\exp(-\|x_i - x_j\|^2 / 2\sigma_i^2)}{\sum_{k \neq i} \exp(-\|x_i - x_k\|^2 / 2\sigma_i^2)}$$
+  <div class="formula-caption" data-lang="zh">以 $i$ 為中心的 Gaussian kernel，normalize 成機率</div>
+  <div class="formula-caption" data-lang="en">Gaussian kernel centered at $i$, normalized to probability</div>
+</div>
+
+<p data-lang="zh">$\sigma_i$ 是「以 $i$ 為中心的 Gaussian 寬度」——<b>每個點各自一個 $\sigma_i$</b>！這是 t-SNE 對密度不均的關鍵設計。</p>
+<p data-lang="en">$\sigma_i$ = "width of Gaussian centered at $i$" — <b>each point has its own $\sigma_i$</b>! This is t-SNE's key design for density variation.</p>
+
+<h3 data-lang="zh">2.2 perplexity：選擇 $\sigma_i$ 的指標</h3>
+<h3 data-lang="en">2.2 Perplexity: how to choose $\sigma_i$</h3>
+
+<p data-lang="zh">perplexity 直覺上就是「<b>有效鄰居數</b>」。給定一個 perplexity（典型 30），對每個 $i$ 解出讓「鄰居分布的 entropy」對應這個 perplexity 的 $\sigma_i$：</p>
+<p data-lang="en">Perplexity is intuitively "<b>effective number of neighbors</b>". Given perplexity (typically 30), solve for $\sigma_i$ such that the entropy of the neighbor distribution matches:</p>
+
+<div class="math-block boxed">
+  $$\text{perplexity}(P_i) = 2^{H(P_i)}, \quad H(P_i) = -\sum_j p_{j|i} \log_2 p_{j|i}$$
+  <div class="formula-caption" data-lang="zh">perplexity ≈ 「分布有效寬度」</div>
+  <div class="formula-caption" data-lang="en">perplexity ≈ "effective width of distribution"</div>
+</div>
+
+<p data-lang="zh">密度高的區域（鄰居多）→ $\sigma_i$ 小；密度低的區域（鄰居遠）→ $\sigma_i$ 大。每個點都看到「同樣多」鄰居。</p>
+<p data-lang="en">Dense regions (many neighbors) → small $\sigma_i$; sparse regions → large $\sigma_i$. Every point "sees the same number of neighbors".</p>
+
+<h3 data-lang="zh">2.3 對稱化</h3>
+<h3 data-lang="en">2.3 Symmetrize</h3>
+
+<div class="math-block">
+  $$P_{ij} = \frac{p_{j|i} + p_{i|j}}{2n}$$
+</div>
+
+<p data-lang="zh">把 $p_{j|i}$ 跟 $p_{i|j}$ 平均（再 / n 整體 normalize），得到對稱的 $P_{ij} = P_{ji}$，避免「我覺得 j 是鄰居、j 覺得我不是」的不對稱問題。</p>
+<p data-lang="en">Average $p_{j|i}$ and $p_{i|j}$ (then divide by $n$), giving symmetric $P_{ij} = P_{ji}$. Avoids "I think j is my neighbor but j doesn't think the same" asymmetry.</p>
+
+<h2 id="s3"><span class="num">§3</span> <span data-lang="zh">互動：perplexity 怎麼影響鄰居</span><span data-lang="en">Interactive: perplexity vs neighbors</span></h2>
+
+<div class="card">
+  <p data-lang="zh">下方一個 2D 點分布。對中央那個紅點，拉 perplexity 看「鄰居機率」怎麼分布——
+    perplexity 小 → 只關注最近 3-5 個；perplexity 大 → 連遠的點也是「鄰居」。</p>
+  <p data-lang="en">2D point distribution. For the red center point, drag perplexity to see "neighbor probability" distribution —
+    small perp → focus on 3-5 closest; large perp → distant points also count.</p>
+  <div class="controls">
+    <label>perplexity:
+      <input type="range" id="s3perp" min="2" max="40" value="10" step="1"><span id="s3perpVal">10</span>
+    </label>
+  </div>
+  <svg class="canvas" id="s3svg" viewBox="0 0 800 400" width="100%"></svg>
+  <div class="stat-row">
+    <div class="item"><span class="lbl">$\sigma_i$</span><span class="lbl">$\sigma_i$</span><span class="val" id="s3sig">—</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">總機率 (sum check)</span><span class="lbl" data-lang="en">prob sum</span><span class="val" id="s3sum">—</span></div>
+  </div>
+</div>
+
+<h2 id="s4"><span class="num">§4</span> <span data-lang="zh">低維 $Q_{ij}$：Student-t 重尾</span><span data-lang="en">Low-D $Q_{ij}$: Student-t heavy tail</span></h2>
+
+<p data-lang="zh">在低維空間，t-SNE 用 <b>Student-t 分布</b>（自由度 1，即 Cauchy）取代 Gaussian：</p>
+<p data-lang="en">In low-D, t-SNE uses <b>Student-t distribution</b> (df=1, i.e., Cauchy) instead of Gaussian:</p>
+
+<div class="math-block boxed">
+  $$Q_{ij} = \frac{(1 + \|y_i - y_j\|^2)^{-1}}{\sum_{k \neq l} (1 + \|y_k - y_l\|^2)^{-1}}$$
+  <div class="formula-caption" data-lang="zh">$y_i$ 是 $i$ 的低維座標；分母 normalize 整個 $Q$ 加總 = 1</div>
+  <div class="formula-caption" data-lang="en">$y_i$ = low-D coord; denominator normalizes total $Q$ to 1</div>
+</div>
+
+<h3 data-lang="zh">4.1 為什麼用 Student-t? — 解決「擁擠問題」</h3>
+<h3 data-lang="en">4.1 Why Student-t? — solves "crowding problem"</h3>
+
+<p data-lang="zh">高維球面表面積 ∝ $r^{d-1}$，所以「中等距離」的點在高維非常多、但 2D 只有少數位置可放。
+若低維也用 Gaussian，這些中距離點會被擠在一起。Student-t 重尾允許低維點<b>離得更遠</b>仍保持類似機率，避免擁擠。</p>
+<p data-lang="en">High-D sphere surface area ∝ $r^{d-1}$, so "medium distance" points are abundant in high-D but few spots in 2D.
+With Gaussian in 2D, those medium-distance points get crammed together. Student-t's heavy tail allows low-D points to be <b>further apart</b> while keeping similar probability — avoids crowding.</p>
+
+<div class="card">
+  <h4 data-lang="zh">4.2 互動：Gaussian vs Student-t 比較</h4>
+  <h4 data-lang="en">4.2 Interactive: Gaussian vs Student-t</h4>
+  <svg class="canvas" id="s4svg" viewBox="0 0 800 320" width="100%"></svg>
+  <p data-lang="zh">紅色 = Gaussian (σ=1)，藍色 = Student-t (df=1)。注意 Student-t 在 $|x| &gt; 2$ 後仍有可觀機率，
+    意味「同樣機率值對應更大距離」——低維點可以彼此推得更開。</p>
+  <p data-lang="en">Red = Gaussian (σ=1), blue = Student-t (df=1). Student-t has non-trivial probability at $|x| &gt; 2$,
+    meaning "same probability value corresponds to larger distance" — low-D points can spread further.</p>
+</div>
+
+<h2 id="s5"><span class="num">§5</span> <span data-lang="zh">KL 散度與梯度下降</span><span data-lang="en">KL divergence & gradient descent</span></h2>
+
+<p data-lang="zh">目標：找 $y_1, \ldots, y_n$ 讓 $Q_{ij} \approx P_{ij}$。用 <b>KL 散度</b>當距離度量：</p>
+<p data-lang="en">Goal: find $y_1, \ldots, y_n$ so $Q_{ij} \approx P_{ij}$. Use <b>KL divergence</b> as distance:</p>
+
+<div class="math-block boxed">
+  $$\mathcal{L}(Y) = \text{KL}(P \| Q) = \sum_{i \neq j} P_{ij} \log \frac{P_{ij}}{Q_{ij}}$$
+</div>
+
+<h3 data-lang="zh">5.1 為何 KL 不對稱很重要</h3>
+<h3 data-lang="en">5.1 Why KL asymmetry matters</h3>
+
+<p data-lang="zh">$\text{KL}(P \| Q)$ 對「<b>$P$ 大但 $Q$ 小</b>」（高維近但低維遠）<b>嚴重懲罰</b>。
+對「$P$ 小但 $Q$ 大」（高維遠但低維近）懲罰較輕。
+結果：t-SNE 強烈<b>保留鄰近關係</b>（避免錯把鄰居分開），但<b>不在意</b>不相關的點被推得近。
+這就是「全域距離不可信」的數學根源。</p>
+<p data-lang="en">$\text{KL}(P \| Q)$ heavily penalizes "<b>$P$ large, $Q$ small</b>" (close in high-D but far in low-D).
+Less penalty for "$P$ small, $Q$ large" (far in high-D but close in low-D).
+Result: t-SNE strongly <b>preserves neighborhoods</b>, but <b>doesn't care</b> if unrelated points get pushed close.
+This is the mathematical root of "global distance unreliable".</p>
+
+<h3 data-lang="zh">5.2 梯度</h3>
+<h3 data-lang="en">5.2 Gradient</h3>
+
+<div class="math-block">
+  $$\frac{\partial \mathcal{L}}{\partial y_i} = 4 \sum_{j} (P_{ij} - Q_{ij}) (y_i - y_j) (1 + \|y_i - y_j\|^2)^{-1}$$
+</div>
+
+<p data-lang="zh">直覺：$(P_{ij} - Q_{ij}) &gt; 0$（高維比低維近）→ $y_i$ 往 $y_j$ <b>拉</b>；$(P_{ij} - Q_{ij}) &lt; 0$ → <b>推開</b>。每個點同時受所有其他點的「拉」「推」影響。</p>
+<p data-lang="en">Intuition: $(P_{ij} - Q_{ij}) &gt; 0$ (closer in high-D than low-D) → $y_i$ <b>pulls toward</b> $y_j$; negative → <b>pushes away</b>. Each point simultaneously pulled and pushed by every other.</p>
+
+<h2 id="s6"><span class="num">§6</span> <span data-lang="zh">互動：t-SNE 收斂動畫</span><span data-lang="en">Interactive t-SNE animation</span></h2>
+
+<div class="card">
+  <p data-lang="zh">下方 60 個細胞（3 群），高維 P 在「真實」群結構上算出。隨機 2D 初始位置開始，按「下一步」watch t-SNE 用梯度下降收斂到清楚 cluster。</p>
+  <p data-lang="en">60 cells (3 groups), $P$ computed from "true" group structure. Random 2D init. Click "Next" to watch gradient descent converge:</p>
+  <div class="controls">
+    <button id="s6next"><span data-lang="zh">下一步 (10 iter)</span><span data-lang="en">Next (10 iter)</span></button>
+    <button id="s6auto" class="ghost"><span data-lang="zh">自動跑完</span><span data-lang="en">Auto-run</span></button>
+    <button id="s6reset" class="ghost"><span data-lang="zh">重置</span><span data-lang="en">Reset</span></button>
+    <span><span data-lang="zh">iter</span>: <b id="s6iter">0</b></span>
+  </div>
+  <svg class="canvas" id="s6svg" viewBox="0 0 800 400" width="100%"></svg>
+  <div class="stat-row">
+    <div class="item"><span class="lbl">KL loss</span><span class="lbl">KL loss</span><span class="val" id="s6loss">—</span></div>
+  </div>
+</div>
+
+<h2 id="s7"><span class="num">§7</span> <span data-lang="zh">Perplexity / learning rate 影響</span><span data-lang="en">Perplexity / LR effects</span></h2>
+
+<table class="compare">
+  <tr><th data-lang="zh">參數</th><th data-lang="en">Param</th>
+      <th data-lang="zh">影響</th><th data-lang="en">Effect</th>
+      <th data-lang="zh">建議</th><th data-lang="en">Recommended</th></tr>
+  <tr><td>perplexity</td><td>perplexity</td>
+      <td data-lang="zh">小 → 細微局部結構；大 → 大尺度結構</td>
+      <td data-lang="en">small → fine local; large → coarse global</td>
+      <td>5-50（典型 30）</td><td>5-50 (typically 30)</td></tr>
+  <tr><td>learning rate (η)</td><td>learning rate</td>
+      <td data-lang="zh">太低 → 卡在 local min；太高 → 跳開</td>
+      <td data-lang="en">too low → local min; too high → diverge</td>
+      <td>η = max(n/12, 200)</td><td>η = max(n/12, 200)</td></tr>
+  <tr><td>early exaggeration</td><td>early exaggeration</td>
+      <td data-lang="zh">前 250 iter 把 P 放大（拉開 cluster）</td>
+      <td data-lang="en">first 250 iter, scale P up (push clusters apart)</td>
+      <td>12 (預設)</td><td>12 (default)</td></tr>
+  <tr><td>iterations</td><td>iterations</td>
+      <td data-lang="zh">少 → 沒收斂；多 → 浪費計算</td>
+      <td data-lang="en">few → unconverged; many → wasted</td>
+      <td>1000 (預設)</td><td>1000 (default)</td></tr>
+</table>
+
+<h2 id="s8"><span class="num">§8</span> <span data-lang="zh">限制：t-SNE 不該看「群距」</span><span data-lang="en">Limits: don't read inter-cluster distance</span></h2>
+
+<div class="callout warn">
+  <strong data-lang="zh">5 個經典 t-SNE 誤讀</strong><strong data-lang="en">5 classic misreadings of t-SNE</strong>:
+  <ol>
+    <li data-lang="zh"><b>「兩 cluster 相距遠」≠ 真實生物距離遠</b>。可能只是初始位置不同。</li>
+    <li data-lang="en"><b>"Clusters far apart" ≠ truly distant biologically</b>. May just reflect random init.</li>
+    <li data-lang="zh"><b>「cluster 大小」≠ 細胞型態的多樣性</b>。t-SNE 會「正常化」cluster 大小。</li>
+    <li data-lang="en"><b>"Cluster size" ≠ cell-type diversity</b>. t-SNE "normalizes" cluster sizes.</li>
+    <li data-lang="zh"><b>不同 random seed 結果不同</b>。固定 seed 才能重現。</li>
+    <li data-lang="en"><b>Different random seeds give different results</b>. Fix seed for reproducibility.</li>
+    <li data-lang="zh"><b>無法直接 query 新點</b>（沒有 transform 函數）。不像 PCA 能直接投影新資料。</li>
+    <li data-lang="en"><b>Can't directly project new points</b> (no transform function). Unlike PCA.</li>
+    <li data-lang="zh"><b>對 perplexity 敏感</b>。不同 perplexity 可能給完全不同的圖。</li>
+    <li data-lang="en"><b>Sensitive to perplexity</b>. Different perplexities give very different layouts.</li>
+  </ol>
+</div>
+
+<h3 data-lang="zh">8.1 限制表</h3>
+<h3 data-lang="en">8.1 Limitations</h3>
+
+<table class="compare">
+  <tr><th data-lang="zh">限制</th><th data-lang="en">Limitation</th>
+      <th data-lang="zh">後果</th><th data-lang="en">Consequence</th>
+      <th data-lang="zh">緩解</th><th data-lang="en">Mitigation</th></tr>
+  <tr><td data-lang="zh">速度慢 $O(n^2)$</td><td data-lang="en">Slow $O(n^2)$</td>
+      <td data-lang="zh">10k cells ~10 分鐘</td><td data-lang="en">10k cells ~10 min</td>
+      <td>FIt-SNE, openTSNE, BH-tSNE</td><td>FIt-SNE, openTSNE, BH-tSNE</td></tr>
+  <tr><td data-lang="zh">全域距離不可信</td><td data-lang="en">Global distances unreliable</td>
+      <td data-lang="zh">cluster 間距無意義</td><td data-lang="en">inter-cluster distance meaningless</td>
+      <td data-lang="zh">用 UMAP 同時保 local + global</td><td data-lang="en">use UMAP for local + global</td></tr>
+  <tr><td data-lang="zh">沒有 transform 函數</td><td data-lang="en">No transform function</td>
+      <td data-lang="zh">新資料要重跑整個 t-SNE</td><td data-lang="en">new data requires full re-run</td>
+      <td data-lang="zh">用 parametric t-SNE (NN 版本)</td><td data-lang="en">use parametric t-SNE (NN version)</td></tr>
+</table>
+
+<div class="callout prog">
+  <strong data-lang="zh">下一步</strong><strong data-lang="en">Next</strong>:
+  <span data-lang="zh">→ <a href="3.3-umap.html"><b>3.3 UMAP</b></a> 同時保留 local + global、跑 10× 快 → <a href="3.4-diffusion-map.html"><b>3.4 Diffusion Maps</b></a> 流形結構。</span>
+  <span data-lang="en">→ <a href="3.3-umap.html"><b>3.3 UMAP</b></a> preserves both, 10× faster → <a href="3.4-diffusion-map.html"><b>3.4 Diffusion Maps</b></a> for manifold structure.</span>
+</div>
+
+<p class="footer">
+  <span data-lang="zh">© scRNA-seq Advanced Math · M3.2 t-SNE Deep Interactive</span>
+  <span data-lang="en">© scRNA-seq Advanced Math · M3.2 t-SNE Deep Interactive</span>
+</p>
+
+</div>
 
 <script src="../i18n.js"></script>
 <script>
-function switchTab(b,id){
-  const p=b.closest(".code-tabs");
-  p.querySelectorAll(".code-tab-btn").forEach(x=>x.classList.remove("active"));
-  p.querySelectorAll(".code-tab-content").forEach(x=>x.classList.remove("active"));
-  b.classList.add("active");
-  document.getElementById(id).classList.add("active");
-}
-
-/* ============================================
-   §0-1 Crowding (3D → 2D)
-   ============================================ */
-(function(){
-  const svg = document.getElementById('crowdSvg');
-  const cR = document.getElementById('crowdR');
-  const cV = document.getElementById('crowdV');
-  const readout = document.getElementById('crowdReadout');
-  // 10 neighbors arranged on a sphere
-  const N = 10;
-  const neighbors3D = [];
-  for (let i = 0; i < N; i++) {
-    const phi = Math.acos(1 - 2*(i+0.5)/N);
-    const theta = Math.PI * (1 + Math.sqrt(5)) * (i+0.5);
-    neighbors3D.push({
-      x: Math.sin(phi)*Math.cos(theta),
-      y: Math.sin(phi)*Math.sin(theta),
-      z: Math.cos(phi)
-    });
+// ===== §0 illustration =====
+(function() {
+  // Linear (PCA-like) vs nonlinear (t-SNE-like) — two cell types
+  let s = '';
+  s += `<text class="lbl" x="200" y="25" text-anchor="middle" font-weight="700">PCA (linear, overlapping)</text>`;
+  s += `<text class="lbl" x="600" y="25" text-anchor="middle" font-weight="700">t-SNE (nonlinear, separated)</text>`;
+  s += `<rect x="20" y="40" width="370" height="300" fill="#fff" stroke="#ddd"/>`;
+  s += `<rect x="410" y="40" width="370" height="300" fill="#fff" stroke="#ddd"/>`;
+  // PCA: two types overlap in middle, only stretch along x
+  let seed = 19;
+  const rnd = () => { seed = (seed*9301+49297)%233280; return seed/233280; };
+  function nrnd(m,s){const u1=rnd(),u2=rnd();return m+s*Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);}
+  // PCA side
+  for (let i = 0; i < 40; i++) {
+    s += `<circle cx="${nrnd(170, 60)}" cy="${nrnd(180, 50)}" r="4" fill="#9f1239" opacity="0.7"/>`;
   }
-  function draw() {
-    const c = +cR.value / 100;  // 0 = full 3D, 1 = full 2D
-    cV.textContent = (c*100).toFixed(0) + '%';
-    const W=800, H=320;
-    const cx1 = 200, cx2 = 600, cy = H/2, scale = 80;
-    let h = `<rect width="${W}" height="${H}" fill="#fff"/>`;
-    h += `<line x1="${W/2}" y1="0" x2="${W/2}" y2="${H}" stroke="#dfe4f0"/>`;
-    h += `<text x="${cx1}" y="22" text-anchor="middle" font-size="13" fill="#444" font-weight="700">3D (all equidistant)</text>`;
-    h += `<text x="${cx2}" y="22" text-anchor="middle" font-size="13" fill="${c>0.5?'#dc2626':'#444'}" font-weight="700">2D ${c>0?`(compressed ${(c*100).toFixed(0)}%)`:''}</text>`;
-    // Left: 3D view, rotating slightly
-    const rot = Date.now() * 0.0005;
-    const cs = Math.cos(rot), sn = Math.sin(rot);
-    const proj3D = neighbors3D.map(p => {
-      const x = p.x*cs + p.z*sn;
-      const z = -p.x*sn + p.z*cs;
-      return { sx: cx1 + x*scale, sy: cy - p.y*scale, depth: z };
-    }).sort((a,b)=>a.depth-b.depth);
-    h += `<circle cx="${cx1}" cy="${cy}" r="8" fill="#8b5cf6"/>`;
-    for (const p of proj3D) {
-      // line to center
-      h += `<line x1="${cx1}" y1="${cy}" x2="${p.sx}" y2="${p.sy}" stroke="#4f7df4" stroke-width="0.7" opacity="0.4"/>`;
-      h += `<circle cx="${p.sx}" cy="${p.sy}" r="${4 + p.depth*1.5}" fill="#4f7df4" opacity="${0.5 + p.depth*0.3}"/>`;
-    }
-    // Right: forced 2D — 6 can stay equidistant, others pushed
-    h += `<circle cx="${cx2}" cy="${cy}" r="8" fill="#8b5cf6"/>`;
-    // hexagonal 6 + 4 pushed
-    const radEqui = 70;
-    const radFar = 70 + c * 50;  // pushed further
-    for (let i = 0; i < N; i++) {
-      const a = i / 6 * Math.PI * 2;
-      let r, color, opacity;
-      if (i < 6) {
-        // 6 equidistant
-        r = radEqui;
-        color = '#06a77d';
-        opacity = 1;
-      } else {
-        // pushed (4 extra)
-        r = radEqui * (1 - c) + radFar * c;
-        color = c > 0.5 ? '#dc2626' : '#06a77d';
-        opacity = 0.7 + c * 0.3;
-      }
-      // interpolate from 3D position to forced 2D position
-      const target_x = cx2 + r * Math.cos(a + (i>=6 ? Math.PI*0.5/4*(i-6) : 0));
-      const target_y = cy + r * Math.sin(a + (i>=6 ? Math.PI*0.5/4*(i-6) : 0));
-      const orig = neighbors3D[i];
-      const orig_x = cx2 + orig.x * scale;
-      const orig_y = cy - orig.y * scale;
-      const sx = orig_x * (1-c) + target_x * c;
-      const sy = orig_y * (1-c) + target_y * c;
-      h += `<line x1="${cx2}" y1="${cy}" x2="${sx}" y2="${sy}" stroke="${color}" stroke-width="0.7" opacity="0.5"/>`;
-      h += `<circle cx="${sx}" cy="${sy}" r="5" fill="${color}" opacity="${opacity}"/>`;
-    }
-    svg.innerHTML = h;
-    const equiCount = c > 0.5 ? 6 : 10;
-    const pushedCount = c > 0.5 ? 4 : 0;
-    readout.innerHTML = `<span class="lbl">3D：</span><span class="val-hl">10 個</span>都可以等距
-      <span class="lbl">2D：</span><span class="val-hl">最多 6 個</span>能等距，
-      ${c > 0.5 ? `<b style="color:#dc2626">${pushedCount} 個被推遠</b>（這就是擠擁問題！）` : '正在壓縮...'}`;
+  for (let i = 0; i < 40; i++) {
+    s += `<circle cx="${nrnd(240, 60)}" cy="${nrnd(220, 50)}" r="4" fill="#2c5aa0" opacity="0.7"/>`;
   }
-  cR.oninput = draw;
-  setInterval(draw, 60);  // animate 3D rotation
-  draw();
+  // t-SNE side: well separated
+  for (let i = 0; i < 40; i++) {
+    s += `<circle cx="${nrnd(500, 25)}" cy="${nrnd(140, 25)}" r="4" fill="#9f1239" opacity="0.8"/>`;
+  }
+  for (let i = 0; i < 40; i++) {
+    s += `<circle cx="${nrnd(680, 25)}" cy="${nrnd(240, 25)}" r="4" fill="#2c5aa0" opacity="0.8"/>`;
+  }
+  // legend
+  s += `<g transform="translate(40, 355)">`;
+  s += `<circle cx="14" cy="0" r="5" fill="#9f1239"/><text class="lbl" x="26" y="4">T cell</text>`;
+  s += `<circle cx="120" cy="0" r="5" fill="#2c5aa0"/><text class="lbl" x="132" y="4">B cell</text>`;
+  s += `</g>`;
+  document.getElementById('s0svg').innerHTML = s;
 })();
 
-/* ============================================
-   §0-2 Gaussian vs t tail
-   ============================================ */
-(function(){
-  const svg = document.getElementById('tailSvg');
-  const readout = document.getElementById('tailReadout');
-  let hoverR = 2;
-  function gauss(r) { return Math.exp(-r*r/2) / Math.sqrt(2*Math.PI); }
-  function tDist(r) { return 1/(Math.PI * (1 + r*r)); }
-  function draw() {
-    const W=700, H=300, padL=50, padB=40, padT=20, padR=20;
-    const xmax = 6;
-    const ymax = 0.45;
-    const xToSvg = x => padL + x / xmax * (W - padL - padR);
-    const yToSvg = y => H - padB - y / ymax * (H - padT - padB);
-    let h = `<rect width="${W}" height="${H}" fill="#fff"/>`;
-    h += `<line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="#999"/>`;
-    h += `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${H-padB}" stroke="#999"/>`;
-    // Gaussian
-    let pG = '';
-    for (let r = 0; r <= xmax; r += 0.05) {
-      pG += (r===0?'M':'L') + xToSvg(r) + ',' + yToSvg(gauss(r));
-    }
-    h += `<path d="${pG}" stroke="#dc2626" stroke-width="2.5" fill="none"/>`;
-    h += `<path d="${pG} L ${xToSvg(xmax)},${yToSvg(0)} L ${xToSvg(0)},${yToSvg(0)} Z" fill="rgba(220,38,38,0.1)"/>`;
-    // t
-    let pT = '';
-    for (let r = 0; r <= xmax; r += 0.05) {
-      pT += (r===0?'M':'L') + xToSvg(r) + ',' + yToSvg(tDist(r));
-    }
-    h += `<path d="${pT}" stroke="#4f7df4" stroke-width="2.5" fill="none"/>`;
-    h += `<path d="${pT} L ${xToSvg(xmax)},${yToSvg(0)} L ${xToSvg(0)},${yToSvg(0)} Z" fill="rgba(79,125,244,0.1)"/>`;
-    // hover line
-    h += `<line x1="${xToSvg(hoverR)}" y1="${padT}" x2="${xToSvg(hoverR)}" y2="${H-padB}" stroke="#8b5cf6" stroke-dasharray="3 3"/>`;
-    h += `<circle cx="${xToSvg(hoverR)}" cy="${yToSvg(gauss(hoverR))}" r="5" fill="#dc2626"/>`;
-    h += `<circle cx="${xToSvg(hoverR)}" cy="${yToSvg(tDist(hoverR))}" r="5" fill="#4f7df4"/>`;
-    // labels
-    h += `<text x="${W/2}" y="${H-8}" text-anchor="middle" font-size="12" fill="#444">distance r</text>`;
-    h += `<text x="14" y="${H/2}" font-size="12" fill="#444" transform="rotate(-90 14 ${H/2})" text-anchor="middle">probability</text>`;
-    h += `<text x="${W-140}" y="${padT+12}" font-size="12" fill="#dc2626" font-weight="700">━ Gaussian</text>`;
-    h += `<text x="${W-140}" y="${padT+28}" font-size="12" fill="#4f7df4" font-weight="700">━ Student-t (df=1)</text>`;
-    for (let v = 0; v <= 0.4; v += 0.1) {
-      h += `<text x="${padL-8}" y="${yToSvg(v)+4}" text-anchor="end" font-size="10" fill="#888">${v.toFixed(1)}</text>`;
-    }
-    for (let v = 0; v <= xmax; v += 1) {
-      h += `<text x="${xToSvg(v)}" y="${H-padB+14}" text-anchor="middle" font-size="10" fill="#888">${v}</text>`;
-    }
-    svg.innerHTML = h;
-    const g = gauss(hoverR), t = tDist(hoverR);
-    const ratio = t / g;
-    readout.innerHTML = `<span class="lbl">在 r = ${hoverR.toFixed(2)}：</span>
-      Gaussian = <span style="color:#dc2626" class="val-hl">${g.toExponential(2)}</span>
-      t = <span style="color:#4f7df4" class="val-hl">${t.toExponential(2)}</span>
-      <b>t / Gaussian = ${ratio.toFixed(1)}×</b>${hoverR>2?' (中距離 t 比 Gaussian 高很多！)':''}`;
+// ===== §3 perplexity =====
+(function() {
+  let seed = 31;
+  const rnd = () => { seed = (seed*9301+49297)%233280; return seed/233280; };
+  function nrnd(m,s){const u1=rnd(),u2=rnd();return m+s*Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);}
+  const points = [];
+  // center
+  points.push({x: 400, y: 200, id: 0, isCenter: true});
+  // close ring (10 points)
+  for (let i = 0; i < 10; i++) {
+    const ang = i * Math.PI * 2 / 10;
+    points.push({x: 400 + Math.cos(ang)*40, y: 200 + Math.sin(ang)*40, id: i+1});
   }
-  svg.addEventListener('mousemove', e => {
-    const rect = svg.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width * 700;
-    hoverR = Math.max(0, Math.min(6, (x - 50) / (700 - 70) * 6));
-    draw();
-  });
-  draw();
-})();
-
-/* ============================================
-   §1 Distance → Probability
-   ============================================ */
-(function(){
-  const svg = document.getElementById('s1Svg');
-  const sigR = document.getElementById('s1sigR');
-  const sigV = document.getElementById('s1sigV');
-  const readout = document.getElementById('s1Readout');
-  let scale = 1;
-  // 5 neighbors at fixed relative distances
-  const baseNeighbors = [
-    {x: 1.0, y: 0.3, label: 'A'},
-    {x: -0.7, y: 1.2, label: 'B'},
-    {x: -1.5, y: -0.5, label: 'C'},
-    {x: 0.5, y: -1.8, label: 'D'},
-    {x: 2.5, y: -1.0, label: 'E'},
-  ];
-  function draw() {
-    const sig = +sigR.value;
-    sigV.textContent = sig.toFixed(2);
-    const W=700, H=260, cx=350, cy=H/2, vis=50;
-    let h = `<rect width="${W}" height="${H}" fill="#fff"/>`;
-    h += `<text x="${W/4}" y="22" text-anchor="middle" font-size="13" fill="#444" font-weight="700">scene (scale = ${scale.toFixed(1)}×)</text>`;
-    h += `<text x="${3*W/4}" y="22" text-anchor="middle" font-size="13" fill="#5e35b1" font-weight="700">p_{j|i} bars</text>`;
-    h += `<line x1="${W/2}" y1="0" x2="${W/2}" y2="${H}" stroke="#dfe4f0"/>`;
-    // Left scene
-    const sceneCx = W/4;
-    h += `<circle cx="${sceneCx}" cy="${cy}" r="10" fill="#8b5cf6"/>`;
-    h += `<text x="${sceneCx}" y="${cy+5}" text-anchor="middle" font-size="11" fill="#fff" font-weight="700">i</text>`;
-    // compute probabilities
-    const dists = baseNeighbors.map(n => Math.hypot(n.x*scale, n.y*scale));
-    const exps = dists.map(d => Math.exp(-d*d/(2*sig*sig)));
-    const sumE = exps.reduce((a,b)=>a+b, 0);
-    const probs = exps.map(e => e/sumE);
-    baseNeighbors.forEach((n, i) => {
-      const px = sceneCx + n.x * scale * vis;
-      const py = cy + n.y * scale * vis;
-      h += `<line x1="${sceneCx}" y1="${cy}" x2="${px}" y2="${py}" stroke="#4f7df4" stroke-width="0.7" opacity="0.5"/>`;
-      h += `<circle cx="${px}" cy="${py}" r="8" fill="#4f7df4"/>`;
-      h += `<text x="${px}" y="${py+4}" text-anchor="middle" font-size="10" fill="#fff" font-weight="700">${n.label}</text>`;
-    });
-    // Right: probability bars
-    const barX = W/2 + 40;
-    const barW = 50;
-    const barH = 25;
-    baseNeighbors.forEach((n, i) => {
-      const y0 = 50 + i * (barH + 6);
-      h += `<text x="${barX-10}" y="${y0+18}" text-anchor="end" font-size="12" fill="#444" font-weight="700">${n.label}</text>`;
-      h += `<rect x="${barX}" y="${y0}" width="${probs[i]*200}" height="${barH}" fill="#5e35b1"/>`;
-      h += `<text x="${barX + probs[i]*200 + 6}" y="${y0+18}" font-size="11" fill="#444">${probs[i].toFixed(3)}</text>`;
-    });
-    svg.innerHTML = h;
-    readout.innerHTML = `<span class="lbl">所有距離乘 scale：</span><span class="val-hl">${scale.toFixed(1)}×</span>
-      <span class="lbl">機率分布幾乎不變</span> (機率是 softmax，對單位/尺度不敏感)`;
+  // medium ring (10 points)
+  for (let i = 0; i < 10; i++) {
+    const ang = i * Math.PI * 2 / 10 + 0.3;
+    points.push({x: 400 + Math.cos(ang)*100, y: 200 + Math.sin(ang)*100, id: i+11});
   }
-  sigR.oninput = draw;
-  ['s1stretch','s1stretch_en'].forEach(id => {
-    const b = document.getElementById(id);
-    if (b) b.onclick = () => { scale = 5; draw(); };
-  });
-  document.getElementById('s1reset').onclick = () => { scale = 1; draw(); };
-  draw();
-})();
-
-/* ============================================
-   §2 σ shapes P
-   ============================================ */
-(function(){
-  const svg = document.getElementById('s2Svg');
-  const sigR = document.getElementById('s2sigR');
-  const sigV = document.getElementById('s2sigV');
-  const readout = document.getElementById('s2Readout');
-  // 10 neighbors at varying distances
-  const dists = [0.5, 0.8, 1.2, 1.5, 2.0, 2.6, 3.4, 4.5, 6.0, 8.0];
-  function draw() {
-    const sig = +sigR.value;
-    sigV.textContent = sig.toFixed(2);
-    const W=700, H=280, padL=50, padB=40, padT=20, padR=20;
-    const xmax = 10, ymax = 0.55;
-    const xToSvg = x => padL + x / xmax * (W - padL - padR);
-    const yToSvg = y => H - padB - y / ymax * (H - padT - padB);
-    let h = `<rect width="${W}" height="${H}" fill="#fff"/>`;
-    h += `<line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="#999"/>`;
-    h += `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${H-padB}" stroke="#999"/>`;
-    // continuous curve
-    const exps = [];
-    let sumE = 0;
-    for (const d of dists) { const e = Math.exp(-d*d/(2*sig*sig)); exps.push(e); sumE += e; }
-    const probs = exps.map(e => e/sumE);
-    // continuous reference curve
-    let path = '';
-    let refSum = 0;
-    for (let d = 0; d <= xmax; d += 0.1) refSum += Math.exp(-d*d/(2*sig*sig));
-    refSum *= 0.1;
-    for (let d = 0; d <= xmax; d += 0.05) {
-      const p = Math.exp(-d*d/(2*sig*sig)) / refSum;
-      path += (d===0?'M':'L') + xToSvg(d) + ',' + yToSvg(p);
+  // far points
+  for (let i = 0; i < 10; i++) {
+    points.push({x: nrnd(400, 130), y: nrnd(200, 100), id: i+21});
+  }
+  function entropy(p) {
+    let H = 0;
+    p.forEach(pi => { if (pi > 1e-9) H -= pi * Math.log2(pi); });
+    return H;
+  }
+  function pjGivenI(sigma, distSq) {
+    const probs = distSq.map(d => Math.exp(-d / (2*sigma*sigma)));
+    const sum = probs.reduce((a,b)=>a+b, 0);
+    return probs.map(p => p / sum);
+  }
+  function findSigma(targetPerp, distSq) {
+    let lo = 0.1, hi = 500;
+    for (let it = 0; it < 50; it++) {
+      const mid = (lo + hi) / 2;
+      const p = pjGivenI(mid, distSq);
+      const H = entropy(p);
+      const perp = Math.pow(2, H);
+      if (perp < targetPerp) lo = mid; else hi = mid;
     }
-    h += `<path d="${path}" stroke="#5e35b1" stroke-width="2" fill="rgba(94,53,177,0.1)"/>`;
-    // bars at discrete points
-    dists.forEach((d, i) => {
-      h += `<rect x="${xToSvg(d)-3}" y="${yToSvg(probs[i]/0.5)}" width="6" height="${H-padB-yToSvg(probs[i]/0.5)}" fill="#4f7df4"/>`;
-      if (probs[i] > 0.02) h += `<text x="${xToSvg(d)}" y="${yToSvg(probs[i]/0.5)-3}" text-anchor="middle" font-size="9" fill="#4f7df4">${probs[i].toFixed(2)}</text>`;
-    });
-    // labels
-    h += `<text x="${W/2}" y="${H-8}" text-anchor="middle" font-size="12" fill="#444">distance d (to neighbor j)</text>`;
-    h += `<text x="14" y="${H/2}" font-size="12" fill="#444" transform="rotate(-90 14 ${H/2})" text-anchor="middle">p_{j|i}</text>`;
-    svg.innerHTML = h;
-    // peak ratio
+    return (lo + hi) / 2;
+  }
+  function draw() {
+    const targetPerp = +document.getElementById('s3perp').value;
+    document.getElementById('s3perpVal').textContent = targetPerp;
+    const center = points[0];
+    const others = points.slice(1);
+    const distSq = others.map(p => (p.x-center.x)**2 + (p.y-center.y)**2);
+    const sigma = findSigma(targetPerp, distSq);
+    const probs = pjGivenI(sigma, distSq);
+    document.getElementById('s3sig').textContent = sigma.toFixed(1);
+    document.getElementById('s3sum').textContent = probs.reduce((a,b)=>a+b, 0).toFixed(3);
     const maxP = Math.max(...probs);
-    const minP = Math.min(...probs.filter(p => p > 1e-10));
-    readout.innerHTML = `<span class="lbl">σ = </span><span class="val-hl">${sig.toFixed(2)}</span>
-      最大 p = ${maxP.toFixed(3)}（最近鄰）
-      最小 p = ${minP.toExponential(1)}（最遠）
-      <b>peak/valley = ${(maxP/minP).toExponential(1)}×</b>
-      ${sig < 0.8 ? '<span style="color:#dc2626">σ 小 → 分布尖銳 (局部)</span>' : sig > 3 ? '<span style="color:#06a77d">σ 大 → 分布平坦 (全局)</span>' : '<span style="color:#f59e0b">中等 σ</span>'}`;
-  }
-  sigR.oninput = draw;
-  draw();
-})();
-
-/* ============================================
-   §3 Perplexity & σ binary search
-   ============================================ */
-(function(){
-  const svg = document.getElementById('s3Svg');
-  const sigR = document.getElementById('s3sigR');
-  const sigV = document.getElementById('s3sigV');
-  const perpR = document.getElementById('s3perpR');
-  const perpV = document.getElementById('s3perpV');
-  const readout = document.getElementById('s3Readout');
-  // 15 neighbors at varying distances
-  const dists = [];
-  for (let i = 0; i < 15; i++) dists.push(0.5 + i * 0.55);
-  function draw() {
-    const sig = +sigR.value;
-    const targetPerp = +perpR.value;
-    sigV.textContent = sig.toFixed(2);
-    perpV.textContent = targetPerp;
-    // compute current perplexity
-    const exps = dists.map(d => Math.exp(-d*d/(2*sig*sig)));
-    const sumE = exps.reduce((a,b)=>a+b, 0);
-    const probs = exps.map(e => e/sumE);
-    const H_val = -probs.reduce((acc, p) => p > 0 ? acc + p * Math.log2(p) : acc, 0);
-    const perp = Math.pow(2, H_val);
-    const W=700, H=280, padL=50, padB=40, padT=30, padR=20;
-    const xmax = 10, ymax = 0.55;
-    const xToSvg = x => padL + x / xmax * (W - padL - padR);
-    const yToSvg = y => H - padB - y / ymax * (H - padT - padB);
-    let h = `<rect width="${W}" height="${H}" fill="#fff"/>`;
-    h += `<line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="#999"/>`;
-    h += `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${H-padB}" stroke="#999"/>`;
-    // bars
-    dists.forEach((d, i) => {
-      const p = probs[i];
-      const barH_ = (p / 0.5) * (H - padT - padB);
-      h += `<rect x="${xToSvg(d)-4}" y="${H - padB - barH_}" width="8" height="${barH_}" fill="#4f7df4" opacity="0.8"/>`;
+    let s = '';
+    s += `<rect x="0" y="0" width="800" height="400" fill="#fcfcfa"/>`;
+    others.forEach((p, i) => {
+      const intensity = probs[i] / maxP;
+      const r = 4 + intensity * 8;
+      const fill = `rgba(159, 18, 57, ${0.2 + 0.8*intensity})`;
+      s += `<circle cx="${p.x}" cy="${p.y}" r="${r}" fill="${fill}"/>`;
     });
-    // labels
-    h += `<text x="${W/2}" y="${H-8}" text-anchor="middle" font-size="12" fill="#444">distance</text>`;
-    h += `<text x="14" y="${H/2}" font-size="12" fill="#444" transform="rotate(-90 14 ${H/2})" text-anchor="middle">p_{j|i}</text>`;
-    // Title with current perp and target
-    const matched = Math.abs(perp - targetPerp) < 0.5;
-    h += `<text x="${W/2}" y="20" text-anchor="middle" font-size="14" font-weight="700" fill="${matched?'#06a77d':'#444'}">當前 Perp = ${perp.toFixed(2)}　目標 = ${targetPerp}　${matched?'✓ matched!':''}</text>`;
-    svg.innerHTML = h;
-    const arrow = perp > targetPerp ? '↓ 降低 σ' : '↑ 提高 σ';
-    readout.innerHTML = `<span class="lbl">σ = </span><span class="val-hl">${sig.toFixed(2)}</span>
-      <span class="lbl">熵 H = </span>${H_val.toFixed(3)} bits
-      <span class="lbl">Perplexity = 2^H = </span><span class="val-hl">${perp.toFixed(2)}</span>
-      ${matched ? '<b style="color:#06a77d"> ← 達標！這就是二分搜尋找到的 σᵢ</b>' : '<span style="color:#f59e0b"> '+arrow+'</span>'}`;
+    s += `<circle cx="${center.x}" cy="${center.y}" r="10" fill="#c0392b" stroke="#000" stroke-width="2"/>`;
+    s += `<text class="lbl" x="${center.x+12}" y="${center.y+5}" font-weight="700" fill="#c0392b">center</text>`;
+    document.getElementById('s3svg').innerHTML = s;
   }
-  sigR.oninput = draw;
-  perpR.oninput = draw;
+  document.getElementById('s3perp').addEventListener('input', draw);
   draw();
 })();
 
-/* ============================================
-   §3 Quiz
-   ============================================ */
-(function(){
-  const quiz = document.querySelector('#s3 .quiz-mini');
-  if (!quiz) return;
-  const opts = quiz.querySelectorAll('.quiz-opt');
-  const fb = quiz.querySelector('.quiz-feedback');
-  opts.forEach(opt => {
-    opt.onclick = () => {
-      if (quiz.classList.contains('answered')) return;
-      quiz.classList.add('answered');
-      const correct = opt.dataset.ans === '1';
-      opt.classList.add(correct ? 'correct' : 'wrong');
-      if (!correct) quiz.querySelector('[data-ans="1"]').classList.add('correct');
-      fb.innerHTML = correct
-        ? '✅ <b>正確！</b> Perplexity 是「分布的有效鄰居數」(= 2^H)。典型值 5-50，更大值偏全局結構。'
-        : '❌ <b>答案是 C</b>。Perplexity ≈ 有效鄰居數，反映「P 分布的扁平程度」。';
-    };
-  });
+// ===== §4 Gaussian vs Student-t =====
+(function() {
+  const W = 800, H = 320;
+  const xMin = -5, xMax = 5;
+  const X = x => 60 + (x-xMin)/(xMax-xMin) * 700;
+  const Y = y => 280 - y * 240;
+  let s = '';
+  s += `<line class="axis" x1="60" y1="280" x2="760" y2="280"/>`;
+  s += `<line class="axis" x1="60" y1="20" x2="60" y2="280"/>`;
+  // Gaussian
+  let p1 = '';
+  for (let x = xMin; x <= xMax; x += 0.1) {
+    const y = Math.exp(-x*x/2) / Math.sqrt(2*Math.PI);
+    p1 += `${x===xMin?'M':'L'} ${X(x)},${Y(y)} `;
+  }
+  s += `<path d="${p1}" stroke="#c0392b" stroke-width="2.5" fill="none"/>`;
+  s += `<text class="lbl" x="${X(2.5)+10}" y="${Y(0.07)}" fill="#c0392b" font-weight="700">Gaussian (σ=1)</text>`;
+  // Student-t df=1 (Cauchy): f(x) = 1/(π(1+x²))
+  let p2 = '';
+  for (let x = xMin; x <= xMax; x += 0.1) {
+    const y = 1 / (Math.PI * (1 + x*x));
+    p2 += `${x===xMin?'M':'L'} ${X(x)},${Y(y)} `;
+  }
+  s += `<path d="${p2}" stroke="#2c5aa0" stroke-width="2.5" fill="none"/>`;
+  s += `<text class="lbl" x="${X(3)+10}" y="${Y(0.04)}" fill="#2c5aa0" font-weight="700">Student-t (df=1)</text>`;
+  // mark heavy tail region
+  s += `<rect x="${X(2)}" y="20" width="${X(5)-X(2)}" height="260" fill="#fef3c7" opacity="0.3"/>`;
+  s += `<text class="lbl" x="${X(3.5)}" y="40" text-anchor="middle" font-weight="700" fill="#b45309">heavy tail region</text>`;
+  for (let x = xMin; x <= xMax; x++) s += `<text class="lbl" x="${X(x)}" y="300" text-anchor="middle">${x}</text>`;
+  document.getElementById('s4svg').innerHTML = s;
 })();
 
-/* ============================================
-   §5 Shell capacity by dimension
-   ============================================ */
-(function(){
-  const svg = document.getElementById('dimSvg');
-  const dR = document.getElementById('dimR');
-  const dV = document.getElementById('dimV');
-  const readout = document.getElementById('dimReadout');
-  function shellArea(r, d) {
-    // surface of d-sphere of radius r ∝ r^(d-1)
-    return Math.pow(r, d - 1);
-  }
-  function draw() {
-    const d = +dR.value;
-    dV.textContent = d;
-    const W=700, H=280, padL=50, padB=40, padT=20, padR=20;
-    const xmax = 5;
-    const xToSvg = x => padL + x / xmax * (W - padL - padR);
-    const yToSvg = y => H - padB - y * (H - padT - padB);
-    let h = `<rect width="${W}" height="${H}" fill="#fff"/>`;
-    h += `<line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="#999"/>`;
-    h += `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${H-padB}" stroke="#999"/>`;
-    // capacity curve (normalized so peak = 1)
-    const samples = [];
-    let maxV = 0;
-    for (let r = 0.1; r <= xmax; r += 0.05) {
-      const v = shellArea(r, d) * Math.exp(-r*r/8);  // shell × density (Gaussian distribution of distances)
-      samples.push({r, v});
-      if (v > maxV) maxV = v;
+// ===== §6 t-SNE animation =====
+(function() {
+  let seed = 47;
+  const rnd = () => { seed = (seed*9301+49297)%233280; return seed/233280; };
+  function nrnd(m,s){const u1=rnd(),u2=rnd();return m+s*Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);}
+  // 60 cells: 3 groups, P matrix derived from group identity
+  let cells, P, Y_low, iter;
+  function gen() {
+    seed = 47;
+    cells = [];
+    for (let g = 0; g < 3; g++) {
+      for (let i = 0; i < 20; i++) {
+        cells.push({group: g});
+      }
     }
-    let path = '';
-    for (let i = 0; i < samples.length; i++) {
-      const x = xToSvg(samples[i].r);
-      const y = yToSvg(samples[i].v / maxV);
-      path += (i===0?'M':'L') + x + ',' + y;
+    const n = cells.length;
+    // P: high within group, low between
+    P = [];
+    for (let i = 0; i < n; i++) {
+      P.push([]);
+      let row = 0;
+      for (let j = 0; j < n; j++) {
+        if (i === j) { P[i].push(0); continue; }
+        const v = cells[i].group === cells[j].group ? 1.0 : 0.05;
+        P[i].push(v);
+        row += v;
+      }
+      // normalize row
+      const rowSum = P[i].reduce((a,b)=>a+b, 0);
+      P[i] = P[i].map(v => v/rowSum/n);
     }
-    h += `<path d="${path}" stroke="#5e35b1" stroke-width="3" fill="rgba(94,53,177,0.15)"/>`;
-    // peak marker
-    let peakR = samples[0].r, peakV = 0;
-    for (const s of samples) if (s.v > peakV) { peakV = s.v; peakR = s.r; }
-    h += `<line x1="${xToSvg(peakR)}" y1="${padT}" x2="${xToSvg(peakR)}" y2="${H-padB}" stroke="#dc2626" stroke-dasharray="3 3"/>`;
-    h += `<text x="${xToSvg(peakR)}" y="${padT+12}" text-anchor="middle" font-size="11" fill="#dc2626" font-weight="700">peak r = ${peakR.toFixed(2)}</text>`;
-    // labels
-    h += `<text x="${W/2}" y="${H-8}" text-anchor="middle" font-size="12" fill="#444">distance r</text>`;
-    h += `<text x="14" y="${H/2}" font-size="12" fill="#444" transform="rotate(-90 14 ${H/2})" text-anchor="middle">shell capacity ∝ r^(d-1)</text>`;
-    svg.innerHTML = h;
-    readout.innerHTML = `<span class="lbl">d = </span><span class="val-hl">${d}</span>
-      <b>峰值距離 r ≈ ${peakR.toFixed(2)}</b>
-      ${d <= 3 ? '<span style="color:#dc2626">低維：峰值在「近距離」，2D 容納不下高維的中距離鄰居</span>' : '<span style="color:#06a77d">高維：峰值在「中距離」，這才是高維資料的「鄰居殼」</span>'}`;
-  }
-  dR.oninput = draw;
-  draw();
-})();
-
-/* ============================================
-   §6 Gaussian vs t reallocation
-   ============================================ */
-(function(){
-  const svg = document.getElementById('s6Svg');
-  const readout = document.getElementById('s6Readout');
-  let hoverR = 1.5;
-  function gauss(r) { return Math.exp(-r*r/2) / Math.sqrt(2*Math.PI); }
-  function tDist(r) { return 1/(Math.PI * (1 + r*r)); }
-  function draw() {
-    const W=700, H=300, padL=50, padB=40, padT=20, padR=20;
-    const xmax = 5, ymax = 0.45;
-    const xToSvg = x => padL + x / xmax * (W - padL - padR);
-    const yToSvg = y => H - padB - y / ymax * (H - padT - padB);
-    let h = `<rect width="${W}" height="${H}" fill="#fff"/>`;
-    h += `<line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="#999"/>`;
-    h += `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${H-padB}" stroke="#999"/>`;
-    // shaded "medium distance" zone
-    h += `<rect x="${xToSvg(1.5)}" y="${padT}" width="${xToSvg(3)-xToSvg(1.5)}" height="${H-padT-padB}" fill="rgba(245,158,11,0.1)"/>`;
-    h += `<text x="${xToSvg(2.25)}" y="${padT+14}" text-anchor="middle" font-size="11" fill="#92590e" font-weight="700">「中距離」zone</text>`;
-    // curves
-    let pG = '', pT = '';
-    for (let r = 0; r <= xmax; r += 0.05) {
-      pG += (r===0?'M':'L') + xToSvg(r) + ',' + yToSvg(gauss(r));
-      pT += (r===0?'M':'L') + xToSvg(r) + ',' + yToSvg(tDist(r));
+    // symmetrize
+    for (let i = 0; i < n; i++) for (let j = i+1; j < n; j++) {
+      const avg = (P[i][j] + P[j][i]) / 2;
+      P[i][j] = avg; P[j][i] = avg;
     }
-    h += `<path d="${pG}" stroke="#dc2626" stroke-width="2.5" fill="none"/>`;
-    h += `<path d="${pT}" stroke="#4f7df4" stroke-width="2.5" fill="none"/>`;
-    // hover
-    h += `<line x1="${xToSvg(hoverR)}" y1="${padT}" x2="${xToSvg(hoverR)}" y2="${H-padB}" stroke="#8b5cf6" stroke-dasharray="3 3"/>`;
-    h += `<circle cx="${xToSvg(hoverR)}" cy="${yToSvg(gauss(hoverR))}" r="5" fill="#dc2626"/>`;
-    h += `<circle cx="${xToSvg(hoverR)}" cy="${yToSvg(tDist(hoverR))}" r="5" fill="#4f7df4"/>`;
-    // labels
-    h += `<text x="${W/2}" y="${H-8}" text-anchor="middle" font-size="12" fill="#444">low-D distance r</text>`;
-    h += `<text x="14" y="${H/2}" font-size="12" fill="#444" transform="rotate(-90 14 ${H/2})" text-anchor="middle">probability</text>`;
-    h += `<text x="${W-160}" y="${padT+12}" font-size="12" fill="#dc2626" font-weight="700">━ Gaussian (SNE)</text>`;
-    h += `<text x="${W-160}" y="${padT+28}" font-size="12" fill="#4f7df4" font-weight="700">━ Student-t (t-SNE)</text>`;
-    svg.innerHTML = h;
-    const g = gauss(hoverR), t = tDist(hoverR);
-    readout.innerHTML = `<span class="lbl">在 r = ${hoverR.toFixed(2)}：</span>
-      Gaussian = ${g.toExponential(2)}　t = ${t.toExponential(2)}
-      <b>t 比 Gaussian 多 ${(t/g).toFixed(1)}× 的機率</b>
-      ${hoverR > 2 && hoverR < 4 ? '<span style="color:#92590e"> ← 中距離區！t 給了「擠不下」的鄰居一個位置</span>' : ''}`;
+    // init Y
+    Y_low = cells.map(() => ({x: 400 + nrnd(0, 80), y: 200 + nrnd(0, 80)}));
+    iter = 0;
   }
-  svg.addEventListener('mousemove', e => {
-    const rect = svg.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width * 700;
-    hoverR = Math.max(0, Math.min(5, (x - 50) / (700 - 70) * 5));
+  function step(nIter) {
+    const n = cells.length;
+    const lr = 50;
+    for (let it = 0; it < nIter; it++) {
+      // compute Q
+      const Q = [];
+      const inv = [];
+      let sumInv = 0;
+      for (let i = 0; i < n; i++) {
+        Q.push([]); inv.push([]);
+        for (let j = 0; j < n; j++) {
+          if (i === j) { Q[i].push(0); inv[i].push(0); continue; }
+          const d2 = (Y_low[i].x-Y_low[j].x)**2 + (Y_low[i].y-Y_low[j].y)**2;
+          const iv = 1 / (1 + d2 / 1000); // scale d2 for visualization
+          inv[i].push(iv);
+          sumInv += iv;
+        }
+      }
+      for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+        if (i === j) continue;
+        Q[i][j] = inv[i][j] / sumInv;
+      }
+      // gradient
+      const grad = Array(n).fill(0).map(() => ({x:0, y:0}));
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) {
+          if (i === j) continue;
+          const coef = 4 * (P[i][j] - Q[i][j]) * inv[i][j];
+          grad[i].x += coef * (Y_low[i].x - Y_low[j].x);
+          grad[i].y += coef * (Y_low[i].y - Y_low[j].y);
+        }
+      }
+      // update
+      for (let i = 0; i < n; i++) {
+        Y_low[i].x -= lr * grad[i].x;
+        Y_low[i].y -= lr * grad[i].y;
+      }
+      iter++;
+    }
+    // compute loss
+    let loss = 0;
+    const Q = [];
+    let sumInv = 0;
+    for (let i = 0; i < n; i++) {
+      Q.push([]);
+      for (let j = 0; j < n; j++) {
+        if (i === j) { Q[i].push(0); continue; }
+        const d2 = (Y_low[i].x-Y_low[j].x)**2 + (Y_low[i].y-Y_low[j].y)**2;
+        const iv = 1 / (1 + d2/1000);
+        Q[i].push(iv);
+        sumInv += iv;
+      }
+    }
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+      if (i === j) continue;
+      const q = Q[i][j] / sumInv;
+      if (P[i][j] > 1e-12 && q > 1e-12) loss += P[i][j] * Math.log(P[i][j] / q);
+    }
+    document.getElementById('s6iter').textContent = iter;
+    document.getElementById('s6loss').textContent = loss.toFixed(4);
     draw();
-  });
-  draw();
-})();
-
-/* ============================================
-   §7 Force visualization
-   ============================================ */
-(function(){
-  const svg = document.getElementById('s7Svg');
-  const pR = document.getElementById('s7pR');
-  const pV = document.getElementById('s7pV');
-  const rR = document.getElementById('s7rR');
-  const rV = document.getElementById('s7rV');
-  const readout = document.getElementById('s7Readout');
+  }
   function draw() {
-    const p = +pR.value, r = +rR.value;
-    pV.textContent = p.toFixed(3);
-    rV.textContent = r.toFixed(1);
-    // approx q assuming this is the only point (illustrative)
-    const q = 1 / (1 + r*r);
-    // very simplified q normalization for illustration
-    const q_norm = q / 10;  // pretend Z=10
-    const force = 4 * (p - q_norm) * (1 / (1 + r*r));
-    let h = `<rect width="700" height="240" fill="#fff"/>`;
-    const cx = 350, cy = 120;
-    const scale = 30;
-    const dx = r * scale / 2;
-    h += `<circle cx="${cx-dx}" cy="${cy}" r="14" fill="#4f7df4"/>`;
-    h += `<text x="${cx-dx}" y="${cy+5}" text-anchor="middle" font-size="13" fill="#fff" font-weight="700">i</text>`;
-    h += `<circle cx="${cx+dx}" cy="${cy}" r="14" fill="#8b5cf6"/>`;
-    h += `<text x="${cx+dx}" y="${cy+5}" text-anchor="middle" font-size="13" fill="#fff" font-weight="700">j</text>`;
-    h += `<line x1="${cx-dx+14}" y1="${cy}" x2="${cx+dx-14}" y2="${cy}" stroke="#999" stroke-width="2"/>`;
-    h += `<text x="${cx}" y="${cy-25}" text-anchor="middle" font-size="13" fill="#444">r = ${r.toFixed(2)},  q ≈ ${q_norm.toFixed(3)}</text>`;
-    h += `<text x="${cx}" y="${cy-45}" text-anchor="middle" font-size="13" fill="#5e35b1" font-weight="700">p = ${p.toFixed(3)} (target)</text>`;
-    // force arrows
-    const forceMag = Math.min(120, Math.abs(force) * 250);
-    if (force > 0.001) {
-      h += `<path d="M${cx-dx-25},${cy} l${forceMag},0" stroke="#06a77d" stroke-width="3" marker-end="url(#ar7)"/>`;
-      h += `<path d="M${cx+dx+25},${cy} l${-forceMag},0" stroke="#06a77d" stroke-width="3" marker-end="url(#ar7)"/>`;
-      h += `<text x="${cx}" y="${cy+50}" text-anchor="middle" font-size="14" fill="#06a77d" font-weight="700">→ ATTRACT ← (p &gt; q)</text>`;
-    } else if (force < -0.001) {
-      h += `<path d="M${cx-dx-25+forceMag},${cy} l${-forceMag},0" stroke="#dc2626" stroke-width="3" marker-end="url(#ar7)"/>`;
-      h += `<path d="M${cx+dx+25-forceMag},${cy} l${forceMag},0" stroke="#dc2626" stroke-width="3" marker-end="url(#ar7)"/>`;
-      h += `<text x="${cx}" y="${cy+50}" text-anchor="middle" font-size="14" fill="#dc2626" font-weight="700">← REPEL → (p &lt; q)</text>`;
-    } else {
-      h += `<text x="${cx}" y="${cy+50}" text-anchor="middle" font-size="14" fill="#06a77d" font-weight="700">⚖️ BALANCED (p ≈ q)</text>`;
-    }
-    h += `<defs><marker id="ar7" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="currentColor"/></marker></defs>`;
-    svg.innerHTML = h;
-    readout.innerHTML = `<span class="lbl">force ∝ (p − q) · (1+r²)⁻¹ = </span><span class="val-hl">${force.toFixed(4)}</span>
-      ${force > 0.001 ? ' → 拉近' : force < -0.001 ? ' → 推開' : ' → 平衡'}`;
-  }
-  pR.oninput = draw;
-  rR.oninput = draw;
-  draw();
-})();
-
-/* ============================================
-   §8 Algorithm walkthrough
-   ============================================ */
-(function(){
-  const stepSvg = document.getElementById('stepSvg');
-  const stepTitle = document.getElementById('stepTitle');
-  const stepDesc = document.getElementById('stepDesc');
-  const stepMath = document.getElementById('stepMath');
-  const dots = document.querySelectorAll('#s8 .step-dot');
-  let cur = 1;
-  const TOTAL = 7;
-  // Sample 30 points in 3 clusters in 2D
-  const clusters = [
-    {cx: 130, cy: 100, color: '#c0392b'},
-    {cx: 300, cy: 80, color: '#06a77d'},
-    {cx: 250, cy: 200, color: '#4f7df4'}
-  ];
-  const pts = [];
-  for (let g = 0; g < 3; g++) {
-    for (let i = 0; i < 10; i++) {
-      pts.push({
-        x: clusters[g].cx + (Math.random()-0.5)*40,
-        y: clusters[g].cy + (Math.random()-0.5)*40,
-        g
-      });
-    }
-  }
-  function dist(a, b) { return Math.hypot(a.x-b.x, a.y-b.y); }
-  function render() {
-    dots.forEach(d => {
-      const n = +d.dataset.step;
-      d.classList.toggle('active', n === cur);
-      d.classList.toggle('done', n < cur);
+    const cols = ['#9f1239', '#2c5aa0', '#27795a'];
+    // re-center for display
+    const cx = Y_low.reduce((a,b)=>a+b.x,0)/Y_low.length;
+    const cy = Y_low.reduce((a,b)=>a+b.y,0)/Y_low.length;
+    let s = '';
+    s += `<rect x="0" y="0" width="800" height="400" fill="#fcfcfa"/>`;
+    Y_low.forEach((p, i) => {
+      s += `<circle cx="${p.x - cx + 400}" cy="${p.y - cy + 200}" r="6" fill="${cols[cells[i].group]}" opacity="0.85"/>`;
     });
-    let h = '<rect width="500" height="300" fill="#0d1631"/>';
-    let title, desc, math;
-    if (cur === 1) {
-      title = '步驟 1：高維距離平方矩陣';
-      desc = '對每對點計算 ||xᵢ - xⱼ||²。這是 t-SNE 唯一接觸原始資料的步驟，後續都只用距離。';
-      math = '<span style="color:#ffd564"># Step 1: pairwise distance squared</span>\nD[i,j] = ||x_i - x_j||²\n\n<span style="color:#888"># for 10k cells: D is 10000×10000 matrix</span>';
-      // show some distance lines
-      for (const p of pts) h += `<circle cx="${p.x}" cy="${p.y}" r="3" fill="${clusters[p.g].color}" opacity="0.8"/>`;
-      const focus = pts[5];
-      for (let i = 0; i < pts.length; i++) {
-        if (pts[i] === focus) continue;
-        const d = dist(focus, pts[i]);
-        if (d < 80) h += `<line x1="${focus.x}" y1="${focus.y}" x2="${pts[i].x}" y2="${pts[i].y}" stroke="#ffd564" stroke-width="0.5" opacity="0.4"/>`;
-      }
-      h += `<circle cx="${focus.x}" cy="${focus.y}" r="6" fill="#ffd564"/>`;
-    } else if (cur === 2) {
-      title = '步驟 2：對每個 xᵢ 用二分搜尋找 σᵢ';
-      desc = '使用者指定 perplexity = 30。對每個點，找到使 Perp(Pᵢ) = 30 的 σᵢ。密集區的點 σ 小，稀疏區的點 σ 大。';
-      math = '<span style="color:#ffd564"># Step 2: binary search σ_i</span>\nfor each i:\n    binary search σ_i s.t.\n    Perp(P_i) = 2^H(P_i) = perplexity';
-      for (const p of pts) {
-        const others = pts.filter(q => q !== p).sort((a,b)=>dist(p,a)-dist(p,b)).slice(0, 5);
-        const avgD = others.reduce((s,q)=>s+dist(p,q),0) / others.length;
-        h += `<circle cx="${p.x}" cy="${p.y}" r="${avgD*0.5}" fill="none" stroke="#8b5cf6" stroke-width="0.5" opacity="0.3"/>`;
-      }
-      for (const p of pts) h += `<circle cx="${p.x}" cy="${p.y}" r="3" fill="${clusters[p.g].color}"/>`;
-    } else if (cur === 3) {
-      title = '步驟 3：計算 P 矩陣 + 對稱化';
-      desc = '用 σᵢ 算 p_{j|i} = softmax(-dᵢⱼ²/2σᵢ²)，再對稱化 p_{ij} = (p_{j|i}+p_{i|j})/(2n)。這是高維「真實」分布。';
-      math = '<span style="color:#ffd564"># Step 3: P matrix</span>\np_{j|i} = exp(-d_ij²/2σ_i²) / Z_i\np_{ij} = (p_{j|i} + p_{i|j}) / (2n)';
-      // show edges with thickness = p
-      for (let i = 0; i < pts.length; i++) {
-        const others = pts.filter(q => q !== pts[i]).map(q => ({q, d: dist(pts[i],q)})).sort((a,b)=>a.d-b.d).slice(0, 3);
-        for (const o of others) {
-          const p = Math.exp(-o.d * o.d / 1000);
-          h += `<line x1="${pts[i].x}" y1="${pts[i].y}" x2="${o.q.x}" y2="${o.q.y}" stroke="#06a77d" stroke-width="${0.3 + p*1.8}" opacity="${0.3 + p*0.5}"/>`;
-        }
-      }
-      for (const p of pts) h += `<circle cx="${p.x}" cy="${p.y}" r="3" fill="${clusters[p.g].color}"/>`;
-    } else if (cur === 4) {
-      title = '步驟 4：低維隨機初始化';
-      desc = '把 yᵢ 從 N(0, 10⁻⁴) 抽樣 — 緊密在原點附近。也可以用 PCA init（Kobak 2021 推薦，全局結構更好）。';
-      math = '<span style="color:#ffd564"># Step 4: random init</span>\nY ← np.random.normal(0, 1e-4, (n, 2))\n# or: Y ← PCA(X)[:, :2]';
-      // small random points near center
-      for (let i = 0; i < 30; i++) {
-        const x = 250 + (Math.random()-0.5)*30;
-        const y = 150 + (Math.random()-0.5)*30;
-        h += `<circle cx="${x}" cy="${y}" r="3" fill="${clusters[Math.floor(i/10)].color}"/>`;
-      }
-      h += `<text x="250" y="100" text-anchor="middle" font-size="13" fill="#ffd564">All points clustered near origin</text>`;
-      h += `<circle cx="250" cy="150" r="20" fill="none" stroke="#ffd564" stroke-dasharray="3 3"/>`;
-    } else if (cur === 5) {
-      title = '步驟 5：Early Exaggeration (前 250 epochs)';
-      desc = '把所有 p_{ij} 乘以 12 倍，讓「真鄰居」對 y 產生超強吸引力。這幫助形成早期群結構，避免被遠距離排斥力卡住。';
-      math = '<span style="color:#ffd564"># Step 5: early exaggeration</span>\nP ← P × 12  # for first 250 epochs\n# strong attraction → clusters form quickly';
-      // show clusters starting to form
-      const cstart = clusters.map((c,i) => ({...c, off: 0.4}));
-      for (let g = 0; g < 3; g++) {
-        for (let i = 0; i < 10; i++) {
-          const cx = 250 + (clusters[g].cx - 250) * 0.5;
-          const cy = 150 + (clusters[g].cy - 150) * 0.5;
-          h += `<circle cx="${cx + (Math.random()-0.5)*25}" cy="${cy + (Math.random()-0.5)*25}" r="3" fill="${clusters[g].color}"/>`;
-        }
-      }
-      // show strong arrows toward cluster centers
-      h += `<text x="250" y="270" text-anchor="middle" font-size="13" fill="#ffd564" font-weight="700">P × 12 → strong attraction</text>`;
-    } else if (cur === 6) {
-      title = '步驟 6：梯度下降 (epoch 250-1000)';
-      desc = '取消 early exaggeration（P 恢復原始大小），繼續用 KL 梯度精細調整。低維 Q 用 Student-t，給「中距離」適當的機率。';
-      math = '<span style="color:#ffd564"># Step 6: refine gradient descent</span>\nP ← P / 12  # restore\nfor epoch in 250..1000:\n    Q ← compute_t(Y)\n    grad = 4 Σ (p-q) (y_i - y_j) (1+r²)⁻¹\n    Y ← Y - lr × grad + momentum';
-      // show clusters more separated
-      for (let g = 0; g < 3; g++) {
-        for (let i = 0; i < 10; i++) {
-          h += `<circle cx="${clusters[g].cx + (Math.random()-0.5)*25}" cy="${clusters[g].cy + (Math.random()-0.5)*25}" r="3" fill="${clusters[g].color}"/>`;
-        }
-      }
-      h += `<text x="250" y="275" text-anchor="middle" font-size="13" fill="#ffd564" font-weight="700">Refining: clusters separate, neighbors stay close</text>`;
-    } else if (cur === 7) {
-      title = '步驟 7：收斂 — 最終 2D 嵌入';
-      desc = '經過 1000 epochs，KL 散度收斂。產生最終 y₁..yₙ ∈ ℝ². 注意：群間距離無意義，群大小被 t-SNE 標準化。';
-      math = '<span style="color:#ffd564"># Step 7: final embedding</span>\nY_final ∈ ℝ^(n × 2)\n→ plt.scatter(Y[:,0], Y[:,1], c=labels)\n# 群內結構優秀，群間距離不要詮釋!';
-      for (let g = 0; g < 3; g++) {
-        for (let i = 0; i < 10; i++) {
-          h += `<circle cx="${clusters[g].cx + (Math.random()-0.5)*25}" cy="${clusters[g].cy + (Math.random()-0.5)*25}" r="4" fill="${clusters[g].color}" opacity="0.85"/>`;
-        }
-      }
-      h += `<text x="250" y="280" text-anchor="middle" font-size="14" fill="#ffd564" font-weight="700">✓ 3 群被自然分開</text>`;
-    }
-    stepSvg.innerHTML = h;
-    stepTitle.textContent = title;
-    stepDesc.innerHTML = `<p style="margin:0">${desc}</p>`;
-    stepMath.innerHTML = math;
-    document.getElementById('stepPrev').disabled = cur === 1;
-    document.getElementById('stepNext').disabled = cur === TOTAL;
+    document.getElementById('s6svg').innerHTML = s;
   }
-  document.getElementById('stepNext').onclick = () => { if (cur < TOTAL) { cur++; render(); } };
-  document.getElementById('stepPrev').onclick = () => { if (cur > 1) { cur--; render(); } };
-  document.getElementById('stepReset').onclick = () => { cur = 1; render(); };
-  dots.forEach(d => d.onclick = () => { cur = +d.dataset.step; render(); });
-  render();
+  document.getElementById('s6next').addEventListener('click', () => step(10));
+  document.getElementById('s6reset').addEventListener('click', () => { gen(); draw(); document.getElementById('s6iter').textContent = 0; document.getElementById('s6loss').textContent = '—'; });
+  document.getElementById('s6auto').addEventListener('click', () => {
+    let n = 0;
+    function tick() {
+      step(10);
+      if (++n < 12) setTimeout(tick, 150);
+    }
+    tick();
+  });
+  gen();
+  draw();
 })();
 </script>
 </body>

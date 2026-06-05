@@ -3,1482 +3,720 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>3.3 UMAP — scRNA-seq 進階數學深入互動版</title>
-<link rel="stylesheet" href="../styles.css">
+<title>3.3 UMAP：fuzzy simplicial sets + cross entropy — Deep Interactive</title>
 <script>
-  MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] }, svg: { fontCache: 'global' } };
+  MathJax = {
+    tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] },
+    svg: { fontCache: 'global' }
+  };
 </script>
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>
 <style>
-  /* UMAP 頁專屬樣式 */
-  .story-card { background:#fff; border-radius:14px; padding:24px 28px; margin:24px 0; box-shadow:var(--c-card-shadow); }
-  .story-card h3 { color:var(--c-accent); margin-top:0; }
-  .step-num-big { background:linear-gradient(135deg,#4f7df4,#8b5cf6); color:#fff; width:42px; height:42px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-weight:800; font-size:18px; margin-right:12px; vertical-align:middle; }
-  .interact-box { background:linear-gradient(180deg,#f6f8fc 0%,#eef2f9 100%); border:1px solid #dfe4f0; border-radius:14px; padding:22px; margin:20px 0; }
-  .interact-box h4 { color:var(--c-formula); margin-top:0; font-size:15px; text-transform:uppercase; letter-spacing:1px; }
-  .control-row { display:flex; gap:18px; flex-wrap:wrap; align-items:center; margin:12px 0; }
-  .control-item { display:flex; flex-direction:column; gap:4px; min-width:140px; }
-  .control-item label { font-size:12px; color:var(--c-ink-soft); font-weight:600; }
-  .control-item input[type=range] { width:100%; }
-  .control-item .val { font-family:var(--font-code); font-size:14px; font-weight:700; color:var(--c-formula); }
-  .control-item button { background:var(--c-accent); color:#fff; border:0; padding:7px 14px; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600; }
-  .control-item button:hover { background:#3b6ad0; }
-  .control-item button.ghost { background:#fff; color:var(--c-accent); border:1px solid var(--c-accent); }
-  .live-readout { background:#fff; padding:12px 16px; border-radius:8px; margin-top:12px; font-family:var(--font-code); font-size:13px; border-left:3px solid var(--c-accent); }
-  .live-readout .lbl { color:var(--c-ink-mute); }
-  .live-readout .val-hl { color:var(--c-formula); font-weight:700; }
-  .twin-view { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:14px 0; }
-  .twin-view .panel { background:#fff; border-radius:8px; padding:12px; }
-  .twin-view .panel h5 { margin:0 0 8px; font-size:13px; color:var(--c-ink); }
-  @media (max-width:720px){.twin-view{grid-template-columns:1fr;}}
-  .step-walkthrough { background:#1a2347; color:#fff; border-radius:14px; padding:22px 24px; margin:24px 0; }
-  .step-walkthrough .step-nav-bar { display:flex; gap:10px; align-items:center; margin-bottom:14px; }
-  .step-walkthrough .step-nav-bar button { background:var(--c-accent); color:#fff; border:0; padding:8px 16px; border-radius:6px; font-weight:700; cursor:pointer; font-size:13px; }
-  .step-walkthrough .step-nav-bar button:disabled { background:#555; cursor:not-allowed; }
-  .step-walkthrough .step-nav-bar button.ghost { background:transparent; border:1px solid #4f7df4; color:#c5cee8; }
-  .step-walkthrough .step-indicator { display:flex; gap:6px; flex:1; justify-content:center; }
-  .step-walkthrough .step-dot { width:30px; height:30px; border-radius:50%; background:#2d3a6b; color:#c5cee8; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; cursor:pointer; transition:all .2s; }
-  .step-walkthrough .step-dot.active { background:#ffd564; color:#1a2347; transform:scale(1.15); }
-  .step-walkthrough .step-dot.done { background:var(--c-success); color:#fff; }
-  .step-walkthrough .step-content { display:grid; grid-template-columns:1.3fr 1fr; gap:18px; }
-  @media (max-width:760px){.step-walkthrough .step-content{grid-template-columns:1fr;}}
-  .step-walkthrough .step-vis { background:#0d1631; border-radius:8px; padding:10px; min-height:300px; }
-  .step-walkthrough .step-vis svg { width:100%; }
-  .step-walkthrough .step-explain { background:rgba(255,255,255,.05); border-radius:8px; padding:18px; backdrop-filter:blur(8px); }
-  .step-walkthrough .step-title { color:#ffd564; font-size:17px; font-weight:800; margin-bottom:10px; }
-  .step-walkthrough .step-math { background:#0d1631; padding:12px 14px; border-radius:6px; margin:10px 0; font-family:var(--font-code); font-size:13px; line-height:1.7; }
-  .formula-anatomy { background:linear-gradient(135deg,#f8f5ff,#f4eeff); border:1px solid #e0d4f7; border-left:5px solid var(--c-formula); padding:18px 22px; border-radius:0 10px 10px 0; margin:18px 0; }
-  .formula-anatomy table { width:100%; margin-top:10px; font-size:13px; }
-  .formula-anatomy table td { padding:6px 8px; border-bottom:1px dashed #d8c8f0; }
-  .formula-anatomy table td:first-child { color:var(--c-formula); font-family:var(--font-math); font-weight:700; width:80px; }
-  .quiz-mini { background:#fff8db; border-left:4px solid var(--c-warn); padding:14px 18px; border-radius:0 8px 8px 0; margin:18px 0; }
-  .quiz-mini h4 { color:#92590e; margin:0 0 8px; }
-  .quiz-mini .quiz-opt { background:#fff; padding:8px 12px; margin:6px 0; border-radius:6px; cursor:pointer; border:1px solid #f3d98a; transition:.2s; }
-  .quiz-mini .quiz-opt:hover { background:#fffbed; border-color:var(--c-warn); }
-  .quiz-mini .quiz-opt.correct { background:#d1f7e0; border-color:var(--c-success); }
-  .quiz-mini .quiz-opt.wrong { background:#fed7d7; border-color:var(--c-danger); }
-  .quiz-mini .quiz-feedback { font-size:13px; margin-top:10px; color:#444; }
-  .worked-example { background:#fff; border:2px solid var(--c-formula); border-radius:14px; padding:24px; margin:24px 0; }
-  .worked-step { background:#faf8ff; padding:14px 18px; border-radius:8px; margin:10px 0; border-left:4px solid var(--c-formula); }
-  .worked-step .step-label { color:var(--c-formula); font-weight:700; font-size:13px; letter-spacing:1px; }
-  .compare-twin { background:#f6f8fc; padding:18px; border-radius:10px; margin:18px 0; }
-  .nav-pages { display:flex; gap:8px; margin:30px 0; padding:14px; background:#1a2347; border-radius:10px; align-items:center; flex-wrap:wrap; }
-  .nav-pages a { color:#c5cee8; text-decoration:none; padding:6px 12px; border-radius:6px; font-size:13px; font-weight:600; transition:.2s; }
-  .nav-pages a:hover { background:rgba(255,255,255,.1); color:#fff; }
-  .nav-pages a.active { background:var(--c-accent); color:#fff; }
-  .nav-pages .label { color:#8990a8; font-size:11px; letter-spacing:1px; font-weight:700; margin-right:8px; }
+  :root {
+    --bg: #fafaf7; --fg: #1a1a1a; --muted: #666;
+    --accent: #c0392b; --accent2: #2c5aa0;
+    --green: #27795a; --purple: #8e44ad; --yellow: #f0c419;
+    --tangerine: #ea580c;
+    --card: #ffffff; --border: #e0e0d8; --code: #f4f1ea;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Helvetica Neue", "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif; background: var(--bg); color: var(--fg); line-height: 1.75; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 40px 28px 120px; }
+  header.cover { margin: 20px 0 60px; padding: 52px 40px;
+    background: linear-gradient(135deg, #431407 0%, #ea580c 55%, #fdba74 100%);
+    color: #fff; border-radius: 16px; box-shadow: 0 14px 40px rgba(67,20,7,0.18); }
+  header.cover h1 { margin: 0 0 14px; font-size: 36px; }
+  header.cover .sub { font-size: 17px; opacity: 0.92; line-height: 1.65; }
+  header.cover .badge { display: inline-block; background: rgba(255,255,255,0.18);
+    padding: 4px 12px; border-radius: 20px; font-size: 13px; margin-bottom: 16px; }
+  h2 { margin-top: 70px; padding-bottom: 8px; border-bottom: 3px solid var(--tangerine);
+    font-size: 26px; display: flex; align-items: baseline; gap: 12px; }
+  h2 .num { color: var(--tangerine); font-weight: 800; font-size: 20px; }
+  h3 { margin-top: 36px; font-size: 19px; color: var(--accent2); }
+  h4 { margin-top: 22px; font-size: 16px; color: var(--accent); }
+  p { margin: 14px 0; }
+  .lead { font-size: 17px; color: #2a2a2a; }
+  .callout { background: #fff8e6; border-left: 4px solid var(--yellow); padding: 14px 18px; border-radius: 6px; margin: 22px 0; }
+  .callout.idea { background: #eaf4ff; border-left-color: var(--accent2); }
+  .callout.warn { background: #fdecec; border-left-color: var(--accent); }
+  .callout.bio  { background: #effaf3; border-left-color: var(--green); }
+  .callout.prog { background: #ffedd5; border-left-color: var(--tangerine); }
+  .card { background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px 26px; margin: 26px 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+  .card h3 { margin-top: 0; }
+  .controls { display: flex; flex-wrap: wrap; gap: 14px 22px;
+    align-items: center; margin: 14px 0; padding: 12px 16px;
+    background: #f4f1ea; border-radius: 8px; font-size: 14px; }
+  .controls label { display: flex; align-items: center; gap: 8px; }
+  button { background: var(--tangerine); color: #fff; border: 0;
+    padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 14px;
+    font-family: inherit; }
+  button:hover { background: #9a3412; }
+  button.ghost { background: #fff; color: var(--tangerine); border: 1px solid var(--tangerine); }
+  input[type="range"] { width: 180px; vertical-align: middle; }
+  svg.canvas { background: #fcfcfa; border: 1px solid var(--border); border-radius: 8px; display: block; }
+  svg.canvas .axis { stroke: #bbb; stroke-width: 1; }
+  svg.canvas .grid { stroke: #ececea; stroke-width: 0.5; }
+  svg.canvas text.lbl { font-size: 12px; fill: #333; }
+  .stat-row { display: flex; flex-wrap: wrap; gap: 22px; margin: 14px 0; font-size: 14px; }
+  .stat-row .item { display: flex; flex-direction: column; }
+  .stat-row .item .lbl { color: var(--muted); font-size: 12px; }
+  .stat-row .item .val { font-family: "JetBrains Mono", monospace; font-size: 18px; }
+  details { margin: 16px 0; }
+  details summary { cursor: pointer; font-weight: 600; color: var(--accent2); padding: 6px 0; }
+  .toc { background: #fff; border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 28px; margin: 30px 0; }
+  .toc h4 { margin: 0 0 10px; color: var(--tangerine); }
+  .toc ol { margin: 6px 0; padding-left: 24px; line-height: 1.9; }
+  .toc a { color: var(--accent2); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .toc .new { background: var(--tangerine); color: #fff; font-size: 11px;
+    padding: 1px 8px; border-radius: 10px; margin-left: 6px; }
+  code.inline { background: var(--code); padding: 2px 6px; border-radius: 4px;
+    font-size: 13px; font-family: "JetBrains Mono", "Consolas", monospace; }
+  pre.code { background: #1e1e1e; color: #dcdcdc;
+    padding: 14px 18px; border-radius: 8px; overflow-x: auto; font-size: 13px;
+    font-family: "JetBrains Mono", "Consolas", monospace; line-height: 1.55; }
+  pre.code .k { color: #569cd6; }
+  pre.code .s { color: #ce9178; }
+  pre.code .c { color: #6a9955; }
+  pre.code .n { color: #b5cea8; }
+  table.compare { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.compare th, table.compare td { border: 1px solid var(--border); padding: 8px 12px; }
+  table.compare th { background: #f4f1ea; text-align: left; }
+  .math-block { background: #fff; border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 18px; margin: 18px 0; }
+  .math-block.boxed { border: 2px solid var(--tangerine); background: #ffedd5; }
+  .formula-caption { font-size: 12.5px; color: var(--muted); text-align: center; margin-top: 6px; }
+  .footer { text-align: center; color: var(--muted); margin-top: 80px; font-size: 13px; }
+  .top-nav { background: #431407; color: #fff; padding: 14px 28px;
+    position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(67,20,7,0.25); }
+  .top-nav-inner { max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; gap: 28px; }
+  .top-nav-brand { color: #fff; text-decoration: none;
+    font-weight: 700; font-size: 17px;
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .top-nav-brand .badge-math { background: #ea580c; color: #fff;
+    padding: 3px 9px; border-radius: 4px; font-size: 11px; }
+  .top-nav-links { list-style: none; margin: 0; padding: 0;
+    display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+  .top-nav-links a { color: #fed7aa; text-decoration: none;
+    padding: 6px 11px; border-radius: 6px; font-size: 13px; font-weight: 500;
+    transition: 0.2s; }
+  .top-nav-links a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .top-nav-links a.active { background: #ea580c; color: #fff; }
+  .top-nav-links li.dropdown { position: relative; }
+  .top-nav-links li.dropdown > a::after { content: ' ▾';
+    font-size: 10px; opacity: 0.7; margin-left: 3px;
+    display: inline-block; transition: transform 0.2s; }
+  .top-nav-links li.dropdown:hover > a::after,
+  .top-nav-links li.dropdown.open > a::after { transform: rotate(180deg); }
+  .top-nav-links .dropdown-menu { display: none; position: absolute; top: 100%; left: 0;
+    background: #5b2c0c; border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px; padding: 6px 0; min-width: 230px;
+    list-style: none; z-index: 200;
+    box-shadow: 0 8px 28px rgba(67,20,7,0.5); margin: 6px 0 0; }
+  .top-nav-links li.dropdown:hover > .dropdown-menu,
+  .top-nav-links li.dropdown.open > .dropdown-menu { display: block; }
+  .top-nav-links .dropdown-menu li { display: block; }
+  .top-nav-links .dropdown-menu li a { display: block; padding: 9px 18px;
+    border-radius: 0; font-size: 13px; white-space: nowrap; color: #fed7aa; }
+  .top-nav-links .dropdown-menu li a:hover { background: rgba(234,88,12,0.3); color: #fff; }
+  .top-nav-links .dropdown-menu li a.active-sub { background: #ea580c; color: #fff; font-weight: 700; }
+  .top-nav-links .dropdown-menu .sub-label { font-size: 10px; color: #fdba74;
+    letter-spacing: 1px; padding: 4px 18px 2px; text-transform: uppercase; }
+  .lang-switch { display: flex; gap: 4px;
+    background: rgba(255,255,255,0.08); padding: 4px; border-radius: 6px; flex-shrink: 0; }
+  .lang-switch button { background: transparent; border: 0; color: #fed7aa;
+    font-size: 12px; font-weight: 700; padding: 5px 10px;
+    border-radius: 4px; cursor: pointer; font-family: inherit; }
+  .lang-switch button.active { background: #ea580c; color: #fff; }
+  .nav-pages { display: flex; gap: 8px; margin: 24px 0; padding: 14px;
+    background: #5b2c0c; border-radius: 10px; align-items: center; flex-wrap: wrap; }
+  .nav-pages a { color: #fed7aa; text-decoration: none;
+    padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 600;
+    transition: 0.2s; }
+  .nav-pages a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .nav-pages .label { color: #fdba74; font-size: 11px;
+    letter-spacing: 1px; font-weight: 700; margin-right: 8px; }
+  [data-lang="en"] { display: none; }
+  body.lang-en [data-lang="zh"] { display: none; }
+  body.lang-en [data-lang="en"] { display: initial; }
+  body.lang-en h1[data-lang="en"], body.lang-en h2[data-lang="en"],
+  body.lang-en h3[data-lang="en"], body.lang-en h4[data-lang="en"],
+  body.lang-en p[data-lang="en"], body.lang-en div[data-lang="en"],
+  body.lang-en ol[data-lang="en"], body.lang-en ul[data-lang="en"] { display: block; }
+  body.lang-en li[data-lang="en"] { display: list-item; }
+  body.lang-en span[data-lang="en"] { display: inline; }
+  body.lang-en tspan[data-lang="en"] { display: inline; }
 </style>
 </head>
 <body>
 
-<!-- ============ 頂部導航 ============ -->
-<nav class="top-nav">
-  <div class="top-nav-inner">
-    <a href="../index.html" class="top-nav-brand">
-      <span>🧬</span>
-      <span data-lang="zh">scRNA-seq 進階數學</span>
-      <span data-lang="en">scRNA-seq Advanced Math</span>
-      <span class="badge-math">MATH</span>
-    </a>
-    <ul class="top-nav-links">
-      <li class="dropdown">
-        <a href="../index.html#M1">M1</a>
-        <ul class="dropdown-menu">
-          <li class="sub-label" data-lang="zh">基礎</li><li class="sub-label" data-lang="en">FOUNDATIONS</li>
-          <li><a href="../M1-foundations/1.1-sparse-matrix.html">1.1 <span data-lang="zh">稀疏矩陣</span><span data-lang="en">Sparse Matrix</span></a></li>
-          <li><a href="../M1-foundations/1.2-count-distributions.html">1.2 <span data-lang="zh">計數分布</span><span data-lang="en">Count Distributions</span></a></li>
-        </ul>
-      </li>
-      <li class="dropdown">
-        <a href="../index.html#M2">M2</a>
-        <ul class="dropdown-menu">
-          <li class="sub-label" data-lang="zh">前處理</li><li class="sub-label" data-lang="en">PREPROCESSING</li>
-          <li><a href="../M2-preprocessing/2.1-qc-statistics.html">2.1 QC</a></li>
-          <li><a href="../M2-preprocessing/2.2-normalization.html">2.2 Normalization</a></li>
-          <li><a href="../M2-preprocessing/2.3-hvg-selection.html">2.3 HVG</a></li>
-          <li><a href="../M2-preprocessing/2.4-scaling.html">2.4 Scaling</a></li>
-        </ul>
-      </li>
-      <li class="dropdown">
-        <a href="../index.html#M3" class="active">M3</a>
-        <ul class="dropdown-menu">
-          <li class="sub-label" data-lang="zh">降維</li><li class="sub-label" data-lang="en">DIM. REDUCTION</li>
-          <li><a href="3.1-pca.html">3.1 PCA ⭐</a></li>
-          <li><a href="3.2-tsne.html">3.2 t-SNE</a></li>
-          <li><a href="3.3-umap.html" class="active-sub">3.3 UMAP <span data-lang="zh">(本頁)</span><span data-lang="en">(here)</span></a></li>
-          <li><a href="3.4-diffusion-map.html">3.4 Diffusion Maps</a></li>
-        </ul>
-      </li>
-      <li class="dropdown">
-        <a href="../index.html#M4">M4</a>
-        <ul class="dropdown-menu">
-          <li class="sub-label" data-lang="zh">圖與聚類</li><li class="sub-label" data-lang="en">GRAPH &amp; CLUSTERING</li>
-          <li><a href="../M4-graph-clustering/4.1-knn-graph.html">4.1 KNN Graph</a></li>
-          <li><a href="../M4-graph-clustering/4.2-louvain-leiden.html">4.2 Louvain &amp; Leiden</a></li>
-        </ul>
-      </li>
-      <li class="dropdown">
-        <a href="../index.html#M5">M5</a>
-        <ul class="dropdown-menu">
-          <li class="sub-label" data-lang="zh">統計推論</li><li class="sub-label" data-lang="en">STATS</li>
-          <li><a href="../M5-statistics/5.1-de-tests.html">5.1 DE Tests</a></li>
-          <li><a href="../M5-statistics/5.2-multiple-testing.html">5.2 FDR</a></li>
-          <li><a href="../M5-statistics/5.3-classifier.html">5.3 Classifier</a></li>
-        </ul>
-      </li>
-      <li class="dropdown">
-        <a href="../index.html#M6">M6</a>
-        <ul class="dropdown-menu">
-          <li class="sub-label" data-lang="zh">進階</li><li class="sub-label" data-lang="en">ADVANCED</li>
-          <li><a href="../M6-advanced/6.1-integration.html">6.1 Integration</a></li>
-          <li><a href="../M6-advanced/6.2-pseudotime.html">6.2 Pseudotime</a></li>
-          <li><a href="../M6-advanced/6.3-cellchat.html">6.3 CellChat</a></li>
-        </ul>
-      </li>
-      <li><a href="../index.html" data-lang="zh">🏠 回首頁</a><span data-lang="en">🏠 Home</span></li>
-    </ul>
-    <div class="lang-switch">
-      <button data-lang-btn="zh" class="active">中文</button>
-      <button data-lang-btn="en">EN</button>
-    </div>
+<nav class="top-nav"><div class="top-nav-inner">
+  <a href="../index.html" class="top-nav-brand">
+    <span>🧬</span>
+    <span data-lang="zh">scRNA-seq 進階數學</span>
+    <span data-lang="en">scRNA-seq Advanced Math</span>
+    <span class="badge-math">MATH</span>
+  </a>
+  <ul class="top-nav-links">
+    <li class="dropdown"><a href="../index.html#M1">M1</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">基礎 / FOUNDATIONS</li>
+        <li><a href="../M1-foundations/1.1-sparse-matrix.html">1.1 稀疏矩陣</a></li>
+        <li><a href="../M1-foundations/1.2-count-distributions.html">1.2 計數分布</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M2">M2</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">前處理 / PREPROCESSING</li>
+        <li><a href="../M2-preprocessing/2.1-qc-statistics.html">2.1 QC 統計</a></li>
+        <li><a href="../M2-preprocessing/2.2-normalization.html">2.2 Normalization</a></li>
+        <li><a href="../M2-preprocessing/2.3-hvg-selection.html">2.3 HVG 選擇</a></li>
+        <li><a href="../M2-preprocessing/2.4-scaling.html">2.4 Scaling</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M3" class="active">M3</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">降維 / DIM. REDUCTION</li>
+        <li><a href="3.1-pca.html">3.1 PCA</a></li>
+        <li><a href="3.2-tsne.html">3.2 t-SNE</a></li>
+        <li><a href="3.3-umap.html" class="active-sub">3.3 UMAP ⭐ (本頁)</a></li>
+        <li><a href="3.4-diffusion-map.html">3.4 Diffusion Maps</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M4">M4</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">圖與聚類 / GRAPH &amp; CLUSTERING</li>
+        <li><a href="../M4-graph-clustering/4.1-knn-graph.html">4.1 KNN Graph + HNSW</a></li>
+        <li><a href="../M4-graph-clustering/4.2-louvain-leiden.html">4.2 Louvain &amp; Leiden</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M5">M5</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">統計推論 / STATS</li>
+        <li><a href="../M5-statistics/5.1-de-tests.html">5.1 DE 檢定</a></li>
+        <li><a href="../M5-statistics/5.2-multiple-testing.html">5.2 多重檢定 / FDR</a></li>
+        <li><a href="../M5-statistics/5.3-classifier.html">5.3 細胞分類器</a></li>
+      </ul></li>
+    <li class="dropdown"><a href="../index.html#M6">M6</a>
+      <ul class="dropdown-menu">
+        <li class="sub-label">進階 / ADVANCED</li>
+        <li><a href="../M6-advanced/6.1-integration.html">6.1 Integration</a></li>
+        <li><a href="../M6-advanced/6.2-pseudotime.html">6.2 Pseudotime</a></li>
+        <li><a href="../M6-advanced/6.3-cellchat.html">6.3 CellChat</a></li>
+      </ul></li>
+    <li><a href="../index.html"><span data-lang="zh">🏠 回首頁</span><span data-lang="en">🏠 Home</span></a></li>
+  </ul>
+  <div class="lang-switch">
+    <button data-lang-btn="zh" class="active">中文</button>
+    <button data-lang-btn="en">EN</button>
   </div>
-</nav>
+</div></nav>
 
-<!-- ============ 頁面 Hero ============ -->
-<header class="page-hero">
-  <div class="page-hero-inner">
-    <div class="page-badge">M3.3 · DIMENSIONALITY REDUCTION · 深入互動版</div>
-    <h1 data-lang="zh">UMAP：從流形假設到 cross-entropy</h1>
-    <h1 data-lang="en">UMAP: From Manifold to Cross-Entropy</h1>
-    <p class="subtitle" data-lang="zh">「Fuzzy Simplicial Set」這個詞嚇人但其實一點都不可怕。我們從一隻爬在地球儀上的螞蟻開始，一步一步走到 UMAP 完整數學。
-    每章都有互動可以親手玩、有公式可以親眼算、有對照可以親自比。</p>
-    <p class="subtitle" data-lang="en">"Fuzzy simplicial set" sounds scary but it isn't. We start from an ant on a globe and walk to UMAP's full math — one interactive at a time.</p>
+<div class="wrap">
+
+<div class="nav-pages">
+  <span class="label" data-lang="zh">本頁章節</span><span class="label" data-lang="en">CHAPTERS</span>
+  <a href="#s0"><span data-lang="zh">§0 故事</span><span data-lang="en">§0 Story</span></a>
+  <a href="#s1"><span data-lang="zh">§1 fuzzy 直覺</span><span data-lang="en">§1 fuzzy intuition</span></a>
+  <a href="#s2"><span data-lang="zh">§2 高維 graph</span><span data-lang="en">§2 high-D graph</span></a>
+  <a href="#s3"><span data-lang="zh">§3 互動 n_neighbors</span><span data-lang="en">§3 n_neighbors</span></a>
+  <a href="#s4"><span data-lang="zh">§4 低維 force-directed</span><span data-lang="en">§4 force-directed</span></a>
+  <a href="#s5"><span data-lang="zh">§5 cross entropy</span><span data-lang="en">§5 cross entropy</span></a>
+  <a href="#s6"><span data-lang="zh">§6 互動 UMAP</span><span data-lang="en">§6 Interactive UMAP</span></a>
+  <a href="#s7"><span data-lang="zh">§7 vs t-SNE</span><span data-lang="en">§7 vs t-SNE</span></a>
+  <a href="#s8"><span data-lang="zh">§8 限制</span><span data-lang="en">§8 Limits</span></a>
+</div>
+
+<header class="cover">
+  <div class="badge"><span data-lang="zh">深入互動版 · 從直覺到數學</span><span data-lang="en">Deep Interactive · From Intuition to Math</span></div>
+  <h1 data-lang="zh">UMAP：兼顧 local + global 的非線性降維</h1>
+  <h1 data-lang="en">UMAP: nonlinear dim reduction preserving local + global</h1>
+  <div class="sub" data-lang="zh">
+    t-SNE 保留<b>局部</b>鄰居關係，但 cluster 間距離不可信。
+    UMAP（McInnes et al. 2018）改進兩件事：
+    (1) <b>建一個 fuzzy weighted graph</b>當高維結構描述；
+    (2) <b>在低維 force-directed 嵌入</b>那個 graph，同時保 local + global。
+    結果：cluster 內結構好、cluster 間距離也比 t-SNE 可信。<br><br>
+    本節從 fuzzy simplicial set 的直覺出發，理解 UMAP 怎麼用 cross-entropy loss + 隨機 negative sampling
+    跑得比 t-SNE 快 10 倍。
+  </div>
+  <div class="sub" data-lang="en">
+    t-SNE preserves <b>local</b> neighbors but inter-cluster distance is unreliable.
+    UMAP (McInnes et al. 2018) improves two things:
+    (1) <b>build a fuzzy weighted graph</b> as the high-D description;
+    (2) <b>force-directed embed</b> that graph in low-D, preserving both local + global.
+    Result: clean cluster structure + reliable inter-cluster distance.<br><br>
+    Starting from fuzzy simplicial set intuition, we explain UMAP's cross-entropy loss + random negative sampling
+    that makes it 10× faster than t-SNE.
   </div>
 </header>
 
-<!-- ============ 章節導航 ============ -->
-<div class="content-wrap">
-<div class="nav-pages">
-  <span class="label" data-lang="zh">本頁章節</span><span class="label" data-lang="en">CHAPTERS</span>
-  <a href="#s0" data-lang="zh">§0 故事</a><span data-lang="en">§0 Story</span>
-  <a href="#s1" data-lang="zh">§1 鄰居 vs 距離</a><span data-lang="en">§1 Neighbors vs Distance</span>
-  <a href="#s2" data-lang="zh">§2 高維鄰居機率</a><span data-lang="en">§2 High-D Probability</span>
-  <a href="#s3" data-lang="zh">§3 局部尺度 ρ</a><span data-lang="en">§3 Local Scale ρ</span>
-  <a href="#s4" data-lang="zh">§4 對稱化</a><span data-lang="en">§4 Symmetrization</span>
-  <a href="#s5" data-lang="zh">§5 低維 t 核</a><span data-lang="en">§5 Low-D t-kernel</span>
-  <a href="#s6" data-lang="zh">§6 Cross-Entropy</a><span data-lang="en">§6 Cross-Entropy</span>
-  <a href="#s7" data-lang="zh">§7 演算法 7 步</a><span data-lang="en">§7 7-Step Walkthrough</span>
-  <a href="#s8" data-lang="zh">§8 與 t-SNE 對比</a><span data-lang="en">§8 vs t-SNE</span>
-  <a href="#s9" data-lang="zh">§9 手算 5 點</a><span data-lang="en">§9 Worked Example</span>
-  <a href="#s10" data-lang="zh">§10 限制與陷阱</a><span data-lang="en">§10 Pitfalls</span>
+<div class="toc">
+  <h4 data-lang="zh">目錄</h4>
+  <h4 data-lang="en">Table of Contents</h4>
+  <ol start="0">
+    <li><a href="#s0"><span data-lang="zh">故事：t-SNE 解決一半問題</span><span data-lang="en">Story: t-SNE only solves half</span></a><span class="new" data-lang="zh">新增</span><span class="new" data-lang="en">NEW</span></li>
+    <li><a href="#s1"><span data-lang="zh">fuzzy simplicial set 的直覺</span><span data-lang="en">fuzzy simplicial set intuition</span></a></li>
+    <li><a href="#s2"><span data-lang="zh">高維 graph 構造</span><span data-lang="en">High-D graph construction</span></a></li>
+    <li><a href="#s3"><span data-lang="zh">互動：n_neighbors 影響</span><span data-lang="en">Interactive: n_neighbors</span></a></li>
+    <li><a href="#s4"><span data-lang="zh">低維 force-directed embedding</span><span data-lang="en">Low-D force-directed embedding</span></a><span class="new" data-lang="zh">核心</span><span class="new" data-lang="en">CORE</span></li>
+    <li><a href="#s5"><span data-lang="zh">Cross entropy loss + negative sampling</span><span data-lang="en">Cross entropy + neg sampling</span></a></li>
+    <li><a href="#s6"><span data-lang="zh">互動：UMAP 收斂動畫</span><span data-lang="en">Interactive UMAP animation</span></a></li>
+    <li><a href="#s7"><span data-lang="zh">UMAP vs t-SNE 對比</span><span data-lang="en">UMAP vs t-SNE</span></a></li>
+    <li><a href="#s8"><span data-lang="zh">限制與超參數</span><span data-lang="en">Limits & hyperparams</span></a></li>
+  </ol>
 </div>
 
-<!-- ====================================================== -->
-<!-- §0 故事開場 -->
-<!-- ====================================================== -->
-<section class="section" id="s0">
-  <span class="section-label intuition">§0 · 故事開場 / STORY</span>
-  <h2 data-lang="zh">假設你是一隻爬在地球儀上的螞蟻</h2>
-  <h2 data-lang="en">Imagine you're an ant crawling on a globe</h2>
+<h2 id="s0"><span class="num">§0</span> <span data-lang="zh">故事：t-SNE 解決一半問題</span><span data-lang="en">Story: t-SNE only solves half</span></h2>
 
-  <div data-lang="zh">
-    <p>你住在「地球表面」上。對你來說，「<b>距離</b>」是沿著彎曲表面走的距離——不是穿過地心的直線。
-      如果有人告訴你「台北到紐約距離 12,000 公里」，那是<b>表面距離</b>，不是<b>歐式直線距離</b>（穿地心約 11,000 公里）。</p>
-    <p>這就是<b>流形 (manifold) 假設</b>的核心：高維空間裡的資料其實住在一個彎曲的低維表面上。
-      要正確「描述距離」，你不能只看 3D 空間的歐式距離——你要看「在流形上走的距離」。
-      但流形我們看不到，只看得到資料點散在 3D 空間。怎麼辦？</p>
-    <p><b>UMAP 的回答</b>：別管全局距離了。<b>只要保留誰是誰的「鄰居」</b>，就能還原流形結構。
-      接下來我們會看到，這個簡單想法的數學形式如何讓 UMAP 在 scRNA-seq 變成標準。</p>
+<p class="lead" data-lang="zh">
+  t-SNE 把局部結構保留得很好——「鄰居還是鄰居」。但<b>cluster 之間的距離跟形狀</b>就不可靠：
+  兩 cluster 在 t-SNE 中相距 10、另兩 cluster 相距 50，兩件事在生物上的意義可能<b>完全一樣</b>。
+  你也無法把「新細胞」query 進已有的 t-SNE plot（沒 transform 函數）。
+</p>
+<p class="lead" data-lang="en">
+  t-SNE preserves local structure well — "neighbors stay neighbors". But <b>inter-cluster distance and shape</b> are unreliable:
+  "10 apart" vs "50 apart" in t-SNE may carry <b>identical biological meaning</b>.
+  Also no way to query new cells into an existing t-SNE plot (no transform function).
+</p>
+
+<div class="card">
+  <h3 data-lang="zh">§0-1 t-SNE vs UMAP：同一資料</h3>
+  <h3 data-lang="en">§0-1 t-SNE vs UMAP: same data</h3>
+  <svg class="canvas" id="s0svg" viewBox="0 0 800 360" width="100%"></svg>
+  <div class="callout idea">
+    <strong data-lang="zh">UMAP 的兩個改進</strong><strong data-lang="en">UMAP's two improvements</strong>:
+    <span data-lang="zh">(1) 在 cross-entropy loss 中用 <b>negative sampling</b>（隨機抽不相關的對推開），不必算所有 n² 對 → 速度 $O(n)$ 訓練；
+    (2) 高維結構用「fuzzy simplicial set」topological description，保留<b>連通性</b> → cluster 間距離也有意義。</span>
+    <span data-lang="en">(1) Use <b>negative sampling</b> (random distant pairs push) in cross-entropy loss — no n² needed → $O(n)$ training;
+    (2) High-D structure as "fuzzy simplicial set" topological description — preserves <b>connectivity</b> → inter-cluster distance meaningful.</span>
   </div>
-  <div data-lang="en">
-    <p>You live on Earth's surface. For you, "<b>distance</b>" means traveling along the curved surface — not through Earth's core.
-      Taipei → New York is 12,000 km on the surface (not the 11,000 km straight through).</p>
-    <p>This is the <b>manifold hypothesis</b>: high-D data live on a curved low-D surface.
-      You can't see the manifold directly — only the points scattered in 3D. So how do you recover its structure?</p>
-    <p><b>UMAP's answer</b>: forget global distance. <b>Just preserve who is whose neighbor</b>, and the manifold structure emerges.</p>
-  </div>
-
-  <div class="story-card">
-    <h3>📌 <span data-lang="zh">0-1 親眼看看流形：螺旋形「瑞士捲」資料</span><span data-lang="en">0-1 See a manifold: Swiss roll</span></h3>
-    <div data-lang="zh"><p>下面是一個「瑞士捲」資料 (Swiss Roll)——300 個點散在 3D 空間，但實際上住在<b>一個捲起的 2D 面</b>上。
-      點「攤平」按鈕看 UMAP 怎麼把它「攤平」成 2D；點「投到 XY 平面」看一般 PCA 會怎麼處理（PCA 看不到捲）。</p></div>
-    <div data-lang="en"><p>A Swiss roll: 300 points in 3D, but actually living on a <b>rolled 2D surface</b>. Click "Unroll" to see UMAP's flattening; click "Project to XY" to see PCA fail (it can't see the roll).</p></div>
-    <div class="control-row">
-      <div class="control-item"><button id="rollRaw" class="ghost" data-lang="zh">原始 3D</button><button id="rollRaw_en" class="ghost" data-lang="en">Raw 3D</button></div>
-      <div class="control-item"><button id="rollPCA" data-lang="zh">投到 XY 平面 (PCA)</button><button id="rollPCA_en" data-lang="en">Project XY (PCA)</button></div>
-      <div class="control-item"><button id="rollUnroll" data-lang="zh">沿流形攤平 (UMAP 風格)</button><button id="rollUnroll_en" data-lang="en">Unroll (UMAP-style)</button></div>
-      <div class="control-item"><label data-lang="zh">旋轉角度</label><label data-lang="en">Rotation</label><input type="range" id="rollAng" min="0" max="360" value="40"><span class="val" id="rollAngV">40°</span></div>
-    </div>
-    <svg id="rollSvg" viewBox="0 0 800 360" style="background:#fff; border-radius:10px; width:100%; margin-top:10px"></svg>
-    <p data-lang="zh" style="font-size:13px; color:var(--c-ink-soft); margin-top:10px"><b>觀察題</b>：旋轉視角看看「PCA 投影」怎麼把原本不該重疊的兩段捲都壓在一起；UMAP 攤平則正確把彩虹顏色排成一條。</p>
-    <p data-lang="en" style="font-size:13px; color:var(--c-ink-soft); margin-top:10px"><b>Observe</b>: rotate to see how PCA collapses two roll layers; UMAP unrolling arranges the rainbow correctly.</p>
-  </div>
-
-  <div class="story-card">
-    <h3>📌 <span data-lang="zh">0-2 「鄰居」是什麼？局部尺度問題</span><span data-lang="en">0-2 What is a "neighbor"? The local scale problem</span></h3>
-    <div data-lang="zh"><p>「鄰居」不是絕對的——它取決於<b>局部密度</b>。在森林密集區，「3 公尺內的樹」可能就是鄰居；在草原稀疏區，「30 公尺內的樹」才算鄰居。
-      下面有兩團點：左邊密集、右邊稀疏。對左邊的紫點，藍圈內是鄰居；對右邊的紫點，同樣大小的圈太小了——應該用更大的圈。</p>
-      <p>拖動「圈半徑」滑桿改成「絕對距離」標準看看會怎樣——左邊圈太大把整群都包了、右邊圈太小變孤立。</p>
-    </div>
-    <div data-lang="en"><p>"Neighbor" isn't absolute — it depends on <b>local density</b>. Drag the slider: a fixed-radius approach fails for both dense and sparse regions.</p></div>
-    <div class="control-row">
-      <div class="control-item"><label data-lang="zh">圈半徑（絕對距離）</label><label data-lang="en">Absolute radius</label><input type="range" id="nbRadius" min="20" max="120" value="60"><span class="val" id="nbRadiusV">60</span></div>
-      <div class="control-item"><label data-lang="zh"><input type="checkbox" id="nbLocal" checked> 局部自適應</label><label data-lang="en"><input type="checkbox" id="nbLocal_en" checked> Local adaptive</label></div>
-    </div>
-    <svg id="nbSvg" viewBox="0 0 700 280" style="background:#fff; border-radius:10px; width:100%"></svg>
-    <p data-lang="zh" style="font-size:13px; color:var(--c-ink-soft); margin-top:8px"><b>aha 時刻</b>：UMAP 對<b>每個點</b>計算自己的「局部尺度 $\rho_i$」，自動適應密度差異。這就是 §3 要講的關鍵巧思。</p>
-    <p data-lang="en" style="font-size:13px; color:var(--c-ink-soft); margin-top:8px"><b>Aha</b>: UMAP computes a local scale $\rho_i$ <b>per point</b>, automatically adapting to density. We'll formalize this in §3.</p>
-  </div>
-
-  <div class="story-card">
-    <h3>📌 <span data-lang="zh">0-3 三句話總結：UMAP 在做什麼</span><span data-lang="en">0-3 UMAP in three sentences</span></h3>
-    <ol data-lang="zh" style="font-size:15px; line-height:2">
-      <li>看高維空間裡誰是誰的鄰居 → 算出「<b>高維鄰居機率 $\mu_{ij}$</b>」。</li>
-      <li>把點隨機撒到低維 → 算「<b>低維鄰居機率 $\nu_{ij}$</b>」。</li>
-      <li>用 cross-entropy 強迫 $\nu \approx \mu$，讓低維結構複製高維結構。</li>
-    </ol>
-    <ol data-lang="en" style="font-size:15px; line-height:2">
-      <li>Compute high-D neighbor probabilities $\mu_{ij}$.</li>
-      <li>Randomly initialize low-D points → compute $\nu_{ij}$.</li>
-      <li>Use cross-entropy to push $\nu \approx \mu$, copying high-D structure to low-D.</li>
-    </ol>
-    <p data-lang="zh">本頁接下來會把每一句的數學細節攤開。你看完最後一節時，會發現 UMAP 真的只是這三句話。</p>
-    <p data-lang="en">This page unfolds the math behind each sentence. By the end, UMAP is exactly these three sentences.</p>
-  </div>
-</section>
-
-<!-- ====================================================== -->
-<!-- §1 第一個直覺：保留鄰居不保留距離 -->
-<!-- ====================================================== -->
-<section class="section" id="s1">
-  <span class="section-label intuition">§1 · 第一個直覺 / FIRST INTUITION</span>
-  <h2 data-lang="zh">為什麼是「保留鄰居」而不是「保留距離」？</h2>
-  <h2 data-lang="en">Why preserve neighbors, not distances?</h2>
-
-  <div data-lang="zh">
-    <p>PCA 試圖保留資料的<b>變異量</b>——但這假設資料是「線性」的。如果資料住在彎曲流形上，PCA 的「直線方向」就抓不到重點。</p>
-    <p>另一個自然想法：保留<b>所有點對距離</b>（這就是 MDS、Isomap）。但這需要 $O(n^2)$ 個距離全部對得上，計算量大且容易過度擬合。</p>
-    <p>UMAP 採用一個更聰明的折衷：<b>只保留「誰是誰的近鄰」的拓撲關係</b>。
-      具體說，對每個點 $i$，只在意「跟我最近的 $k$ 個點是誰」（$k \approx 15$ 是常用值）。
-      遠距離資訊全部丟掉——這就是為什麼 UMAP 不保留全局距離。</p>
-  </div>
-  <div data-lang="en">
-    <p>PCA preserves variance, but assumes linearity. MDS/Isomap preserve all pairwise distances, but that's $O(n^2)$ and overfits.
-      UMAP's compromise: preserve only "who is whose neighbor" topology — for each $i$, only the closest $k$ matter ($k \approx 15$). All long-range info is discarded.</p>
-  </div>
-
-  <div class="interact-box">
-    <h4 data-lang="zh">互動 1.1 · 兩種策略對比</h4>
-    <h4 data-lang="en">Interactive 1.1 · Two strategies compared</h4>
-    <p data-lang="zh">左圖是原始 2D 資料（3 個群）。中圖是「保留距離」的降維（試圖維持點間幾何）。右圖是「保留鄰居」（只看 KNN）。
-      拖動「拉伸因子」改變資料——你會看到：<b>中圖被拉伸所影響</b>、<b>右圖完全沒被影響</b>。</p>
-    <p data-lang="en">Left: original 2D. Middle: distance-preserving. Right: neighbor-preserving. Drag stretch — see neighbor-preserving is invariant to stretching.</p>
-    <div class="control-row">
-      <div class="control-item"><label data-lang="zh">水平拉伸 (×)</label><label data-lang="en">Horizontal stretch</label><input type="range" id="stretchR" min="50" max="300" value="100"><span class="val" id="stretchV">1.0×</span></div>
-    </div>
-    <svg id="stretchSvg" viewBox="0 0 900 280" style="background:#fff; border-radius:10px; width:100%"></svg>
-    <div class="live-readout" id="stretchReadout"></div>
-  </div>
-</section>
-
-<!-- ====================================================== -->
-<!-- §2 高維鄰居機率 -->
-<!-- ====================================================== -->
-<section class="section" id="s2">
-  <span class="section-label math">§2 · 核心數學 / HIGH-D PROBABILITY</span>
-  <h2 data-lang="zh">把「鄰居關係」變成機率</h2>
-  <h2 data-lang="en">Turning "neighborhood" into probability</h2>
-
-  <div data-lang="zh">
-    <p>對每個點 $i$，UMAP 用高斯核計算「$j$ 是 $i$ 的鄰居」的<b>條件機率</b>：</p>
-  </div>
-  <div data-lang="en">
-    <p>For each point $i$, UMAP uses a Gaussian-like kernel to compute the probability "$j$ is a neighbor of $i$":</p>
-  </div>
-
-  <div class="formula-anatomy">
-    $$\boxed{\; w_{j|i} = \exp\left( -\frac{\max(0,\; d(x_i, x_j) - \rho_i)}{\sigma_i} \right) \;}$$
-    <table>
-      <tr><td>$d(x_i, x_j)$</td><td data-lang="zh">$x_i$ 到 $x_j$ 的歐式距離</td><td data-lang="en">Euclidean distance from $x_i$ to $x_j$</td></tr>
-      <tr><td>$\rho_i$</td><td data-lang="zh">$x_i$ 到「最近鄰」的距離（§3 詳解）</td><td data-lang="en">Distance from $x_i$ to its 1st neighbor (see §3)</td></tr>
-      <tr><td>$\sigma_i$</td><td data-lang="zh">$x_i$ 專屬的「尺度」參數，下面討論</td><td data-lang="en">Per-point bandwidth, see below</td></tr>
-      <tr><td>$\max(0,\cdot)$</td><td data-lang="zh">確保最近的點都拿到「滿分 1」，再遠才衰減</td><td data-lang="en">Ensures nearest points get full weight 1; only farther ones decay</td></tr>
-    </table>
-  </div>
-
-  <div data-lang="zh">
-    <p><b>$\sigma_i$ 怎麼定？</b>UMAP 要求<b>每個點的「期望鄰居數」相同</b>。具體說，要求：</p>
-  </div>
-  <div data-lang="en">
-    <p><b>How is $\sigma_i$ chosen?</b> UMAP requires each point's "effective neighbor count" to be equal:</p>
-  </div>
-
-  <div class="math-block">
-  $$\sum_j w_{j|i} = \log_2(k)$$
-  <div class="formula-caption" data-lang="zh">$k$ 是使用者設的「目標鄰居數」(<code>n_neighbors</code>)。$\log_2$ 是經驗選擇，讓「有效鄰居數」隨 $k$ 對數增長。</div>
-  <div class="formula-caption" data-lang="en">$k$ is user-set (<code>n_neighbors</code>). $\log_2$ is empirical, giving logarithmic growth.</div>
-  </div>
-
-  <p data-lang="zh">用二分搜尋找滿足這條件的 $\sigma_i$。<b>關鍵效果</b>：密集區域的點 $\sigma_i$ 小（鄰居們都近）、稀疏區域的點 $\sigma_i$ 大（鄰居們較遠）。
-    UMAP 自動適應局部密度。</p>
-  <p data-lang="en">Found via binary search. Dense regions get small $\sigma_i$; sparse regions get large $\sigma_i$. Automatic density adaptation.</p>
-
-  <div class="interact-box">
-    <h4 data-lang="zh">互動 2.1 · 高斯核形狀</h4>
-    <h4 data-lang="en">Interactive 2.1 · Gaussian kernel shape</h4>
-    <p data-lang="zh">綠色曲線是 $w_{j|i}$ 隨距離 $d$ 的衰減。拖動 $\sigma_i$、$\rho_i$ 看曲線怎麼變。右邊面板顯示「期望鄰居數」$\sum_j w_{j|i}$ 的累積值。
-      試著調 $\sigma_i$ 讓累積值落在 $\log_2(15) \approx 3.91$ 附近——這就是 $k=15$ 時 UMAP 內部在做的事。</p>
-    <p data-lang="en">Green curve = $w_{j|i}$ vs distance. Drag $\sigma_i$ to make the sum $\approx \log_2(15) \approx 3.91$.</p>
-    <div class="control-row">
-      <div class="control-item"><label>$\sigma_i$</label><input type="range" id="sigR" min="0.3" max="5" step="0.1" value="1.5"><span class="val" id="sigV">1.5</span></div>
-      <div class="control-item"><label>$\rho_i$</label><input type="range" id="rhoR" min="0" max="2" step="0.1" value="0.5"><span class="val" id="rhoV">0.5</span></div>
-      <div class="control-item"><label data-lang="zh">目標 $k$</label><label data-lang="en">Target $k$</label><input type="range" id="kR" min="5" max="50" step="1" value="15"><span class="val" id="kV">15</span></div>
-    </div>
-    <svg id="kerSvg" viewBox="0 0 700 280" style="background:#fff; border-radius:10px; width:100%"></svg>
-    <div class="live-readout" id="kerReadout"></div>
-  </div>
-
-  <div class="quiz-mini">
-    <h4 data-lang="zh">📝 小測驗：你猜對了嗎？</h4>
-    <h4 data-lang="en">📝 Quick check</h4>
-    <p data-lang="zh">下列哪一句話<b>正確</b>？</p>
-    <p data-lang="en">Which statement is <b>correct</b>?</p>
-    <div class="quiz-opt" data-ans="0"><span data-lang="zh">A. $\sigma_i$ 越大，「鄰居」範圍越小</span><span data-lang="en">A. Larger $\sigma_i$ → smaller neighborhood</span></div>
-    <div class="quiz-opt" data-ans="1"><span data-lang="zh">B. $\sigma_i$ 由二分搜尋找出，讓「期望鄰居數」固定 = $\log_2(k)$</span><span data-lang="en">B. $\sigma_i$ found by binary search to fix expected neighbor count = $\log_2(k)$</span></div>
-    <div class="quiz-opt" data-ans="0"><span data-lang="zh">C. $\sigma_i$ 對所有點都一樣</span><span data-lang="en">C. $\sigma_i$ is identical for all points</span></div>
-    <div class="quiz-feedback"></div>
-  </div>
-</section>
-
-<!-- ====================================================== -->
-<!-- §3 ρ_i 局部尺度 -->
-<!-- ====================================================== -->
-<section class="section" id="s3">
-  <span class="section-label math">§3 · 核心巧思 / LOCAL SCALE</span>
-  <h2 data-lang="zh">$\rho_i$：UMAP 最關鍵的一行公式</h2>
-  <h2 data-lang="en">$\rho_i$: UMAP's most important line</h2>
-
-  <div data-lang="zh">
-    <p>還記得公式 $w_{j|i} = \exp\left(-\frac{\max(0, d - \rho_i)}{\sigma_i}\right)$ 中那個 $\rho_i$？它定義為：</p>
-  </div>
-  <div data-lang="en">
-    <p>Recall the kernel. The $\rho_i$ is defined as:</p>
-  </div>
-
-  <div class="math-block">
-  $$\rho_i = \min_{j \in \mathcal{N}_k(i),\, j \neq i} d(x_i, x_j)$$
-  <div class="formula-caption" data-lang="zh">$\rho_i$ = $x_i$ 到「最近 (非自身) 鄰居」的距離</div>
-  <div class="formula-caption" data-lang="en">$\rho_i$ = distance from $x_i$ to its closest non-self neighbor</div>
-  </div>
-
-  <div data-lang="zh">
-    <p>看起來不起眼，但這是 UMAP 與其他方法分道揚鑣的地方。<b>為什麼要減 $\rho_i$？</b>因為流形假設說「局部均勻」——
-      也就是說，每個點周圍最近的那個鄰居「應該」是等距的。所以我們把它的距離當作「局部尺度標準」，把它正規化掉。</p>
-    <p>結果：<b>每個點到自己最近鄰的距離都會被當成「0」</b>，後續距離才衰減。
-      這讓不同密度區域的點都被「對齊」到同樣的尺度。</p>
-  </div>
-  <div data-lang="en">
-    <p>Innocent-looking but pivotal. By the manifold hypothesis, nearest neighbors should be equidistant locally. So $\rho_i$ is the local scale to subtract.
-      <b>Effect</b>: every point's nearest neighbor distance becomes "0"; decay starts from there. Dense and sparse regions get rescaled to a common scale.</p>
-  </div>
-
-  <div class="interact-box">
-    <h4 data-lang="zh">互動 3.1 · 有 vs 沒有 $\rho_i$ 修正</h4>
-    <h4 data-lang="en">Interactive 3.1 · With vs without $\rho_i$ correction</h4>
-    <p data-lang="zh">下面是兩團密度不同的點（左密、右稀）。中圖顯示「沒有 $\rho_i$」的鄰居機率（純高斯核）——左邊的鄰居被強烈算進、右邊鄰居強度很弱。
-      右圖加入 $\rho_i$ 修正後，兩團點的「鄰居強度」變得均衡。</p>
-    <p data-lang="en">Two clusters: dense (left), sparse (right). Middle: no $\rho_i$ — dense overwhelms. Right: with $\rho_i$ — balanced.</p>
-    <svg id="rhoSvg" viewBox="0 0 900 320" style="background:#fff; border-radius:10px; width:100%"></svg>
-    <div class="live-readout" id="rhoReadout"></div>
-  </div>
-
-  <div class="callout callout-deep">
-    <strong data-lang="zh">🔑 關鍵連結</strong>
-    <strong data-lang="en">🔑 Key insight</strong>
-    <p data-lang="zh">如果沒有 $\rho_i$，UMAP 等於對所有點用同一個高斯核——本質上會像 t-SNE 一樣偏向「擠群」。
-      $\rho_i$ + 不同 $\sigma_i$ 構成 UMAP 的「<b>自適應局部度量</b>」，是它保留全局結構的數學基礎。</p>
-    <p data-lang="en">Without $\rho_i$, UMAP would behave like t-SNE (crowd-prone). $\rho_i$ + per-point $\sigma_i$ gives UMAP its "<b>adaptive local metric</b>" — the foundation for preserving global structure.</p>
-  </div>
-</section>
-
-<!-- ====================================================== -->
-<!-- §4 對稱化 -->
-<!-- ====================================================== -->
-<section class="section" id="s4">
-  <span class="section-label math">§4 · 對稱化 / SYMMETRIZATION</span>
-  <h2 data-lang="zh">為什麼需要對稱化？</h2>
-  <h2 data-lang="en">Why symmetrize?</h2>
-
-  <div data-lang="zh">
-    <p>$w_{j|i}$ 是「從 $i$ 看出去」的條件機率——它<b>不對稱</b>：$w_{j|i} \neq w_{i|j}$。
-      但我們在乎的是「$i$ 和 $j$ 是否互為鄰居」這個對稱關係，所以需要把兩個方向合起來。</p>
-    <p>UMAP 用「<b>模糊聯集 (fuzzy union)</b>」對稱化：</p>
-  </div>
-  <div data-lang="en">
-    <p>$w_{j|i}$ is asymmetric. We need symmetric "is $(i,j)$ an edge?", so we combine both directions with <b>fuzzy union</b>:</p>
-  </div>
-
-  <div class="formula-anatomy">
-    $$\boxed{\;\mu_{ij} = w_{j|i} + w_{i|j} - w_{j|i} \cdot w_{i|j}\;}$$
-    <table>
-      <tr><td>$\mu_{ij}$</td><td data-lang="zh">高維「邊機率」，$\in [0, 1]$</td><td data-lang="en">High-D edge probability</td></tr>
-      <tr><td>$+$</td><td data-lang="zh">兩個方向「都算數」</td><td data-lang="en">Both directions count</td></tr>
-      <tr><td>$- w_{j|i} w_{i|j}$</td><td data-lang="zh">避免雙重計算（容斥原理）</td><td data-lang="en">Inclusion-exclusion: avoid double-counting</td></tr>
-    </table>
-  </div>
-
-  <div data-lang="zh">
-    <p>為什麼這個式子？想像兩個獨立事件 $A, B$，它們<b>至少有一個發生</b>的機率是 $P(A) + P(B) - P(A \cap B)$。
-      把「$j$ 是 $i$ 的鄰居」和「$i$ 是 $j$ 的鄰居」當成兩個獨立事件，就是這個式子。「模糊」在於這些「事件」是連續值 (0~1)，而非二元真假。</p>
-    <p>術語：把 $\mu_{ij}$ 視為「邊 $(i,j)$ 屬於『流形圖』的<b>模糊隸屬度</b>」。
-      這就是 <b>fuzzy simplicial set</b> 這個嚇人名詞背後的東西——它只是「機率加權的圖」而已。</p>
-  </div>
-  <div data-lang="en">
-    <p>It's just inclusion-exclusion for "at least one direction is a neighbor". The "fuzzy" part: events are continuous (0-1) not binary.</p>
-    <p>Terminology: $\mu_{ij}$ is the <b>fuzzy membership</b> of edge $(i,j)$ in the manifold graph. That's all "fuzzy simplicial set" means — a probability-weighted graph.</p>
-  </div>
-
-  <div class="interact-box">
-    <h4 data-lang="zh">互動 4.1 · 對稱化計算器</h4>
-    <h4 data-lang="en">Interactive 4.1 · Symmetrization calculator</h4>
-    <p data-lang="zh">拖動兩個方向的條件機率，即時計算 $\mu_{ij}$ 並顯示在拓撲圖上。注意當兩方向都接近 1 時，$\mu_{ij}$ 不會超過 1。</p>
-    <p data-lang="en">Drag two conditional probabilities, see $\mu_{ij}$. Note $\mu_{ij}$ never exceeds 1.</p>
-    <div class="control-row">
-      <div class="control-item"><label>$w_{j|i}$</label><input type="range" id="wjiR" min="0" max="1" step="0.01" value="0.7"><span class="val" id="wjiV">0.70</span></div>
-      <div class="control-item"><label>$w_{i|j}$</label><input type="range" id="wijR" min="0" max="1" step="0.01" value="0.4"><span class="val" id="wijV">0.40</span></div>
-    </div>
-    <div class="twin-view">
-      <div class="panel"><h5 data-lang="zh">計算式</h5><h5 data-lang="en">Equation</h5><div id="symCalc" style="font-family:var(--font-code); font-size:14px"></div></div>
-      <div class="panel"><h5 data-lang="zh">圖示</h5><h5 data-lang="en">Graph</h5><svg id="symSvg" viewBox="0 0 320 200"></svg></div>
-    </div>
-  </div>
-</section>
-
-<!-- ====================================================== -->
-<!-- §5 低維 t 核 -->
-<!-- ====================================================== -->
-<section class="section" id="s5">
-  <span class="section-label math">§5 · 低維嵌入 / LOW-D KERNEL</span>
-  <h2 data-lang="zh">低維空間用什麼核？</h2>
-  <h2 data-lang="en">Which kernel for the low-D space?</h2>
-
-  <div data-lang="zh">
-    <p>把點散到 2D 後（$y_i \in \mathbb{R}^2$），同樣需要計算「低維鄰居機率 $\nu_{ij}$」。UMAP 用「<b>類 Student-t 核</b>」：</p>
-  </div>
-  <div data-lang="en">
-    <p>For 2D embeddings $y_i$, we similarly need $\nu_{ij}$. UMAP uses a Student-t-like kernel:</p>
-  </div>
-
-  <div class="formula-anatomy">
-    $$\boxed{\;\nu_{ij} = \left( 1 + a \,\|y_i - y_j\|^{2b}\right)^{-1}\;}$$
-    <table>
-      <tr><td>$a, b$</td><td data-lang="zh">兩個形狀參數，由 <code>min_dist</code>、<code>spread</code> 擬合決定（典型 $a \approx 1.58, b \approx 0.9$）</td><td data-lang="en">Shape params from <code>min_dist</code>, <code>spread</code> (typical $a \approx 1.58, b \approx 0.9$)</td></tr>
-    </table>
-  </div>
-
-  <div data-lang="zh">
-    <p>跟 t-SNE 的 Cauchy 核 $(1+r^2)^{-1}$ 很像，但多了 $a, b$ 兩個調整旋鈕。
-      <code>min_dist</code> 控制「最小允許距離」——小 → 群內擠很緊、大 → 群內鬆散；
-      <code>spread</code> 控制「整體展開程度」。</p>
-  </div>
-  <div data-lang="en">
-    <p>Similar to t-SNE's Cauchy $(1+r^2)^{-1}$ but with knobs. <code>min_dist</code> = how tight clusters pack; <code>spread</code> = global scale.</p>
-  </div>
-
-  <div class="interact-box">
-    <h4 data-lang="zh">互動 5.1 · $\nu_{ij}$ 隨距離衰減</h4>
-    <h4 data-lang="en">Interactive 5.1 · $\nu_{ij}$ decay vs distance</h4>
-    <p data-lang="zh">藍色 = UMAP $\nu(r)$。紅色虛線 = t-SNE 的 Cauchy。拖動 min_dist 看「平台期」怎麼形成。</p>
-    <p data-lang="en">Blue = UMAP $\nu(r)$. Dashed red = t-SNE Cauchy. See the plateau form as min_dist increases.</p>
-    <div class="control-row">
-      <div class="control-item"><label>min_dist</label><input type="range" id="mdR" min="0" max="1" step="0.05" value="0.3"><span class="val" id="mdV">0.30</span></div>
-      <div class="control-item"><label>spread</label><input type="range" id="spR" min="0.5" max="2" step="0.1" value="1.0"><span class="val" id="spV">1.0</span></div>
-    </div>
-    <svg id="lowKerSvg" viewBox="0 0 700 280" style="background:#fff; border-radius:10px; width:100%"></svg>
-    <div class="live-readout" id="lowKerReadout"></div>
-  </div>
-</section>
-
-<!-- ====================================================== -->
-<!-- §6 Cross-Entropy -->
-<!-- ====================================================== -->
-<section class="section" id="s6">
-  <span class="section-label math">§6 · 目標函數 / OBJECTIVE</span>
-  <h2 data-lang="zh">Cross-Entropy：兩股力量在拉扯</h2>
-  <h2 data-lang="en">Cross-Entropy: a tug-of-war</h2>
-
-  <div data-lang="zh"><p>UMAP 要讓低維機率 $\nu$ 盡量接近高維機率 $\mu$。用 cross-entropy 量化「兩個 Bernoulli 分布的距離」：</p></div>
-  <div data-lang="en"><p>UMAP minimizes the cross-entropy between two Bernoulli distributions $\mu$ and $\nu$:</p></div>
-
-  <div class="formula-anatomy">
-    $$\boxed{\;\mathrm{CE}(\mu, \nu) = \sum_{i \neq j} \underbrace{\mu_{ij} \log\frac{\mu_{ij}}{\nu_{ij}}}_{\text{吸引力 attraction}} + \underbrace{(1 - \mu_{ij}) \log\frac{1 - \mu_{ij}}{1 - \nu_{ij}}}_{\text{排斥力 repulsion}}\;$$
-    <table>
-      <tr><td data-lang="zh">第一項</td><td data-lang="en">Term 1</td><td data-lang="zh">「高維是鄰居」($\mu$ 大) 但低維不像 ($\nu$ 小) → 拉近</td><td data-lang="en">Neighbors in high-D ($\mu$ large) but not low-D → pull together</td></tr>
-      <tr><td data-lang="zh">第二項</td><td data-lang="en">Term 2</td><td data-lang="zh">「高維不是鄰居」($\mu$ 小) 但低維太近 ($\nu$ 大) → 推開</td><td data-lang="en">Not neighbors in high-D but too close in low-D → push apart</td></tr>
-    </table>
-  </div>
-
-  <div data-lang="zh">
-    <p><b>關鍵對比</b>：t-SNE 只用<b>第一項</b> (KL 散度)——缺乏排斥項是 t-SNE 全局結構差的原因。
-      UMAP 加上排斥項讓「不該是鄰居的點」主動拉開，分群之間的距離才有意義。</p>
-    <p>實際優化用 <b>SGD + 負取樣</b>：每次只算「一個真實鄰居（吸引）」+「5 個隨機點（排斥）」，
-      避免 $O(n^2)$ 計算。這就是 UMAP 比 t-SNE 快 3-10 倍的原因。</p>
-  </div>
-  <div data-lang="en">
-    <p><b>Contrast</b>: t-SNE uses only Term 1 (KL); the missing repulsion term is why t-SNE's global structure is poor.
-      Optimized via <b>SGD + negative sampling</b>: 1 true neighbor + 5 random points per step, avoiding $O(n^2)$.</p>
-  </div>
-
-  <div class="interact-box">
-    <h4 data-lang="zh">互動 6.1 · 兩股力量視覺化</h4>
-    <h4 data-lang="en">Interactive 6.1 · Two forces visualized</h4>
-    <p data-lang="zh">圖中紫色 = $\mu_{ij}$ (high-D 強度)、藍色 = $\nu_{ij}$ (low-D 強度)。
-      拖動「當前距離 r」改變低維點對距離，下方箭頭顯示淨力方向與大小。</p>
-    <p data-lang="en">Purple = $\mu_{ij}$ (target). Blue = $\nu_{ij}$ (current). Drag $r$ to see net force.</p>
-    <div class="control-row">
-      <div class="control-item"><label>$\mu_{ij}$ (target)</label><input type="range" id="muTR" min="0.05" max="0.95" step="0.05" value="0.8"><span class="val" id="muTV">0.80</span></div>
-      <div class="control-item"><label>low-D 距離 $r$</label><input type="range" id="rTR" min="0.1" max="5" step="0.1" value="2"><span class="val" id="rTV">2.0</span></div>
-    </div>
-    <svg id="forceSvg" viewBox="0 0 700 240" style="background:#fff; border-radius:10px; width:100%"></svg>
-    <div class="live-readout" id="forceReadout"></div>
-  </div>
-</section>
-
-<!-- ====================================================== -->
-<!-- §7 演算法 7 步導覽 -->
-<!-- ====================================================== -->
-<section class="section" id="s7">
-  <span class="section-label algo">§7 · 演算法步驟導覽 / 7-STEP WALKTHROUGH</span>
-  <h2 data-lang="zh">UMAP 演算法 — 7 個步驟，每步都看見</h2>
-  <h2 data-lang="en">UMAP Algorithm — 7 steps, each visualized</h2>
-
-  <div class="step-walkthrough">
-    <div class="step-nav-bar">
-      <button id="stepPrev" class="ghost">← <span data-lang="zh">上一步</span><span data-lang="en">Prev</span></button>
-      <div class="step-indicator">
-        <div class="step-dot active" data-step="1">1</div>
-        <div class="step-dot" data-step="2">2</div>
-        <div class="step-dot" data-step="3">3</div>
-        <div class="step-dot" data-step="4">4</div>
-        <div class="step-dot" data-step="5">5</div>
-        <div class="step-dot" data-step="6">6</div>
-        <div class="step-dot" data-step="7">7</div>
-      </div>
-      <button id="stepNext"><span data-lang="zh">下一步</span><span data-lang="en">Next</span> →</button>
-      <button id="stepReset" class="ghost"><span data-lang="zh">重設</span><span data-lang="en">Reset</span></button>
-    </div>
-    <div class="step-content">
-      <div class="step-vis"><svg id="stepSvg" viewBox="0 0 500 300"></svg></div>
-      <div class="step-explain">
-        <div class="step-title" id="stepTitle"></div>
-        <div id="stepDesc"></div>
-        <div class="step-math" id="stepMath"></div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ====================================================== -->
-<!-- §8 與 t-SNE 對比 -->
-<!-- ====================================================== -->
-<section class="section" id="s8">
-  <span class="section-label">§8 · 對比 / COMPARISON</span>
-  <h2 data-lang="zh">UMAP vs t-SNE 全面對照</h2>
-  <h2 data-lang="en">UMAP vs t-SNE: full comparison</h2>
-
-  <table class="compare-table">
-    <tr><th></th><th>t-SNE</th><th>UMAP</th></tr>
-    <tr><td data-lang="zh">理論基礎</td><td data-lang="en">Foundation</td>
-      <td>KL between Gaussian (high) &amp; Student-t (low)</td>
-      <td>Fuzzy simplicial sets, cross-entropy</td></tr>
-    <tr><td data-lang="zh">高維核</td><td data-lang="en">High-D kernel</td>
-      <td>Gaussian, perplexity-tuned $\sigma_i$</td>
-      <td>Gaussian + $\rho_i$ subtraction + $\sum w = \log_2 k$</td></tr>
-    <tr><td data-lang="zh">低維核</td><td data-lang="en">Low-D kernel</td>
-      <td>Cauchy $(1+r^2)^{-1}$</td>
-      <td>$(1+a r^{2b})^{-1}$ (tunable)</td></tr>
-    <tr><td data-lang="zh">目標函數</td><td data-lang="en">Objective</td>
-      <td>KL (only attractive)</td>
-      <td class="good">Cross-entropy (attractive + repulsive)</td></tr>
-    <tr><td data-lang="zh">局部結構</td><td data-lang="en">Local structure</td>
-      <td class="good">優秀</td><td class="good">優秀</td></tr>
-    <tr><td data-lang="zh">全局結構</td><td data-lang="en">Global structure</td>
-      <td class="bad">差</td><td class="meh">部分保留 (尤其 spectral init)</td></tr>
-    <tr><td data-lang="zh">複雜度</td><td data-lang="en">Complexity</td>
-      <td>$O(n^2)$ → $O(n \log n)$ with Barnes-Hut</td>
-      <td class="good">$O(n \cdot k)$ via negative sampling</td></tr>
-    <tr><td data-lang="zh">百萬細胞速度</td><td data-lang="en">1M cells</td>
-      <td class="meh">~1 小時</td><td class="good">~10 分鐘</td></tr>
-    <tr><td data-lang="zh">新資料投影</td><td data-lang="en">Project new data</td>
-      <td class="bad">不能（需重訓）</td><td class="good">支援 (parametric UMAP)</td></tr>
-    <tr><td data-lang="zh">超參數敏感性</td><td data-lang="en">Hyperparameter sensitivity</td>
-      <td class="bad">perplexity 影響大</td><td class="meh">n_neighbors, min_dist</td></tr>
-  </table>
-
-  <div class="callout callout-note">
-    <strong data-lang="zh">📌 實務建議</strong><strong data-lang="en">📌 Practical advice</strong>
-    <p data-lang="zh">scRNA-seq 流程 <b>UMAP 已是預設</b>（Scanpy、Seurat 都是）。t-SNE 仍適合：(1) 需要極優秀的局部結構展示、(2) 較小資料 (&lt; 50K 細胞)。
-      整體上 UMAP 的速度與全局結構優勢大於 t-SNE。</p>
-    <p data-lang="en">scRNA-seq pipelines default to UMAP. t-SNE still suits: (1) extreme local detail, (2) smaller datasets. Otherwise UMAP wins.</p>
-  </div>
-</section>
-
-<!-- ====================================================== -->
-<!-- §9 Worked Example -->
-<!-- ====================================================== -->
-<section class="section" id="s9">
-  <span class="section-label math">§9 · 手算範例 / WORKED EXAMPLE</span>
-  <h2 data-lang="zh">親手算一遍：5 個點的 UMAP</h2>
-  <h2 data-lang="en">Compute UMAP by hand: 5 points</h2>
-
-  <div class="worked-example">
-    <div data-lang="zh"><p>5 個 2D 點：$x_1 = (0,0)$、$x_2 = (1, 0.2)$、$x_3 = (3, 0)$、$x_4 = (3.2, 1)$、$x_5 = (5, 5)$。
-      $k = 2$（每個點看最近 2 個鄰居）。</p></div>
-    <div data-lang="en"><p>5 points; $k=2$.</p></div>
-
-    <div class="worked-step">
-      <span class="step-label" data-lang="zh">步驟 1：距離矩陣</span><span class="step-label" data-lang="en">Step 1: Distance matrix</span>
-      <pre style="font-family:var(--font-code); font-size:13px; background:#fff; padding:10px; border-radius:6px; margin:8px 0">
-       x1     x2     x3     x4     x5
-x1   0.000  1.020  3.000  3.354  7.071
-x2   1.020  0.000  2.012  2.391  6.131
-x3   3.000  2.012  0.000  1.020  5.385
-x4   3.354  2.391  1.020  0.000  4.408
-x5   7.071  6.131  5.385  4.408  0.000</pre>
-    </div>
-
-    <div class="worked-step">
-      <span class="step-label" data-lang="zh">步驟 2：找 $\rho_i$（每個點到最近鄰的距離）</span><span class="step-label" data-lang="en">Step 2: $\rho_i$</span>
-      <pre style="font-family:var(--font-code); font-size:13px; background:#fff; padding:10px; border-radius:6px; margin:8px 0">
-ρ_1 = min(1.020, 3.000, ...) = 1.020   (最近是 x2)
-ρ_2 = min(1.020, 2.012, ...) = 1.020   (最近是 x1)
-ρ_3 = min(2.012, 1.020, ...) = 1.020   (最近是 x4)
-ρ_4 = min(2.391, 1.020, ...) = 1.020   (最近是 x3)
-ρ_5 = min(7.071, 6.131, 5.385, 4.408) = 4.408   (最近是 x4)</pre>
-    </div>
-
-    <div class="worked-step">
-      <span class="step-label" data-lang="zh">步驟 3：用二分搜尋找 $\sigma_i$ 滿足 $\sum_j w_{j|i} = \log_2(2) = 1$</span><span class="step-label" data-lang="en">Step 3: Find $\sigma_i$ s.t. $\sum w = \log_2(2) = 1$</span>
-      <div data-lang="zh">以 $x_1$ 為例。距離 ($d - \rho$) 為：[0, 0, 1.98, 2.33, 6.05]（$d - \rho$ 後 $\max(0, \cdot)$）。
-        想要 $\sum_j \exp(-d'_j/\sigma_1) = 1$。手算迭代：</div>
-      <div data-lang="en">For $x_1$: residual distances $[0, 0, 1.98, 2.33, 6.05]$ (post $\max(0, d-\rho)$). Want $\sum \exp(-d'/\sigma) = 1$.</div>
-      <pre style="font-family:var(--font-code); font-size:13px; background:#fff; padding:10px; border-radius:6px; margin:8px 0">
-σ = 1.0 → exp[0,0,-1.98,-2.33,-6.05] sum ≈ 1+1+0.138+0.097+0.002 = 2.24  (太大)
-σ = 0.5 → exp[0,0,-3.96,-4.66,-12.1] sum ≈ 1+1+0.019+0.009+0 = 2.03  (還是太大)
-... 二分搜尋至 σ_1 ≈ 0.40 → sum ≈ 2.00（注意 i=j 時 d=0 也算 → 通常排除自身）
-正規化排除自身後：σ_1 ≈ 1.45 滿足 sum_{j≠1} w = 1
-      </pre>
-      <div data-lang="zh">同理算 $\sigma_2, \sigma_3, \sigma_4, \sigma_5$。實作上是自動二分搜尋，不用手算。</div>
-    </div>
-
-    <div class="worked-step">
-      <span class="step-label" data-lang="zh">步驟 4：算 $w_{j|i}$、對稱化得 $\mu_{ij}$</span><span class="step-label" data-lang="en">Step 4: Compute $w_{j|i}$, symmetrize</span>
-      <div data-lang="zh">假設算出 $w_{2|1} = 1.00$、$w_{1|2} = 1.00$、$w_{3|1} = 0.25$、$w_{1|3} = 0.18$。對稱化：</div>
-      <pre style="font-family:var(--font-code); font-size:13px; background:#fff; padding:10px; border-radius:6px; margin:8px 0">
-μ_{1,2} = 1.00 + 1.00 - 1.00·1.00 = 1.00   (互為最近鄰，強連結)
-μ_{1,3} = 0.25 + 0.18 - 0.25·0.18 = 0.385  (中等)
-μ_{1,5} ≈ 0.001 (幾乎不連結)
-      </pre>
-      <div data-lang="zh">最終得到一個 5×5 的<b>邊機率矩陣 $\boldsymbol\mu$</b>，這就是 fuzzy simplicial set 的具體形式。</div>
-    </div>
-
-    <div class="worked-step">
-      <span class="step-label" data-lang="zh">步驟 5：初始化 $y_i$ + SGD 迭代（500-1000 步）</span><span class="step-label" data-lang="en">Step 5: Init + SGD</span>
-      <div data-lang="zh">隨機 (或 spectral) 初始化 $y_1, \ldots, y_5 \in \mathbb{R}^2$。每步：</div>
-      <ol data-lang="zh" style="margin:8px 0; padding-left:24px">
-        <li>抽一條真實邊 $(i, j)$（按 $\mu_{ij}$ 加權抽）→ 計算 $\partial \mathrm{CE}/\partial y_i$ 拉近 $y_i, y_j$</li>
-        <li>隨機抽 5 個負例 $k$ → 推開 $y_i, y_k$</li>
-        <li>更新位置，學習率隨步數線性衰減</li>
-      </ol>
-      <div data-lang="en"><p>Init randomly or spectrally. Each step: sample edge (attract); sample 5 negatives (repel); update with decaying LR.</p></div>
-    </div>
-
-    <div class="callout callout-intuition" style="margin-top:16px">
-      <strong data-lang="zh">🎯 觀察</strong><strong data-lang="en">🎯 Observe</strong>
-      <p data-lang="zh">手算只是讓你看「演算法的每一步在做什麼」。實務上 numpy + scikit-learn 的 UMAP 是 C++ 實作，秒殺 100 萬點。
-        但理解這 5 步之後，你看 source code 就不會被嚇到。</p>
-      <p data-lang="en">Hand calculation reveals what each step does. Production UMAP is C++; understanding these 5 steps makes the source readable.</p>
-    </div>
-  </div>
-</section>
-
-<!-- ====================================================== -->
-<!-- §10 限制與陷阱 -->
-<!-- ====================================================== -->
-<section class="section" id="s10">
-  <span class="section-label warn">§10 · 限制 / PITFALLS</span>
-  <h2 data-lang="zh">UMAP 的限制：這裡不行！</h2>
-  <h2 data-lang="en">UMAP limitations: what NOT to do</h2>
-
-  <table class="compare-table">
-    <tr><th data-lang="zh">陷阱</th><th data-lang="en">Pitfall</th><th data-lang="zh">原因</th><th data-lang="en">Why</th><th data-lang="zh">解法</th><th data-lang="en">Fix</th></tr>
-    <tr>
-      <td data-lang="zh">用 UMAP 結果直接做分群</td><td data-lang="en">Cluster on UMAP coords</td>
-      <td data-lang="zh">2D 投影失真，UMAP 可能把不該分的群拆開、該分的群合併</td><td data-lang="en">2D distorts; UMAP may split/merge clusters wrongly</td>
-      <td data-lang="zh">在 PCA 空間做 Leiden，UMAP 只用於視覺化</td><td data-lang="en">Cluster in PCA space; UMAP for vis only</td>
-    </tr>
-    <tr>
-      <td data-lang="zh">詮釋群間距離</td><td data-lang="en">Interpret inter-cluster distance</td>
-      <td data-lang="zh">UMAP 不保留全局距離；兩個遠群可能其實很近</td><td data-lang="en">UMAP doesn't preserve global distances</td>
-      <td data-lang="zh">用 PAGA 或 Diffusion Map 看群間關係</td><td data-lang="en">Use PAGA / Diffusion Map for global</td>
-    </tr>
-    <tr>
-      <td data-lang="zh">詮釋群的形狀大小</td><td data-lang="en">Interpret cluster shape/size</td>
-      <td data-lang="zh">UMAP 對所有群「展開到差不多大」</td><td data-lang="en">UMAP balloons all clusters to similar size</td>
-      <td data-lang="zh">用 marker gene 或 DE 證據</td><td data-lang="en">Use marker / DE evidence</td>
-    </tr>
-    <tr>
-      <td data-lang="zh">不同隨機種子比較</td><td data-lang="en">Compare across random seeds</td>
-      <td data-lang="zh">SGD 隨機，不同 seed 結果不同</td><td data-lang="en">SGD is stochastic; seeds yield different layouts</td>
-      <td data-lang="zh">固定 random_state；spectral init 較穩定</td><td data-lang="en">Fix seed; spectral init helps</td>
-    </tr>
-    <tr>
-      <td data-lang="zh">忽略 n_neighbors 的影響</td><td data-lang="en">Ignore n_neighbors effect</td>
-      <td data-lang="zh">小 n_neighbors 偏向局部、大則偏全局</td><td data-lang="en">Small = local; large = global</td>
-      <td data-lang="zh">scRNA-seq 預設 15~30；對比多個值</td><td data-lang="en">Default 15-30; try multiple</td>
-    </tr>
-    <tr>
-      <td data-lang="zh">期望它解決 batch effect</td><td data-lang="en">Expect it fixes batch effects</td>
-      <td data-lang="zh">UMAP 只是視覺化，batch 仍在</td><td data-lang="en">UMAP just visualizes; batch persists</td>
-      <td data-lang="zh">先用 Harmony / BBKNN 整合 (M6.1)</td><td data-lang="en">Integrate first with Harmony / BBKNN (M6.1)</td>
-    </tr>
-  </table>
-
-  <h3 style="margin-top:24px" data-lang="zh">🎓 程式碼範例：scRNA-seq 標準用法</h3>
-  <h3 style="margin-top:24px" data-lang="en">🎓 Code: standard scRNA-seq usage</h3>
-  <div class="code-tabs">
-    <div class="code-tab-btns">
-      <button class="code-tab-btn active" onclick="switchTab(this,'pyU')">Python / Scanpy</button>
-      <button class="code-tab-btn" onclick="switchTab(this,'rU')">R / Seurat</button>
-    </div>
-    <div class="code-tab-content active" id="pyU"><pre><span class="comment"># 標準流程</span>
-sc.pp.neighbors(adata, n_neighbors=<span class="num">15</span>, n_pcs=<span class="num">30</span>)
-sc.tl.umap(adata, min_dist=<span class="num">0.5</span>, spread=<span class="num">1.0</span>, random_state=<span class="num">42</span>)
-sc.pl.umap(adata, color=<span class="str">"leiden"</span>)
-
-<span class="comment"># 對比不同 n_neighbors</span>
-<span class="keyword">for</span> nn <span class="keyword">in</span> [<span class="num">5</span>, <span class="num">15</span>, <span class="num">50</span>, <span class="num">100</span>]:
-    sc.pp.neighbors(adata, n_neighbors=nn)
-    sc.tl.umap(adata, key_added=<span class="str">f"umap_nn{nn}"</span>)
-
-<span class="comment"># Parametric UMAP（可投影新資料）</span>
-<span class="keyword">from</span> umap.parametric_umap <span class="keyword">import</span> ParametricUMAP
-pumap = ParametricUMAP(n_components=<span class="num">2</span>)
-embedding = pumap.fit_transform(X_pca)
-new_embedding = pumap.transform(X_new)
-</pre></div>
-    <div class="code-tab-content" id="rU"><pre>pbmc &lt;- <span class="func">RunUMAP</span>(pbmc, dims = <span class="num">1</span>:<span class="num">30</span>,
-                n.neighbors = <span class="num">15</span>, min.dist = <span class="num">0.3</span>,
-                seed.use = <span class="num">42</span>)
-<span class="func">DimPlot</span>(pbmc, reduction = <span class="str">"umap"</span>)
-</pre></div>
-  </div>
-</section>
-
-<!-- ====================================================== -->
-<!-- §11 整理 + 參考文獻 -->
-<!-- ====================================================== -->
-<section class="section" id="s11">
-  <span class="section-label">§11 · 整理 / SUMMARY</span>
-  <h2 data-lang="zh">把整套故事串起來</h2>
-  <h2 data-lang="en">The whole story</h2>
-
-  <div class="callout callout-deep">
-    <p data-lang="zh"><b>UMAP 的 7 個核心思想</b>：</p>
-    <ol data-lang="zh">
-      <li><b>流形假設</b>：高維資料住在低維彎曲表面上（§0）</li>
-      <li><b>只保留鄰居拓撲</b>，不保留全局距離（§1）</li>
-      <li><b>鄰居機率</b>用高斯核計算，$\sigma_i$ 自適應（§2）</li>
-      <li><b>$\rho_i$ 局部尺度</b>修正讓不同密度區域可比（§3）</li>
-      <li><b>對稱化</b>用 fuzzy union 把方向合併（§4）</li>
-      <li><b>低維 t 核</b>讓「中等距離」獲得強斥力（§5）</li>
-      <li><b>Cross-Entropy</b> 用吸引 + 排斥兩力推動 SGD（§6）</li>
-    </ol>
-    <p data-lang="en"><b>UMAP's 7 ideas</b>: (1) Manifold hypothesis (§0), (2) Preserve neighbor topology not global distance (§1), (3) Gaussian kernel with adaptive $\sigma_i$ (§2), (4) $\rho_i$ local scale (§3), (5) Fuzzy union symmetrization (§4), (6) Low-D t-kernel for repulsion (§5), (7) Cross-entropy with SGD + negative sampling (§6).</p>
-  </div>
-
-  <h3 data-lang="zh">📚 參考文獻</h3>
-  <h3 data-lang="en">📚 References</h3>
-  <ul class="refs-list">
-    <li><div class="ref-title">McInnes, L., Healy, J., Melville, J. (2018). UMAP: Uniform Manifold Approximation and Projection.</div><div class="ref-meta">arXiv:1802.03426. <a href="https://arxiv.org/abs/1802.03426">arXiv</a></div></li>
-    <li><div class="ref-title">Becht, E. et al. (2019). Dimensionality reduction for visualizing single-cell data using UMAP.</div><div class="ref-meta">Nat Biotech 37. <a href="https://doi.org/10.1038/nbt.4314">10.1038/nbt.4314</a></div></li>
-    <li><div class="ref-title">Kobak, D. &amp; Linderman, G.C. (2021). Initialization is critical for preserving global data structure.</div><div class="ref-meta">Nat Biotech 39. <a href="https://doi.org/10.1038/s41587-020-00809-z">10.1038/s41587-020-00809-z</a></div></li>
-    <li><div class="ref-title">Coenen, A. &amp; Pearce, A. (2019). Understanding UMAP (interactive).</div><div class="ref-meta">Google PAIR. <a href="https://pair-code.github.io/understanding-umap/">pair-code.github.io</a></div></li>
-    <li><div class="ref-title">Damrich, S., Hamprecht, F.A. (2021). On UMAP's true loss function.</div><div class="ref-meta">NeurIPS 2021. <a href="https://arxiv.org/abs/2103.14608">arXiv</a></div></li>
-  </ul>
-</section>
-
-<div class="cross-links">
-  <a href="3.2-tsne.html" class="cross-link">
-    <div class="cross-label" data-lang="zh">← 上一篇</div><div class="cross-label" data-lang="en">← PREV</div>
-    <div class="cross-title"><span class="cross-id">M3.2</span> t-SNE</div>
-  </a>
-  <a href="3.4-diffusion-map.html" class="cross-link">
-    <div class="cross-label" data-lang="zh">下一篇 →</div><div class="cross-label" data-lang="en">NEXT →</div>
-    <div class="cross-title"><span class="cross-id">M3.4</span> Diffusion Maps</div>
-  </a>
 </div>
 
+<h2 id="s1"><span class="num">§1</span> <span data-lang="zh">fuzzy simplicial set 的直覺</span><span data-lang="en">fuzzy simplicial set intuition</span></h2>
+
+<p data-lang="zh">
+  「fuzzy simplicial set」聽起來嚇人，但直覺很簡單：對每個 cell $i$，畫一個<b>軟邊界</b>球，
+  球內所有點都「<b>有點是鄰居</b>」，距離越近隸屬度越高。
+  把所有 cell 的軟球疊起來，得到一個<b>加權圖</b>——這就是 UMAP 高維結構描述。
+</p>
+<p data-lang="en">
+  "Fuzzy simplicial set" sounds scary, intuition is simple: for each cell $i$, draw a <b>soft-boundary</b> ball,
+  every point inside is "<b>somewhat a neighbor</b>", closer = higher membership.
+  Overlap all balls → a <b>weighted graph</b> — UMAP's high-D description.
+</p>
+
+<h3 data-lang="zh">1.1 與 t-SNE 的概念對應</h3>
+<h3 data-lang="en">1.1 Mapping to t-SNE concepts</h3>
+
+<table class="compare">
+  <tr><th></th><th>t-SNE</th><th>t-SNE</th><th>UMAP</th><th>UMAP</th></tr>
+  <tr><td data-lang="zh">高維結構</td><td data-lang="en">High-D structure</td>
+      <td data-lang="zh">機率分布 $P_{ij}$</td><td data-lang="en">probability $P_{ij}$</td>
+      <td data-lang="zh">fuzzy graph 邊權 $w_{ij}$</td><td data-lang="en">fuzzy graph edge $w_{ij}$</td></tr>
+  <tr><td data-lang="zh">每點寬度</td><td data-lang="en">Per-point width</td>
+      <td>$\sigma_i$ (Gaussian)</td><td>$\sigma_i$ (Gaussian)</td>
+      <td>$\rho_i$ + $\sigma_i$ (Riemannian metric)</td><td>$\rho_i$ + $\sigma_i$</td></tr>
+  <tr><td data-lang="zh">超參數</td><td data-lang="en">Hyperparameter</td>
+      <td>perplexity (typical 30)</td><td>perplexity (typical 30)</td>
+      <td>n_neighbors (typical 15)</td><td>n_neighbors (typical 15)</td></tr>
+  <tr><td data-lang="zh">低維 loss</td><td data-lang="en">Low-D loss</td>
+      <td>$KL(P \| Q)$</td><td>$KL(P \| Q)$</td>
+      <td data-lang="zh">cross-entropy (binary)</td><td data-lang="en">cross-entropy (binary)</td></tr>
+</table>
+
+<h2 id="s2"><span class="num">§2</span> <span data-lang="zh">高維 graph 構造</span><span data-lang="en">High-D graph construction</span></h2>
+
+<h3 data-lang="zh">2.1 局部 metric：$\rho_i$ 跟 $\sigma_i$</h3>
+<h3 data-lang="en">2.1 Local metric: $\rho_i$ and $\sigma_i$</h3>
+
+<div class="math-block">
+  $$\rho_i = \min_j \|x_i - x_j\|, \quad \text{(到最近鄰的距離)}$$
+  $$\sum_j \exp\!\left(-\frac{\max(0, d(x_i, x_j) - \rho_i)}{\sigma_i}\right) = \log_2 k$$
+  <div class="formula-caption" data-lang="zh">$\rho_i$ = 最近鄰距離；$\sigma_i$ 自動解使「有效鄰居數」= n_neighbors $k$</div>
+  <div class="formula-caption" data-lang="en">$\rho_i$ = nearest neighbor distance; $\sigma_i$ solved so "effective neighbors" = $k$</div>
 </div>
 
-<footer class="site-footer">
-  <p>© Charlene · <span data-lang="zh">scRNA-seq 進階數學教程 · UMAP 深入互動版</span><span data-lang="en">scRNA-seq Advanced Math · UMAP Deep Interactive</span></p>
-</footer>
+<p data-lang="zh">與 t-SNE 不同：UMAP <b>把最近鄰距離當原點</b>（$\rho_i$），確保每點至少有一個權重 = 1 的邊。<b>保證圖連通</b>。</p>
+<p data-lang="en">Unlike t-SNE: UMAP <b>uses nearest-neighbor distance as origin</b> ($\rho_i$), ensuring every point has at least one weight-1 edge. <b>Guarantees connectivity</b>.</p>
+
+<h3 data-lang="zh">2.2 邊權重 (membership strength)</h3>
+<h3 data-lang="en">2.2 Edge weight (membership strength)</h3>
+
+<div class="math-block boxed">
+  $$w_{i \to j} = \exp\!\left(-\frac{\max(0, d(x_i, x_j) - \rho_i)}{\sigma_i}\right)$$
+  <div class="formula-caption" data-lang="zh">從 $i$ 看 $j$ 是「鄰居」的隸屬度 (0~1)</div>
+  <div class="formula-caption" data-lang="en">how much $j$ "belongs" to $i$'s neighborhood (0~1)</div>
+</div>
+
+<h3 data-lang="zh">2.3 對稱化 (probabilistic t-conorm)</h3>
+<h3 data-lang="en">2.3 Symmetrize (probabilistic t-conorm)</h3>
+
+<div class="math-block">
+  $$w_{ij} = w_{i \to j} + w_{j \to i} - w_{i \to j} \cdot w_{j \to i}$$
+  <div class="formula-caption" data-lang="zh">「兩邊任一覺得是鄰居」的隸屬度合併</div>
+  <div class="formula-caption" data-lang="en">"either side thinks it's a neighbor" membership</div>
+</div>
+
+<p data-lang="zh">這個 union 公式來自 fuzzy logic（不是 t-SNE 的單純平均），保留<b>非線性 OR</b> 結構。</p>
+<p data-lang="en">This union formula comes from fuzzy logic (not t-SNE's simple averaging), preserves <b>nonlinear OR</b> structure.</p>
+
+<h2 id="s3"><span class="num">§3</span> <span data-lang="zh">互動：n_neighbors 影響</span><span data-lang="en">Interactive: n_neighbors</span></h2>
+
+<div class="card">
+  <p data-lang="zh">下方 60 個點分布。拉 n_neighbors 看「fuzzy graph 邊」怎麼變：小 → 只連最近的；大 → 連到較遠的。</p>
+  <p data-lang="en">60 points. Drag n_neighbors to see "fuzzy graph edges" change: small → only closest; large → reach further.</p>
+  <div class="controls">
+    <label>n_neighbors:
+      <input type="range" id="s3k" min="3" max="30" value="10" step="1"><span id="s3kVal">10</span>
+    </label>
+    <label><input type="checkbox" id="s3showWeight" checked> <span data-lang="zh">邊粗細 = 權重</span><span data-lang="en">edge width = weight</span></label>
+  </div>
+  <svg class="canvas" id="s3svg" viewBox="0 0 800 400" width="100%"></svg>
+  <div class="stat-row">
+    <div class="item"><span class="lbl" data-lang="zh">總邊數</span><span class="lbl" data-lang="en">edges</span><span class="val" id="s3edges">—</span></div>
+    <div class="item"><span class="lbl" data-lang="zh">平均度</span><span class="lbl" data-lang="en">avg degree</span><span class="val" id="s3deg">—</span></div>
+  </div>
+  <div class="callout idea">
+    <strong data-lang="zh">經驗法則</strong><strong data-lang="en">Rule of thumb</strong>:
+    <span data-lang="zh">n_neighbors 小 (~5) → <b>強調 local</b>，可能看不到大尺度；大 (~50) → <b>強調 global</b>，可能模糊局部細節。預設 15 是 sweet spot。</span>
+    <span data-lang="en">small (~5) → <b>local emphasis</b>, may miss large scale; large (~50) → <b>global emphasis</b>, fuzzy local detail. Default 15 is sweet spot.</span>
+  </div>
+</div>
+
+<h2 id="s4"><span class="num">§4</span> <span data-lang="zh">低維 force-directed embedding</span><span data-lang="en">Low-D force-directed embedding</span></h2>
+
+<p data-lang="zh">
+  UMAP 把 fuzzy graph $w_{ij}$ <b>嵌入到 2D</b>，找一組座標 $y_1, \ldots, y_n$ 讓低維「同樣」的邊權跟 $w_{ij}$ 匹配。
+  低維邊權用一個<b>類似 Student-t 但可調參的 family</b>：
+</p>
+<p data-lang="en">
+  UMAP <b>embeds</b> the fuzzy graph $w_{ij}$ into 2D, finding coordinates so low-D edge weights match $w_{ij}$.
+  Low-D edge weights use a <b>Student-t-like but tunable family</b>:
+</p>
+
+<div class="math-block boxed">
+  $$\Phi(y_i, y_j) = \frac{1}{1 + a \cdot \|y_i - y_j\|^{2b}}$$
+  <div class="formula-caption" data-lang="zh">$a, b$ 由 min_dist 跟 spread 兩個超參數決定（預設 a≈1.93, b≈0.79）</div>
+  <div class="formula-caption" data-lang="en">$a, b$ derived from min_dist and spread (defaults a≈1.93, b≈0.79)</div>
+</div>
+
+<h3 data-lang="zh">4.1 為什麼是這個形式?</h3>
+<h3 data-lang="en">4.1 Why this form?</h3>
+
+<p data-lang="zh">這是 t-SNE Student-t 的「廣義版」——多了參數 $a, b$ 控制「在多近距離開始衰減」（由 <code class="inline">min_dist</code> 設定）。
+若 min_dist 小 → 同 cluster 點可以擠很近；大 → 強制散開（讓 plot 看起來像 PCA）。</p>
+<p data-lang="en">Generalization of t-SNE's Student-t — parameters $a, b$ control "at what distance to start decay" (set by <code class="inline">min_dist</code>).
+Small min_dist → points within cluster can pack tight; large → forced spread (more PCA-like layout).</p>
+
+<h2 id="s5"><span class="num">§5</span> <span data-lang="zh">Cross entropy loss + negative sampling</span><span data-lang="en">Cross entropy + negative sampling</span></h2>
+
+<h3 data-lang="zh">5.1 Binary cross-entropy</h3>
+<h3 data-lang="en">5.1 Binary cross-entropy</h3>
+
+<div class="math-block boxed">
+  $$\mathcal{L} = \sum_{i,j} \left[ w_{ij} \log \frac{w_{ij}}{\Phi_{ij}} + (1-w_{ij}) \log \frac{1-w_{ij}}{1-\Phi_{ij}} \right]$$
+</div>
+
+<p data-lang="zh">與 t-SNE 不同：UMAP 的 loss 對「<b>應該不相鄰但低維變近</b>」（第二項）<b>也有強懲罰</b>。這就是 UMAP 能保留 global 結構的關鍵——它真的在乎「不是鄰居的不要靠近」。</p>
+<p data-lang="en">Unlike t-SNE: UMAP's loss heavily penalizes "<b>shouldn't be neighbors but became close in low-D</b>" (second term). This is why UMAP preserves global structure — it cares about "non-neighbors stay apart".</p>
+
+<h3 data-lang="zh">5.2 Negative sampling 加速</h3>
+<h3 data-lang="en">5.2 Negative sampling for speed</h3>
+
+<p data-lang="zh">原始公式要對所有 $n^2$ 對算 loss。UMAP 取巧：</p>
+<p data-lang="en">Original requires computing loss over $n^2$ pairs. UMAP's trick:</p>
+
+<ol>
+  <li><span data-lang="zh">對每個「正樣本邊」$(i, j)$（$w_{ij} &gt; 0$）→ <b>拉</b>它們近</span>
+      <span data-lang="en">For each "positive edge" $(i, j)$ with $w_{ij} &gt; 0$ → <b>pull</b> close</span></li>
+  <li><span data-lang="zh">隨機抽 $m$ 個「負樣本」$(i, k)$（沒邊或不相干）→ <b>推</b>它們開</span>
+      <span data-lang="en">Sample $m$ random "negatives" $(i, k)$ → <b>push</b> apart</span></li>
+  <li><span data-lang="zh">用 SGD 更新 $y_i$</span>
+      <span data-lang="en">SGD update $y_i$</span></li>
+</ol>
+
+<div class="callout idea">
+  <strong data-lang="zh">關鍵效能</strong><strong data-lang="en">Key efficiency</strong>:
+  <span data-lang="zh">每次迭代成本 $O(\text{edges} + n \cdot m)$，總體 $O(n)$（typically m=5）。對 100k cells UMAP 比 t-SNE 快 <b>20-50 倍</b>。</span>
+  <span data-lang="en">Per-iter cost $O(\text{edges} + n \cdot m)$, total $O(n)$ (typically m=5). For 100k cells, UMAP is <b>20–50× faster</b> than t-SNE.</span>
+</div>
+
+<h2 id="s6"><span class="num">§6</span> <span data-lang="zh">互動：UMAP 收斂動畫</span><span data-lang="en">Interactive UMAP animation</span></h2>
+
+<div class="card">
+  <p data-lang="zh">下方 60 個細胞（3 群）的 fuzzy graph。隨機初始 2D 位置，按「下一步」watch SGD + negative sampling 怎麼把群分開：</p>
+  <p data-lang="en">60 cells (3 groups) fuzzy graph. Random 2D init. Click "Next" to watch SGD + negative sampling separate clusters:</p>
+  <div class="controls">
+    <button id="s6next"><span data-lang="zh">下一步 (20 iter)</span><span data-lang="en">Next (20 iter)</span></button>
+    <button id="s6auto" class="ghost"><span data-lang="zh">自動跑完</span><span data-lang="en">Auto-run</span></button>
+    <button id="s6reset" class="ghost"><span data-lang="zh">重置</span><span data-lang="en">Reset</span></button>
+    <span><span data-lang="zh">iter</span>: <b id="s6iter">0</b></span>
+  </div>
+  <svg class="canvas" id="s6svg" viewBox="0 0 800 400" width="100%"></svg>
+</div>
+
+<h2 id="s7"><span class="num">§7</span> <span data-lang="zh">UMAP vs t-SNE 對比</span><span data-lang="en">UMAP vs t-SNE</span></h2>
+
+<table class="compare">
+  <tr><th></th><th>t-SNE</th><th>t-SNE</th><th>UMAP</th><th>UMAP</th></tr>
+  <tr><td data-lang="zh">局部保留</td><td data-lang="en">Local preservation</td>
+      <td>✅</td><td>✅</td>
+      <td>✅</td><td>✅</td></tr>
+  <tr><td data-lang="zh">全域保留</td><td data-lang="en">Global preservation</td>
+      <td>❌</td><td>❌</td>
+      <td><b>✅</b></td><td><b>✅</b></td></tr>
+  <tr><td data-lang="zh">速度</td><td data-lang="en">Speed</td>
+      <td>$O(n^2)$</td><td>$O(n^2)$</td>
+      <td><b>$O(n)$</b></td><td><b>$O(n)$</b></td></tr>
+  <tr><td data-lang="zh">transform 新資料</td><td data-lang="en">Transform new data</td>
+      <td>❌</td><td>❌</td>
+      <td><b>✅</b></td><td><b>✅</b></td></tr>
+  <tr><td data-lang="zh">支援 supervised</td><td data-lang="en">Supervised mode</td>
+      <td>❌</td><td>❌</td>
+      <td><b>✅</b></td><td><b>✅</b></td></tr>
+  <tr><td data-lang="zh">主要參數</td><td data-lang="en">Main params</td>
+      <td>perplexity, lr</td><td>perplexity, lr</td>
+      <td>n_neighbors, min_dist</td><td>n_neighbors, min_dist</td></tr>
+  <tr><td data-lang="zh">scanpy 預設</td><td data-lang="en">Scanpy default</td>
+      <td>—</td><td>—</td>
+      <td><b>✅</b></td><td><b>✅</b></td></tr>
+</table>
+
+<h2 id="s8"><span class="num">§8</span> <span data-lang="zh">限制與超參數</span><span data-lang="en">Limits & hyperparams</span></h2>
+
+<h3 data-lang="zh">8.1 兩個關鍵超參數</h3>
+<h3 data-lang="en">8.1 Two key hyperparameters</h3>
+
+<table class="compare">
+  <tr><th>param</th><th>param</th>
+      <th data-lang="zh">作用</th><th data-lang="en">Role</th>
+      <th data-lang="zh">小 vs 大</th><th data-lang="en">small vs large</th></tr>
+  <tr><td>n_neighbors</td><td>n_neighbors</td>
+      <td data-lang="zh">高維 graph 鄰居數</td>
+      <td data-lang="en">high-D neighbor count</td>
+      <td data-lang="zh">小 (~5) 強調 local；大 (~50) 強調 global</td>
+      <td data-lang="en">small → local; large → global</td></tr>
+  <tr><td>min_dist</td><td>min_dist</td>
+      <td data-lang="zh">低維點最小間距</td>
+      <td data-lang="en">low-D minimum gap</td>
+      <td data-lang="zh">小 (0.1) cluster 緊湊；大 (0.5) cluster 散開</td>
+      <td data-lang="en">small → tight; large → spread</td></tr>
+</table>
+
+<pre class="code">sc.pp.neighbors(adata, n_neighbors=<span class="n">15</span>, n_pcs=<span class="n">30</span>)  <span class="c"># 建 KNN graph</span>
+sc.tl.umap(adata, min_dist=<span class="n">0.5</span>, spread=<span class="n">1.0</span>)             <span class="c"># UMAP 嵌入</span></pre>
+
+<h3 data-lang="zh">8.2 限制</h3>
+<h3 data-lang="en">8.2 Limitations</h3>
+<table class="compare">
+  <tr><th data-lang="zh">限制</th><th data-lang="en">Limitation</th>
+      <th data-lang="zh">後果</th><th data-lang="en">Consequence</th>
+      <th data-lang="zh">緩解</th><th data-lang="en">Mitigation</th></tr>
+  <tr><td data-lang="zh">隨機性</td><td data-lang="en">Stochasticity</td>
+      <td data-lang="zh">不同 seed 結果略不同</td><td data-lang="en">different seeds give different layouts</td>
+      <td data-lang="zh">固定 random_state</td><td data-lang="en">fix random_state</td></tr>
+  <tr><td data-lang="zh">大尺度距離有限可信</td><td data-lang="en">Global distances partially reliable</td>
+      <td data-lang="zh">比 t-SNE 好但不完美</td><td data-lang="en">better than t-SNE but not perfect</td>
+      <td data-lang="zh">配合 PCA / Diffusion Maps 看</td><td data-lang="en">combine with PCA / Diffusion Maps</td></tr>
+  <tr><td data-lang="zh">參數敏感</td><td data-lang="en">Parameter sensitive</td>
+      <td data-lang="zh">n_neighbors 變化會改變 cluster 形狀</td><td data-lang="en">n_neighbors changes cluster shapes</td>
+      <td data-lang="zh">benchmark 多個值看穩定性</td><td data-lang="en">benchmark multiple values</td></tr>
+</table>
+
+<div class="callout prog">
+  <strong data-lang="zh">下一步</strong><strong data-lang="en">Next</strong>:
+  <span data-lang="zh">→ <a href="3.4-diffusion-map.html"><b>3.4 Diffusion Maps</b></a> 流形上的隨機漫步 → <a href="../M4-graph-clustering/4.1-knn-graph.html"><b>M4.1 KNN graph</b></a> 把 UMAP 的 graph 餵給 Leiden。</span>
+  <span data-lang="en">→ <a href="3.4-diffusion-map.html"><b>3.4 Diffusion Maps</b></a> → <a href="../M4-graph-clustering/4.1-knn-graph.html"><b>M4.1 KNN graph</b></a> feeds UMAP's graph to Leiden.</span>
+</div>
+
+<p class="footer">
+  <span data-lang="zh">© scRNA-seq Advanced Math · M3.3 UMAP Deep Interactive</span>
+  <span data-lang="en">© scRNA-seq Advanced Math · M3.3 UMAP Deep Interactive</span>
+</p>
+
+</div>
 
 <script src="../i18n.js"></script>
 <script>
-function switchTab(b,id){
-  const p=b.closest(".code-tabs");
-  p.querySelectorAll(".code-tab-btn").forEach(x=>x.classList.remove("active"));
-  p.querySelectorAll(".code-tab-content").forEach(x=>x.classList.remove("active"));
-  b.classList.add("active");
-  document.getElementById(id).classList.add("active");
-}
-
-/* =============================================
-   §0-1 Swiss Roll
-   ============================================= */
-(function(){
-  const svg = document.getElementById('rollSvg');
-  const angR = document.getElementById('rollAng');
-  const angV = document.getElementById('rollAngV');
-  let mode = 'raw'; // raw / pca / unroll
-  // 300 points on a swiss roll
-  const pts = [];
-  for (let i = 0; i < 300; i++) {
-    const t = 1.5 + i / 300 * 4.5;  // 1.5 ~ 6.0
-    const z = (Math.random() - 0.5) * 4;
-    pts.push({ t, z,
-      // 3D coords
-      x: t * Math.cos(t),
-      y: t * Math.sin(t),
-      // 2D (unrolled) coords
-      u: t * 1.2,  // 沿曲線長度
-      v: z
-    });
-  }
-  function draw() {
-    const W = 800, H = 360;
-    const ang = (+angR.value) * Math.PI / 180;
-    angV.textContent = angR.value + '°';
-    const cs = Math.cos(ang), sn = Math.sin(ang);
-    let h = '';
-    h += `<rect width="${W}" height="${H}" fill="#fff"/>`;
-    // panel divider
-    h += `<line x1="${W/2}" y1="0" x2="${W/2}" y2="${H}" stroke="#dfe4f0"/>`;
-    // left = 3D rotation
-    h += `<text x="${W/4}" y="22" text-anchor="middle" font-size="13" fill="#444" font-weight="700">3D ${mode==='raw'?'原始/Raw':''}</text>`;
-    // project 3D to 2D screen (left half)
-    const ptsSort = pts.map(p => {
-      const rx = p.x * cs - p.z * sn;
-      const ry = p.y;
-      const rz = p.x * sn + p.z * cs;
-      return { ...p, sx: W/4 + rx*22, sy: H/2 - ry*22, depth: rz };
-    }).sort((a,b)=>a.depth - b.depth);
-    for (const p of ptsSort) {
-      const color = `hsl(${(p.t-1.5)/4.5*270}, 75%, 50%)`;
-      h += `<circle cx="${p.sx}" cy="${p.sy}" r="3" fill="${color}" opacity="0.85"/>`;
+// ===== §0 t-SNE vs UMAP illustration =====
+(function() {
+  let seed = 31;
+  const rnd = () => { seed = (seed*9301+49297)%233280; return seed/233280; };
+  function nrnd(m,s){const u1=rnd(),u2=rnd();return m+s*Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);}
+  let s = '';
+  s += `<text class="lbl" x="200" y="25" text-anchor="middle" font-weight="700">t-SNE: clusters 分開但距離隨機</text>`;
+  s += `<text class="lbl" x="600" y="25" text-anchor="middle" font-weight="700">UMAP: clusters 分開 + 距離有意義</text>`;
+  s += `<rect x="20" y="40" width="370" height="280" fill="#fff" stroke="#ddd"/>`;
+  s += `<rect x="410" y="40" width="370" height="280" fill="#fff" stroke="#ddd"/>`;
+  // t-SNE: 3 clusters scattered randomly
+  const tcenters = [[100, 100], [320, 240], [180, 280]];
+  const cols = ['#ea580c', '#2c5aa0', '#27795a'];
+  tcenters.forEach((c, k) => {
+    for (let i = 0; i < 25; i++) {
+      s += `<circle cx="${nrnd(c[0], 25)}" cy="${nrnd(c[1], 25)}" r="4" fill="${cols[k]}" opacity="0.8"/>`;
     }
-
-    // right = projection result
-    const rightX = 3*W/4;
-    if (mode === 'pca') {
-      h += `<text x="${rightX}" y="22" text-anchor="middle" font-size="13" fill="#dc2626" font-weight="700">PCA: project to XY (loses roll)</text>`;
-      for (const p of pts) {
-        const color = `hsl(${(p.t-1.5)/4.5*270}, 75%, 50%)`;
-        h += `<circle cx="${rightX + p.x*22}" cy="${H/2 - p.y*22}" r="3" fill="${color}" opacity="0.7"/>`;
-      }
-    } else if (mode === 'unroll') {
-      h += `<text x="${rightX}" y="22" text-anchor="middle" font-size="13" fill="#06a77d" font-weight="700">UMAP: unroll the manifold ✓</text>`;
-      for (const p of pts) {
-        const color = `hsl(${(p.t-1.5)/4.5*270}, 75%, 50%)`;
-        h += `<circle cx="${rightX-160 + p.u*40}" cy="${H/2 + p.v*15}" r="3" fill="${color}" opacity="0.85"/>`;
-      }
-    } else {
-      h += `<text x="${rightX}" y="22" text-anchor="middle" font-size="13" fill="#666" font-weight="700">Click PCA or UMAP →</text>`;
-      h += `<text x="${rightX}" y="${H/2}" text-anchor="middle" font-size="14" fill="#aaa">↻ rotate above first</text>`;
-    }
-    svg.innerHTML = h;
-  }
-  ['rollRaw','rollRaw_en'].forEach(id=>document.getElementById(id) && (document.getElementById(id).onclick = ()=>{mode='raw'; draw();}));
-  ['rollPCA','rollPCA_en'].forEach(id=>document.getElementById(id) && (document.getElementById(id).onclick = ()=>{mode='pca'; draw();}));
-  ['rollUnroll','rollUnroll_en'].forEach(id=>document.getElementById(id) && (document.getElementById(id).onclick = ()=>{mode='unroll'; draw();}));
-  angR.oninput = draw;
-  draw();
-})();
-
-/* =============================================
-   §0-2 Neighbor radius
-   ============================================= */
-(function(){
-  const svg = document.getElementById('nbSvg');
-  const rR = document.getElementById('nbRadius');
-  const rV = document.getElementById('nbRadiusV');
-  const localCB = document.getElementById('nbLocal');
-  // 2 clusters: dense left, sparse right
-  const dense = [], sparse = [];
-  for (let i = 0; i < 25; i++) {
-    dense.push({ x: 130 + (Math.random()-0.5)*70, y: 140 + (Math.random()-0.5)*70 });
-    sparse.push({ x: 480 + (Math.random()-0.5)*140, y: 140 + (Math.random()-0.5)*140 });
-  }
-  const center1 = dense[0], center2 = sparse[0];
-  function draw() {
-    const r = +rR.value;
-    rV.textContent = r;
-    const local = localCB && localCB.checked;
-    let h = '';
-    h += `<rect width="700" height="280" fill="#fff"/>`;
-    // dense
-    for (const p of dense) h += `<circle cx="${p.x}" cy="${p.y}" r="3" fill="#4f7df4" opacity="0.7"/>`;
-    h += `<circle cx="${center1.x}" cy="${center1.y}" r="5" fill="#8b5cf6" stroke="#000" stroke-width="2"/>`;
-    // sparse
-    for (const p of sparse) h += `<circle cx="${p.x}" cy="${p.y}" r="3" fill="#4f7df4" opacity="0.7"/>`;
-    h += `<circle cx="${center2.x}" cy="${center2.y}" r="5" fill="#8b5cf6" stroke="#000" stroke-width="2"/>`;
-    // circles
-    if (local) {
-      // adaptive: dense uses small radius, sparse uses large
-      h += `<circle cx="${center1.x}" cy="${center1.y}" r="35" fill="rgba(79,125,244,0.15)" stroke="#06a77d" stroke-width="2"/>`;
-      h += `<circle cx="${center2.x}" cy="${center2.y}" r="75" fill="rgba(79,125,244,0.15)" stroke="#06a77d" stroke-width="2"/>`;
-      h += `<text x="${center1.x}" y="${center1.y-45}" text-anchor="middle" font-size="11" fill="#06a77d" font-weight="700">local r ≈ 35</text>`;
-      h += `<text x="${center2.x}" y="${center2.y-85}" text-anchor="middle" font-size="11" fill="#06a77d" font-weight="700">local r ≈ 75</text>`;
-    } else {
-      h += `<circle cx="${center1.x}" cy="${center1.y}" r="${r}" fill="rgba(220,38,38,0.15)" stroke="#dc2626" stroke-width="2"/>`;
-      h += `<circle cx="${center2.x}" cy="${center2.y}" r="${r}" fill="rgba(220,38,38,0.15)" stroke="#dc2626" stroke-width="2"/>`;
-      h += `<text x="${center1.x}" y="${center1.y-r-8}" text-anchor="middle" font-size="11" fill="#dc2626" font-weight="700">fixed r = ${r}</text>`;
-      h += `<text x="${center2.x}" y="${center2.y-r-8}" text-anchor="middle" font-size="11" fill="#dc2626" font-weight="700">fixed r = ${r}</text>`;
-    }
-    h += `<text x="130" y="270" text-anchor="middle" font-size="12" fill="#444">Dense cluster (left)</text>`;
-    h += `<text x="500" y="270" text-anchor="middle" font-size="12" fill="#444">Sparse cluster (right)</text>`;
-    svg.innerHTML = h;
-  }
-  rR.oninput = draw;
-  if (localCB) localCB.onchange = draw;
-  draw();
-})();
-
-/* =============================================
-   §1 Stretch demo
-   ============================================= */
-(function(){
-  const svg = document.getElementById('stretchSvg');
-  const sR = document.getElementById('stretchR');
-  const sV = document.getElementById('stretchV');
-  const readout = document.getElementById('stretchReadout');
-  // 3 clusters
-  const pts = [];
-  function makePts() {
-    pts.length = 0;
-    const centers = [[100,100],[260,140],[180,220]];
-    for (let g = 0; g < 3; g++) {
-      for (let i = 0; i < 12; i++) {
-        pts.push({
-          x: centers[g][0] + (Math.random()-0.5)*40,
-          y: centers[g][1] + (Math.random()-0.5)*40,
-          g: g
-        });
-      }
-    }
-  }
-  makePts();
-  const colors = ['#c0392b','#06a77d','#4f7df4'];
-  function draw() {
-    const stretch = (+sR.value) / 100;
-    sV.textContent = stretch.toFixed(2) + '×';
-    let h = '';
-    h += `<rect width="900" height="280" fill="#fff"/>`;
-    // 3 panels
-    h += `<text x="150" y="22" text-anchor="middle" font-size="13" fill="#444" font-weight="700">Original (stretched)</text>`;
-    h += `<text x="450" y="22" text-anchor="middle" font-size="13" fill="#dc2626" font-weight="700">Distance-preserving (also stretched ✗)</text>`;
-    h += `<text x="750" y="22" text-anchor="middle" font-size="13" fill="#06a77d" font-weight="700">Neighbor-preserving (invariant ✓)</text>`;
-    // left: original (stretched horizontally)
-    for (const p of pts) {
-      h += `<circle cx="${(p.x-150)*stretch + 150}" cy="${p.y+30}" r="4" fill="${colors[p.g]}" opacity="0.8"/>`;
-    }
-    // middle: distance-preserving (also stretched)
-    for (const p of pts) {
-      h += `<circle cx="${(p.x-150)*stretch + 450}" cy="${p.y+30}" r="4" fill="${colors[p.g]}" opacity="0.8"/>`;
-    }
-    // right: neighbor-preserving (always same layout)
-    for (const p of pts) {
-      h += `<circle cx="${p.x + 600}" cy="${p.y+30}" r="4" fill="${colors[p.g]}" opacity="0.8"/>`;
-    }
-    h += `<line x1="300" y1="0" x2="300" y2="280" stroke="#dfe4f0"/>`;
-    h += `<line x1="600" y1="0" x2="600" y2="280" stroke="#dfe4f0"/>`;
-    svg.innerHTML = h;
-    readout.innerHTML = `<span class="lbl">當前拉伸 / Stretch:</span> <span class="val-hl">${stretch.toFixed(2)}×</span>　<span class="lbl">距離保留法被拉伸影響</span>　<span class="lbl">鄰居保留法不變</span>`;
-  }
-  sR.oninput = draw;
-  draw();
-})();
-
-/* =============================================
-   §2 Gaussian kernel
-   ============================================= */
-(function(){
-  const svg = document.getElementById('kerSvg');
-  const sigR = document.getElementById('sigR');
-  const sigV = document.getElementById('sigV');
-  const rhoR = document.getElementById('rhoR');
-  const rhoV = document.getElementById('rhoV');
-  const kR = document.getElementById('kR');
-  const kV = document.getElementById('kV');
-  const readout = document.getElementById('kerReadout');
-  // virtual neighbors at fixed distances
-  const neighbors = [0.5, 0.8, 1.2, 1.8, 2.5, 3.2, 4.0, 5.0, 6.5, 8.0, 10.0, 12.0];
-  function draw() {
-    const sig = +sigR.value;
-    const rho = +rhoR.value;
-    const k = +kR.value;
-    sigV.textContent = sig.toFixed(1);
-    rhoV.textContent = rho.toFixed(1);
-    kV.textContent = k;
-    const W = 700, H = 280, padL = 50, padB = 40, padT = 20, padR = 20;
-    const xmax = 12;
-    const xToSvg = x => padL + x / xmax * (W - padL - padR);
-    const yToSvg = y => H - padB - y * (H - padT - padB);
-    let h = '';
-    h += `<rect width="${W}" height="${H}" fill="#fff"/>`;
-    // axes
-    h += `<line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="#999"/>`;
-    h += `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${H-padB}" stroke="#999"/>`;
-    // curve
-    const path = [];
-    for (let d = 0; d <= xmax; d += 0.1) {
-      const w = Math.exp(-Math.max(0, d - rho) / sig);
-      path.push((d===0 ? 'M' : 'L') + xToSvg(d) + ',' + yToSvg(w));
-    }
-    h += `<path d="${path.join(' ')}" stroke="#06a77d" stroke-width="2.5" fill="none"/>`;
-    // shaded area
-    const pathArea = path.join(' ') + ' L ' + xToSvg(xmax) + ',' + yToSvg(0) + ' L ' + xToSvg(0) + ',' + yToSvg(0) + ' Z';
-    h += `<path d="${pathArea}" fill="rgba(6,167,125,0.1)"/>`;
-    // ρ marker
-    h += `<line x1="${xToSvg(rho)}" y1="${padT}" x2="${xToSvg(rho)}" y2="${H-padB}" stroke="#8b5cf6" stroke-width="2" stroke-dasharray="4 3"/>`;
-    h += `<text x="${xToSvg(rho)+4}" y="${padT+14}" font-size="11" fill="#8b5cf6" font-weight="700">ρ = ${rho.toFixed(1)}</text>`;
-    // neighbor points
-    let sum = 0;
-    for (const d of neighbors) {
-      const w = Math.exp(-Math.max(0, d - rho) / sig);
-      sum += w;
-      h += `<circle cx="${xToSvg(d)}" cy="${yToSvg(w)}" r="4" fill="#4f7df4" stroke="#fff" stroke-width="1.5"/>`;
-    }
-    // labels
-    h += `<text x="${W/2}" y="${H-8}" text-anchor="middle" font-size="12" fill="#444">distance d</text>`;
-    h += `<text x="14" y="${H/2}" font-size="12" fill="#444" transform="rotate(-90 14 ${H/2})" text-anchor="middle">w(d)</text>`;
-    for (let v = 0; v <= 1; v += 0.25) {
-      h += `<text x="${padL-8}" y="${yToSvg(v)+4}" text-anchor="end" font-size="10" fill="#888">${v.toFixed(2)}</text>`;
-    }
-    svg.innerHTML = h;
-    const target = Math.log2(k);
-    const diff = Math.abs(sum - target);
-    readout.innerHTML = `
-      <span class="lbl">Σ w(d) = </span><span class="val-hl">${sum.toFixed(3)}</span>
-      <span class="lbl">target log₂(${k}) = </span>${target.toFixed(3)}
-      ${diff < 0.15 ? '<b style="color:#06a77d">✓ 接近！這就是 UMAP 找到的 σᵢ</b>' : (sum > target ? '<b style="color:#f59e0b">σ 太大 → 降低</b>' : '<b style="color:#f59e0b">σ 太小 → 提高</b>')}
-    `;
-  }
-  [sigR, rhoR, kR].forEach(el => el.oninput = draw);
-  draw();
-})();
-
-/* =============================================
-   §2 Quiz
-   ============================================= */
-(function(){
-  const quiz = document.querySelector('#s2 .quiz-mini');
-  if (!quiz) return;
-  const opts = quiz.querySelectorAll('.quiz-opt');
-  const fb = quiz.querySelector('.quiz-feedback');
-  opts.forEach(opt => {
-    opt.onclick = () => {
-      if (quiz.classList.contains('answered')) return;
-      quiz.classList.add('answered');
-      const correct = opt.dataset.ans === '1';
-      opt.classList.add(correct ? 'correct' : 'wrong');
-      if (!correct) quiz.querySelector('[data-ans="1"]').classList.add('correct');
-      fb.innerHTML = correct
-        ? '✅ <b>正確 / Correct!</b> σᵢ 用二分搜尋讓「期望鄰居數」固定 = log₂(k)，每個點都有自己的 σᵢ。'
-        : '❌ <b>正確答案是 B</b>。σᵢ 是每個點專屬，由二分搜尋找出。';
-    };
   });
+  // UMAP: linear arrangement (truer)
+  const ucenters = [[500, 200], [620, 130], [720, 240]];
+  ucenters.forEach((c, k) => {
+    for (let i = 0; i < 25; i++) {
+      s += `<circle cx="${nrnd(c[0], 25)}" cy="${nrnd(c[1], 25)}" r="4" fill="${cols[k]}" opacity="0.8"/>`;
+    }
+  });
+  // UMAP also has a thin link showing related clusters
+  s += `<line x1="525" y1="195" x2="600" y2="150" stroke="#999" stroke-width="1" stroke-dasharray="3,3" opacity="0.5"/>`;
+  s += `<line x1="645" y1="155" x2="705" y2="230" stroke="#999" stroke-width="1" stroke-dasharray="3,3" opacity="0.5"/>`;
+  s += `<text class="lbl" x="650" y="290" text-anchor="middle" font-size="10" fill="#666">↑ cluster 間排成「真正的」relationship</text>`;
+  document.getElementById('s0svg').innerHTML = s;
 })();
 
-/* =============================================
-   §3 ρ correction
-   ============================================= */
-(function(){
-  const svg = document.getElementById('rhoSvg');
-  const readout = document.getElementById('rhoReadout');
-  if (!svg) return;
-  // dense cluster + sparse cluster
-  const dense = [], sparse = [];
-  for (let i = 0; i < 15; i++) {
-    dense.push({ x: 100 + (Math.random()-0.5)*50, y: 160 + (Math.random()-0.5)*50 });
-    sparse.push({ x: 650 + (Math.random()-0.5)*180, y: 160 + (Math.random()-0.5)*180 });
-  }
-  function distSq(a, b) { return (a.x-b.x)**2 + (a.y-b.y)**2; }
-  function knn(p, set, k) {
-    return set.filter(q => q !== p).map(q => ({q, d: Math.sqrt(distSq(p,q))})).sort((a,b)=>a.d-b.d).slice(0, k);
+// ===== §3 fuzzy graph =====
+(function() {
+  let seed = 23;
+  const rnd = () => { seed = (seed*9301+49297)%233280; return seed/233280; };
+  function nrnd(m,s){const u1=rnd(),u2=rnd();return m+s*Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);}
+  const points = [];
+  for (let g = 0; g < 3; g++) {
+    const cx = 200 + g*200, cy = 200;
+    for (let i = 0; i < 20; i++) {
+      points.push({x: cx + nrnd(0, 35), y: cy + nrnd(0, 35), g});
+    }
   }
   function draw() {
-    const W = 900, H = 320;
-    let h = '';
-    h += `<rect width="${W}" height="${H}" fill="#fff"/>`;
-    // 3 columns
-    h += `<text x="${W/6}" y="20" text-anchor="middle" font-size="13" fill="#444" font-weight="700">原始 / Raw points</text>`;
-    h += `<text x="${W/2}" y="20" text-anchor="middle" font-size="13" fill="#dc2626" font-weight="700">No ρ correction (uniform σ)</text>`;
-    h += `<text x="${5*W/6}" y="20" text-anchor="middle" font-size="13" fill="#06a77d" font-weight="700">With ρ correction ✓</text>`;
-    // Col 1: raw
-    for (const p of dense) h += `<circle cx="${p.x - 40}" cy="${p.y + 20}" r="4" fill="#4f7df4"/>`;
-    for (const p of sparse) h += `<circle cx="${p.x - 470}" cy="${p.y + 20}" r="4" fill="#4f7df4"/>`;
-    // Col 2 (middle): show edge intensities without ρ
-    // 使用統一 σ = 30, 沒有 ρ correction
-    const allPts = [...dense, ...sparse];
-    const sigmaUniform = 30;
-    const showCenter1 = dense[0];
-    const showCenter2 = sparse[0];
-    for (const p of dense) {
-      const d = Math.sqrt(distSq(p, showCenter1));
-      const w = Math.exp(-d / sigmaUniform);
-      h += `<circle cx="${p.x + 310}" cy="${p.y + 20}" r="3" fill="rgba(220,38,38,${w*0.9+0.1})"/>`;
-    }
-    for (const p of sparse) {
-      const d = Math.sqrt(distSq(p, showCenter2));
-      const w = Math.exp(-d / sigmaUniform);
-      h += `<circle cx="${p.x - 120}" cy="${p.y + 20}" r="3" fill="rgba(220,38,38,${w*0.9+0.1})"/>`;
-    }
-    h += `<text x="${W/2}" y="${H-10}" text-anchor="middle" font-size="11" fill="#dc2626">dense cluster has overly strong edges</text>`;
-    // Col 3: with ρ correction
-    const knn1 = knn(showCenter1, dense, 3);
-    const knn2 = knn(showCenter2, sparse, 3);
-    const rho1 = knn1[0].d;
-    const rho2 = knn2[0].d;
-    for (const p of dense) {
-      const d = Math.sqrt(distSq(p, showCenter1));
-      const w = Math.exp(-Math.max(0, d - rho1) / (rho1*1.5));
-      h += `<circle cx="${p.x + 720}" cy="${p.y + 20}" r="3" fill="rgba(6,167,125,${w*0.9+0.1})"/>`;
-    }
-    for (const p of sparse) {
-      const d = Math.sqrt(distSq(p, showCenter2));
-      const w = Math.exp(-Math.max(0, d - rho2) / (rho2*1.5));
-      h += `<circle cx="${p.x + 290}" cy="${p.y + 20}" r="3" fill="rgba(6,167,125,${w*0.9+0.1})"/>`;
-    }
-    h += `<text x="${5*W/6}" y="${H-10}" text-anchor="middle" font-size="11" fill="#06a77d">balanced edge intensity ✓</text>`;
-    // dividers
-    h += `<line x1="${W/3}" y1="0" x2="${W/3}" y2="${H}" stroke="#dfe4f0"/>`;
-    h += `<line x1="${2*W/3}" y1="0" x2="${2*W/3}" y2="${H}" stroke="#dfe4f0"/>`;
-    svg.innerHTML = h;
-    readout.innerHTML = `Dense cluster ρ ≈ <b>${rho1.toFixed(1)}</b>　Sparse cluster ρ ≈ <b>${rho2.toFixed(1)}</b>
-      <span class="lbl">→ 不同 ρ 自動把局部尺度對齊到同樣強度</span>`;
-  }
-  draw();
-})();
-
-/* =============================================
-   §4 Symmetrization
-   ============================================= */
-(function(){
-  const wjiR = document.getElementById('wjiR');
-  const wjiV = document.getElementById('wjiV');
-  const wijR = document.getElementById('wijR');
-  const wijV = document.getElementById('wijV');
-  const calc = document.getElementById('symCalc');
-  const svg = document.getElementById('symSvg');
-  if (!wjiR) return;
-  function update() {
-    const wji = +wjiR.value, wij = +wijR.value;
-    wjiV.textContent = wji.toFixed(2);
-    wijV.textContent = wij.toFixed(2);
-    const mu = wji + wij - wji * wij;
-    calc.innerHTML = `
-      <div>w<sub>j|i</sub> = <b style="color:#4f7df4">${wji.toFixed(2)}</b></div>
-      <div>w<sub>i|j</sub> = <b style="color:#8b5cf6">${wij.toFixed(2)}</b></div>
-      <div style="border-top:1px dashed #ccc;margin-top:6px;padding-top:6px">
-        μ<sub>ij</sub> = ${wji.toFixed(2)} + ${wij.toFixed(2)} − ${wji.toFixed(2)}·${wij.toFixed(2)}
-      </div>
-      <div style="font-size:18px;color:#5e35b1;font-weight:800;margin-top:4px">= ${mu.toFixed(3)}</div>
-      <div style="font-size:11px;color:#888;margin-top:6px">
-        ${mu > 0.7 ? '強連結 strong edge' : mu > 0.3 ? '中等連結 medium' : '弱連結 weak'}
-      </div>
-    `;
-    // graph viz
-    const ix = 80, jx = 240, y = 100;
-    const thick = 1 + mu * 8;
-    svg.innerHTML = `
-      <circle cx="${ix}" cy="${y}" r="20" fill="#4f7df4"/>
-      <text x="${ix}" y="${y+5}" text-anchor="middle" fill="#fff" font-weight="700">i</text>
-      <circle cx="${jx}" cy="${y}" r="20" fill="#8b5cf6"/>
-      <text x="${jx}" y="${y+5}" text-anchor="middle" fill="#fff" font-weight="700">j</text>
-      <line x1="${ix+20}" y1="${y}" x2="${jx-20}" y2="${y}" stroke="#5e35b1" stroke-width="${thick}"/>
-      <text x="${(ix+jx)/2}" y="${y-15}" text-anchor="middle" font-size="14" fill="#5e35b1" font-weight="700">μ = ${mu.toFixed(3)}</text>
-      <text x="${(ix+jx)/2}" y="${y+50}" text-anchor="middle" font-size="11" fill="#888">線粗 = 機率</text>
-    `;
-  }
-  wjiR.oninput = update;
-  wijR.oninput = update;
-  update();
-})();
-
-/* =============================================
-   §5 Low-D kernel
-   ============================================= */
-(function(){
-  const mdR = document.getElementById('mdR');
-  const mdV = document.getElementById('mdV');
-  const spR = document.getElementById('spR');
-  const spV = document.getElementById('spV');
-  const svg = document.getElementById('lowKerSvg');
-  const readout = document.getElementById('lowKerReadout');
-  if (!mdR) return;
-
-  function fitAB(min_dist, spread) {
-    // UMAP 的 a, b 從 min_dist, spread 擬合
-    // 簡化 fitting: 使曲線在 r=spread 處下降到 0.5
-    // 並讓 r < min_dist 時 ≈ 1
-    const b = Math.max(0.5, 1.0 - min_dist * 0.5);
-    const a = (Math.exp((spread - min_dist) / spread) - 1) / Math.pow(spread, 2 * b);
-    return { a: Math.max(0.5, Math.min(3, a)), b };
-  }
-
-  function draw() {
-    const md = +mdR.value, sp = +spR.value;
-    mdV.textContent = md.toFixed(2);
-    spV.textContent = sp.toFixed(1);
-    const { a, b } = fitAB(md, sp);
-    const W = 700, H = 280, padL = 50, padB = 40, padT = 20, padR = 20;
-    const xmax = 5;
-    const xToSvg = x => padL + x / xmax * (W - padL - padR);
-    const yToSvg = y => H - padB - y * (H - padT - padB);
-    let h = '';
-    h += `<rect width="${W}" height="${H}" fill="#fff"/>`;
-    h += `<line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="#999"/>`;
-    h += `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${H-padB}" stroke="#999"/>`;
-    // UMAP curve
-    const pathU = [];
-    for (let r = 0; r <= xmax; r += 0.05) {
-      const v = 1 / (1 + a * Math.pow(r, 2*b));
-      pathU.push((r===0?'M':'L') + xToSvg(r) + ',' + yToSvg(v));
-    }
-    h += `<path d="${pathU.join(' ')}" stroke="#4f7df4" stroke-width="3" fill="none"/>`;
-    // t-SNE Cauchy
-    const pathT = [];
-    for (let r = 0; r <= xmax; r += 0.05) {
-      const v = 1 / (1 + r*r);
-      pathT.push((r===0?'M':'L') + xToSvg(r) + ',' + yToSvg(v));
-    }
-    h += `<path d="${pathT.join(' ')}" stroke="#dc2626" stroke-width="2" stroke-dasharray="5 3" fill="none"/>`;
-    // min_dist marker
-    h += `<line x1="${xToSvg(md)}" y1="${padT}" x2="${xToSvg(md)}" y2="${H-padB}" stroke="#8b5cf6" stroke-dasharray="3 3"/>`;
-    h += `<text x="${xToSvg(md)+4}" y="${padT+14}" font-size="11" fill="#8b5cf6">min_dist</text>`;
-    // labels
-    h += `<text x="${W/2}" y="${H-8}" text-anchor="middle" font-size="12" fill="#444">low-D distance r</text>`;
-    h += `<text x="14" y="${H/2}" font-size="12" fill="#444" transform="rotate(-90 14 ${H/2})" text-anchor="middle">ν(r)</text>`;
-    h += `<text x="${W-110}" y="${padT+10}" font-size="11" fill="#4f7df4" font-weight="700">━ UMAP ν(r)</text>`;
-    h += `<text x="${W-110}" y="${padT+26}" font-size="11" fill="#dc2626">- - t-SNE (Cauchy)</text>`;
-    for (let v = 0; v <= 1; v += 0.25) {
-      h += `<text x="${padL-8}" y="${yToSvg(v)+4}" text-anchor="end" font-size="10" fill="#888">${v.toFixed(2)}</text>`;
-    }
-    svg.innerHTML = h;
-    readout.innerHTML = `<span class="lbl">擬合 a = </span><span class="val-hl">${a.toFixed(3)}</span>
-      <span class="lbl">b = </span><span class="val-hl">${b.toFixed(3)}</span>
-      <span class="lbl">min_dist 越大，群內展開越鬆</span>`;
-  }
-  mdR.oninput = draw;
-  spR.oninput = draw;
-  draw();
-})();
-
-/* =============================================
-   §6 Force visualization
-   ============================================= */
-(function(){
-  const muTR = document.getElementById('muTR');
-  const muTV = document.getElementById('muTV');
-  const rTR = document.getElementById('rTR');
-  const rTV = document.getElementById('rTV');
-  const svg = document.getElementById('forceSvg');
-  const readout = document.getElementById('forceReadout');
-  if (!muTR) return;
-  function draw() {
-    const mu = +muTR.value, r = +rTR.value;
-    muTV.textContent = mu.toFixed(2);
-    rTV.textContent = r.toFixed(1);
-    const a = 1.58, b = 0.9;
-    const nu = 1 / (1 + a * Math.pow(r, 2*b));
-    // attractive force ~ mu - nu, when mu > nu pull together
-    const attr = (mu - nu); // > 0 means pull
-    const repl = (1-mu) - (1-nu);  // (1-mu) > (1-nu) means push apart
-    const net = attr; // simplified
-
-    let h = '';
-    h += `<rect width="700" height="240" fill="#fff"/>`;
-    // two points
-    const cx = 350, cy = 120;
-    const scale = 40;
-    const dx = r * scale / 2;
-    h += `<circle cx="${cx-dx}" cy="${cy}" r="14" fill="#4f7df4"/>`;
-    h += `<text x="${cx-dx}" y="${cy+5}" text-anchor="middle" font-size="13" fill="#fff" font-weight="700">i</text>`;
-    h += `<circle cx="${cx+dx}" cy="${cy}" r="14" fill="#8b5cf6"/>`;
-    h += `<text x="${cx+dx}" y="${cy+5}" text-anchor="middle" font-size="13" fill="#fff" font-weight="700">j</text>`;
-    // edge
-    h += `<line x1="${cx-dx+14}" y1="${cy}" x2="${cx+dx-14}" y2="${cy}" stroke="#999" stroke-width="2"/>`;
-    h += `<text x="${cx}" y="${cy-22}" text-anchor="middle" font-size="13" fill="#444">r = ${r.toFixed(1)},  ν = ${nu.toFixed(3)}</text>`;
-    h += `<text x="${cx}" y="${cy-40}" text-anchor="middle" font-size="13" fill="#5e35b1" font-weight="700">μ (target) = ${mu.toFixed(2)}</text>`;
-
-    // force arrows
-    const forceMag = Math.abs(net) * 80;
-    if (net > 0.03) {
-      // pull together
-      h += `<path d="M${cx-dx-30},${cy} l${forceMag},0" stroke="#06a77d" stroke-width="3" marker-end="url(#ar)"/>`;
-      h += `<path d="M${cx+dx+30},${cy} l${-forceMag},0" stroke="#06a77d" stroke-width="3" marker-end="url(#ar)"/>`;
-      h += `<text x="${cx}" y="${cy+50}" text-anchor="middle" font-size="13" fill="#06a77d" font-weight="700">→ ATTRACT ←  (μ &gt; ν)</text>`;
-    } else if (net < -0.03) {
-      h += `<path d="M${cx-dx-30+forceMag},${cy} l${-forceMag},0" stroke="#dc2626" stroke-width="3" marker-end="url(#ar)"/>`;
-      h += `<path d="M${cx+dx+30-forceMag},${cy} l${forceMag},0" stroke="#dc2626" stroke-width="3" marker-end="url(#ar)"/>`;
-      h += `<text x="${cx}" y="${cy+50}" text-anchor="middle" font-size="13" fill="#dc2626" font-weight="700">← REPEL →  (μ &lt; ν)</text>`;
-    } else {
-      h += `<text x="${cx}" y="${cy+50}" text-anchor="middle" font-size="13" fill="#06a77d" font-weight="700">⚖️ BALANCED  (μ ≈ ν)</text>`;
-    }
-    h += `<defs><marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="currentColor"/></marker></defs>`;
-    svg.innerHTML = h;
-    readout.innerHTML = `<span class="lbl">μ − ν =</span> <span class="val-hl">${(mu-nu).toFixed(3)}</span>
-      <span class="lbl">attraction term:</span> ${mu.toFixed(2)} log(${mu.toFixed(2)}/${nu.toFixed(3)}) = ${(mu*Math.log(mu/nu)).toFixed(3)}
-      <span class="lbl">repulsion term:</span> ${(1-mu).toFixed(2)} log(${(1-mu).toFixed(2)}/${(1-nu).toFixed(3)}) = ${((1-mu)*Math.log((1-mu)/(1-nu))).toFixed(3)}`;
-  }
-  muTR.oninput = draw;
-  rTR.oninput = draw;
-  draw();
-})();
-
-/* =============================================
-   §7 Algorithm walkthrough
-   ============================================= */
-(function(){
-  const stepSvg = document.getElementById('stepSvg');
-  const stepTitle = document.getElementById('stepTitle');
-  const stepDesc = document.getElementById('stepDesc');
-  const stepMath = document.getElementById('stepMath');
-  const dots = document.querySelectorAll('.step-dot');
-  let cur = 1;
-  const TOTAL = 7;
-  // sample 30 points
-  const pts3D = [];
-  for (let i = 0; i < 30; i++) {
-    const t = i / 30 * Math.PI * 2;
-    pts3D.push({ x: 200 + 80*Math.cos(t) + (Math.random()-0.5)*20, y: 150 + 80*Math.sin(t) + (Math.random()-0.5)*20 });
-  }
-  // for low-D
-  const pts2D = pts3D.map(p => ({ x: 250 + (Math.random()-0.5)*120, y: 150 + (Math.random()-0.5)*120 }));
-
-  function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
-
-  function render() {
-    dots.forEach(d => {
-      const n = +d.dataset.step;
-      d.classList.toggle('active', n === cur);
-      d.classList.toggle('done', n < cur);
+    const k = +document.getElementById('s3k').value;
+    const showW = document.getElementById('s3showWeight').checked;
+    document.getElementById('s3kVal').textContent = k;
+    // For each point, compute KNN
+    let edges = [];
+    points.forEach((p, i) => {
+      const dists = points.map((p2, j) => ({j, d: i===j ? Infinity : Math.sqrt((p.x-p2.x)**2 + (p.y-p2.y)**2)}));
+      dists.sort((a,b)=>a.d-b.d);
+      const rho = dists[0].d;
+      // approximate sigma by simple solve: target sum_j exp(-(d-rho)/sigma) = log2(k)
+      let lo = 0.1, hi = 200;
+      for (let it = 0; it < 30; it++) {
+        const mid = (lo+hi)/2;
+        let sum = 0;
+        dists.slice(0, k).forEach(d => { sum += Math.exp(-Math.max(0, d.d - rho) / mid); });
+        if (sum < Math.log2(k)) lo = mid; else hi = mid;
+      }
+      const sigma = (lo+hi)/2;
+      dists.slice(0, k).forEach(d => {
+        const w = Math.exp(-Math.max(0, d.d - rho) / sigma);
+        if (i < d.j) edges.push({i, j: d.j, w});
+      });
     });
-    let h = '<rect width="500" height="300" fill="#0d1631"/>';
-    let title, desc, math;
-    if (cur === 1) {
-      title = '步驟 1：建 KNN graph';
-      desc = '對每個資料點 xᵢ 找最近的 k 個鄰居（典型 k=15）。圖中顯示一個樣本的 5 鄰居連結。';
-      math = '<span style="color:#ffd564"># Step 1: KNN search</span>\nN_k(i) = top-k closest points to x_i';
-      // pick a focus point, draw edges to neighbors
-      const focus = pts3D[10];
-      const nbrs = pts3D.filter(p => p !== focus).map(p => ({p, d: dist(focus, p)})).sort((a,b)=>a.d-b.d).slice(0, 5);
-      for (const p of pts3D) h += `<circle cx="${p.x}" cy="${p.y}" r="3" fill="#4f7df4" opacity="0.7"/>`;
-      for (const n of nbrs) h += `<line x1="${focus.x}" y1="${focus.y}" x2="${n.p.x}" y2="${n.p.y}" stroke="#ffd564" stroke-width="1.5"/>`;
-      h += `<circle cx="${focus.x}" cy="${focus.y}" r="6" fill="#ffd564"/>`;
-    } else if (cur === 2) {
-      title = '步驟 2：算 ρᵢ（每個點到最近鄰的距離）';
-      desc = '對每個 xᵢ，ρᵢ 是「到最近非自身鄰居的距離」。視覺上：每個圈半徑 = ρᵢ。';
-      math = '<span style="color:#ffd564"># Step 2: ρ_i</span>\nρ_i = min { d(x_i, x_j) : j ∈ N_k(i), j≠i }';
-      for (const p of pts3D) {
-        const nbr = pts3D.filter(q => q !== p).sort((a,b)=>dist(p,a)-dist(p,b))[0];
-        const rho = dist(p, nbr);
-        h += `<circle cx="${p.x}" cy="${p.y}" r="${rho}" fill="none" stroke="#8b5cf6" stroke-width="0.5" opacity="0.4"/>`;
-      }
-      for (const p of pts3D) h += `<circle cx="${p.x}" cy="${p.y}" r="3" fill="#4f7df4"/>`;
-    } else if (cur === 3) {
-      title = '步驟 3：找 σᵢ 滿足 Σ w = log₂(k)';
-      desc = '對每個點，二分搜尋 σᵢ 讓所有鄰居的權重總和等於 log₂(k)。視覺上：每個點的「鄰居影響圈」現在被歸一化。';
-      math = '<span style="color:#ffd564"># Step 3: σ_i (binary search)</span>\nfind σ_i s.t. Σⱼ exp(−max(0, d−ρ_i)/σ_i) = log₂(k)';
-      for (const p of pts3D) {
-        h += `<circle cx="${p.x}" cy="${p.y}" r="35" fill="rgba(139,92,246,0.08)" stroke="rgba(139,92,246,0.4)" stroke-width="0.7"/>`;
-      }
-      for (const p of pts3D) h += `<circle cx="${p.x}" cy="${p.y}" r="3" fill="#4f7df4"/>`;
-    } else if (cur === 4) {
-      title = '步驟 4：計算 w_{j|i}，對稱化成 μ_{ij}';
-      desc = '對每對鄰居算 w_{j|i}，再透過 fuzzy union 對稱化，得到「邊機率 μ_{ij}」。';
-      math = '<span style="color:#ffd564"># Step 4: edge probabilities</span>\nμ_{ij} = w_{j|i} + w_{i|j} − w_{j|i}·w_{i|j}';
-      // draw all KNN edges with varying thickness
-      for (let i = 0; i < pts3D.length; i++) {
-        const nbrs = pts3D.filter(p => p !== pts3D[i]).map(p => ({p, d: dist(pts3D[i], p)})).sort((a,b)=>a.d-b.d).slice(0, 4);
-        for (const n of nbrs) {
-          const mu = Math.exp(-n.d / 30);
-          h += `<line x1="${pts3D[i].x}" y1="${pts3D[i].y}" x2="${n.p.x}" y2="${n.p.y}" stroke="#06a77d" stroke-width="${0.3 + mu * 2}" opacity="${0.2 + mu * 0.5}"/>`;
-        }
-      }
-      for (const p of pts3D) h += `<circle cx="${p.x}" cy="${p.y}" r="3" fill="#4f7df4"/>`;
-    } else if (cur === 5) {
-      title = '步驟 5：初始化低維點 yᵢ';
-      desc = 'spectral init（用圖 Laplacian 特徵向量）或隨機。隨機 init 較快但收斂可能差。';
-      math = '<span style="color:#ffd564"># Step 5: init</span>\ny_i ← spectral_layout(graph) or N(0, 1e-4)';
-      h += '<rect x="40" y="80" width="200" height="180" fill="#1a2347" stroke="#4f7df4" stroke-width="1.5" rx="5"/>';
-      h += '<text x="140" y="60" text-anchor="middle" font-size="13" fill="#ffd564" font-weight="700">high-D KNN graph</text>';
-      for (let i = 0; i < 20; i++) {
-        const t = i / 20 * Math.PI * 2;
-        h += `<circle cx="${140 + 60*Math.cos(t)}" cy="${170 + 60*Math.sin(t)}" r="3" fill="#4f7df4"/>`;
-      }
-      h += '<rect x="280" y="80" width="200" height="180" fill="#1a2347" stroke="#06a77d" stroke-width="1.5" rx="5"/>';
-      h += '<text x="380" y="60" text-anchor="middle" font-size="13" fill="#ffd564" font-weight="700">low-D init (random)</text>';
-      for (let i = 0; i < 20; i++) {
-        h += `<circle cx="${300 + Math.random()*160}" cy="${100 + Math.random()*150}" r="3" fill="#06a77d"/>`;
-      }
-      h += '<path d="M245,170 L275,170" stroke="#ffd564" stroke-width="2" marker-end="url(#arr5)"/>';
-      h += '<defs><marker id="arr5" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#ffd564"/></marker></defs>';
-    } else if (cur === 6) {
-      title = '步驟 6：SGD 與負取樣';
-      desc = '每次迭代：隨機抽一條邊（按 μ_{ij} 加權）做吸引，隨機抽 5 個非鄰居做排斥。學習率隨時間衰減。';
-      math = '<span style="color:#ffd564"># Step 6: SGD step</span>\nfor t in 1..n_epochs:\n  sample edge (i,j) ~ μ\n  attract y_i toward y_j\n  for k in negative_samples(5):\n    repel y_i from y_k';
-      // animate forces on simple 2-cluster setup
-      const c1 = [{x:130,y:140},{x:160,y:160},{x:120,y:170},{x:150,y:140}];
-      const c2 = [{x:350,y:140},{x:380,y:160},{x:340,y:170},{x:370,y:140}];
-      for (const p of [...c1, ...c2]) h += `<circle cx="${p.x}" cy="${p.y}" r="6" fill="#4f7df4"/>`;
-      // attraction within cluster
-      for (let i = 0; i < c1.length-1; i++) {
-        h += `<line x1="${c1[i].x}" y1="${c1[i].y}" x2="${c1[i+1].x}" y2="${c1[i+1].y}" stroke="#06a77d" stroke-width="2"/>`;
-      }
-      // repulsion between clusters
-      h += `<line x1="${c1[0].x}" y1="${c1[0].y}" x2="${c2[0].x}" y2="${c2[0].y}" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="4 3"/>`;
-      h += `<text x="250" y="100" text-anchor="middle" font-size="12" fill="#06a77d">attract (within cluster)</text>`;
-      h += `<text x="250" y="220" text-anchor="middle" font-size="12" fill="#dc2626">repel (negative samples)</text>`;
-    } else if (cur === 7) {
-      title = '步驟 7：收斂後得到 2D 嵌入';
-      desc = '經過 200~500 epochs，低維點達到穩定配置：高維鄰居在低維也是鄰居，非鄰居被拉開。';
-      math = '<span style="color:#ffd564"># Step 7: converged embedding</span>\nY_final ∈ ℝ^(n × 2)\n→ scatter plot, color by cluster';
-      // simulate 3 clusters
-      const colors = ['#c0392b','#06a77d','#4f7df4'];
-      const centers = [{x:130,y:150},{x:350,y:100},{x:380,y:220}];
-      for (let g = 0; g < 3; g++) {
-        for (let i = 0; i < 10; i++) {
-          h += `<circle cx="${centers[g].x + (Math.random()-0.5)*40}" cy="${centers[g].y + (Math.random()-0.5)*40}" r="4" fill="${colors[g]}" opacity="0.85"/>`;
-        }
-      }
-      h += `<text x="250" y="280" text-anchor="middle" font-size="13" fill="#ffd564" font-weight="700">✓ 3 個群被自然分開</text>`;
-    }
-    stepSvg.innerHTML = h;
-    stepTitle.textContent = title;
-    stepDesc.innerHTML = `<p style="margin:0">${desc}</p>`;
-    stepMath.innerHTML = math;
-    document.getElementById('stepPrev').disabled = cur === 1;
-    document.getElementById('stepNext').disabled = cur === TOTAL;
+    let s = '';
+    s += `<rect x="0" y="0" width="800" height="400" fill="#fcfcfa"/>`;
+    edges.forEach(e => {
+      const p1 = points[e.i], p2 = points[e.j];
+      const sw = showW ? 0.5 + e.w * 2 : 0.7;
+      s += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="#888" stroke-width="${sw}" opacity="0.5"/>`;
+    });
+    const cols = ['#ea580c', '#2c5aa0', '#27795a'];
+    points.forEach(p => {
+      s += `<circle cx="${p.x}" cy="${p.y}" r="5" fill="${cols[p.g]}" opacity="0.85"/>`;
+    });
+    document.getElementById('s3svg').innerHTML = s;
+    document.getElementById('s3edges').textContent = edges.length;
+    document.getElementById('s3deg').textContent = (2 * edges.length / points.length).toFixed(1);
   }
-  document.getElementById('stepNext').onclick = () => { if (cur < TOTAL) { cur++; render(); } };
-  document.getElementById('stepPrev').onclick = () => { if (cur > 1) { cur--; render(); } };
-  document.getElementById('stepReset').onclick = () => { cur = 1; render(); };
-  dots.forEach(d => d.onclick = () => { cur = +d.dataset.step; render(); });
-  render();
+  document.getElementById('s3k').addEventListener('input', draw);
+  document.getElementById('s3showWeight').addEventListener('change', draw);
+  draw();
+})();
+
+// ===== §6 UMAP animation =====
+(function() {
+  let seed = 19;
+  const rnd = () => { seed = (seed*9301+49297)%233280; return seed/233280; };
+  function nrnd(m,s){const u1=rnd(),u2=rnd();return m+s*Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);}
+  let groups, Y, edges, iter;
+  function gen() {
+    seed = 19;
+    groups = [];
+    for (let g = 0; g < 3; g++) for (let i = 0; i < 20; i++) groups.push(g);
+    Y = groups.map(() => ({x: nrnd(400, 60), y: nrnd(200, 60)}));
+    // edges: within-group connect to a few neighbors
+    edges = [];
+    for (let i = 0; i < groups.length; i++) {
+      for (let j = i+1; j < groups.length; j++) {
+        if (groups[i] === groups[j] && rnd() < 0.18) edges.push({i, j, w: 0.8 + rnd()*0.2});
+        else if (groups[i] !== groups[j] && rnd() < 0.005) edges.push({i, j, w: 0.1});
+      }
+    }
+    iter = 0;
+  }
+  function step(nIter) {
+    const lr = 0.05;
+    const a = 1.93, b = 0.79;
+    for (let it = 0; it < nIter; it++) {
+      // positive edges: pull
+      edges.forEach(e => {
+        const dx = Y[e.i].x - Y[e.j].x;
+        const dy = Y[e.i].y - Y[e.j].y;
+        const d2 = dx*dx + dy*dy;
+        const phi = 1 / (1 + a * Math.pow(d2/1000, b));
+        const grad = -2 * a * b * Math.pow(d2/1000, b-1) * phi * phi / 1000;
+        // pull: w_ij * dPhi/dy_i = w * grad * (y_i - y_j) ; we want to maximize log Phi → SGD on y
+        const force = e.w * grad * lr * 50;
+        Y[e.i].x -= force * dx; Y[e.i].y -= force * dy;
+        Y[e.j].x += force * dx; Y[e.j].y += force * dy;
+      });
+      // negative samples: push
+      for (let i = 0; i < groups.length; i++) {
+        for (let m = 0; m < 5; m++) {
+          const j = Math.floor(rnd() * groups.length);
+          if (j === i) continue;
+          const dx = Y[i].x - Y[j].x;
+          const dy = Y[i].y - Y[j].y;
+          const d2 = dx*dx + dy*dy;
+          if (d2 < 1) continue;
+          // push using gradient of (1-w) log(1-Phi); here w_ij approximated by 0
+          const phi = 1 / (1 + a * Math.pow(d2/1000, b));
+          const force = lr * 2 * phi / Math.sqrt(d2) * 30;
+          Y[i].x += force * dx / Math.sqrt(d2);
+          Y[i].y += force * dy / Math.sqrt(d2);
+        }
+      }
+      iter++;
+    }
+  }
+  function draw() {
+    const cx = Y.reduce((a,b)=>a+b.x,0)/Y.length;
+    const cy = Y.reduce((a,b)=>a+b.y,0)/Y.length;
+    // re-scale to fit
+    const xs = Y.map(p => p.x - cx), ys = Y.map(p => p.y - cy);
+    const mx = Math.max(...xs.map(Math.abs), ...ys.map(Math.abs), 1);
+    const scale = Math.min(150 / mx, 1.5);
+    const cols = ['#ea580c', '#2c5aa0', '#27795a'];
+    let s = '';
+    s += `<rect x="0" y="0" width="800" height="400" fill="#fcfcfa"/>`;
+    edges.forEach(e => {
+      const x1 = (Y[e.i].x - cx) * scale + 400;
+      const y1 = (Y[e.i].y - cy) * scale + 200;
+      const x2 = (Y[e.j].x - cx) * scale + 400;
+      const y2 = (Y[e.j].y - cy) * scale + 200;
+      s += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#888" stroke-width="${0.5 + e.w}" opacity="${0.2 + e.w*0.3}"/>`;
+    });
+    Y.forEach((p, i) => {
+      s += `<circle cx="${(p.x - cx) * scale + 400}" cy="${(p.y - cy) * scale + 200}" r="6" fill="${cols[groups[i]]}" opacity="0.85"/>`;
+    });
+    document.getElementById('s6svg').innerHTML = s;
+    document.getElementById('s6iter').textContent = iter;
+  }
+  document.getElementById('s6next').addEventListener('click', () => { step(20); draw(); });
+  document.getElementById('s6reset').addEventListener('click', () => { gen(); draw(); });
+  document.getElementById('s6auto').addEventListener('click', () => {
+    let n = 0;
+    function tick() {
+      step(20); draw();
+      if (++n < 10) setTimeout(tick, 150);
+    }
+    tick();
+  });
+  gen(); draw();
 })();
 </script>
 </body>

@@ -2265,6 +2265,9 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
    §0 故事開始（深入淺出開場）
    =================================================== */
 (function section0() {
+  // ----- i18n helper -----
+  function tr(zh, en) { return document.body.classList.contains('lang-en') ? en : zh; }
+
   // ----- 0-1 原始資料表 -----
   // 用固定種子的偽資料來確保表格穩定
   function srand(seed) { let s = seed; return ()=>{ s = (s*9301+49297)%233280; return s/233280; }; }
@@ -2298,12 +2301,12 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     shownIndices = picks;
   }
   function renderTable() {
-    let h = '<thead><tr><th>樣本 ID</th><th>Gene1</th><th>Gene2</th><th>Gene3</th><th>細胞型態？</th></tr></thead><tbody>';
+    let h = `<thead><tr><th>${tr('樣本 ID','Sample ID')}</th><th>Gene1</th><th>Gene2</th><th>Gene3</th><th>${tr('細胞型態？','Cell type?')}</th></tr></thead><tbody>`;
     for (let k=0; k<shownIndices.length; k++) {
       const i = shownIndices[k];
       h += `<tr><td>#${(i+1).toString().padStart(2,'0')}</td><td>${rawData[i][0].toFixed(3)}</td><td>${rawData[i][1].toFixed(3)}</td><td>${rawData[i][2].toFixed(3)}</td><td style="color:#888">?</td></tr>`;
     }
-    h += `<tr><td colspan="5" style="color:#888;text-align:center">⋮（共 60 筆，這只是隨機抽的 10 筆）⋮</td></tr></tbody>`;
+    h += `<tr><td colspan="5" style="color:#888;text-align:center">${tr('⋮（共 60 筆，這只是隨機抽的 10 筆）⋮','⋮ (60 total samples; this is just 10 randomly drawn) ⋮')}</td></tr></tbody>`;
     rawTable.innerHTML = h;
   }
   pickShownIndices();
@@ -2318,10 +2321,10 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     let h = '';
     h += `<line x1="${pad}" y1="${H-pad}" x2="${W-10}" y2="${H-pad}" stroke="#ccc"/>`;
     h += `<line x1="${pad}" y1="20" x2="${pad}" y2="${H-pad}" stroke="#ccc"/>`;
-    h += `<text x="${W/2}" y="${H-12}" text-anchor="middle" font-size="13" fill="#aaa">Gene1 表現量</text>`;
-    h += `<text x="14" y="${H/2}" font-size="13" fill="#aaa" transform="rotate(-90 14 ${H/2})" text-anchor="middle">Gene2 表現量</text>`;
-    h += `<text x="${W/2}" y="${H/2 - 8}" text-anchor="middle" font-size="14" fill="#bbb">⌛ 散佈圖會在按按鈕後出現</text>`;
-    h += `<text x="${W/2}" y="${H/2 + 14}" text-anchor="middle" font-size="12" fill="#bbb">先試著從左邊的表格找規律看看…</text>`;
+    h += `<text x="${W/2}" y="${H-12}" text-anchor="middle" font-size="13" fill="#aaa">${tr('Gene1 表現量','Gene1 expression')}</text>`;
+    h += `<text x="14" y="${H/2}" font-size="13" fill="#aaa" transform="rotate(-90 14 ${H/2})" text-anchor="middle">${tr('Gene2 表現量','Gene2 expression')}</text>`;
+    h += `<text x="${W/2}" y="${H/2 - 8}" text-anchor="middle" font-size="14" fill="#bbb">${tr('⌛ 散佈圖會在按按鈕後出現','⌛ Scatter plot appears after you click the button')}</text>`;
+    h += `<text x="${W/2}" y="${H/2 + 14}" text-anchor="middle" font-size="12" fill="#bbb">${tr('先試著從左邊的表格找規律看看…','First try to spot a pattern in the table on the left…')}</text>`;
     scatterSvg.innerHTML = h;
   }
   function draw2DScatter() {
@@ -2334,8 +2337,8 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     let h = '';
     h += `<line x1="${pad}" y1="${H-pad}" x2="${W-10}" y2="${H-pad}" stroke="#999"/>`;
     h += `<line x1="${pad}" y1="20" x2="${pad}" y2="${H-pad}" stroke="#999"/>`;
-    h += `<text x="${W/2}" y="${H-12}" text-anchor="middle" font-size="13" fill="#666">Gene1 表現量</text>`;
-    h += `<text x="14" y="${H/2}" font-size="13" fill="#666" transform="rotate(-90 14 ${H/2})" text-anchor="middle">Gene2 表現量</text>`;
+    h += `<text x="${W/2}" y="${H-12}" text-anchor="middle" font-size="13" fill="#666">${tr('Gene1 表現量','Gene1 expression')}</text>`;
+    h += `<text x="14" y="${H/2}" font-size="13" fill="#666" transform="rotate(-90 14 ${H/2})" text-anchor="middle">${tr('Gene2 表現量','Gene2 expression')}</text>`;
     for (let i=0; i<rawData.length; i++) {
       const isShown = shownIndices.includes(i);
       h += `<circle cx="${sx(rawData[i][0])}" cy="${sy(rawData[i][1])}" r="${isShown?7:5}" fill="${isShown?cellCols[labels[i]]:'#bbb'}" stroke="${isShown?'#222':'#fff'}" stroke-width="${isShown?2:1}" opacity="${isShown?1:0.55}"/>`;
@@ -2346,9 +2349,14 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     if (vizDone) return;
     draw2DScatter();
     vizDone = true;
-    vizNote.innerHTML = '🎯 <b>看見了嗎？</b>同一份 60 筆資料，畫成 (Gene1, Gene2) 散佈圖後，<b>三群點馬上跳出來</b>。' +
-      '<br>表格中你看的那 10 列（外圍黑邊的點）<b>剛好散在三群裡</b>——你之前看不出規律，是因為眼睛不擅長看純數字表格。' +
-      '<br>剩下 50 個點顯示為灰色，因為圖只用了 Gene1, Gene2 兩個維度，還沒做任何 PCA。';
+    vizNote.innerHTML = tr(
+      '🎯 <b>看見了嗎？</b>同一份 60 筆資料，畫成 (Gene1, Gene2) 散佈圖後，<b>三群點馬上跳出來</b>。'
+      + '<br>表格中你看的那 10 列（外圍黑邊的點）<b>剛好散在三群裡</b>——你之前看不出規律，是因為眼睛不擅長看純數字表格。'
+      + '<br>剩下 50 個點顯示為灰色，因為圖只用了 Gene1, Gene2 兩個維度，還沒做任何 PCA。',
+      '🎯 <b>See it?</b> The same 60 samples, plotted as (Gene1, Gene2), instantly reveal <b>three clusters</b>.'
+      + '<br>The 10 rows from the table (black-outlined points) <b>land naturally in all three clusters</b> — you couldn\'t see the pattern before because eyes aren\'t built for reading number tables.'
+      + '<br>The remaining 50 points are gray because the plot only uses Gene1 and Gene2 — no PCA yet.'
+    );
   };
   document.getElementById('s0ResetBtn').onclick = () => {
     pickShownIndices();
@@ -2373,15 +2381,15 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     // 均值
     const mean = spreadPts.reduce((a,b)=>a+b,0)/spreadPts.length;
     h += `<line x1="${sx(mean)}" y1="60" x2="${sx(mean)}" y2="100" stroke="#8e44ad" stroke-width="2" stroke-dasharray="3 2"/>`;
-    h += `<text x="${sx(mean)}" y="50" text-anchor="middle" font-size="11" fill="#8e44ad">均值=${mean.toFixed(2)}</text>`;
+    h += `<text x="${sx(mean)}" y="50" text-anchor="middle" font-size="11" fill="#8e44ad">${tr('均值','mean')}=${mean.toFixed(2)}</text>`;
     spreadPts.forEach((v, i) => {
       const cx = sx(v);
       h += `<circle class="spt" cx="${cx}" cy="100" r="9" fill="#2c5aa0" stroke="#fff" stroke-width="2" data-idx="${i}" style="cursor:grab"/>`;
     });
     // 變異數
     const variance = spreadPts.reduce((s,v)=>s+(v-mean)**2,0)/(spreadPts.length-1);
-    h += `<text x="${W/2}" y="20" text-anchor="middle" font-size="13" fill="#c0392b" font-weight="700">變異數 = ${variance.toFixed(3)}</text>`;
-    h += `<text x="${W/2}" y="38" text-anchor="middle" font-size="11" fill="#666">（你還不需要懂這個數字怎麼來的，只要感覺它隨著點變分散會變大）</text>`;
+    h += `<text x="${W/2}" y="20" text-anchor="middle" font-size="13" fill="#c0392b" font-weight="700">${tr('變異數','Variance')} = ${variance.toFixed(3)}</text>`;
+    h += `<text x="${W/2}" y="38" text-anchor="middle" font-size="11" fill="#666">${tr('（你還不需要懂這個數字怎麼來的，只要感覺它隨著點變分散會變大）','(You don\'t need to know how this number is computed yet — just feel it grow as the points spread)')}</text>`;
     spreadSvg.innerHTML = h;
   }
   let dragS = null;
@@ -2405,58 +2413,62 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
   const formulaData = [2, 4, 4, 4, 5, 5, 7, 9]; // 經典 mean=5 var=4
   const formulaCards = [
     {
-      name: '方案 A',
-      title: '範圍 (max − min)',
+      name: tr('方案 A','Option A'),
+      title: tr('範圍 (max − min)','Range (max − min)'),
       formula: '\\(\\max(x_i) - \\min(x_i)\\)',
       compute: () => {
         const mn = Math.min(...formulaData), mx = Math.max(...formulaData);
-        return { value: mx - mn, steps: [`max = ${mx}`, `min = ${mn}`, `結果 = ${mx} − ${mn} = ${mx-mn}`] };
+        return { value: mx - mn, steps: [`max = ${mx}`, `min = ${mn}`, `${tr('結果','Result')} = ${mx} − ${mn} = ${mx-mn}`] };
       },
-      verdict: '只用到 2 個點',
-      problem: '極端值決定一切，<b>中間的 6 個點完全沒參與計算</b>。如果加一個離群值就完全失準。',
+      verdict: tr('只用到 2 個點','Uses only 2 points'),
+      problem: tr('極端值決定一切，<b>中間的 6 個點完全沒參與計算</b>。如果加一個離群值就完全失準。',
+                  'Extremes decide everything; <b>the middle 6 points contribute nothing</b>. A single outlier wrecks it.'),
       bad: true
     },
     {
-      name: '方案 B',
-      title: '偏差總和 \\(\\sum (x_i - \\bar{x})\\)',
+      name: tr('方案 B','Option B'),
+      title: tr('偏差總和 \\(\\sum (x_i - \\bar{x})\\)','Sum of deviations \\(\\sum (x_i - \\bar{x})\\)'),
       formula: '\\(\\sum_i (x_i - \\bar{x})\\)',
       compute: () => {
         const m = formulaData.reduce((a,b)=>a+b,0)/formulaData.length;
         const devs = formulaData.map(v=>v-m);
         const sum = devs.reduce((a,b)=>a+b,0);
-        return { value: sum, steps: [`均值 = ${m}`, `偏差 = [${devs.map(d=>d.toFixed(1)).join(', ')}]`, `總和 = ${sum.toFixed(6)}`] };
+        return { value: sum, steps: [`${tr('均值','mean')} = ${m}`, `${tr('偏差','deviations')} = [${devs.map(d=>d.toFixed(1)).join(', ')}]`, `${tr('總和','sum')} = ${sum.toFixed(6)}`] };
       },
-      verdict: '永遠等於 0',
-      problem: '正負偏差<b>會互相抵消</b>。任何資料的偏差總和都是 0（這是「均值」的定義）。所以這個公式根本沒用。',
+      verdict: tr('永遠等於 0','Always equals 0'),
+      problem: tr('正負偏差<b>會互相抵消</b>。任何資料的偏差總和都是 0（這是「均值」的定義）。所以這個公式根本沒用。',
+                  'Positive and negative deviations <b>cancel each other</b>. The sum is always 0 (that\'s the definition of mean). Useless.'),
       bad: true
     },
     {
-      name: '方案 C',
-      title: '絕對偏差總和 \\(\\sum |x_i - \\bar{x}|\\)',
+      name: tr('方案 C','Option C'),
+      title: tr('絕對偏差總和 \\(\\sum |x_i - \\bar{x}|\\)','Mean absolute deviation \\(\\sum |x_i - \\bar{x}|\\)'),
       formula: '\\(\\frac{1}{n}\\sum_i |x_i - \\bar{x}|\\)',
       compute: () => {
         const m = formulaData.reduce((a,b)=>a+b,0)/formulaData.length;
         const devs = formulaData.map(v=>Math.abs(v-m));
         const sum = devs.reduce((a,b)=>a+b,0);
-        return { value: sum/formulaData.length, steps: [`均值 = ${m}`, `|偏差| = [${devs.map(d=>d.toFixed(1)).join(', ')}]`, `總和 = ${sum.toFixed(2)}`, `÷ n = ${(sum/formulaData.length).toFixed(3)}`] };
+        return { value: sum/formulaData.length, steps: [`${tr('均值','mean')} = ${m}`, `${tr('|偏差|','|deviation|')} = [${devs.map(d=>d.toFixed(1)).join(', ')}]`, `${tr('總和','sum')} = ${sum.toFixed(2)}`, `÷ n = ${(sum/formulaData.length).toFixed(3)}`] };
       },
-      verdict: '不抵消、但不平滑',
-      problem: '解決了抵消問題，但 |x| 在 x=0 處<b>不可微分</b>，後續推導 PCA 時要用最佳化方法（如 Lagrange）會非常麻煩。',
+      verdict: tr('不抵消、但不平滑','No cancellation, but not smooth'),
+      problem: tr('解決了抵消問題，但 |x| 在 x=0 處<b>不可微分</b>，後續推導 PCA 時要用最佳化方法（如 Lagrange）會非常麻煩。',
+                  'Cancellation is gone, but |x| is <b>not differentiable</b> at x=0 — optimisation tools used in PCA (e.g. Lagrange) become a nightmare.'),
       bad: false,
       ok: true
     },
     {
-      name: '方案 D',
-      title: '平方偏差 \\(\\sum (x_i - \\bar{x})^2\\)',
+      name: tr('方案 D','Option D'),
+      title: tr('平方偏差 \\(\\sum (x_i - \\bar{x})^2\\)','Squared deviations \\(\\sum (x_i - \\bar{x})^2\\)'),
       formula: '\\(\\frac{1}{n-1}\\sum_i (x_i - \\bar{x})^2\\)',
       compute: () => {
         const m = formulaData.reduce((a,b)=>a+b,0)/formulaData.length;
         const devs = formulaData.map(v=>(v-m)*(v-m));
         const sum = devs.reduce((a,b)=>a+b,0);
-        return { value: sum/(formulaData.length-1), steps: [`均值 = ${m}`, `偏差² = [${devs.map(d=>d.toFixed(2)).join(', ')}]`, `總和 = ${sum.toFixed(2)}`, `÷ (n-1) = ${(sum/(formulaData.length-1)).toFixed(3)}`] };
+        return { value: sum/(formulaData.length-1), steps: [`${tr('均值','mean')} = ${m}`, `${tr('偏差²','deviation²')} = [${devs.map(d=>d.toFixed(2)).join(', ')}]`, `${tr('總和','sum')} = ${sum.toFixed(2)}`, `÷ (n-1) = ${(sum/(formulaData.length-1)).toFixed(3)}`] };
       },
-      verdict: '✓ 這就是變異數',
-      problem: '<b>1)</b> 平方一定非負，不會抵消。<b>2)</b> 平方函數處處可微，數學工具豐富。<b>3)</b> 對應到「歐式距離平方」的幾何意義，是 PCA、回歸、最小平方法的共同基礎。',
+      verdict: tr('✓ 這就是變異數','✓ This is variance'),
+      problem: tr('<b>1)</b> 平方一定非負，不會抵消。<b>2)</b> 平方函數處處可微，數學工具豐富。<b>3)</b> 對應到「歐式距離平方」的幾何意義，是 PCA、回歸、最小平方法的共同基礎。',
+                  '<b>1)</b> Squares are non-negative — no cancellation. <b>2)</b> Squares are differentiable everywhere — rich math toolbox. <b>3)</b> Corresponds geometrically to "squared Euclidean distance" — the shared foundation of PCA, regression, and least squares.'),
       bad: false,
       best: true
     }
@@ -2473,7 +2485,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
                   text-align:center" data-card="${i}">
         <div style="font-size:12px; color:#888; font-weight:600">${c.name}</div>
         <div style="font-size:14px; margin:8px 0; font-weight:600">${c.title}</div>
-        <div style="font-size:11px; color:${c.best?'#27795a':(c.bad?'#c0392b':'#999')}; font-weight:700">${selFormula===i?(c.best?'✓ 最佳':(c.bad?'✗ 有問題':'△ 有優點但...')):'點擊試試 →'}</div>
+        <div style="font-size:11px; color:${c.best?'#27795a':(c.bad?'#c0392b':'#999')}; font-weight:700">${selFormula===i?(c.best?tr('✓ 最佳','✓ Best'):(c.bad?tr('✗ 有問題','✗ Problematic'):tr('△ 有優點但...','△ Has merit but...'))):tr('點擊試試 →','Click to try →')}</div>
       </div>`).join('');
     cardsEl.querySelectorAll('[data-card]').forEach(el=>{
       el.addEventListener('click', e => {
@@ -2486,10 +2498,11 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
   }
   function renderDetail() {
     if (selFormula < 0) {
-      detailEl.innerHTML = `<h4>請點上方任一卡片開始探索</h4>
+      detailEl.innerHTML = `<h4>${tr('請點上方任一卡片開始探索','Click any card above to start exploring')}</h4>
         <p style="font-size:13px; color:var(--muted); margin:8px 0">
-          資料：8 個樣本 = [${formulaData.join(', ')}]<br>
-          你的任務：點四個卡片試試看，看哪個公式最適合當「分散度」的量度。
+          ${tr('資料：8 個樣本','Data: 8 samples')} = [${formulaData.join(', ')}]<br>
+          ${tr('你的任務：點四個卡片試試看，看哪個公式最適合當「分散度」的量度。',
+                'Your task: click each of the four cards and find out which formula best captures "spread".')}
         </p>`;
       return;
     }
@@ -2500,12 +2513,13 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
       <div style="font-family:monospace; font-size:14px; background:#fff; padding:10px; border-radius:6px; margin:8px 0">
         ${res.steps.map(s=>`<div>${s}</div>`).join('')}
         <div style="border-top:2px solid #c0392b; margin-top:6px; padding-top:6px; font-weight:700; color:#c0392b">
-          答案 = ${typeof res.value === 'number' ? res.value.toFixed(3) : res.value}
+          ${tr('答案','Answer')} = ${typeof res.value === 'number' ? res.value.toFixed(3) : res.value}
         </div>
       </div>
-      <p style="margin:8px 0; font-size:13px"><b>判決：${c.verdict}</b></p>
+      <p style="margin:8px 0; font-size:13px"><b>${tr('判決','Verdict')}：${c.verdict}</b></p>
       <p style="margin:8px 0; font-size:13px">${c.problem}</p>
-      ${c.best ? '<p style="font-size:13px; color:#27795a; font-weight:600">✓ 這就是「變異數」。從此你可以放心使用這個公式來量分散度。</p>' : ''}`;
+      ${c.best ? `<p style="font-size:13px; color:#27795a; font-weight:600">${tr('✓ 這就是「變異數」。從此你可以放心使用這個公式來量分散度。',
+                                                                                  '✓ This <b>is</b> variance. From here on you can confidently use this formula to measure spread.')}</p>` : ''}`;
   }
   renderCards();
   renderDetail();
@@ -2558,7 +2572,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     // 投影方向線
     const [mxS, myS] = [cx + mean2d[0]*scale, cy - mean2d[1]*scale];
     h += `<line x1="${mxS - cs*200}" y1="${myS + sn*200}" x2="${mxS + cs*220}" y2="${myS - sn*220}" stroke="#27795a" stroke-width="3" marker-end="url(#arrowG)"/>`;
-    h += `<text x="${mxS + cs*240}" y="${myS - sn*240}" font-size="13" fill="#27795a" font-weight="700">投影方向</text>`;
+    h += `<text x="${mxS + cs*240}" y="${myS - sn*240}" font-size="13" fill="#27795a" font-weight="700">${tr('投影方向','Projection direction')}</text>`;
     // 點與投影
     for (const p of projData) {
       const sx = cx + p[0]*scale, sy = cy - p[1]*scale;
@@ -2578,15 +2592,18 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     const best = bestAngle();
     const bestV = varAtAngle(best*Math.PI/180);
     const ratio = v/bestV*100;
-    projStats.innerHTML = `<h4>當前方向的「投影後變異數」</h4>
-      <div class="kv"><span class="k">角度 θ：</span><span class="v">${projThetaR.value}°</span></div>
-      <div class="kv"><span class="k">投影後變異數：</span><span class="v" style="color:#27795a">${v.toFixed(3)}</span></div>
-      <div class="kv"><span class="k">理論最大值：</span><span class="v">${bestV.toFixed(3)} (在 ${best}°)</span></div>
-      <div class="kv"><span class="k">你目前找到：</span><span class="v" style="color:${ratio>95?'#27795a':(ratio>70?'#f0c419':'#c0392b')}">${ratio.toFixed(1)}%</span></div>
+    projStats.innerHTML = `<h4>${tr('當前方向的「投影後變異數」','Variance after projecting onto the current direction')}</h4>
+      <div class="kv"><span class="k">${tr('角度 θ','Angle θ')}：</span><span class="v">${projThetaR.value}°</span></div>
+      <div class="kv"><span class="k">${tr('投影後變異數','Projected variance')}：</span><span class="v" style="color:#27795a">${v.toFixed(3)}</span></div>
+      <div class="kv"><span class="k">${tr('理論最大值','Theoretical max')}：</span><span class="v">${bestV.toFixed(3)} (${tr('在','at')} ${best}°)</span></div>
+      <div class="kv"><span class="k">${tr('你目前找到','You currently have')}：</span><span class="v" style="color:${ratio>95?'#27795a':(ratio>70?'#f0c419':'#c0392b')}">${ratio.toFixed(1)}%</span></div>
       <p style="margin:10px 0 0; font-size:13px">
-        ${ratio>95?'🎯 太棒了！你已經找到（近似）最佳方向，這個方向就是 <b>PC1</b>。':
-          ratio>70?'再左右調一下滑桿，看是否能讓變異數更大。':
-          '繼續調滑桿，看哪個角度能讓變異數最大。'}
+        ${ratio>95?tr('🎯 太棒了！你已經找到（近似）最佳方向，這個方向就是 <b>PC1</b>。',
+                      '🎯 Excellent! You have (approximately) found the optimal direction — this <b>is</b> PC1.'):
+          ratio>70?tr('再左右調一下滑桿，看是否能讓變異數更大。',
+                      'Tweak the slider left or right and see if you can make the variance bigger.'):
+          tr('繼續調滑桿，看哪個角度能讓變異數最大。',
+             'Keep dragging the slider — find the angle that maximises the variance.')}
       </p>`;
   }
   projThetaR.oninput = drawProj;
@@ -2666,7 +2683,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
       const ux = dx/len, uy = dy/len;
       h += `<line x1="${p0.x - ux*300}" y1="${p0.y - uy*300}" x2="${p1.x + ux*300}" y2="${p1.y + uy*300}" stroke="#f0c419" stroke-width="3" stroke-dasharray="6 3"/>`;
       h += `<circle cx="${p1.x}" cy="${p1.y}" r="6" fill="#f0c419" stroke="#c0392b" stroke-width="2"/>`;
-      h += `<text x="${p1.x+8}" y="${p1.y-8}" font-size="12" fill="#c0392b" font-weight="700">你的猜測</text>`;
+      h += `<text x="${p1.x+8}" y="${p1.y-8}" font-size="12" fill="#c0392b" font-weight="700">${tr('你的猜測','Your guess')}</text>`;
     }
     // 揭曉答案
     if (guessRevealed) {
@@ -2674,9 +2691,9 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
       const [mxS, myS] = [cx + mean[0]*scale, cy - mean[1]*scale];
       const len = Math.sqrt(Math.max(l1,0)) * scale * 2.5;
       h += `<line x1="${mxS - pc1[0]*len}" y1="${myS + pc1[1]*len}" x2="${mxS + pc1[0]*len}" y2="${myS - pc1[1]*len}" stroke="#c0392b" stroke-width="3"/>`;
-      h += `<text x="${mxS + pc1[0]*len + 6}" y="${myS - pc1[1]*len}" font-size="13" fill="#c0392b" font-weight="700">真正的 PC1</text>`;
+      h += `<text x="${mxS + pc1[0]*len + 6}" y="${myS - pc1[1]*len}" font-size="13" fill="#c0392b" font-weight="700">${tr('真正的 PC1','True PC1')}</text>`;
     }
-    h += `<text x="10" y="18" font-size="12" fill="#666">${guessClicks.length===0?'點散佈圖第一下開始畫':(guessClicks.length===1?'再點第二下，畫成一條線':'按「揭曉答案」評分')}</text>`;
+    h += `<text x="10" y="18" font-size="12" fill="#666">${guessClicks.length===0?tr('點散佈圖第一下開始畫','Click the scatter plot to place the first point'):(guessClicks.length===1?tr('再點第二下，畫成一條線','Click again to draw the line'):tr('按「揭曉答案」評分','Press "Reveal answer" to be scored'))}</text>`;
     guessSvg.innerHTML = h;
   }
 
@@ -2689,14 +2706,14 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     guessClicks.push({ x, y });
     drawGuess();
     if (guessClicks.length === 2) {
-      guessFeedback.innerHTML = `<h4>你已經畫好線了</h4>
-        <p style="font-size:13px">點下方「揭曉答案」看你的猜測有多接近真正的 PC1。</p>`;
+      guessFeedback.innerHTML = `<h4>${tr('你已經畫好線了','Line drawn')}</h4>
+        <p style="font-size:13px">${tr('點下方「揭曉答案」看你的猜測有多接近真正的 PC1。','Press "Reveal answer" below to see how close your guess is to the true PC1.')}</p>`;
     }
   });
 
   document.getElementById('s0GuessReveal').onclick = () => {
     if (guessClicks.length < 2) {
-      guessFeedback.innerHTML = `<h4 style="color:#c0392b">先在散佈圖上點兩下！</h4>`;
+      guessFeedback.innerHTML = `<h4 style="color:#c0392b">${tr('先在散佈圖上點兩下！','Click twice on the scatter plot first!')}</h4>`;
       return;
     }
     guessRevealed = true;
@@ -2712,35 +2729,85 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     const cosSim = Math.abs(gNorm[0]*pc1[0] + gNorm[1]*pc1[1]);
     const angleDeg = Math.acos(Math.min(1, cosSim)) * 180/Math.PI;
     let medal = '', comment = '';
-    if (cosSim > 0.99) { medal = '🏆 完美'; comment = '幾乎完全對齊！你已經能<b>用肉眼找出 PC1</b> 了。'; }
-    else if (cosSim > 0.95) { medal = '🥇 非常接近'; comment = '誤差不到 18°，眼力很好！'; }
-    else if (cosSim > 0.85) { medal = '🥈 還不錯'; comment = '方向對了，但有點偏。試試「拉長軸方向」更準確。'; }
-    else { medal = '🥉 還可以更好'; comment = '方向偏掉了——PC1 應該沿著「資料雲最拉長」的方向。再試一次！'; }
+    if (cosSim > 0.99) { medal = tr('🏆 完美','🏆 Perfect'); comment = tr('幾乎完全對齊！你已經能<b>用肉眼找出 PC1</b> 了。','Almost perfectly aligned! You can already <b>spot PC1 by eye</b>.'); }
+    else if (cosSim > 0.95) { medal = tr('🥇 非常接近','🥇 Very close'); comment = tr('誤差不到 18°，眼力很好！','Less than 18° off — sharp eyes!'); }
+    else if (cosSim > 0.85) { medal = tr('🥈 還不錯','🥈 Not bad'); comment = tr('方向對了，但有點偏。試試「拉長軸方向」更準確。','Right direction but slightly off. Try following the "long-axis" of the cloud more precisely.'); }
+    else { medal = tr('🥉 還可以更好','🥉 Can do better'); comment = tr('方向偏掉了——PC1 應該沿著「資料雲最拉長」的方向。再試一次！','Direction is off — PC1 should follow the "most stretched-out" direction of the cloud. Try again!'); }
     guessFeedback.innerHTML = `<h4>${medal}</h4>
-      <div class="kv"><span class="k">你的方向 vs PC1 的夾角：</span><span class="v">${angleDeg.toFixed(1)}°</span></div>
-      <div class="kv"><span class="k">餘弦相似度 |cos θ|：</span><span class="v" style="color:#c0392b">${cosSim.toFixed(3)}</span></div>
+      <div class="kv"><span class="k">${tr('你的方向 vs PC1 的夾角','Angle between your direction and PC1')}：</span><span class="v">${angleDeg.toFixed(1)}°</span></div>
+      <div class="kv"><span class="k">${tr('餘弦相似度 |cos θ|','Cosine similarity |cos θ|')}：</span><span class="v" style="color:#c0392b">${cosSim.toFixed(3)}</span></div>
       <p style="margin:10px 0; font-size:13px">${comment}</p>
       <p style="margin:10px 0; font-size:12px; color:var(--muted)">
-        💡 <b>觀察重點</b>：真正的 PC1 永遠穿過「資料雲的中心」（紫色十字），方向是讓投影後變異最大的那個。
-        <br>當資料分布像橢圓形，PC1 就是橢圓的<b>長軸</b>。
+        ${tr('💡 <b>觀察重點</b>：真正的 PC1 永遠穿過「資料雲的中心」（紫色十字），方向是讓投影後變異最大的那個。<br>當資料分布像橢圓形，PC1 就是橢圓的<b>長軸</b>。',
+              '💡 <b>Key observation</b>: the true PC1 always passes through the "centre of the cloud" (purple cross) in the direction that maximises projected variance.<br>When the data form an ellipse, PC1 is its <b>major axis</b>.')}
       </p>`;
   };
   document.getElementById('s0GuessReset').onclick = () => {
     guessClicks = []; guessRevealed = false; drawGuess();
-    guessFeedback.innerHTML = `<h4>怎麼玩</h4>
-      <p style="font-size:13px; margin:6px 0">在散佈圖上點兩下定義一條線，然後按「揭曉答案」評分。</p>`;
+    guessFeedback.innerHTML = `<h4>${tr('怎麼玩','How to play')}</h4>
+      <p style="font-size:13px; margin:6px 0">${tr('在散佈圖上點兩下定義一條線，然後按「揭曉答案」評分。','Click twice on the scatter to define a line, then press "Reveal answer" to be scored.')}</p>`;
   };
   document.getElementById('s0GuessNew').onclick = () => {
     genGuessData(); guessClicks = []; guessRevealed = false; drawGuess();
-    guessFeedback.innerHTML = `<h4>新的資料，再試一次！</h4><p style="font-size:13px">點兩下畫線。</p>`;
+    guessFeedback.innerHTML = `<h4>${tr('新的資料，再試一次！','New data — try again!')}</h4><p style="font-size:13px">${tr('點兩下畫線。','Click twice to draw a line.')}</p>`;
   };
   drawGuess();
+
+  // ----- Re-render all §0 dynamic content on language change -----
+  document.addEventListener('langchange', function () {
+    renderTable();
+    if (vizDone) draw2DScatter(); else drawPlaceholder();
+    if (vizDone) {
+      // re-issue the viz note if user has already clicked
+      vizNote.innerHTML = tr(
+        '🎯 <b>看見了嗎？</b>同一份 60 筆資料，畫成 (Gene1, Gene2) 散佈圖後，<b>三群點馬上跳出來</b>。'
+        + '<br>表格中你看的那 10 列（外圍黑邊的點）<b>剛好散在三群裡</b>——你之前看不出規律，是因為眼睛不擅長看純數字表格。'
+        + '<br>剩下 50 個點顯示為灰色，因為圖只用了 Gene1, Gene2 兩個維度，還沒做任何 PCA。',
+        '🎯 <b>See it?</b> The same 60 samples, plotted as (Gene1, Gene2), instantly reveal <b>three clusters</b>.'
+        + '<br>The 10 rows from the table (black-outlined points) <b>land naturally in all three clusters</b> — you couldn\'t see the pattern before because eyes aren\'t built for reading number tables.'
+        + '<br>The remaining 50 points are gray because the plot only uses Gene1 and Gene2 — no PCA yet.'
+      );
+    }
+    drawSpread();
+    // §0-3: rebuild card metadata so verdicts/problems retranslate, then re-render
+    for (let i = 0; i < formulaCards.length; i++) {
+      const cBase = [
+        { name: tr('方案 A','Option A'), title: tr('範圍 (max − min)','Range (max − min)'),
+          verdict: tr('只用到 2 個點','Uses only 2 points'),
+          problem: tr('極端值決定一切，<b>中間的 6 個點完全沒參與計算</b>。如果加一個離群值就完全失準.',
+                      'Extremes decide everything; <b>the middle 6 points contribute nothing</b>. A single outlier wrecks it.'),
+          stepLabels: { mean:'mean', dev:'deviations', sum:'sum', adev:'|deviation|', dev2:'deviation²' } },
+        { name: tr('方案 B','Option B'), title: tr('偏差總和 \\(\\sum (x_i - \\bar{x})\\)','Sum of deviations \\(\\sum (x_i - \\bar{x})\\)'),
+          verdict: tr('永遠等於 0','Always equals 0'),
+          problem: tr('正負偏差<b>會互相抵消</b>。任何資料的偏差總和都是 0（這是「均值」的定義）。所以這個公式根本沒用。',
+                      'Positive and negative deviations <b>cancel each other</b>. The sum is always 0 (that\'s the definition of mean). Useless.') },
+        { name: tr('方案 C','Option C'), title: tr('絕對偏差總和 \\(\\sum |x_i - \\bar{x}|\\)','Mean absolute deviation \\(\\sum |x_i - \\bar{x}|\\)'),
+          verdict: tr('不抵消、但不平滑','No cancellation, but not smooth'),
+          problem: tr('解決了抵消問題，但 |x| 在 x=0 處<b>不可微分</b>，後續推導 PCA 時要用最佳化方法（如 Lagrange）會非常麻煩。',
+                      'Cancellation is gone, but |x| is <b>not differentiable</b> at x=0 — optimisation tools used in PCA (e.g. Lagrange) become a nightmare.') },
+        { name: tr('方案 D','Option D'), title: tr('平方偏差 \\(\\sum (x_i - \\bar{x})^2\\)','Squared deviations \\(\\sum (x_i - \\bar{x})^2\\)'),
+          verdict: tr('✓ 這就是變異數','✓ This is variance'),
+          problem: tr('<b>1)</b> 平方一定非負，不會抵消。<b>2)</b> 平方函數處處可微，數學工具豐富。<b>3)</b> 對應到「歐式距離平方」的幾何意義，是 PCA、回歸、最小平方法的共同基礎。',
+                      '<b>1)</b> Squares are non-negative — no cancellation. <b>2)</b> Squares are differentiable everywhere — rich math toolbox. <b>3)</b> Corresponds geometrically to "squared Euclidean distance" — the shared foundation of PCA, regression, and least squares.') }
+      ][i];
+      formulaCards[i].name = cBase.name;
+      formulaCards[i].title = cBase.title;
+      formulaCards[i].verdict = cBase.verdict;
+      formulaCards[i].problem = cBase.problem;
+    }
+    renderCards();
+    renderDetail();
+    if (window.MathJax && window.MathJax.typesetPromise) window.MathJax.typesetPromise([detailEl, cardsEl]);
+    drawProj();
+    drawGuess();
+  });
 })();
 
 /* ===================================================
    §1 可拖曳 2D 點雲
    =================================================== */
 (function section1() {
+  function tr(zh, en) { return document.body.classList.contains('lang-en') ? en : zh; }
   const svg = document.getElementById('svgPC');
   const W = 440, H = 440, cx = 220, cy = 220, scale = 30;
   const gridG = document.getElementById('gridG');
@@ -2880,7 +2947,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     pc2.setAttribute('x2', msx + r.v2[0]*len2);
     pc2.setAttribute('y2', msy - r.v2[1]*len2);
 
-    meanShow.textContent = `Gene1 均值 = ${r.mx.toFixed(2)},  Gene2 均值 = ${r.my.toFixed(2)}`;
+    meanShow.textContent = `Gene1 ${tr('均值','mean')} = ${r.mx.toFixed(2)},  Gene2 ${tr('均值','mean')} = ${r.my.toFixed(2)}`;
     covShow.innerHTML = `<table>
       <tr><td style="color:#888;font-size:11px">Var(G1)</td><td style="color:#888;font-size:11px">Cov(G1,G2)</td></tr>
       <tr><td>${r.sxx.toFixed(2)}</td><td>${r.sxy.toFixed(2)}</td></tr>
