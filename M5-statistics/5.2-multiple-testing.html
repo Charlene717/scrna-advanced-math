@@ -251,6 +251,107 @@
   </div>
 </header>
 
+<!-- ===== 🧬 scRNA-seq 視角 panel ===== -->
+<div class="card" style="border-left: 6px solid var(--green); background: linear-gradient(135deg, #effaf3 0%, #fff 70%);">
+  <h3 style="color: var(--green); margin-top: 0">
+    <span data-lang="zh">🧬 scRNA-seq 視角：FDR 是「marker 清單能不能信」的安全閥</span>
+    <span data-lang="en">🧬 scRNA-seq perspective: FDR is the safety valve deciding whether your marker list is trustworthy</span>
+  </h3>
+
+  <h4>📍 <span data-lang="zh">在 scRNA-seq 流程中的位置</span><span data-lang="en">Position in scRNA-seq pipeline</span></h4>
+  <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f7f9fb; padding: 10px; border-radius: 6px; line-height: 1.8">
+    Leiden → DE tests →
+    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b>FDR / multiple testing (BH)</b></span>
+    → significant marker list → annotation / pathway / disease vs control
+  </div>
+  <p style="margin-top: 6px; font-size: 0.9em; color: #555">
+    <span data-lang="zh">scRNA-seq DE 一次跑<b>每 cluster × 30k gene</b> = 數十萬 p-value。沒 FDR，1500-15000 個 gene 會被「隨機標記成 marker」。FDR 是把「DE 結果是不是垃圾」量化的<b>唯一機制</b>。</span>
+    <span data-lang="en">scRNA-seq DE runs <b>each cluster × 30k genes</b> = hundreds of thousands of p-values. Without FDR, 1500-15000 genes get "randomly tagged as markers". FDR is the <b>only mechanism</b> to quantify whether DE results are noise or signal.</span>
+  </p>
+
+  <h4>🎯 <span data-lang="zh">為什麼 scRNA 必須做 FDR、且必須用 BH（不用 Bonferroni）</span><span data-lang="en">Why scRNA MUST do FDR, and MUST use BH (not Bonferroni)</span></h4>
+  <ul>
+    <li>
+      <b><span data-lang="zh">scRNA gene 數量極大，假陽性問題比 bulk 嚴重 10 倍</span><span data-lang="en">scRNA has many more genes; FP problem 10× worse than bulk</span></b>：
+      <span data-lang="zh">bulk RNA-seq 跑 1 個 contrast × 20k gene = 20k p-value。scRNA 跑 10 cluster × 30k = 300k p-value，假陽性是 bulk 的 15 倍。Bonferroni（α/m = 0.05/300k = 1.7e-7）<b>太嚴</b>，會把真 marker 砍光。</span>
+      <span data-lang="en">Bulk: 1 contrast × 20k = 20k p-values. scRNA: 10 cluster × 30k = 300k p-values, 15× worse. Bonferroni (α/m = 0.05/300k = 1.7e-7) is <b>too strict</b>, eliminates real markers.</span>
+    </li>
+    <li>
+      <b><span data-lang="zh">scRNA marker 通常 effect size 很大，但 p-value 也由細胞數驅動 → BH 才平衡</span><span data-lang="en">scRNA markers have large effect sizes but p-values inflated by cell count → BH balances</span></b>：
+      <span data-lang="zh">10,000 個細胞做 Wilcoxon，即使<b>輕微</b>的差異都會跑出 p &lt; 1e-300。BH 控制「報出的 marker 中假陽性的<b>比例</b>」而不是「<b>絕對個數</b>」→ 跟生物學家想知道的事情（「我這份 list 大概有多少 noise」）對齊。</span>
+      <span data-lang="en">Wilcoxon on 10,000 cells gives p &lt; 1e-300 for trivial differences. BH controls "<b>fraction</b> of false positives among reported markers" not "<b>absolute count</b>" → aligns with what biologists want to know ("how much noise in my list").</span>
+    </li>
+    <li>
+      <b><span data-lang="zh">每 cluster 獨立 BH or 全 cluster 聯合 BH 結果不同</span><span data-lang="en">Per-cluster vs joint BH gives different results</span></b>：
+      <span data-lang="zh">scanpy 預設<b>每 cluster 獨立做 BH</b>（rank_genes_groups），生物上合理但跨 cluster 比較需要小心。報告時要明確說明 FDR scope。</span>
+      <span data-lang="en">scanpy defaults to <b>per-cluster BH</b> (rank_genes_groups), reasonable biologically but cross-cluster comparisons need care. Must explicitly state FDR scope in papers.</span>
+    </li>
+  </ul>
+
+  <h4>💥 <span data-lang="zh">不做 FDR 校正會發生什麼</span><span data-lang="en">What happens without FDR correction</span></h4>
+  <table class="compare">
+    <thead>
+      <tr>
+        <th><span data-lang="zh">校正策略</span><span data-lang="en">Correction strategy</span></th>
+        <th><span data-lang="zh">PBMC 3k cluster 0 marker list 結果</span><span data-lang="en">PBMC 3k cluster 0 marker list result</span></th>
+        <th><span data-lang="zh">下游災難</span><span data-lang="en">Downstream disaster</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="background: #fdecec">
+        <td><span data-lang="zh">不校正（raw p &lt; 0.05）</span><span data-lang="en">No correction (raw p &lt; 0.05)</span></td>
+        <td><span data-lang="zh">3500 個「顯著」基因（30k × 0.05 + 真 marker）</span><span data-lang="en">3500 "significant" genes (30k × 0.05 + true markers)</span></td>
+        <td><span data-lang="zh">marker list 80% 是 noise → annotation 看不出主訊號</span><span data-lang="en">80% of marker list is noise → annotation signal buried</span></td>
+      </tr>
+      <tr style="background: #fdecec">
+        <td><span data-lang="zh">Bonferroni（過保守）</span><span data-lang="en">Bonferroni (too conservative)</span></td>
+        <td><span data-lang="zh">5-10 個 gene 通過</span><span data-lang="en">Only 5-10 genes pass</span></td>
+        <td><span data-lang="zh">真 marker（如 CD79A B 細胞）被砍 → 註解失敗</span><span data-lang="en">True markers (e.g. CD79A for B) eliminated → annotation fails</span></td>
+      </tr>
+      <tr style="background: #fdecec">
+        <td><span data-lang="zh">全部 cluster 跑完才 BH</span><span data-lang="en">BH after all clusters combined</span></td>
+        <td><span data-lang="zh">總 p-value 數量增加 10 倍，FDR threshold 抬高</span><span data-lang="en">10× more p-values, threshold raised</span></td>
+        <td><span data-lang="zh">大 cluster marker 過多，rare cluster marker 漏報</span><span data-lang="en">Large cluster markers over-detected, rare cluster missed</span></td>
+      </tr>
+      <tr style="background: #effaf3">
+        <td><span data-lang="zh">scanpy 預設：每 cluster BH FDR &lt; 0.05</span><span data-lang="en">scanpy default: per-cluster BH FDR &lt; 0.05</span></td>
+        <td><span data-lang="zh">每 cluster 30-50 個 marker，前 10 名 = 已知 cell type marker</span><span data-lang="en">30-50 markers per cluster, top 10 = known cell type markers</span></td>
+        <td><span data-lang="zh">符合 Seurat 標準 marker list</span><span data-lang="en">Matches Seurat's standard marker list</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h4>🔗 <span data-lang="zh">對下游每個 scRNA 步驟的具體影響</span><span data-lang="en">Concrete downstream impact</span></h4>
+  <ul>
+    <li><b><span data-lang="zh">細胞型態註解（§M5.3）</span><span data-lang="en">Cell type annotation (§M5.3)</span></b>：
+      <span data-lang="zh">CellTypist / 手動註解都讀 FDR-filtered marker；沒過 BH 的 gene 不應出現在「marker」清單。</span>
+      <span data-lang="en">CellTypist / manual annotation read FDR-filtered markers; non-significant genes should not appear in "marker" lists.</span>
+    </li>
+    <li><b><span data-lang="zh">疾病 vs control DE 結論</span><span data-lang="en">Disease vs control DE conclusions</span></b>：
+      <span data-lang="zh">「IFN response gene 在 COVID T cell 顯著上調」這種 paper 結論必須是 FDR-corrected p-value，否則 reviewer 直接拒。</span>
+      <span data-lang="en">"IFN response genes are upregulated in COVID T cells" — such paper claims must come from FDR-corrected p-values, or reviewers reject.</span>
+    </li>
+    <li><b><span data-lang="zh">GSEA / pathway analysis</span><span data-lang="en">GSEA / pathway analysis</span></b>：
+      <span data-lang="zh">GSEA 用 ranked gene list，rank 用 sign(log2FC) × −log10(adj_p)，必須 BH 校正後的 adj_p。</span>
+      <span data-lang="en">GSEA uses ranked gene list with sign(log2FC) × −log10(adj_p); adj_p must be BH-corrected.</span>
+    </li>
+    <li><b><span data-lang="zh">CellChat ligand-receptor 過濾</span><span data-lang="en">CellChat ligand-receptor filtering</span></b>：
+      <span data-lang="zh">CellChat 內部對 ligand / receptor 顯著性檢定，同樣做 FDR；否則 signaling network 充斥假連線。</span>
+      <span data-lang="en">CellChat internally tests ligand / receptor significance + FDR; otherwise signaling network full of fake links.</span>
+    </li>
+    <li><b><span data-lang="zh">drug target / 臨床轉化</span><span data-lang="en">Drug target / clinical translation</span></b>：
+      <span data-lang="zh">「上調 gene X 推薦做 drug target」這種結論不能用 raw p，否則臨床公司投資失敗。</span>
+      <span data-lang="en">"Upregulated gene X is a drug target" — cannot rely on raw p, or clinical investment fails.</span>
+    </li>
+  </ul>
+
+  <div class="callout bio">
+    <strong>⭐ <span data-lang="zh">一句話總結</span><span data-lang="en">One-line summary</span></strong>：
+    <span data-lang="zh">沒 FDR 校正的 scRNA marker 是「<b>把 1500 個 noise 標成發現</b>」；用 BH 校正後 FDR &lt; 0.05 才是「最多 5% 的 marker 是假的」可信清單。<b>FDR 不是統計學細節，是科學結論的及格線</b>。</span>
+    <span data-lang="en">scRNA markers without FDR = "<b>tagging 1500 noise as discoveries</b>"; BH-corrected FDR &lt; 0.05 means "at most 5% of markers are false" — trustworthy. <b>FDR is not a statistical detail, it's the pass/fail line for scientific conclusions</b>.</span>
+  </div>
+</div>
+
 <div class="toc">
   <h4 data-lang="zh">目錄</h4>
   <h4 data-lang="en">Table of Contents</h4>

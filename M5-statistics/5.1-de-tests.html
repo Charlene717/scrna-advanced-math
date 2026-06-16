@@ -253,6 +253,107 @@
   </div>
 </header>
 
+<!-- ===== 🧬 scRNA-seq 視角 panel ===== -->
+<div class="card" style="border-left: 6px solid var(--green); background: linear-gradient(135deg, #effaf3 0%, #fff 70%);">
+  <h3 style="color: var(--green); margin-top: 0">
+    <span data-lang="zh">🧬 scRNA-seq 視角：DE 是「給 cluster 取名字」的唯一途徑</span>
+    <span data-lang="en">🧬 scRNA-seq perspective: DE is the only way to "name" your clusters</span>
+  </h3>
+
+  <h4>📍 <span data-lang="zh">在 scRNA-seq 流程中的位置</span><span data-lang="en">Position in scRNA-seq pipeline</span></h4>
+  <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f7f9fb; padding: 10px; border-radius: 6px; line-height: 1.8">
+    QC → norm → HVG → PCA → KNN → Leiden →
+    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b>DE tests (sc.tl.rank_genes_groups)</b></span>
+    → FDR correction → marker gene → cell type annotation → biological interpretation
+  </div>
+  <p style="margin-top: 6px; font-size: 0.9em; color: #555">
+    <span data-lang="zh">Leiden 給你「cluster 0」「cluster 1」等沒名字的數字標籤，DE 是<b>把這些數字翻譯成「CD4 T cell」「B cell」</b>的唯一方法。也是<b>condition × cluster</b>比較（e.g.「疾病組的 T cell 表現哪些 gene 不同」）的核心統計工具。</span>
+    <span data-lang="en">Leiden gives you nameless labels "cluster 0", "cluster 1"; DE is the <b>only way to translate them into "CD4 T cell", "B cell"</b>. Also the core statistical tool for <b>condition × cluster</b> comparisons ("which genes differ in T cells between disease vs control").</span>
+  </p>
+
+  <h4>🎯 <span data-lang="zh">為什麼 scRNA 的 DE 跟 bulk RNA-seq 完全不同</span><span data-lang="en">Why scRNA DE is totally different from bulk RNA-seq</span></h4>
+  <ul>
+    <li>
+      <b><span data-lang="zh">資料極度離散 + zero-inflated</span><span data-lang="en">Data is extremely discrete + zero-inflated</span></b>：
+      <span data-lang="zh">每個 cell × gene 的 count 通常 0、1、2、3...；70-90% 是 0（dropout）。t-test 假設常態完全垮掉；Wilcoxon rank-sum 雖然 nonparametric，但對 zero-inflation 仍然不理想。MAST（Finak 2015）<b>專為 scRNA 設計</b>，雙部分模型（zero 部分 binomial + nonzero 部分 Gaussian）。</span>
+      <span data-lang="en">Each cell × gene count is typically 0,1,2,3...; 70-90% are zeros (dropout). t-test's normality assumption collapses; Wilcoxon rank-sum is nonparametric but still suboptimal for zero-inflation. MAST (Finak 2015) is <b>built for scRNA</b>: two-part model (binomial for zeros + Gaussian for non-zeros).</span>
+    </li>
+    <li>
+      <b><span data-lang="zh">cell 不是獨立樣本（pseudoreplication 陷阱）</span><span data-lang="en">Cells are not independent samples (pseudoreplication trap)</span></b>：
+      <span data-lang="zh">同一 patient 的 1000 個細胞<b>不是 1000 個獨立樣本</b>。如果你拿 cell-level Wilcoxon 比較 disease vs control，會嚴重<b>低估 p-value</b>（每個 cell 都算一票 → 假高顯著）。<b>pseudobulk + DESeq2</b>（Squair 2021 / Crowell 2020）才是金標準：把每個 sample 的同 cluster 細胞 sum 起來變 bulk，做 sample-level DE。</span>
+      <span data-lang="en">1000 cells from one patient are <b>not 1000 independent samples</b>. Cell-level Wilcoxon between disease vs control severely <b>under-estimates p-value</b> (every cell counts as one vote → false high significance). <b>Pseudobulk + DESeq2</b> (Squair 2021 / Crowell 2020) is gold standard: sum same-cluster cells per sample to bulk, do sample-level DE.</span>
+    </li>
+    <li>
+      <b><span data-lang="zh">基因數量極大（20-30k）→ 多重檢定問題嚴重</span><span data-lang="en">Tens of thousands of genes → severe multiple testing</span></b>：
+      <span data-lang="zh">每 cluster 跑 30k gene 的 DE → 60k p-value（10 cluster × 30k × 2 個方向）。如果不做 FDR，<b>1500 個假陽性「marker」</b>。必須串接 §M5.2 BH 校正。</span>
+      <span data-lang="en">DE per cluster × 30k genes → 60k p-values (10 clusters × 30k × 2 directions). Without FDR, <b>1500 false-positive "markers"</b>. Must chain into §M5.2 BH correction.</span>
+    </li>
+  </ul>
+
+  <h4>💥 <span data-lang="zh">用錯 DE 方法會發生什麼</span><span data-lang="en">What happens with wrong DE method</span></h4>
+  <table class="compare">
+    <thead>
+      <tr>
+        <th><span data-lang="zh">DE 方法</span><span data-lang="en">DE method</span></th>
+        <th><span data-lang="zh">情境</span><span data-lang="en">Scenario</span></th>
+        <th><span data-lang="zh">後果（PBMC 3k）</span><span data-lang="en">Consequence (PBMC 3k)</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="background: #fdecec">
+        <td><span data-lang="zh">t-test on log1p</span><span data-lang="en">t-test on log1p</span></td>
+        <td><span data-lang="zh">cluster A vs B marker</span><span data-lang="en">cluster A vs B marker</span></td>
+        <td><span data-lang="zh">大量假陽性（70% zero 違反常態假設）</span><span data-lang="en">Many false positives (70% zeros violate normality)</span></td>
+      </tr>
+      <tr style="background: #fdecec">
+        <td><span data-lang="zh">cell-level Wilcoxon for disease vs control</span><span data-lang="en">Cell-level Wilcoxon for disease vs control</span></td>
+        <td><span data-lang="zh">3 個 patient × 1000 cells/patient</span><span data-lang="en">3 patients × 1000 cells/patient</span></td>
+        <td><span data-lang="zh">pseudoreplication → 全部 gene 「顯著」 (p < 1e-50)，但只是 patient-to-patient 變異</span><span data-lang="en">Pseudoreplication → all genes "significant" (p < 1e-50), but it's just patient variance</span></td>
+      </tr>
+      <tr style="background: #fdecec">
+        <td><span data-lang="zh">DESeq2 直接 single-cell</span><span data-lang="en">DESeq2 on single cells</span></td>
+        <td><span data-lang="zh">DESeq2 需要 dispersion 估計</span><span data-lang="en">DESeq2 needs dispersion estimation</span></td>
+        <td><span data-lang="zh">在極低 count 下 dispersion 估不準 → over-dispersion 漏報</span><span data-lang="en">Dispersion poorly estimated at low counts → over-dispersion missed</span></td>
+      </tr>
+      <tr style="background: #effaf3">
+        <td><span data-lang="zh">Wilcoxon（marker）+ pseudobulk DESeq2（disease vs control）</span><span data-lang="en">Wilcoxon (markers) + pseudobulk DESeq2 (disease vs control)</span></td>
+        <td><span data-lang="zh">標準工作流</span><span data-lang="en">Standard workflow</span></td>
+        <td><span data-lang="zh">CD3D（T cell）、MS4A1（B）、CD14（mono）正確排出 top marker</span><span data-lang="en">CD3D (T), MS4A1 (B), CD14 (mono) correctly ranked as top markers</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h4>🔗 <span data-lang="zh">對下游每個 scRNA 步驟的具體影響</span><span data-lang="en">Concrete downstream impact</span></h4>
+  <ul>
+    <li><b><span data-lang="zh">細胞型態註解（§M5.3）</span><span data-lang="en">Cell type annotation (§M5.3)</span></b>：
+      <span data-lang="zh">DE 結果是「marker gene panel」，把它對齊到已知 reference（CD3D → T、CD19 → B）→ 標籤。DE 錯，annotation 全錯。</span>
+      <span data-lang="en">DE results are "marker gene panels", matched against known references (CD3D → T, CD19 → B) → labels. Wrong DE → wrong annotations.</span>
+    </li>
+    <li><b><span data-lang="zh">FDR 校正（§M5.2）</span><span data-lang="en">FDR correction (§M5.2)</span></b>：
+      <span data-lang="zh">DE 出 60k p-value，沒 BH 校正 = 1500 個假 marker。</span>
+      <span data-lang="en">DE outputs 60k p-values; without BH correction → 1500 false markers.</span>
+    </li>
+    <li><b><span data-lang="zh">疾病 vs control 分析</span><span data-lang="en">Disease vs control analysis</span></b>：
+      <span data-lang="zh">「在 T cell 中，哪些 gene 在 patient vs healthy 顯著差異」→ 這篇 paper 的核心結論完全靠 DE。</span>
+      <span data-lang="en">"In T cells, which genes differ patient vs healthy" — your paper's core conclusion depends entirely on DE.</span>
+    </li>
+    <li><b><span data-lang="zh">GSEA / pathway enrichment</span><span data-lang="en">GSEA / pathway enrichment</span></b>：
+      <span data-lang="zh">把 DE 排序的 gene list 丟給 fgsea / enrichR 找 pathway → DE 排序錯，pathway 也錯。</span>
+      <span data-lang="en">Feed DE-ranked gene list to fgsea / enrichR for pathway analysis → wrong DE ranking → wrong pathways.</span>
+    </li>
+    <li><b><span data-lang="zh">CellChat ligand-receptor scoring（§M6.3）</span><span data-lang="en">CellChat ligand-receptor scoring (§M6.3)</span></b>：
+      <span data-lang="zh">CellChat 把 ligand-receptor pair 的「<b>cluster-level DE</b>」做為 signal strength。DE 錯，signaling network 錯。</span>
+      <span data-lang="en">CellChat uses ligand-receptor pair <b>cluster-level DE</b> as signal strength. Wrong DE → wrong signaling network.</span>
+    </li>
+  </ul>
+
+  <div class="callout bio">
+    <strong>⭐ <span data-lang="zh">一句話總結</span><span data-lang="en">One-line summary</span></strong>：
+    <span data-lang="zh">沒有 DE，cluster 永遠只是「數字 0, 1, 2」；有了正確的 DE，cluster 才會變成「T cell、B cell、NK cell」這些<b>有生物意義的名字</b>。<b>用 Wilcoxon 找 marker、用 pseudobulk 比 condition</b>，是兩條不能混的金科玉律。</span>
+    <span data-lang="en">Without DE, clusters are forever just "0, 1, 2"; with correct DE, clusters become <b>biologically meaningful names</b> like "T cell, B cell, NK cell". <b>Wilcoxon for markers, pseudobulk for condition comparisons</b> — two golden rules that should never be confused.</span>
+  </div>
+</div>
+
 <div class="toc">
   <h4 data-lang="zh">目錄</h4>
   <h4 data-lang="en">Table of Contents</h4>

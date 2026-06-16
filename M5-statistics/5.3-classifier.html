@@ -252,6 +252,107 @@
   </div>
 </header>
 
+<!-- ===== 🧬 scRNA-seq 視角 panel ===== -->
+<div class="card" style="border-left: 6px solid var(--green); background: linear-gradient(135deg, #effaf3 0%, #fff 70%);">
+  <h3 style="color: var(--green); margin-top: 0">
+    <span data-lang="zh">🧬 scRNA-seq 視角：分類器是 atlas 時代「人工 annotate 已經做不完」的解</span>
+    <span data-lang="en">🧬 scRNA-seq perspective: Classifiers are the answer when manual annotation can't keep up with the atlas era</span>
+  </h3>
+
+  <h4>📍 <span data-lang="zh">在 scRNA-seq 流程中的位置</span><span data-lang="en">Position in scRNA-seq pipeline</span></h4>
+  <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f7f9fb; padding: 10px; border-radius: 6px; line-height: 1.8">
+    Leiden cluster → DE markers →
+    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b>cell type classifier (CellTypist / Azimuth / scNym)</b></span>
+    → annotated UMAP → composition / DE per cell type → biology
+  </div>
+  <p style="margin-top: 6px; font-size: 0.9em; color: #555">
+    <span data-lang="zh">2017 年的 PBMC 3k 用<b>手動 marker → cell type</b> 還做得來；2024 年的 CELLxGENE 50M 細胞、HCA 全身 atlas，<b>手動完全不可能</b>。Classifier 把「<b>已標註 reference + 邏輯回歸 / NN</b>」變成 1 秒鐘標 100 萬 cell 的工具，是 atlas-scale scRNA 的<b>剛需</b>。</span>
+    <span data-lang="en">2017's PBMC 3k can be done with <b>manual marker → cell type</b>; 2024's CELLxGENE 50M cells and HCA whole-body atlas make manual <b>completely impossible</b>. Classifiers turn "<b>annotated reference + logistic regression / NN</b>" into tools that label 1M cells in seconds — a hard requirement for atlas-scale scRNA.</span>
+  </p>
+
+  <h4>🎯 <span data-lang="zh">為什麼 scRNA-seq 一定要用分類器（而不是只用 manual marker）</span><span data-lang="en">Why scRNA-seq must use classifiers (not just manual markers)</span></h4>
+  <ul>
+    <li>
+      <b><span data-lang="zh">manual 不可擴展、不一致</span><span data-lang="en">Manual doesn't scale, isn't consistent</span></b>：
+      <span data-lang="zh">200 個 cluster × 20 個 marker = 4000 個 gene 要人工查；不同人對「CD4 T cell」名字定義不同（Tcm? Th1? naive?）。Classifier 用<b>同一個 reference</b> 解兩個問題。</span>
+      <span data-lang="en">200 clusters × 20 markers = 4000 genes to look up; different people define "CD4 T cell" differently (Tcm? Th1? naive?). Classifier uses <b>one reference</b> to solve both.</span>
+    </li>
+    <li>
+      <b><span data-lang="zh">CellTypist / Azimuth 用<b>大規模、跨組織</b>已標 atlas 訓練</span><span data-lang="en">CellTypist / Azimuth trained on <b>large-scale cross-tissue</b> annotated atlases</span></b>：
+      <span data-lang="zh">CellTypist 有 30+ models（immune、lung、gut、kidney...），每個 model 由 HCA / Tabula Sapiens 等大量 expert-annotated 細胞訓練。你的 PBMC 用 <code>Immune_All_Low.pkl</code> 就能標出 32 個 immune subtype，遠超 manual marker 能力。</span>
+      <span data-lang="en">CellTypist has 30+ models (immune, lung, gut, kidney...); each trained on HCA / Tabula Sapiens expert-annotated cells. Your PBMC with <code>Immune_All_Low.pkl</code> labels 32 immune subtypes — far beyond manual marker capacity.</span>
+    </li>
+    <li>
+      <b><span data-lang="zh">提供 confidence score → 找出「reference 沒見過的細胞」</span><span data-lang="en">Confidence score → finds "novel cells unseen in reference"</span></b>：
+      <span data-lang="zh">softmax 輸出機率，低 confidence 細胞 = potential novel state（新發現的關鍵）。手動 marker 沒有這個量化機制。</span>
+      <span data-lang="en">Softmax outputs probabilities; low-confidence cells = potential novel states (the key to new discoveries). Manual marker has no such quantitative mechanism.</span>
+    </li>
+  </ul>
+
+  <h4>💥 <span data-lang="zh">不用 classifier、純手動 annotate 會發生什麼</span><span data-lang="en">What happens with manual-only annotation</span></h4>
+  <table class="compare">
+    <thead>
+      <tr>
+        <th><span data-lang="zh">情境</span><span data-lang="en">Scenario</span></th>
+        <th><span data-lang="zh">問題</span><span data-lang="en">Problem</span></th>
+        <th><span data-lang="zh">下游災難</span><span data-lang="en">Downstream disaster</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="background: #fdecec">
+        <td><span data-lang="zh">手動標 100 個 cluster</span><span data-lang="en">Manual label 100 clusters</span></td>
+        <td><span data-lang="zh">3-5 天時間 + 不可重現</span><span data-lang="en">3-5 days + non-reproducible</span></td>
+        <td><span data-lang="zh">不同人標出不同 atlas，無法跨 paper 比較</span><span data-lang="en">Different people label different atlases, cross-paper comparison impossible</span></td>
+      </tr>
+      <tr style="background: #fdecec">
+        <td><span data-lang="zh">marker-based SCSA 自動標</span><span data-lang="en">Marker-based SCSA auto-label</span></td>
+        <td><span data-lang="zh">marker database 不全（rare cell type 沒收錄）</span><span data-lang="en">Marker database incomplete (rare types missing)</span></td>
+        <td><span data-lang="zh">pDC、ILC3 等 rare 細胞被標成「unknown」or 誤標</span><span data-lang="en">Rare cells (pDC, ILC3) labeled "unknown" or wrong</span></td>
+      </tr>
+      <tr style="background: #fdecec">
+        <td><span data-lang="zh">用過時 reference</span><span data-lang="en">Use outdated reference</span></td>
+        <td><span data-lang="zh">2018 reference 沒有 IFN-stim T cell 細項</span><span data-lang="en">2018 reference lacks IFN-stim T cell subtype</span></td>
+        <td><span data-lang="zh">在 COVID 資料把 IFN-stim T 標成 naive T → 結論全錯</span><span data-lang="en">In COVID data, IFN-stim T labeled as naive T → wrong conclusion</span></td>
+      </tr>
+      <tr style="background: #effaf3">
+        <td><span data-lang="zh">CellTypist Immune_All_High + confidence ≥ 0.7</span><span data-lang="en">CellTypist Immune_All_High + confidence ≥ 0.7</span></td>
+        <td><span data-lang="zh">10 秒標 PBMC 3k，confidence &lt; 0.7 標 "uncertain"</span><span data-lang="en">10 sec for PBMC 3k, confidence &lt; 0.7 marked "uncertain"</span></td>
+        <td><span data-lang="zh">8 個主細胞型 + 5 個 rare 高 confidence + reject 一些「邊界 cell」</span><span data-lang="en">8 main types + 5 rare high-confidence + reject some "boundary cells"</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h4>🔗 <span data-lang="zh">對下游每個 scRNA 步驟的具體影響</span><span data-lang="en">Concrete downstream impact</span></h4>
+  <ul>
+    <li><b><span data-lang="zh">跨資料整合（§M6.1）</span><span data-lang="en">Cross-dataset integration (§M6.1)</span></b>：
+      <span data-lang="zh">Harmony / scVI 整合好的 query data，用同一 CellTypist reference 標 → 兩個 dataset 的「CD4 T」可以放心比較。沒這個，「同名不同義」會把 paper 結論搞錯。</span>
+      <span data-lang="en">Query data integrated by Harmony / scVI, labeled with the same CellTypist reference → "CD4 T" in two datasets is safely comparable. Without this, "same name, different meaning" wrecks conclusions.</span>
+    </li>
+    <li><b><span data-lang="zh">細胞比例分析（composition）</span><span data-lang="en">Cellular composition analysis</span></b>：
+      <span data-lang="zh">「健康 vs 疾病的 cell type 比例變化」這種 paper 結論 → 標籤名要跨 dataset 一致才有意義。</span>
+      <span data-lang="en">"Cell type proportion shift in health vs disease" — only meaningful if labels are consistent across datasets.</span>
+    </li>
+    <li><b><span data-lang="zh">細胞間通訊（§M6.3）</span><span data-lang="en">Cell communication (§M6.3)</span></b>：
+      <span data-lang="zh">CellChat 把 ligand-receptor 在<b>cell type level</b> 計算 signal → label 錯就把不該有的 signaling pair 標成關鍵發現。</span>
+      <span data-lang="en">CellChat computes ligand-receptor signals at <b>cell-type level</b> → wrong labels turn non-existent signaling pairs into "key findings".</span>
+    </li>
+    <li><b><span data-lang="zh">疾病 mechanism 解讀</span><span data-lang="en">Disease mechanism interpretation</span></b>：
+      <span data-lang="zh">「CD4 T cell 在 SLE 患者顯著減少」→ 這個結論可信度由「CD4 T 標得對不對」決定，分類器是品保門檻。</span>
+      <span data-lang="en">"CD4 T cells decrease significantly in SLE patients" — this conclusion's credibility depends on labeling correctness; classifier is the QC gate.</span>
+    </li>
+    <li><b><span data-lang="zh">novel cell state 發現</span><span data-lang="en">Novel cell state discovery</span></b>：
+      <span data-lang="zh">CellTypist confidence 很低的 cell = 「reference 沒見過」的 candidate novel state → 接著做 trajectory / marker 確認新型 → paper 賣點。</span>
+      <span data-lang="en">Low-confidence cells in CellTypist = "unseen by reference" → candidate novel states → follow-up trajectory / marker confirmation → paper's selling point.</span>
+    </li>
+  </ul>
+
+  <div class="callout bio">
+    <strong>⭐ <span data-lang="zh">一句話總結</span><span data-lang="en">One-line summary</span></strong>：
+    <span data-lang="zh">手動 annotate 是 2017 的工藝品、classifier 是 2024 的工業標準。<b>用對 reference + 看 confidence + 標出 reject</b>，把 cell type 從「我覺得是」變成「reference 投票 0.92」可重現的科學結論。</span>
+    <span data-lang="en">Manual annotation is a 2017 craft; classifiers are the 2024 industry standard. <b>Right reference + check confidence + mark rejects</b> — turn cell type from "I think it's" into "reference votes 0.92" — a reproducible scientific result.</span>
+  </div>
+</div>
+
 <div class="toc">
   <h4 data-lang="zh">目錄</h4>
   <h4 data-lang="en">Table of Contents</h4>
