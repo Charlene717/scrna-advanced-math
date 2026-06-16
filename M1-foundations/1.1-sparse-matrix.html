@@ -259,6 +259,86 @@
   </div>
 </header>
 
+<!-- ===== 🧬 scRNA-seq 視角 panel ===== -->
+<div class="card" style="border-left: 6px solid var(--green); background: linear-gradient(135deg, #effaf3 0%, #fff 70%);">
+  <h3 style="color: var(--green); margin-top: 0">
+    <span data-lang="zh">🧬 scRNA-seq 視角：為什麼這一步是「整個分析的起點」</span>
+    <span data-lang="en">🧬 scRNA-seq perspective: why this is "the starting point of all analysis"</span>
+  </h3>
+
+  <h4 data-lang="zh">📍 在 scRNA-seq 流程中的位置</h4>
+  <h4 data-lang="en">📍 Position in scRNA-seq pipeline</h4>
+  <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; padding: 12px; background: #f4f1ea; border-radius: 6px;">
+    <span data-lang="zh">10x cellranger 輸出 →</span><span data-lang="en">10x cellranger output →</span>
+    <b style="color: #1e3a8a"> 【稀疏矩陣儲存】 </b>
+    → QC (M2.1) → normalize (M2.2) → HVG (M2.3) → scale (M2.4) → PCA (M3.1) → KNN (M4.1) → Leiden (M4.2) → ...
+    <br><br>
+    <span data-lang="zh">⚠️ <b>每一個下游步驟都直接操作這個矩陣</b>——它的儲存方式決定整個分析「跑得動 vs 跑不動」。</span>
+    <span data-lang="en">⚠️ <b>Every downstream step operates on this matrix</b> — its storage format decides whether your whole analysis "runs vs crashes".</span>
+  </div>
+
+  <h4 data-lang="zh">🎯 為什麼 scRNA-seq <b>必須</b>用稀疏儲存</h4>
+  <h4 data-lang="en">🎯 Why scRNA-seq <b>must</b> use sparse storage</h4>
+  <ul>
+    <li data-lang="zh"><b>物理事實</b>：一個哺乳動物細胞只有 ~200,000-500,000 mRNA 分子 (Marinov 2014)，散布在 20,000 個基因 → <b>大多數基因 count = 0</b></li>
+    <li data-lang="en"><b>Physical fact</b>: a mammalian cell has only ~200,000–500,000 mRNA molecules (Marinov 2014) spread across 20,000 genes → <b>most gene counts = 0</b></li>
+    <li data-lang="zh"><b>技術限制</b>：10x Chromium capture efficiency 僅 10-30% (Zheng 2017) → <b>實測 90-95% entries 是 0</b></li>
+    <li data-lang="en"><b>Technical limit</b>: 10x Chromium capture efficiency is only 10–30% (Zheng 2017) → <b>empirically 90–95% of entries are 0</b></li>
+    <li data-lang="zh"><b>生物選擇性</b>：B 細胞不表現 T 細胞 marker、神經元不表現肝臟 gene → <b>大半 entries 是真實 0，不是噪音</b></li>
+    <li data-lang="en"><b>Biological selectivity</b>: B cells don't express T markers, neurons don't express liver genes → <b>most zeros are real, not noise</b></li>
+  </ul>
+
+  <h4 data-lang="zh">💥 不用稀疏儲存會發生什麼？</h4>
+  <h4 data-lang="en">💥 What happens if you don't use sparse storage?</h4>
+  <table class="compare">
+    <tr><th data-lang="zh">資料規模</th><th data-lang="en">Data scale</th>
+        <th data-lang="zh">Dense 記憶體</th><th data-lang="en">Dense memory</th>
+        <th data-lang="zh">Sparse (CSR)</th><th data-lang="en">Sparse (CSR)</th>
+        <th data-lang="zh">能不能跑?</th><th data-lang="en">Runs?</th></tr>
+    <tr><td>PBMC 3k (2.7k × 33k)</td><td>PBMC 3k (2.7k × 33k)</td>
+        <td>337 MB</td><td>337 MB</td><td>17.5 MB</td><td>17.5 MB</td>
+        <td>✅ <span data-lang="zh">勉強</span><span data-lang="en">barely</span></td>
+        <td>✅ <span data-lang="zh">輕鬆</span><span data-lang="en">easy</span></td></tr>
+    <tr><td>PBMC 68k (Zheng 2017)</td><td>PBMC 68k (Zheng 2017)</td>
+        <td>8.5 GB</td><td>8.5 GB</td><td>~ 500 MB</td><td>~ 500 MB</td>
+        <td>⚠️ <span data-lang="zh">部分機器爆</span><span data-lang="en">most machines crash</span></td>
+        <td>✅</td><td>✅</td></tr>
+    <tr><td>Tabula Sapiens (483k × 20k)</td><td>Tabula Sapiens (483k × 20k)</td>
+        <td><span style="color: #c0392b">60 GB</span></td>
+        <td><span style="color: #c0392b">60 GB</span></td>
+        <td>~ 3 GB</td><td>~ 3 GB</td>
+        <td>❌</td><td>❌</td>
+        <td>✅</td><td>✅</td></tr>
+    <tr><td>CZ CELLxGENE Census (50M cells)</td><td>CZ CELLxGENE Census (50M cells)</td>
+        <td><span style="color: #c0392b">6 TB</span></td>
+        <td><span style="color: #c0392b">6 TB</span></td>
+        <td>~ 300 GB</td><td>~ 300 GB</td>
+        <td>❌</td><td>❌</td>
+        <td>✅ (cluster)</td><td>✅ (cluster)</td></tr>
+  </table>
+
+  <h4 data-lang="zh">🔗 對下游 scRNA 分析的具體影響</h4>
+  <h4 data-lang="en">🔗 Concrete impact on downstream scRNA analysis</h4>
+  <ul>
+    <li data-lang="zh"><b>QC (M2.1)</b>：sparse-aware 算 nFeature / total_counts 是 O(nnz)；dense 是 O(n·p)。對 PBMC 68k 差 20×</li>
+    <li data-lang="en"><b>QC (M2.1)</b>: sparse-aware nFeature / total_counts is O(nnz); dense is O(n·p). 20× difference on PBMC 68k</li>
+    <li data-lang="zh"><b>Normalize (M2.2)</b>：log1p 保留 0 → sparse 仍 sparse；若用 dense，整個矩陣會 densify</li>
+    <li data-lang="en"><b>Normalize (M2.2)</b>: log1p preserves 0 → sparse stays sparse; with dense, full matrix densifies</li>
+    <li data-lang="zh"><b>PCA (M3.1)</b>：scanpy 用 Lanczos/ARPACK 需要 SpMV（O(nnz)）；dense PCA 是 O(p³)。對 30k genes 差 1000×</li>
+    <li data-lang="en"><b>PCA (M3.1)</b>: scanpy uses Lanczos/ARPACK requiring SpMV (O(nnz)); dense PCA is O(p³). 1000× difference at 30k genes</li>
+    <li data-lang="zh"><b>KNN (M4.1)</b>：CSR format 讓「每細胞算到所有細胞的距離」變成連續記憶體操作 → 跟 cache 友善</li>
+    <li data-lang="en"><b>KNN (M4.1)</b>: CSR format makes "compute cell-to-cell distance" cache-friendly contiguous memory ops</li>
+    <li data-lang="zh"><b>Leiden (M4.2)</b>：sparse adjacency 讓 modularity O(edges)；dense 是 O(n²)</li>
+    <li data-lang="en"><b>Leiden (M4.2)</b>: sparse adjacency gives modularity O(edges); dense is O(n²)</li>
+  </ul>
+
+  <div class="callout bio" style="margin-top: 14px;">
+    <strong data-lang="zh">⭐ 一句話總結</strong><strong data-lang="en">⭐ One-line summary</strong>:
+    <span data-lang="zh">沒有稀疏矩陣，<b>10x Genomics 革命（2016 後）就不會發生</b>——沒有任何單機跑得動 10,000+ cells。本章不是「優化技巧」，是「scRNA-seq 計算可行的數學前提」。</span>
+    <span data-lang="en">Without sparse matrices, <b>the 10x Genomics revolution (post-2016) couldn't have happened</b> — no workstation could process 10k+ cells. This isn't an "optimization trick" — it's "the mathematical precondition for scRNA-seq computability".</span>
+  </div>
+</div>
+
 <div class="toc">
   <h4 data-lang="zh">目錄</h4>
   <h4 data-lang="en">Table of Contents</h4>
