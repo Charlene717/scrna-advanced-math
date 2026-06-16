@@ -250,6 +250,107 @@
   </div>
 </header>
 
+<!-- ===== 🧬 scRNA-seq 視角 panel ===== -->
+<div class="card" style="border-left: 6px solid var(--green); background: linear-gradient(135deg, #effaf3 0%, #fff 70%);">
+  <h3 style="color: var(--green); margin-top: 0">
+    <span data-lang="zh">🧬 scRNA-seq 視角：CellChat 把「單細胞圖譜」變成「細胞社會學」</span>
+    <span data-lang="en">🧬 scRNA-seq perspective: CellChat turns a "single-cell atlas" into "cellular sociology"</span>
+  </h3>
+
+  <h4>📍 <span data-lang="zh">在 scRNA-seq 流程中的位置</span><span data-lang="en">Position in scRNA-seq pipeline</span></h4>
+  <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f7f9fb; padding: 10px; border-radius: 6px; line-height: 1.8">
+    所有上游（QC → cluster → annotation） →
+    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b>CellChat / CellPhoneDB / NicheNet (L-R signaling)</b></span>
+    → signaling network → pathway enrichment → spatial validation → drug target
+  </div>
+  <p style="margin-top: 6px; font-size: 0.9em; color: #555">
+    <span data-lang="zh">前面所有 scRNA 步驟（QC、normalize、cluster、annotation）都是<b>把細胞分類</b>；CellChat 是<b>第一個把它們連起來</b>的步驟——回答「<b>細胞型態之間怎麼互動</b>」。腫瘤微環境、發育、組織再生、免疫反應的核心 paper 結論都在這層。</span>
+    <span data-lang="en">All previous scRNA steps (QC, normalize, cluster, annotation) <b>categorize cells</b>; CellChat is the first step that <b>links them together</b> — answering "<b>how cell types interact</b>". Core findings in tumor microenvironment, development, tissue regeneration, immune response papers live at this layer.</span>
+  </p>
+
+  <h4>🎯 <span data-lang="zh">為什麼 scRNA-seq 必須做 cell-cell communication 分析</span><span data-lang="en">Why scRNA-seq must do cell-cell communication analysis</span></h4>
+  <ul>
+    <li>
+      <b><span data-lang="zh">scRNA 一次量全 transcriptome → 同時看 ligand 跟 receptor</span><span data-lang="en">scRNA measures full transcriptome → ligand + receptor simultaneously</span></b>：
+      <span data-lang="zh">bulk RNA-seq 一次只看一個 tissue 的 mixed signal，沒法問「macrophage 的 IL-1β 跟 T cell 的 IL1R 是不是同時高」；scRNA 給每個 cell type 獨立的 expression profile<b>讓 L-R 配對成為可能</b>。</span>
+      <span data-lang="en">Bulk RNA-seq sees only mixed-tissue signal, can't ask "is macrophage IL-1β co-expressed with T cell IL1R"; scRNA gives independent expression profiles per cell type, <b>making L-R pairing feasible</b>.</span>
+    </li>
+    <li>
+      <b><span data-lang="zh">疾病靶點 = 細胞間訊號異常</span><span data-lang="en">Disease targets = aberrant cell-cell signals</span></b>：
+      <span data-lang="zh">癌症 immune escape（PD-L1 / PD-1）、慢性發炎（IL-6 / IL-6R）、纖維化（TGFβ）都是<b>cell-cell signaling</b> 異常。CellChat 系統化把這些通訊量化、可比較。</span>
+      <span data-lang="en">Cancer immune escape (PD-L1 / PD-1), chronic inflammation (IL-6 / IL-6R), fibrosis (TGFβ) are all <b>cell-cell signaling</b> abnormalities. CellChat systematizes these communications, makes them quantifiable and comparable.</span>
+    </li>
+    <li>
+      <b><span data-lang="zh">跟 spatial transcriptomics 互補</span><span data-lang="en">Complements spatial transcriptomics</span></b>：
+      <span data-lang="zh">CellChat 給 candidate L-R pair → spatial（Visium / MERFISH）驗證「兩個細胞是否在物理上接觸」→ 形成可信的 signaling map。scRNA 沒有空間訊息，CellChat 提供 candidate 是<b>必要橋樑</b>。</span>
+      <span data-lang="en">CellChat gives candidate L-R pairs → spatial (Visium / MERFISH) validates "physical contact" → trustworthy signaling map. scRNA lacks spatial info; CellChat-provided candidates are the <b>essential bridge</b>.</span>
+    </li>
+  </ul>
+
+  <h4>💥 <span data-lang="zh">CellChat 做錯會發生什麼</span><span data-lang="en">What happens with bad CellChat</span></h4>
+  <table class="compare">
+    <thead>
+      <tr>
+        <th><span data-lang="zh">問題</span><span data-lang="en">Problem</span></th>
+        <th><span data-lang="zh">後果</span><span data-lang="en">Consequence</span></th>
+        <th><span data-lang="zh">下游災難</span><span data-lang="en">Downstream disaster</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="background: #fdecec">
+        <td><span data-lang="zh">cluster 標錯（pDC 標成 mono）</span><span data-lang="en">Wrong cluster (pDC labeled as mono)</span></td>
+        <td><span data-lang="zh">把 pDC 特有的 IFN signaling 算進 mono</span><span data-lang="en">pDC-specific IFN signaling attributed to mono</span></td>
+        <td><span data-lang="zh">signaling network 結論完全顛倒</span><span data-lang="en">Signaling network conclusions inverted</span></td>
+      </tr>
+      <tr style="background: #fdecec">
+        <td><span data-lang="zh">沒做 permutation test 報「raw score」</span><span data-lang="en">No permutation test, report "raw score"</span></td>
+        <td><span data-lang="zh">3000 個 L-R pair 全跑出 strong signal</span><span data-lang="en">All 3000 L-R pairs give strong signal</span></td>
+        <td><span data-lang="zh">paper figure「signaling network」變一團 hairball，沒結論</span><span data-lang="en">"Signaling network" figure becomes hairball, no findings</span></td>
+      </tr>
+      <tr style="background: #fdecec">
+        <td><span data-lang="zh">dropout 沒處理就跑 L-R co-expression</span><span data-lang="en">No dropout handling for L-R co-expression</span></td>
+        <td><span data-lang="zh">很多真實 ligand 因 zero-inflation 被誤判 absent</span><span data-lang="en">Real ligands judged "absent" due to zero-inflation</span></td>
+        <td><span data-lang="zh">漏報重要 signaling axis（例如 IL-10、TGFβ）</span><span data-lang="en">Miss key signaling axes (e.g. IL-10, TGFβ)</span></td>
+      </tr>
+      <tr style="background: #effaf3">
+        <td><span data-lang="zh">CellChat with permutation p &lt; 0.05 + min ligand expr 10%</span><span data-lang="en">CellChat + permutation p &lt; 0.05 + min ligand expr 10%</span></td>
+        <td><span data-lang="zh">30-100 個 significant L-R pair</span><span data-lang="en">30-100 significant L-R pairs</span></td>
+        <td><span data-lang="zh">chord diagram 看得出 mono → T、T → B 等真實 axis</span><span data-lang="en">Chord diagram shows real axes like mono → T, T → B</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h4>🔗 <span data-lang="zh">對下游每個 scRNA 步驟的具體影響</span><span data-lang="en">Concrete downstream impact</span></h4>
+  <ul>
+    <li><b><span data-lang="zh">pathway enrichment</span><span data-lang="en">Pathway enrichment</span></b>：
+      <span data-lang="zh">CellChat 把 L-R pair grouped 成 signaling pathway（IL signaling, TGFβ, Wnt...）→ 對齊 KEGG / Reactome → 給生物學家熟悉的語言。</span>
+      <span data-lang="en">CellChat groups L-R pairs into pathways (IL signaling, TGFβ, Wnt...) → align to KEGG / Reactome → biologist-friendly language.</span>
+    </li>
+    <li><b><span data-lang="zh">disease vs control 訊號變化</span><span data-lang="en">Disease vs control signal changes</span></b>：
+      <span data-lang="zh">兩個 condition 跑 CellChat、找<b>差異 signaling</b> → 「腫瘤中 TGFβ → T cell receptor 增強」這種具體可下藥的結論。</span>
+      <span data-lang="en">Run CellChat on two conditions, find <b>differential signaling</b> → concrete druggable conclusions like "TGFβ → T cell receptor enhanced in tumor".</span>
+    </li>
+    <li><b><span data-lang="zh">trajectory × signaling</span><span data-lang="en">Trajectory × signaling</span></b>：
+      <span data-lang="zh">把 pseudotime 切成 early / mid / late，每段跑 CellChat → 看 signaling 隨分化怎麼變（誰先講話、誰後接話）。</span>
+      <span data-lang="en">Cut pseudotime into early/mid/late, run CellChat per stage → see how signaling evolves through differentiation (who speaks first, who answers later).</span>
+    </li>
+    <li><b><span data-lang="zh">spatial transcriptomics 驗證</span><span data-lang="en">Spatial transcriptomics validation</span></b>：
+      <span data-lang="zh">CellChat candidate L-R → Visium / MERFISH 確認「兩細胞物理上鄰近」→ 真實 signaling 跟假 signaling 區分。</span>
+      <span data-lang="en">CellChat candidate L-R → Visium / MERFISH confirms "two cells physically adjacent" → real vs fake signaling distinguished.</span>
+    </li>
+    <li><b><span data-lang="zh">藥物靶點</span><span data-lang="en">Drug targets</span></b>：
+      <span data-lang="zh">PD-1 / PD-L1 immune checkpoint inhibitor 的成功就是<b>cell-cell signaling 阻斷</b>。CellChat 為下一個 checkpoint 提供 candidate list。</span>
+      <span data-lang="en">PD-1 / PD-L1 checkpoint inhibitors' success IS <b>cell-cell signal blockade</b>. CellChat provides candidate lists for the next checkpoint.</span>
+    </li>
+  </ul>
+
+  <div class="callout bio">
+    <strong>⭐ <span data-lang="zh">一句話總結</span><span data-lang="en">One-line summary</span></strong>：
+    <span data-lang="zh">前面所有 scRNA 步驟把細胞「分門別類」、CellChat 把它們「連回去」變成「細胞社會」。沒有 CellChat，scRNA 給的是<b>細胞名單</b>；有 CellChat，scRNA 給的是<b>細胞之間的關係網</b>——而疾病、發育、再生的核心機轉都活在這張網裡。</span>
+    <span data-lang="en">All previous scRNA steps "classify cells"; CellChat "links them back" into a "cellular society". Without CellChat, scRNA gives a <b>list of cell types</b>; with CellChat, scRNA gives a <b>relationship network</b> — and the core mechanisms of disease, development, regeneration all live in that network.</span>
+  </div>
+</div>
+
 <div class="toc">
   <h4 data-lang="zh">目錄</h4>
   <h4 data-lang="en">Table of Contents</h4>

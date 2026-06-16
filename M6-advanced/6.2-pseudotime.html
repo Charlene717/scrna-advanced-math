@@ -254,6 +254,107 @@
   </div>
 </header>
 
+<!-- ===== 🧬 scRNA-seq 視角 panel ===== -->
+<div class="card" style="border-left: 6px solid var(--green); background: linear-gradient(135deg, #effaf3 0%, #fff 70%);">
+  <h3 style="color: var(--green); margin-top: 0">
+    <span data-lang="zh">🧬 scRNA-seq 視角：Pseudotime 把「快照」變成「電影」</span>
+    <span data-lang="en">🧬 scRNA-seq perspective: Pseudotime turns "snapshots" into "movies"</span>
+  </h3>
+
+  <h4>📍 <span data-lang="zh">在 scRNA-seq 流程中的位置</span><span data-lang="en">Position in scRNA-seq pipeline</span></h4>
+  <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f7f9fb; padding: 10px; border-radius: 6px; line-height: 1.8">
+    Leiden cluster → diffusion maps →
+    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b>Pseudotime (DPT / Slingshot / Monocle3)</b></span>
+    → trajectory plot → gene dynamics along time → branch / fate analysis
+  </div>
+  <p style="margin-top: 6px; font-size: 0.9em; color: #555">
+    <span data-lang="zh">scRNA 的根本限制：你每個 cell 只能<b>測一次就死了</b>，無法追蹤同細胞「過去 → 未來」。Pseudotime 用<b>群體中的細胞「分布」</b>反推「<b>單細胞的軌跡</b>」——把靜態快照當成動態過程的<b>連續切片</b>。沒它，scRNA 就只能回答「有什麼細胞」，回答不了「細胞怎麼變」。</span>
+    <span data-lang="en">scRNA's fundamental limit: each cell can <b>only be measured once before it dies</b>, you can't track "past → future" of the same cell. Pseudotime uses the <b>population's distribution</b> to infer <b>single-cell trajectories</b> — treating static snapshots as <b>continuous slices of a dynamic process</b>. Without it, scRNA only answers "which cells exist", not "how cells change".</span>
+  </p>
+
+  <h4>🎯 <span data-lang="zh">為什麼 scRNA-seq 必須做 pseudotime（不能只 cluster）</span><span data-lang="en">Why scRNA-seq must do pseudotime (clustering alone is not enough)</span></h4>
+  <ul>
+    <li>
+      <b><span data-lang="zh">分化是連續，不是離散</span><span data-lang="en">Differentiation is continuous, not discrete</span></b>：
+      <span data-lang="zh">HSC → MPP → CMP → GMP → mono 之間<b>沒有跳躍</b>；Leiden 切的 5 個 cluster 邊界是人為的。生物上重要的問題是「<b>怎麼從 HSC 變成 mono</b>」，這個「怎麼」就是 pseudotime（Trapnell 2014 / Haghverdi 2016）。</span>
+      <span data-lang="en">HSC → MPP → CMP → GMP → mono has <b>no jumps</b>; Leiden's 5 cluster boundaries are artificial. The biological question is "<b>how does HSC become mono</b>" — that "how" IS pseudotime (Trapnell 2014 / Haghverdi 2016).</span>
+    </li>
+    <li>
+      <b><span data-lang="zh">找「分化開關 gene」必須沿時間軸</span><span data-lang="en">Finding "fate-switch genes" requires the time axis</span></b>：
+      <span data-lang="zh">GATA1（紅血球決定）、PU.1（髓系決定）是分化決定因子，<b>沿 pseudotime 看才看得出</b> activation 時間點；只看 cluster 比較，你會以為 GATA1 「在 erythroid cluster 高」這種廢話。</span>
+      <span data-lang="en">GATA1 (erythroid fate), PU.1 (myeloid fate) are fate determinants; <b>only visible along pseudotime</b>; cluster comparison just gives "GATA1 is high in erythroid cluster" — a tautology.</span>
+    </li>
+    <li>
+      <b><span data-lang="zh">疾病過程分析</span><span data-lang="en">Disease process analysis</span></b>：
+      <span data-lang="zh">「腫瘤細胞如何 progression」「免疫細胞如何 exhaustion」「神經元如何 degeneration」這類 paper 的核心 figure 就是 pseudotime trajectory；clustering 答不了「progression」這種連續 process。</span>
+      <span data-lang="en">"How tumor cells progress", "how immune cells exhaust", "how neurons degenerate" — these papers' core figures are pseudotime trajectories; clustering can't answer "progression" type continuous processes.</span>
+    </li>
+  </ul>
+
+  <h4>💥 <span data-lang="zh">pseudotime 做錯會發生什麼</span><span data-lang="en">What happens with bad pseudotime</span></h4>
+  <table class="compare">
+    <thead>
+      <tr>
+        <th><span data-lang="zh">問題</span><span data-lang="en">Problem</span></th>
+        <th><span data-lang="zh">造血分化情境</span><span data-lang="en">Hematopoiesis scenario</span></th>
+        <th><span data-lang="zh">下游災難</span><span data-lang="en">Downstream disaster</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="background: #fdecec">
+        <td><span data-lang="zh">root cell 選錯（選 mono 為 root）</span><span data-lang="en">Wrong root cell (pick mono as root)</span></td>
+        <td><span data-lang="zh">pseudotime 從 mono 開始 → HSC 變終點</span><span data-lang="en">Pseudotime starts from mono → HSC ends</span></td>
+        <td><span data-lang="zh">分化方向<b>反向</b>，gene dynamics 全反 → 生物結論全錯</span><span data-lang="en">Differentiation <b>reversed</b>, gene dynamics flipped → all biology wrong</span></td>
+      </tr>
+      <tr style="background: #fdecec">
+        <td><span data-lang="zh">直接在 UMAP 2-D 上量距離當 pseudotime</span><span data-lang="en">Use Euclidean distance on UMAP 2-D as pseudotime</span></td>
+        <td><span data-lang="zh">UMAP 形狀失真，距離不可信</span><span data-lang="en">UMAP shape distorted, distance unreliable</span></td>
+        <td><span data-lang="zh">branching point 漂移、命運機率算錯</span><span data-lang="en">Branching points drift, fate probabilities wrong</span></td>
+      </tr>
+      <tr style="background: #fdecec">
+        <td><span data-lang="zh">資料其實沒分化（穩態 PBMC）強行跑 pseudotime</span><span data-lang="en">No differentiation in data (steady-state PBMC), force pseudotime</span></td>
+        <td><span data-lang="zh">pseudotime 算出來但沒生物意義</span><span data-lang="en">Pseudotime computed but biologically meaningless</span></td>
+        <td><span data-lang="zh">把「同細胞型內部 noise」誤讀為「分化軌跡」 → 假發現</span><span data-lang="en">"Within-cell-type noise" mistaken as "differentiation trajectory" → false discoveries</span></td>
+      </tr>
+      <tr style="background: #effaf3">
+        <td><span data-lang="zh">DPT + diffusion maps + root = HSC + 確認 trajectory branch</span><span data-lang="en">DPT + diffusion maps + root=HSC + verify trajectory branches</span></td>
+        <td><span data-lang="zh">HSC → MEP → ery 跟 HSC → GMP → mono 兩條 branch</span><span data-lang="en">HSC → MEP → ery and HSC → GMP → mono two branches</span></td>
+        <td><span data-lang="zh">GATA1（ery）、PU.1（mono）正確分支 activation</span><span data-lang="en">GATA1 (ery), PU.1 (mono) correctly activate per branch</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h4>🔗 <span data-lang="zh">對下游每個 scRNA 步驟的具體影響</span><span data-lang="en">Concrete downstream impact</span></h4>
+  <ul>
+    <li><b><span data-lang="zh">沿 pseudotime 的 gene dynamics</span><span data-lang="en">Gene dynamics along pseudotime</span></b>：
+      <span data-lang="zh">畫每個 gene 在 pseudotime 上的 expression curve → 找 wave-like activation pattern → 推 master regulator。</span>
+      <span data-lang="en">Plot each gene's expression curve along pseudotime → find wave-like activation patterns → infer master regulators.</span>
+    </li>
+    <li><b><span data-lang="zh">branching / fate probability</span><span data-lang="en">Branching / fate probability</span></b>：
+      <span data-lang="zh">Palantir / CellRank 跑 Markov absorbing process 算「進到 branch A vs B 的機率」→ 找 fate decision 點。</span>
+      <span data-lang="en">Palantir / CellRank run Markov absorbing process to compute "probability of entering branch A vs B" → find fate decision points.</span>
+    </li>
+    <li><b><span data-lang="zh">RNA velocity 對齊</span><span data-lang="en">RNA velocity alignment</span></b>：
+      <span data-lang="zh">scVelo 算 spliced / unspliced ratio 得 velocity vector → 跟 pseudotime 方向交叉驗證 → 找<b>不一致</b>的細胞（可能是 dedifferentiation）。</span>
+      <span data-lang="en">scVelo computes spliced/unspliced ratio for velocity vectors → cross-validate with pseudotime direction → find <b>inconsistent</b> cells (possibly dedifferentiation).</span>
+    </li>
+    <li><b><span data-lang="zh">疾病 vs 健康的 trajectory 對比</span><span data-lang="en">Disease vs healthy trajectory comparison</span></b>：
+      <span data-lang="zh">「腫瘤的 trajectory 跟正常組織 trajectory 差在哪」→ 答案決定治療靶點選擇（哪個 stage 介入最有效）。</span>
+      <span data-lang="en">"How does tumor trajectory differ from normal tissue trajectory" → answer decides therapeutic target choice (which stage to intervene).</span>
+    </li>
+    <li><b><span data-lang="zh">CellChat 跨 stage 訊號變化</span><span data-lang="en">CellChat signal changes across stages</span></b>：
+      <span data-lang="zh">把 pseudotime 切成 early / mid / late 3 段，分別跑 CellChat → 看 signaling network 隨分化怎麼變。</span>
+      <span data-lang="en">Cut pseudotime into early / mid / late stages, run CellChat on each → see how signaling networks evolve through differentiation.</span>
+    </li>
+  </ul>
+
+  <div class="callout bio">
+    <strong>⭐ <span data-lang="zh">一句話總結</span><span data-lang="en">One-line summary</span></strong>：
+    <span data-lang="zh">cluster 告訴你「有什麼細胞」，pseudotime 告訴你「<b>細胞怎麼變</b>」。前者是字典，後者是電影。發育、再生、疾病、衰老——所有<b>過程</b>類問題只有 pseudotime 才答得了。</span>
+    <span data-lang="en">Cluster tells you "what cells exist"; pseudotime tells you "<b>how cells change</b>". The former is a dictionary, the latter a movie. Development, regeneration, disease, aging — all <b>process</b>-type questions only pseudotime can answer.</span>
+  </div>
+</div>
+
 <div class="toc">
   <h4 data-lang="zh">目錄</h4>
   <h4 data-lang="en">Table of Contents</h4>

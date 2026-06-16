@@ -257,6 +257,107 @@
   </div>
 </header>
 
+<!-- ===== 🧬 scRNA-seq 視角 panel ===== -->
+<div class="card" style="border-left: 6px solid var(--green); background: linear-gradient(135deg, #effaf3 0%, #fff 70%);">
+  <h3 style="color: var(--green); margin-top: 0">
+    <span data-lang="zh">🧬 scRNA-seq 視角：Integration 是多 sample 研究「能不能比」的前提</span>
+    <span data-lang="en">🧬 scRNA-seq perspective: Integration is the prerequisite for comparing multi-sample studies</span>
+  </h3>
+
+  <h4>📍 <span data-lang="zh">在 scRNA-seq 流程中的位置</span><span data-lang="en">Position in scRNA-seq pipeline</span></h4>
+  <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f7f9fb; padding: 10px; border-radius: 6px; line-height: 1.8">
+    QC → normalize → HVG → PCA →
+    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b>Integration (Harmony / BBKNN / scVI)</b></span>
+    → corrected PCA / embedding → KNN → Leiden → UMAP → DE / annotation
+  </div>
+  <p style="margin-top: 6px; font-size: 0.9em; color: #555">
+    <span data-lang="zh">當你有<b>多個 sample</b>（不同 patient、不同 lab、不同 10x version、不同 time point）時，「batch effect」會把生物訊號蓋掉。Integration 就是<b>把技術變異拆掉、留生物變異</b>的步驟。沒它，後面所有跨 sample 的比較（healthy vs disease、treatment vs control）都不可信。</span>
+    <span data-lang="en">When you have <b>multiple samples</b> (different patients, labs, 10x versions, time points), batch effects mask biological signal. Integration is the step that <b>removes technical variation while preserving biological variation</b>. Without it, all cross-sample comparisons (healthy vs disease, treatment vs control) become unreliable.</span>
+  </p>
+
+  <h4>🎯 <span data-lang="zh">為什麼 scRNA-seq 跨樣本研究必須做 integration</span><span data-lang="en">Why scRNA-seq cross-sample studies must do integration</span></h4>
+  <ul>
+    <li>
+      <b><span data-lang="zh">batch effect 在 scRNA 比 bulk 嚴重百倍</span><span data-lang="en">Batch effect in scRNA is 100× worse than bulk</span></b>：
+      <span data-lang="zh">不同 10x kit version（v2 vs v3）、不同 sequencing depth、不同 sample prep 操作員，產生的 capture efficiency 跟 dropout pattern 差很多。同 patient 同 tissue 用兩個 batch 跑出來都會分群——Tran 2020 比較 14 種 integration 工具就是因為這事太嚴重。</span>
+      <span data-lang="en">Different 10x kit versions (v2 vs v3), depths, prep operators produce very different capture efficiencies and dropout patterns. Same patient + same tissue + 2 batches will split — Tran 2020's benchmark of 14 integration tools exists because this problem is severe.</span>
+    </li>
+    <li>
+      <b><span data-lang="zh">疾病 vs control 的核心問題</span><span data-lang="en">Core question of disease vs control</span></b>：
+      <span data-lang="zh">paper 標題「COVID-19 患者的 T cell 表現差異」<b>必然</b>需要 integrate 多個 patient sample；如果 batch effect 還在，DE 找到的 gene 是「sample-specific noise」而非 disease signal。</span>
+      <span data-lang="en">Paper titles like "T cell differences in COVID-19 patients" <b>necessarily</b> require integrating multiple patient samples; if batch effects remain, DE genes are "sample-specific noise", not disease signal.</span>
+    </li>
+    <li>
+      <b><span data-lang="zh">atlas 建構的基礎</span><span data-lang="en">Foundation for atlas construction</span></b>：
+      <span data-lang="zh">HCA、CELLxGENE、Tabula Sapiens 等大規模 atlas 整合來自<b>數十到數百個 lab</b> 的資料，沒 Harmony / scVI 級別的 integration，atlas 變成「按 lab 分群」沒生物意義。</span>
+      <span data-lang="en">HCA, CELLxGENE, Tabula Sapiens etc. aggregate data from <b>tens to hundreds of labs</b>; without Harmony / scVI-level integration, atlas becomes "lab-grouped" with no biological meaning.</span>
+    </li>
+  </ul>
+
+  <h4>💥 <span data-lang="zh">不做 integration、或過度校正會發生什麼</span><span data-lang="en">What happens without integration, or over-correction</span></h4>
+  <table class="compare">
+    <thead>
+      <tr>
+        <th><span data-lang="zh">策略</span><span data-lang="en">Strategy</span></th>
+        <th><span data-lang="zh">PBMC 2-batch 結果</span><span data-lang="en">PBMC 2-batch result</span></th>
+        <th><span data-lang="zh">下游災難</span><span data-lang="en">Downstream disaster</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="background: #fdecec">
+        <td><span data-lang="zh">不 integrate，直接合併跑 PCA</span><span data-lang="en">No integration, concatenate + PCA</span></td>
+        <td><span data-lang="zh">UMAP「兩團 batch」遠離</span><span data-lang="en">UMAP shows "two batch blobs" apart</span></td>
+        <td><span data-lang="zh">cluster 變「batch 1 T」「batch 2 T」分開 → DE 全是 batch artifact</span><span data-lang="en">Clusters become "batch 1 T" / "batch 2 T" → DE all batch artifact</span></td>
+      </tr>
+      <tr style="background: #fdecec">
+        <td><span data-lang="zh">只用 ComBat（bulk 用的線性校正）</span><span data-lang="en">ComBat only (bulk linear correction)</span></td>
+        <td><span data-lang="zh">線性校正 over-correct 細胞型態軸</span><span data-lang="en">Linear correction over-corrects cell-type axis</span></td>
+        <td><span data-lang="zh">B cell 跟 T cell 被「校平」 → cluster 合併</span><span data-lang="en">B cells and T cells "flattened" → clusters merged</span></td>
+      </tr>
+      <tr style="background: #fdecec">
+        <td><span data-lang="zh">Harmony 但 batch label 寫成 sample id（不是 lab）</span><span data-lang="en">Harmony with batch=sample_id (not lab)</span></td>
+        <td><span data-lang="zh">Harmony 試圖把每個 sample 都拉到中心 → over-correction</span><span data-lang="en">Harmony tries to pull every sample to center → over-correction</span></td>
+        <td><span data-lang="zh">sample 之間真實的疾病 signal 也被「校掉」 → 病人差異消失</span><span data-lang="en">Real disease signal between samples also "corrected away" → patient differences vanish</span></td>
+      </tr>
+      <tr style="background: #effaf3">
+        <td><span data-lang="zh">Harmony batch=lab、看 kBET/LISI</span><span data-lang="en">Harmony with batch=lab, check kBET/LISI</span></td>
+        <td><span data-lang="zh">兩 batch 混在一起、cell type 仍分得開</span><span data-lang="en">Two batches mixed, cell types still separable</span></td>
+        <td><span data-lang="zh">DE / annotation / composition analysis 正確</span><span data-lang="en">DE / annotation / composition analysis correct</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h4>🔗 <span data-lang="zh">對下游每個 scRNA 步驟的具體影響</span><span data-lang="en">Concrete downstream impact</span></h4>
+  <ul>
+    <li><b><span data-lang="zh">KNN graph + Leiden cluster</span><span data-lang="en">KNN graph + Leiden cluster</span></b>：
+      <span data-lang="zh">integration 後在<b>corrected embedding</b> 上重算 KNN → cluster 不再按 batch 分。沒這步，cluster 只是「batch label」的代名詞。</span>
+      <span data-lang="en">After integration, KNN recomputed on <b>corrected embedding</b> → clusters no longer split by batch. Without this, clusters are just "batch label" aliases.</span>
+    </li>
+    <li><b><span data-lang="zh">UMAP 視覺化</span><span data-lang="en">UMAP visualization</span></b>：
+      <span data-lang="zh">paper figure「健康 vs 疾病」對齊的 UMAP 必須是 integrated embedding，否則 reviewer 一眼看穿。</span>
+      <span data-lang="en">"Healthy vs disease" aligned UMAP must use integrated embedding, otherwise reviewers spot it immediately.</span>
+    </li>
+    <li><b><span data-lang="zh">DE between condition</span><span data-lang="en">DE between conditions</span></b>：
+      <span data-lang="zh">pseudobulk DESeq2 需要 cluster 跨 condition 對齊；沒 integration，cluster 切錯，pseudobulk 也錯。</span>
+      <span data-lang="en">Pseudobulk DESeq2 needs clusters aligned across conditions; without integration, wrong clusters → wrong pseudobulk.</span>
+    </li>
+    <li><b><span data-lang="zh">細胞分類器（§M5.3）</span><span data-lang="en">Cell classifier (§M5.3)</span></b>：
+      <span data-lang="zh">CellTypist / Azimuth 把 query 投到 reference embedding → query 跟 reference 必須先 align 才能 label。</span>
+      <span data-lang="en">CellTypist / Azimuth project query to reference embedding → query and reference must align first to label.</span>
+    </li>
+    <li><b><span data-lang="zh">軌跡分析（§M6.2）</span><span data-lang="en">Trajectory analysis (§M6.2)</span></b>：
+      <span data-lang="zh">如果疾病組跟健康組的 trajectory 都要畫，必須先 integrate 共享 trajectory backbone，否則同細胞型在兩個 trajectory 變成「不同 pseudotime origin」。</span>
+      <span data-lang="en">If trajectories must be drawn for both disease and healthy groups, integration first to share trajectory backbone; otherwise same cell type → "different pseudotime origin" in two trajectories.</span>
+    </li>
+  </ul>
+
+  <div class="callout bio">
+    <strong>⭐ <span data-lang="zh">一句話總結</span><span data-lang="en">One-line summary</span></strong>：
+    <span data-lang="zh">scRNA 跨 sample 研究<b>沒做 integration = 沒做研究</b>。但「校過頭」會把真實的疾病 signal 也校掉——必須在 kBET（batch mixing）跟 cell-type ARI（cell-type purity）之間找平衡。Integration 不是技術細節，是<b>多 sample paper 的成敗關鍵</b>。</span>
+    <span data-lang="en">Cross-sample scRNA <b>without integration = no study</b>. But over-correction wipes out true disease signal too — balance between kBET (batch mixing) and cell-type ARI (cell-type purity). Integration is not a technical detail, it's <b>the make-or-break of multi-sample papers</b>.</span>
+  </div>
+</div>
+
 <div class="toc">
   <h4 data-lang="zh">目錄</h4>
   <h4 data-lang="en">Table of Contents</h4>
