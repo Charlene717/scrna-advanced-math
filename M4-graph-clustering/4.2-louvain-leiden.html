@@ -255,6 +255,112 @@
   </div>
 </header>
 
+<!-- ===== 🧬 scRNA-seq 視角 panel ===== -->
+<div class="card" style="border-left: 6px solid var(--green); background: linear-gradient(135deg, #effaf3 0%, #fff 70%);">
+  <h3 style="color: var(--green); margin-top: 0">
+    <span data-lang="zh">🧬 scRNA-seq 視角：Leiden 是「細胞型態到底有幾種」的最終決策</span>
+    <span data-lang="en">🧬 scRNA-seq perspective: Leiden is the final verdict on "how many cell types are there"</span>
+  </h3>
+
+  <h4>📍 <span data-lang="zh">在 scRNA-seq 流程中的位置</span><span data-lang="en">Position in scRNA-seq pipeline</span></h4>
+  <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f7f9fb; padding: 10px; border-radius: 6px; line-height: 1.8">
+    QC → normalize → HVG → PCA → KNN graph →
+    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b>Leiden cluster (sc.tl.leiden)</b></span>
+    → marker DE → annotation → 所有 cluster-level 分析
+  </div>
+  <p style="margin-top: 6px; font-size: 0.9em; color: #555">
+    <span data-lang="zh">Leiden 把「連續的細胞狀態雲」變成「有名字的細胞型態」。<b>它定義了「細胞型態」這個生物學概念在這份資料裡的具體實例</b>——你接下來看的所有 cluster-level 結果（marker、proportion、DE、軌跡終點）都建立在 Leiden 切的 partition 上。</span>
+    <span data-lang="en">Leiden turns "a continuous cell-state cloud" into "named cell types". <b>It defines the biological concept of "cell type" as concrete instances in this dataset</b> — all downstream cluster-level results (markers, proportions, DE, trajectory endpoints) build on Leiden's partition.</span>
+  </p>
+
+  <h4>🎯 <span data-lang="zh">為什麼 scRNA-seq 用 graph-based 分群而不是 k-means / 階層</span><span data-lang="en">Why scRNA-seq uses graph-based clustering, not k-means/hierarchical</span></h4>
+  <ul>
+    <li>
+      <b><span data-lang="zh">不用先指定 k</span><span data-lang="en">No need to pre-specify k</span></b>：
+      <span data-lang="zh">k-means 必須先告訴它「分幾群」，但 scRNA 一開始<b>就不知道有幾種細胞</b>。Leiden 只要給 resolution γ，演算法<b>自己找最佳群數</b>。</span>
+      <span data-lang="en">k-means requires k upfront, but scRNA <b>doesn't know cell type count</b> at the start. Leiden only needs resolution γ; algorithm <b>finds optimal cluster count itself</b>.</span>
+    </li>
+    <li>
+      <b><span data-lang="zh">不假設 cluster 球形 / 等大小</span><span data-lang="en">No assumption of spherical / equal-size clusters</span></b>：
+      <span data-lang="zh">k-means 用歐式距離 → 假設 cluster 是球形。但 PBMC 裡 monocyte 數量可能是 pDC 的 100 倍（大小極不平衡），T cell 在 PCA 空間是「彎曲流形」（非球形）。Graph modularity 對<b>形狀和大小</b>都不挑剔。</span>
+      <span data-lang="en">k-means uses Euclidean → assumes spherical clusters. In PBMC, monocyte count may be 100× pDC (severe imbalance); T cells form "curved manifold" in PCA space. Graph modularity is agnostic to <b>shape and size</b>.</span>
+    </li>
+    <li>
+      <b><span data-lang="zh">Leiden 修正 Louvain 的「斷裂群」 bug（Traag 2019）</span><span data-lang="en">Leiden fixes Louvain's "disconnected community" bug (Traag 2019)</span></b>：
+      <span data-lang="zh">Louvain 會產生「<b>同一個 cluster 在圖上不連通</b>」的 cluster，生物上完全錯誤（兩坨不相干細胞被叫成同一型）。Leiden 用三階段（local-move → refinement → aggregate）<b>保證每個 cluster 連通</b>。scanpy 1.5+ 預設 Leiden 不再用 Louvain。</span>
+      <span data-lang="en">Louvain produces clusters that are <b>disconnected in the graph</b> — biologically wrong (two unrelated blobs labeled same type). Leiden's 3-phase (local-move → refinement → aggregate) <b>guarantees connected clusters</b>. Scanpy 1.5+ defaults to Leiden, not Louvain.</span>
+    </li>
+  </ul>
+
+  <h4>💥 <span data-lang="zh">不做 Leiden、或 resolution 錯會發生什麼</span><span data-lang="en">What happens without Leiden, or with wrong resolution</span></h4>
+  <table class="compare">
+    <thead>
+      <tr>
+        <th><span data-lang="zh">設定</span><span data-lang="en">Setting</span></th>
+        <th><span data-lang="zh">PBMC 3k 結果</span><span data-lang="en">PBMC 3k result</span></th>
+        <th><span data-lang="zh">下游災難</span><span data-lang="en">Downstream disaster</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="background: #fdecec">
+        <td><span data-lang="zh">用 k-means k=8</span><span data-lang="en">k-means k=8</span></td>
+        <td><span data-lang="zh">pDC（rare, 0.5%）被分到 monocyte cluster</span><span data-lang="en">pDC (rare, 0.5%) merged into monocyte cluster</span></td>
+        <td><span data-lang="zh">看不到 pDC marker（IRF7、CLEC4C）→ 漏報 rare 免疫亞型</span><span data-lang="en">No pDC markers visible (IRF7, CLEC4C) → miss rare immune subtype</span></td>
+      </tr>
+      <tr style="background: #fdecec">
+        <td><span data-lang="zh">Louvain（沒修正）</span><span data-lang="en">Louvain (unfixed)</span></td>
+        <td><span data-lang="zh">「cluster 5」內部圖上有 2 個不連通子圖</span><span data-lang="en">"Cluster 5" has 2 disconnected subgraphs internally</span></td>
+        <td><span data-lang="zh">marker gene 混合兩種細胞表現 → 註解錯</span><span data-lang="en">Marker genes blend two cell types → wrong annotation</span></td>
+      </tr>
+      <tr style="background: #fdecec">
+        <td><span data-lang="zh">resolution=0.1（過低）</span><span data-lang="en">resolution=0.1 (too low)</span></td>
+        <td><span data-lang="zh">3 個大群：T、B、myeloid</span><span data-lang="en">3 big groups: T, B, myeloid</span></td>
+        <td><span data-lang="zh">CD4 / CD8 / Treg / NK 完全混在一起</span><span data-lang="en">CD4 / CD8 / Treg / NK all mixed</span></td>
+      </tr>
+      <tr style="background: #fdecec">
+        <td><span data-lang="zh">resolution=3.0（過高）</span><span data-lang="en">resolution=3.0 (too high)</span></td>
+        <td><span data-lang="zh">40 個 cluster，多數是 noise 切分</span><span data-lang="en">40 clusters, most are noise splits</span></td>
+        <td><span data-lang="zh">每個 cluster 太少 cell，DE 沒 power、註解不穩</span><span data-lang="en">Too few cells per cluster, DE underpowered, annotation unstable</span></td>
+      </tr>
+      <tr style="background: #effaf3">
+        <td><span data-lang="zh">Leiden resolution=1.0（標準）</span><span data-lang="en">Leiden resolution=1.0 (standard)</span></td>
+        <td><span data-lang="zh">8 個 cluster，恰好對應已知 PBMC 細胞型</span><span data-lang="en">8 clusters, matches known PBMC cell types</span></td>
+        <td><span data-lang="zh">CD4/CD8 T、B、NK、CD14 mono、FCGR3A mono、DC、pDC 全部分得開</span><span data-lang="en">CD4/CD8 T, B, NK, CD14/FCGR3A mono, DC, pDC all separable</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h4>🔗 <span data-lang="zh">對下游每個 scRNA 步驟的具體影響</span><span data-lang="en">Concrete downstream impact</span></h4>
+  <ul>
+    <li><b><span data-lang="zh">Marker gene DE（§M5.1）</span><span data-lang="en">Marker gene DE (§M5.1)</span></b>：
+      <span data-lang="zh">Wilcoxon / MAST 是<b>每個 cluster vs 其他</b>跑 DE → cluster 切錯，marker 就是兩種細胞型的混合 signature。</span>
+      <span data-lang="en">Wilcoxon / MAST run DE <b>each cluster vs others</b> → wrong clustering means marker is a mix signature of two cell types.</span>
+    </li>
+    <li><b><span data-lang="zh">細胞型態註解（§M5.3）</span><span data-lang="en">Cell type annotation (§M5.3)</span></b>：
+      <span data-lang="zh">CellTypist / 手動註解都是「<b>給每個 cluster 一個名字</b>」→ cluster 錯，整套 annotation 錯。</span>
+      <span data-lang="en">CellTypist / manual annotation assigns "<b>a name to each cluster</b>" → wrong cluster → wrong annotation.</span>
+    </li>
+    <li><b><span data-lang="zh">細胞比例分析（composition）</span><span data-lang="en">Cellular composition analysis</span></b>：
+      <span data-lang="zh">「疾病組 CD8 T 比 control 多 30%」這種命題，<b>分母是 cluster size</b>；resolution 一改，比例全變。</span>
+      <span data-lang="en">"Disease has 30% more CD8 T than control" — <b>denominator is cluster size</b>; change resolution, ratios all change.</span>
+    </li>
+    <li><b><span data-lang="zh">PAGA / 軌跡分析</span><span data-lang="en">PAGA / trajectory analysis</span></b>：
+      <span data-lang="zh">PAGA 把 cluster 視為節點，畫 cluster-cluster transition → cluster 結構決定軌跡圖的拓撲。</span>
+      <span data-lang="en">PAGA treats clusters as nodes, draws cluster-cluster transitions → cluster structure decides trajectory topology.</span>
+    </li>
+    <li><b><span data-lang="zh">CellChat 細胞間通訊（§M6.3）</span><span data-lang="en">CellChat (§M6.3)</span></b>：
+      <span data-lang="zh">CellChat 把 ligand-receptor signal 分 cluster 計算 → cluster 數量直接決定 signaling network 複雜度。</span>
+      <span data-lang="en">CellChat computes ligand-receptor signal per cluster → cluster count directly determines signaling network complexity.</span>
+    </li>
+  </ul>
+
+  <div class="callout bio">
+    <strong>⭐ <span data-lang="zh">一句話總結</span><span data-lang="en">One-line summary</span></strong>：
+    <span data-lang="zh">Leiden 的<b>每一個 cluster 邊界決定論文裡每一張 figure 怎麼長</b>。選 Leiden + 用合理 resolution + 跨 seed 檢驗穩定性，是把 scRNA-seq 從「圖很漂亮」做到「結論可信」的關鍵步驟。</span>
+    <span data-lang="en">Each Leiden cluster boundary decides <b>how every figure in the paper looks</b>. Choose Leiden + reasonable resolution + cross-seed stability checks — this is the key step turning scRNA-seq from "pretty plot" to "trustworthy conclusion".</span>
+  </div>
+</div>
+
 <div class="toc">
   <h4 data-lang="zh">目錄</h4>
   <h4 data-lang="en">Table of Contents</h4>
