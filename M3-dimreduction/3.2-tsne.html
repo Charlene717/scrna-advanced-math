@@ -225,6 +225,10 @@
   <a href="#s6"><span data-lang="zh">§6 互動 t-SNE</span><span data-lang="en">§6 Interactive t-SNE</span></a>
   <a href="#s7"><span data-lang="zh">§7 hyperparams</span><span data-lang="en">§7 hyperparams</span></a>
   <a href="#s8"><span data-lang="zh">§8 限制</span><span data-lang="en">§8 Limits</span></a>
+  <a href="#s9"><span data-lang="zh">§9 PBMC 案例</span><span data-lang="en">§9 PBMC case</span></a>
+  <a href="#s10"><span data-lang="zh">§10 BH-tSNE</span><span data-lang="en">§10 BH-tSNE</span></a>
+  <a href="#s11"><span data-lang="zh">§11 FIt-SNE</span><span data-lang="en">§11 FIt-SNE</span></a>
+  <a href="#s12"><span data-lang="zh">§12 openTSNE</span><span data-lang="en">§12 openTSNE</span></a>
 </div>
 
 <header class="cover">
@@ -503,6 +507,227 @@ This is the mathematical root of "global distance unreliable".</p>
       <td data-lang="zh">新資料要重跑整個 t-SNE</td><td data-lang="en">new data requires full re-run</td>
       <td data-lang="zh">用 parametric t-SNE (NN 版本)</td><td data-lang="en">use parametric t-SNE (NN version)</td></tr>
 </table>
+
+<!-- ===================================== §9 PBMC tSNE 案例 ===================================== -->
+<h2 id="s9"><span class="num">§9</span> <span data-lang="zh">PBMC 3k t-SNE 案例：perplexity 對細胞型態 separation 的影響</span><span data-lang="en">PBMC 3k t-SNE case: perplexity effect on cell-type separation</span></h2>
+
+<p class="lead" data-lang="zh">
+  本節在 PBMC 3k 上跑不同 perplexity 的 t-SNE，看 perplexity=5/30/100 對<b>細胞型態 cluster 分離</b>的影響。
+</p>
+<p class="lead" data-lang="en">
+  Run t-SNE on PBMC 3k with different perplexities (5/30/100) and inspect <b>cell-type cluster separation</b>.
+</p>
+
+<div class="card">
+  <table class="compare">
+    <tr><th>perplexity</th><th>perplexity</th>
+        <th data-lang="zh">細胞型 separation</th><th data-lang="en">Cell-type separation</th>
+        <th data-lang="zh">時間 (PBMC 3k)</th><th data-lang="en">Time (PBMC 3k)</th>
+        <th data-lang="zh">建議用途</th><th data-lang="en">Recommended use</th></tr>
+    <tr><td>5</td><td>5</td>
+        <td data-lang="zh">過度切碎：每細胞型分成多個小團</td><td data-lang="en">over-fragmented: each type splits</td>
+        <td>~ 25 sec</td><td>~ 25 sec</td>
+        <td data-lang="zh">看 subtype 細結構</td><td data-lang="en">subtype fine structure</td></tr>
+    <tr style="background:#dbeafe"><td><b>30</b></td><td><b>30</b></td>
+        <td data-lang="zh">✅ 9 個主要 cell types 清楚分開</td><td data-lang="en">✅ 9 main types cleanly separated</td>
+        <td>~ 45 sec</td><td>~ 45 sec</td>
+        <td data-lang="zh">標準預設、最常用</td><td data-lang="en">standard default, most common</td></tr>
+    <tr><td>100</td><td>100</td>
+        <td data-lang="zh">過度合併：T cell subtypes 混在一起</td><td data-lang="en">over-merged: T subtypes blend</td>
+        <td>~ 90 sec</td><td>~ 90 sec</td>
+        <td data-lang="zh">看大尺度組織</td><td data-lang="en">macro-scale structure</td></tr>
+  </table>
+
+  <h3 data-lang="zh">9.1 同樣的細胞，不同 perplexity 抓到不同結構</h3>
+  <h3 data-lang="en">9.1 Same cells, different perplexities catch different structure</h3>
+
+  <table class="compare">
+    <tr><th>perplexity</th><th>perplexity</th>
+        <th data-lang="zh">能分出的細胞型</th><th data-lang="en">Resolved cell types</th></tr>
+    <tr><td>5</td><td>5</td>
+        <td>CD4 naive / CD4 memory / CD8 effector / CD8 memory / Mono CD14 / Mono CD16 / B naive / B memory / NK / DC / pDC / Plasma / Treg / Tfh / Megakaryocyte</td>
+        <td>CD4 naive / CD4 memory / CD8 effector / CD8 memory / Mono CD14 / Mono CD16 / B naive / B memory / NK / DC / pDC / Plasma / Treg / Tfh / Megakaryocyte</td></tr>
+    <tr style="background:#dbeafe"><td><b>30</b></td><td><b>30</b></td>
+        <td><b>CD4 T / CD8 T / Mono CD14 / Mono CD16 / B / NK / DC / Megakaryocyte / Plasma</b></td>
+        <td><b>CD4 T / CD8 T / Mono CD14 / Mono CD16 / B / NK / DC / Megakaryocyte / Plasma</b></td></tr>
+    <tr><td>100</td><td>100</td>
+        <td>T 細胞群（all subtypes）/ Mono / B / NK / DC / Megakaryocyte</td>
+        <td>T cells (all subtypes) / Mono / B / NK / DC / Megakaryocyte</td></tr>
+  </table>
+
+  <div class="callout bio">
+    <strong data-lang="zh">perplexity 的選擇</strong><strong data-lang="en">Perplexity choice</strong>:
+    <span data-lang="zh">perplexity ≈ 「<b>有效鄰居數</b>」。如果你關心「rare cell type」（如 pDC, Treg），用 perplexity = 5-15；想看「大尺度 immune hierarchy」用 50-100。<b>每 cluster 至少要 perplexity 個細胞</b>，否則該 cluster 在 t-SNE 上會碎掉。PBMC 3k 的 pDC 只有 ~30 個細胞，perplexity 必須 ≤ 30 才能看見。</span>
+    <span data-lang="en">perplexity ≈ "<b>effective # neighbors</b>". For rare types (pDC, Treg), use 5-15; for macro immune hierarchy, use 50-100. <b>Each cluster needs ≥ perplexity cells</b>, else it fragments. PBMC 3k has ~30 pDCs — perplexity must be ≤ 30 to see them.</span>
+  </div>
+
+  <p data-lang="zh">📚 <b>引用</b>：Kobak & Berens (2019) <i>Nat Commun</i> 10:5416 (t-SNE on scRNA, 含 perplexity 建議); Wattenberg et al. (2016) Distill (How to Use t-SNE Effectively); Cao et al. (2019) <i>Nature</i> 566:496 (sci-RNA-seq3 用 t-SNE 視覺化 2M cells)。</p>
+  <p data-lang="en">📚 <b>References</b>: Kobak & Berens (2019) <i>Nat Commun</i> 10:5416 (t-SNE on scRNA with perplexity guidance); Wattenberg et al. (2016) Distill (How to Use t-SNE Effectively); Cao et al. (2019) <i>Nature</i> 566:496 (sci-RNA-seq3 t-SNE on 2M cells).</p>
+</div>
+
+<!-- ===================================== §10 BH-tSNE ===================================== -->
+<h2 id="s10"><span class="num">§10</span> <span data-lang="zh">Barnes-Hut t-SNE：O(n²) 變 O(n log n) 的關鍵加速</span><span data-lang="en">Barnes-Hut t-SNE: O(n²) → O(n log n) acceleration</span></h2>
+
+<p class="lead" data-lang="zh">
+  原始 t-SNE 對每細胞要算所有其他細胞的影響——O(n²)。van der Maaten (2014) 借用<b>天文物理</b>的 Barnes-Hut 近似（原本用來算重力），把 t-SNE 變 O(n log n)。本節揭密這個聰明連接。
+</p>
+<p class="lead" data-lang="en">
+  Original t-SNE computes pairwise interactions — O(n²). van der Maaten (2014) borrowed the <b>astrophysics</b> Barnes-Hut approximation (originally for gravity) to make t-SNE O(n log n). We open this clever bridge.
+</p>
+
+<h3 data-lang="zh">10.1 天文物理的啟發</h3>
+<h3 data-lang="en">10.1 Astrophysics inspiration</h3>
+
+<p data-lang="zh">
+  N-body 模擬中算 N 個星體互相重力 = O(N²)。Barnes & Hut (1986) 觀察：對<b>遠方一群星體</b>，可以用「<b>質心 + 總質量</b>」近似而不必個別算。建一棵 quadtree（2D）或 octree（3D），對每個查詢點：
+</p>
+<p data-lang="en">
+  N-body simulations need O(N²) for pairwise gravity. Barnes & Hut (1986) noted: for <b>distant clusters</b> of stars, use "<b>centroid + total mass</b>" approximation instead of pairwise. Build a quadtree (2D) or octree (3D); for each query point:
+</p>
+
+<ul>
+  <li data-lang="zh">如果 tree 節點<b>夠遠</b>（節點大小 / 距離 &lt; θ，典型 θ=0.5）→ 用整節點質心當一個「macro particle」</li>
+  <li data-lang="en">If tree node is <b>far enough</b> (node size / distance &lt; θ, typically θ=0.5) → use whole node's centroid as one "macro particle"</li>
+  <li data-lang="zh">否則遞迴下去看子節點</li>
+  <li data-lang="en">Otherwise recurse into children</li>
+</ul>
+
+<h3 data-lang="zh">10.2 套用到 t-SNE 的 repulsion term</h3>
+<h3 data-lang="en">10.2 Applied to t-SNE repulsion term</h3>
+
+<p data-lang="zh">t-SNE 的梯度有兩部分：「attraction」（鄰居拉近）跟「repulsion」（非鄰居推開）。attraction 是 sparse（每點只有 ~3k 鄰居），輕鬆 O(nk)。repulsion 是 dense（每點對其他 n-1 個都有）——O(n²) 瓶頸。</p>
+<p data-lang="en">t-SNE gradient has two parts: "attraction" (pull neighbors close) and "repulsion" (push non-neighbors apart). Attraction is sparse (~3k neighbors per point), easy O(nk). Repulsion is dense (every other n-1 points) — O(n²) bottleneck.</p>
+
+<div class="math-block boxed">
+  $$\text{Repulsion}_i = -\sum_j \frac{Q_{ij}^2 Z (y_i - y_j)}{Z}, \quad Z = \sum_{k \neq l} (1 + \|y_k - y_l\|^2)^{-1}$$
+  <div class="formula-caption" data-lang="zh">對遠方 cells 用 BH 樹的 centroid 近似</div>
+  <div class="formula-caption" data-lang="en">For distant cells, use BH tree centroid approximation</div>
+</div>
+
+<h3 data-lang="zh">10.3 複雜度對比</h3>
+<h3 data-lang="en">10.3 Complexity comparison</h3>
+
+<table class="compare">
+  <tr><th></th><th data-lang="zh">原始 t-SNE</th><th data-lang="en">Vanilla t-SNE</th>
+      <th>BH-tSNE</th><th>BH-tSNE</th>
+      <th>FIt-SNE</th><th>FIt-SNE</th></tr>
+  <tr><td data-lang="zh">複雜度</td><td data-lang="en">Complexity</td>
+      <td>$O(n^2)$</td><td>$O(n^2)$</td>
+      <td>$O(n \log n)$</td><td>$O(n \log n)$</td>
+      <td>$O(n)$</td><td>$O(n)$</td></tr>
+  <tr><td>10k cells 時間</td><td>10k cells time</td>
+      <td>~ 10 min</td><td>~ 10 min</td>
+      <td>~ 30 sec</td><td>~ 30 sec</td>
+      <td>~ 10 sec</td><td>~ 10 sec</td></tr>
+  <tr><td>100k cells</td><td>100k cells</td>
+      <td data-lang="zh">不可行</td><td data-lang="en">infeasible</td>
+      <td>~ 30 min</td><td>~ 30 min</td>
+      <td>~ 3 min</td><td>~ 3 min</td></tr>
+  <tr><td>1M cells</td><td>1M cells</td>
+      <td>❌</td><td>❌</td>
+      <td>~ 10 hr</td><td>~ 10 hr</td>
+      <td>~ 30 min</td><td>~ 30 min</td></tr>
+</table>
+
+<p data-lang="zh">📚 <b>引用</b>：van der Maaten (2014) <i>JMLR</i> 15:3221 (BH-tSNE); Barnes & Hut (1986) <i>Nature</i> 324:446 (原始 BH 演算法); Linderman et al. (2019) <i>Nat Methods</i> 16:243 (FIt-SNE)。</p>
+<p data-lang="en">📚 <b>References</b>: van der Maaten (2014) <i>JMLR</i> 15:3221 (BH-tSNE); Barnes & Hut (1986) <i>Nature</i> 324:446 (original BH algorithm); Linderman et al. (2019) <i>Nat Methods</i> 16:243 (FIt-SNE).</p>
+
+<!-- ===================================== §11 FIt-SNE ===================================== -->
+<h2 id="s11"><span class="num">§11</span> <span data-lang="zh">FIt-SNE：FFT 把 t-SNE 推到 O(n)</span><span data-lang="en">FIt-SNE: FFT pushes t-SNE to O(n)</span></h2>
+
+<p class="lead" data-lang="zh">
+  Linderman et al. (2019) 又前進一步：repulsion 跟 cells 在 2D 平面上的<b>「電荷分布」</b>類似，可以用 FFT 加速到 O(n)。
+</p>
+<p class="lead" data-lang="en">
+  Linderman et al. (2019) went further: repulsion resembles "<b>charge distribution</b>" on 2D plane, FFT accelerates it to O(n).
+</p>
+
+<h3 data-lang="zh">11.1 核心想法：把 cells 放進 2D 網格</h3>
+<h3 data-lang="en">11.1 Core idea: bin cells on 2D grid</h3>
+
+<ol>
+  <li><span data-lang="zh">將低維空間切成 $G \times G$ 網格（$G$ ~ 100）</span>
+      <span data-lang="en">Partition low-D space into $G \times G$ grid ($G$ ~ 100)</span></li>
+  <li><span data-lang="zh">每細胞「分配」到對應網格 cell（用 interpolation kernels）</span>
+      <span data-lang="en">"Assign" each cell to corresponding grid (interpolation kernels)</span></li>
+  <li><span data-lang="zh">用 <b>FFT</b> 在網格上算「Q value 的卷積」— 這就是 repulsion 場</span>
+      <span data-lang="en">Use <b>FFT</b> on grid for "Q-value convolution" — the repulsion field</span></li>
+  <li><span data-lang="zh">把場 value 內插回每細胞</span>
+      <span data-lang="en">Interpolate field back to each cell</span></li>
+</ol>
+
+<div class="callout idea">
+  <strong data-lang="zh">為何 O(n)</strong><strong data-lang="en">Why O(n)</strong>:
+  <span data-lang="zh">FFT 在 $G^2$ 網格上是 $O(G^2 \log G)$；網格分配跟內插都是 $O(n)$。因為 $G^2 \ll n$，總體 O(n)。實測對 1M cells 從 BH 的 10 小時降到 30 分鐘。</span>
+  <span data-lang="en">FFT on $G^2$ grid is $O(G^2 \log G)$; grid assignment and interpolation are $O(n)$. Since $G^2 \ll n$, total is O(n). On 1M cells, drops from BH's 10 hr to 30 min.</span>
+</div>
+
+<pre class="code"><span class="c"># FIt-SNE (Python)</span>
+<span class="k">from</span> openTSNE <span class="k">import</span> TSNE
+tsne = TSNE(
+    n_components=<span class="n">2</span>,
+    perplexity=<span class="n">30</span>,
+    n_jobs=<span class="n">-1</span>,           <span class="c"># 用全部 CPU</span>
+    initialization=<span class="s">"pca"</span>,  <span class="c"># 用 PCA 初始化（global 結構保留）</span>
+)
+embedding = tsne.fit(adata.obsm[<span class="s">"X_pca"</span>])</pre>
+
+<p data-lang="zh">📚 <b>引用</b>：Linderman, Rachh, Hoskins, Steinerberger & Kluger (2019) <i>Nat Methods</i> 16:243 (FIt-SNE); openTSNE Python implementation。</p>
+<p data-lang="en">📚 <b>References</b>: Linderman, Rachh, Hoskins, Steinerberger & Kluger (2019) <i>Nat Methods</i> 16:243 (FIt-SNE); openTSNE Python implementation.</p>
+
+<!-- ===================================== §12 openTSNE + 進階 tips ===================================== -->
+<h2 id="s12"><span class="num">§12</span> <span data-lang="zh">openTSNE：能 transform 新資料的 t-SNE</span><span data-lang="en">openTSNE: t-SNE that can transform new data</span></h2>
+
+<p class="lead" data-lang="zh">
+  傳統 t-SNE 沒有 transform 函數——加新 cells 必須整個重跑。openTSNE (Poličar 2019) 提供 <b>add new points</b> 功能：保留現有 embedding，把新 cells 插入正確位置。
+</p>
+<p class="lead" data-lang="en">
+  Classical t-SNE has no transform — adding cells means full re-run. openTSNE (Poličar 2019) provides <b>add new points</b>: keep existing embedding, insert new cells correctly.
+</p>
+
+<pre class="code"><span class="k">from</span> openTSNE <span class="k">import</span> TSNE
+
+<span class="c"># 訓練 reference embedding</span>
+ref_tsne = TSNE().fit(reference_data)
+
+<span class="c"># 加新 cells（query data）</span>
+query_emb = ref_tsne.transform(query_data)
+<span class="c"># query cells 落在 reference embedding 對應的細胞型位置</span></pre>
+
+<h3 data-lang="zh">12.1 應用情境</h3>
+<h3 data-lang="en">12.1 Use cases</h3>
+
+<ul>
+  <li data-lang="zh"><b>Reference mapping</b>: 把新 sample 的細胞 query 到已知 PBMC reference</li>
+  <li data-lang="en"><b>Reference mapping</b>: query new samples onto a known PBMC reference</li>
+  <li data-lang="zh"><b>Sequential 分析</b>: 持續加新 samples 不需要重跑歷史</li>
+  <li data-lang="en"><b>Sequential analysis</b>: add new samples without re-running history</li>
+  <li data-lang="zh"><b>Atlas-based 註解</b>: 用 Human Cell Atlas 當 reference</li>
+  <li data-lang="en"><b>Atlas-based annotation</b>: use Human Cell Atlas as reference</li>
+</ul>
+
+<h3 data-lang="zh">12.2 t-SNE vs UMAP 在 reference mapping 對比</h3>
+<h3 data-lang="en">12.2 t-SNE vs UMAP for reference mapping</h3>
+
+<table class="compare">
+  <tr><th></th><th>openTSNE</th><th>openTSNE</th>
+      <th>UMAP</th><th>UMAP</th></tr>
+  <tr><td data-lang="zh">Transform 函數</td><td data-lang="en">Transform function</td>
+      <td>✅</td><td>✅</td>
+      <td>✅</td><td>✅</td></tr>
+  <tr><td data-lang="zh">速度（add 10k）</td><td data-lang="en">Speed (add 10k)</td>
+      <td>~ 1 min</td><td>~ 1 min</td>
+      <td>~ 10 sec</td><td>~ 10 sec</td></tr>
+  <tr><td data-lang="zh">embedding 穩定性</td><td data-lang="en">Embedding stability</td>
+      <td>✅</td><td>✅</td>
+      <td>✅</td><td>✅</td></tr>
+  <tr><td data-lang="zh">scanpy 預設</td><td data-lang="en">scanpy default</td>
+      <td>—</td><td>—</td>
+      <td><b>✅</b></td><td><b>✅</b></td></tr>
+</table>
+
+<p data-lang="zh">📚 <b>引用</b>：Poličar, Stražar & Zupan (2019) <i>bioRxiv</i> (openTSNE); Kobak & Berens (2019) <i>Nat Commun</i> 10:5416 (PCA init 重要性)。</p>
+<p data-lang="en">📚 <b>References</b>: Poličar, Stražar & Zupan (2019) <i>bioRxiv</i> (openTSNE); Kobak & Berens (2019) <i>Nat Commun</i> 10:5416 (PCA initialization importance).</p>
 
 <div class="callout prog">
   <strong data-lang="zh">下一步</strong><strong data-lang="en">Next</strong>:

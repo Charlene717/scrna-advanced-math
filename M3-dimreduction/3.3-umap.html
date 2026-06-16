@@ -225,6 +225,10 @@
   <a href="#s6"><span data-lang="zh">§6 互動 UMAP</span><span data-lang="en">§6 Interactive UMAP</span></a>
   <a href="#s7"><span data-lang="zh">§7 vs t-SNE</span><span data-lang="en">§7 vs t-SNE</span></a>
   <a href="#s8"><span data-lang="zh">§8 限制</span><span data-lang="en">§8 Limits</span></a>
+  <a href="#s9"><span data-lang="zh">§9 PBMC 案例</span><span data-lang="en">§9 PBMC case</span></a>
+  <a href="#s10"><span data-lang="zh">§10 spectral init</span><span data-lang="en">§10 spectral init</span></a>
+  <a href="#s11"><span data-lang="zh">§11 Riemannian</span><span data-lang="en">§11 Riemannian</span></a>
+  <a href="#s12"><span data-lang="zh">§12 supervised UMAP</span><span data-lang="en">§12 supervised UMAP</span></a>
 </div>
 
 <header class="cover">
@@ -523,6 +527,244 @@ sc.tl.umap(adata, min_dist=<span class="n">0.5</span>, spread=<span class="n">1.
       <td data-lang="zh">n_neighbors 變化會改變 cluster 形狀</td><td data-lang="en">n_neighbors changes cluster shapes</td>
       <td data-lang="zh">benchmark 多個值看穩定性</td><td data-lang="en">benchmark multiple values</td></tr>
 </table>
+
+<!-- ===================================== §9 PBMC UMAP 案例 ===================================== -->
+<h2 id="s9"><span class="num">§9</span> <span data-lang="zh">PBMC 3k UMAP 完整案例：細胞型態註解的標準流程</span><span data-lang="en">PBMC 3k UMAP full case: standard cell-type annotation workflow</span></h2>
+
+<p class="lead" data-lang="zh">
+  本節用 PBMC 3k 走 UMAP 完整流程：QC → normalize → HVG → scale → PCA → KNN → UMAP → Leiden → marker annotation。
+  最終 UMAP 上每個 cluster 標上正確 cell type，這是 scRNA-seq 教學的「金標準」終點。
+</p>
+<p class="lead" data-lang="en">
+  Walk PBMC 3k full UMAP flow: QC → normalize → HVG → scale → PCA → KNN → UMAP → Leiden → marker annotation.
+  Final UMAP labels each cluster with correct cell type — the "gold standard" endpoint of scRNA tutorials.
+</p>
+
+<div class="card">
+  <h3 data-lang="zh">9.1 完整 scanpy code</h3>
+  <h3 data-lang="en">9.1 Full scanpy code</h3>
+
+<pre class="code"><span class="k">import</span> scanpy <span class="k">as</span> sc
+
+adata = sc.datasets.pbmc3k()
+
+<span class="c"># 1. QC</span>
+adata.var[<span class="s">"mt"</span>] = adata.var_names.str.startswith(<span class="s">"MT-"</span>)
+sc.pp.calculate_qc_metrics(adata, qc_vars=[<span class="s">"mt"</span>], inplace=<span class="k">True</span>)
+adata = adata[(adata.obs[<span class="s">"n_genes_by_counts"</span>] &gt; <span class="n">200</span>) &amp;
+              (adata.obs[<span class="s">"pct_counts_mt"</span>] &lt; <span class="n">5</span>)].copy()
+<span class="c"># 2,638 cells</span>
+
+<span class="c"># 2. Normalize</span>
+sc.pp.normalize_total(adata, target_sum=<span class="n">1e4</span>)
+sc.pp.log1p(adata)
+
+<span class="c"># 3. HVG</span>
+sc.pp.highly_variable_genes(adata, n_top_genes=<span class="n">2000</span>, flavor=<span class="s">"seurat_v3"</span>)
+adata = adata[:, adata.var[<span class="s">"highly_variable"</span>]].copy()
+
+<span class="c"># 4. Scale + PCA</span>
+sc.pp.scale(adata, max_value=<span class="n">10</span>)
+sc.tl.pca(adata, n_comps=<span class="n">50</span>)
+
+<span class="c"># 5. KNN + UMAP</span>
+sc.pp.neighbors(adata, n_neighbors=<span class="n">15</span>, n_pcs=<span class="n">30</span>)
+sc.tl.umap(adata, min_dist=<span class="n">0.3</span>, spread=<span class="n">1.0</span>)
+
+<span class="c"># 6. Cluster</span>
+sc.tl.leiden(adata, resolution=<span class="n">0.5</span>)
+
+<span class="c"># 7. Find markers</span>
+sc.tl.rank_genes_groups(adata, <span class="s">"leiden"</span>, method=<span class="s">"wilcoxon"</span>)
+
+<span class="c"># 8. Annotate</span>
+new_cluster_names = {
+    <span class="s">"0"</span>: <span class="s">"CD4 T (naive)"</span>,
+    <span class="s">"1"</span>: <span class="s">"CD14+ Mono"</span>,
+    <span class="s">"2"</span>: <span class="s">"CD4 T (memory)"</span>,
+    <span class="s">"3"</span>: <span class="s">"B cell"</span>,
+    <span class="s">"4"</span>: <span class="s">"CD8 T"</span>,
+    <span class="s">"5"</span>: <span class="s">"NK cell"</span>,
+    <span class="s">"6"</span>: <span class="s">"FCGR3A+ Mono"</span>,
+    <span class="s">"7"</span>: <span class="s">"DC"</span>,
+    <span class="s">"8"</span>: <span class="s">"Megakaryocyte"</span>
+}
+adata.rename_categories(<span class="s">"leiden"</span>, new_cluster_names.values())
+sc.pl.umap(adata, color=<span class="s">"leiden"</span>, legend_loc=<span class="s">"on data"</span>)</pre>
+
+  <h3 data-lang="zh">9.2 UMAP 上的 9 群空間關係</h3>
+  <h3 data-lang="en">9.2 Spatial relationships of 9 clusters on UMAP</h3>
+
+  <ul>
+    <li data-lang="zh"><b>T cells 一團</b>: CD4 naive / CD4 memory / CD8 在 UMAP 左上靠近（共享 lymphoid lineage）</li>
+    <li data-lang="en"><b>T cells together</b>: CD4 naive / CD4 memory / CD8 cluster in upper-left (shared lymphoid lineage)</li>
+    <li data-lang="zh"><b>Monocytes 一團</b>: CD14+ / FCGR3A+ Mono 在中間（共享 myeloid lineage）</li>
+    <li data-lang="en"><b>Monocytes together</b>: CD14+ / FCGR3A+ Mono in middle (shared myeloid lineage)</li>
+    <li data-lang="zh"><b>B cells 獨立</b>: 在右下（B lineage 跟 T 分得最開）</li>
+    <li data-lang="en"><b>B cells isolated</b>: lower-right (B lineage furthest from T)</li>
+    <li data-lang="zh"><b>NK 靠近 CD8</b>: NK 跟 CD8 T 都是 cytotoxic, 共享 GZMB/PRF1</li>
+    <li data-lang="en"><b>NK near CD8</b>: both cytotoxic, share GZMB/PRF1</li>
+  </ul>
+
+  <div class="callout bio">
+    <strong data-lang="zh">UMAP 全域結構=lineage 關係</strong>
+    <strong data-lang="en">UMAP global structure = lineage relationships</strong>:
+    <span data-lang="zh">UMAP <b>有意義的 inter-cluster 距離</b>讓你看到 T-NK lineage、myeloid lineage 等 hematopoiesis 大樹的結構。t-SNE 把這些距離 randomize 了。</span>
+    <span data-lang="en">UMAP's <b>meaningful inter-cluster distances</b> reveal T-NK lineage, myeloid lineage and other hematopoiesis tree structure. t-SNE randomizes these distances.</span>
+  </div>
+
+  <p data-lang="zh">📚 <b>引用</b>：McInnes et al. (2018) <i>arXiv</i> 1802.03426 (UMAP); Becht et al. (2019) <i>Nat Biotechnol</i> 37:38 (scRNA UMAP benchmark); scanpy PBMC tutorial。</p>
+  <p data-lang="en">📚 <b>References</b>: McInnes et al. (2018) <i>arXiv</i> 1802.03426 (UMAP); Becht et al. (2019) <i>Nat Biotechnol</i> 37:38 (scRNA UMAP benchmark); scanpy PBMC tutorial.</p>
+</div>
+
+<!-- ===================================== §10 spectral init ===================================== -->
+<h2 id="s10"><span class="num">§10</span> <span data-lang="zh">深入：Spectral initialization 為何讓 UMAP 全域結構更穩</span><span data-lang="en">Deep dive: why spectral initialization makes UMAP global structure stable</span></h2>
+
+<p class="lead" data-lang="zh">
+  UMAP 預設用 <b>spectral initialization</b>（從 graph Laplacian 算特徵向量）當 2D 起始位置。
+  這不是隨機 init！它已經把全域結構放好，所以 SGD 只需要局部微調。Kobak & Linderman (2021) 證明：spectral init 是 UMAP「比 t-SNE 保 global 結構好」的<b>關鍵</b>。
+</p>
+<p class="lead" data-lang="en">
+  UMAP defaults to <b>spectral initialization</b> (eigenvectors of graph Laplacian) for 2D starting positions.
+  Not random! It pre-places global structure; SGD only fine-tunes locally. Kobak & Linderman (2021) proved: spectral init is <b>the key</b> reason UMAP preserves global structure better than t-SNE.
+</p>
+
+<h3 data-lang="zh">10.1 數學</h3>
+<h3 data-lang="en">10.1 Math</h3>
+
+<p data-lang="zh">給定 fuzzy graph 的邊權重矩陣 $W$，定義 graph Laplacian:</p>
+<p data-lang="en">Given fuzzy graph edge weight matrix $W$, define graph Laplacian:</p>
+
+<div class="math-block boxed">
+  $$L = D - W, \quad D = \text{diag}(\sum_j W_{ij})$$
+  $$\text{spectral init} = (\phi_2, \phi_3) \text{ where } L \phi_k = \lambda_k \phi_k$$
+  <div class="formula-caption" data-lang="zh">取 second + third 個最小特徵向量（first 是 trivial）當 2D 座標</div>
+  <div class="formula-caption" data-lang="en">Take 2nd + 3rd smallest eigenvectors (1st is trivial) as 2D coords</div>
+</div>
+
+<h3 data-lang="zh">10.2 為何 spectral init 保 global 結構</h3>
+<h3 data-lang="en">10.2 Why spectral init preserves global</h3>
+
+<p data-lang="zh">graph Laplacian 的特徵向量是「<b>圖上最 smooth 的非平凡函數</b>」——這些函數的「<b>頻率最低</b>」，自然反映圖的大尺度結構（cluster 間關係）。SGD 在這個基礎上只調 local 微調，不破壞 global。</p>
+<p data-lang="en">Laplacian eigenvectors are "<b>smoothest non-trivial functions on the graph</b>" — <b>lowest frequency</b> functions naturally reflect graph's macro structure (inter-cluster relations). SGD only refines locally, preserving global.</p>
+
+<div class="callout idea">
+  <strong data-lang="zh">對比：random init 為何不好</strong>
+  <strong data-lang="en">Contrast: why random init fails</strong>
+  <span data-lang="zh">隨機 init 等於「forget 所有 global 結構」，SGD 必須從零開始建。SGD 有 local 視野（只看 negative samples）→ 很容易陷在 local minimum 而 global 結構錯亂。Kobak & Linderman 實測：random init UMAP 結果 ≈ t-SNE（global 隨機）！</span>
+  <span data-lang="en">Random init = "forget all global". SGD must rebuild from scratch. SGD has local view (only negative samples) → easily stuck in local min, global garbled. Empirically: UMAP with random init ≈ t-SNE (global randomized)!</span>
+</div>
+
+<pre class="code"><span class="c"># scanpy 預設 spectral init</span>
+sc.tl.umap(adata, init_pos=<span class="s">"spectral"</span>)  <span class="c"># 預設值</span>
+
+<span class="c"># 想對比看 random init 的差別</span>
+sc.tl.umap(adata, init_pos=<span class="s">"random"</span>)
+<span class="c"># 結果跟 t-SNE 類似，global 不可信</span>
+
+<span class="c"># 想用 PCA 當 init</span>
+sc.tl.umap(adata, init_pos=<span class="s">"paga"</span>)  <span class="c"># 用 PAGA cluster graph init</span></pre>
+
+<p data-lang="zh">📚 <b>引用</b>：Kobak & Linderman (2021) <i>Nat Biotechnol</i> 39:156 (initialization matters); Belkin & Niyogi (2003) <i>Neural Comput</i> 15:1373 (Laplacian eigenmaps 原始); McInnes et al. (2018) UMAP paper §3.</p>
+<p data-lang="en">📚 <b>References</b>: Kobak & Linderman (2021) <i>Nat Biotechnol</i> 39:156 (initialization matters); Belkin & Niyogi (2003) <i>Neural Comput</i> 15:1373 (original Laplacian eigenmaps); McInnes et al. (2018) UMAP paper §3.</p>
+
+<!-- ===================================== §11 Riemannian ===================================== -->
+<h2 id="s11"><span class="num">§11</span> <span data-lang="zh">深入：UMAP 的 Riemannian manifold 理論基礎</span><span data-lang="en">Deep dive: UMAP's Riemannian manifold foundation</span></h2>
+
+<p class="lead" data-lang="zh">
+  UMAP 名字「Manifold Approximation」不是裝飾——它建立在<b>嚴肅的微分幾何</b>上。
+  本節揭密「Riemannian metric」「Uniform manifold assumption」這些術語對 scRNA 的意義。
+</p>
+<p class="lead" data-lang="en">
+  UMAP's name "Manifold Approximation" isn't decoration — it rests on <b>serious differential geometry</b>.
+  We open "Riemannian metric" and "Uniform manifold assumption" jargon for scRNA.
+</p>
+
+<h3 data-lang="zh">11.1 三個關鍵假設</h3>
+<h3 data-lang="en">11.1 Three key assumptions</h3>
+
+<table class="compare">
+  <tr><th data-lang="zh">假設</th><th data-lang="en">Assumption</th>
+      <th data-lang="zh">scRNA 意義</th><th data-lang="en">scRNA meaning</th></tr>
+  <tr><td data-lang="zh">1. 資料分布在一個 Riemannian manifold 上</td>
+      <td data-lang="en">1. Data lies on a Riemannian manifold</td>
+      <td data-lang="zh">細胞表現量受連續生物過程限制（lineage, cell cycle）→ 是流形不是隨機點</td>
+      <td data-lang="en">Cell expression constrained by continuous biology (lineage, cell cycle) → manifold not random points</td></tr>
+  <tr><td data-lang="zh">2. manifold 上 metric 是<b>局部均勻</b></td>
+      <td data-lang="en">2. Manifold metric is <b>locally uniform</b></td>
+      <td data-lang="zh">每細胞周圍密度差很大（dense cluster vs sparse periphery）→ 需要 per-cell σ 校正密度</td>
+      <td data-lang="en">Density varies (dense clusters vs sparse periphery) → per-cell σ corrects density</td></tr>
+  <tr><td data-lang="zh">3. manifold 是 <b>locally connected</b></td>
+      <td data-lang="en">3. Manifold is <b>locally connected</b></td>
+      <td data-lang="zh">每細胞至少有一個鄰居 → 用 ρ_i 確保 graph 連通</td>
+      <td data-lang="en">Each cell has ≥1 neighbor → ρ_i ensures graph connectivity</td></tr>
+</table>
+
+<h3 data-lang="zh">11.2 「Uniform manifold」的數學</h3>
+<h3 data-lang="en">11.2 Math of "uniform manifold"</h3>
+
+<p data-lang="zh">假設真實 manifold 上 metric 均勻（每處密度一樣）。但在歐式空間中觀察到的密度不均勻——所以對每細胞「<b>調整局部 metric</b>」讓它在 manifold 上看起來均勻。這就是 $\rho_i$ + $\sigma_i$ 的數學原因。</p>
+<p data-lang="en">Assume metric is uniform on true manifold. But observed density in Euclidean space is non-uniform — so "<b>adjust local metric per cell</b>" to make manifold appear uniform. This is the math reason for $\rho_i$ + $\sigma_i$.</p>
+
+<div class="callout idea">
+  <strong data-lang="zh">為何這套對 scRNA 特別有效</strong>
+  <strong data-lang="en">Why this is especially effective for scRNA</strong>:
+  <span data-lang="zh">scRNA 的密度極不均勻（PBMC 主要 cell types 各幾百 cells、pDC 只有 30 cells）。Riemannian 校正讓 rare cluster 不被 dense cluster 「淹沒」，保住 rare cell types 的視覺可見性。這也是 UMAP 對 atlas-scale data（500k+ cells）特別好的原因。</span>
+  <span data-lang="en">scRNA density is extremely non-uniform (PBMC main types have hundreds of cells; pDC has only 30). Riemannian correction prevents rare clusters from being "drowned" by dense ones, keeping rare types visible. This is why UMAP excels on atlas-scale data (500k+ cells).</span>
+</div>
+
+<p data-lang="zh">📚 <b>引用</b>：McInnes, Healy & Melville (2018) <i>arXiv</i> 1802.03426 UMAP paper §2-§3 (Riemannian foundation); Belkin & Niyogi (2003); Coifman & Lafon (2006) <i>ACHA</i> 21:5 (diffusion maps, 共享流形假設)。</p>
+<p data-lang="en">📚 <b>References</b>: McInnes, Healy & Melville (2018) <i>arXiv</i> 1802.03426 UMAP paper §2-§3 (Riemannian foundation); Belkin & Niyogi (2003); Coifman & Lafon (2006) <i>ACHA</i> 21:5 (diffusion maps, shared manifold assumption).</p>
+
+<!-- ===================================== §12 supervised UMAP ===================================== -->
+<h2 id="s12"><span class="num">§12</span> <span data-lang="zh">Supervised UMAP：用 label 引導 embedding</span><span data-lang="en">Supervised UMAP: label-guided embedding</span></h2>
+
+<p class="lead" data-lang="zh">
+  UMAP 預設 unsupervised（無視 label）。但如果你<b>已知</b>每細胞的 cell type，可以餵進 UMAP 當 supervision，
+  讓 embedding 更乾淨地分開 cell types。這是 supervised UMAP（McInnes 2018 §6）。
+</p>
+<p class="lead" data-lang="en">
+  UMAP defaults to unsupervised (ignores labels). But if you <b>know</b> each cell's type, feed it as supervision —
+  embedding separates types more cleanly. This is supervised UMAP (McInnes 2018 §6).
+</p>
+
+<h3 data-lang="zh">12.1 數學：加 supervised loss</h3>
+<h3 data-lang="en">12.1 Math: add supervised loss</h3>
+
+<div class="math-block">
+  $$\mathcal{L} = (1 - \alpha) \cdot \mathcal{L}_{\text{UMAP}} + \alpha \cdot \mathcal{L}_{\text{supervised}}$$
+  <div class="formula-caption" data-lang="zh">$\mathcal{L}_{\text{supervised}}$ 用 label 構造額外 attractive/repulsive 邊；$\alpha \in [0,1]$ 控制權重</div>
+  <div class="formula-caption" data-lang="en">$\mathcal{L}_{\text{supervised}}$ adds label-driven attractive/repulsive edges; $\alpha \in [0,1]$ controls weight</div>
+</div>
+
+<pre class="code"><span class="k">from</span> umap <span class="k">import</span> UMAP
+
+<span class="c"># Unsupervised (預設)</span>
+umap_unsup = UMAP().fit_transform(X)
+
+<span class="c"># Supervised (用 cell type label)</span>
+umap_sup = UMAP(target_metric=<span class="s">"categorical"</span>).fit_transform(X, y=cell_types)</pre>
+
+<h3 data-lang="zh">12.2 應用情境</h3>
+<h3 data-lang="en">12.2 Use cases</h3>
+
+<ul>
+  <li data-lang="zh"><b>reference atlas 建立</b>: 已 annotate 的細胞→ 用 supervised UMAP 得乾淨 reference</li>
+  <li data-lang="en"><b>Reference atlas building</b>: use annotated cells → supervised UMAP for clean reference</li>
+  <li data-lang="zh"><b>label transfer</b>: 訓 supervised reference → 把新 sample 細胞 query 進去</li>
+  <li data-lang="en"><b>Label transfer</b>: train supervised reference → query new sample cells</li>
+  <li data-lang="zh"><b>視覺化 cell type 之間的「邊界細胞」</b>: 看哪些 cells 介於兩 type 之間</li>
+  <li data-lang="en"><b>Visualize "boundary cells" between types</b>: see which cells lie between two types</li>
+</ul>
+
+<div class="callout warn">
+  <strong data-lang="zh">注意</strong><strong data-lang="en">Caution</strong>:
+  <span data-lang="zh">supervised UMAP <b>會強行分開 label 不同的細胞</b>，可能掩蓋真實生物學的「過渡細胞」存在。Discovery research 不建議用，只在已知 label 的下游 visualization 用。</span>
+  <span data-lang="en">supervised UMAP <b>force-separates cells with different labels</b>, potentially masking real "transitional cells" in biology. Not for discovery research; only for downstream visualization of known labels.</span>
+</div>
+
+<p data-lang="zh">📚 <b>引用</b>：McInnes, Healy & Melville (2018) UMAP paper §6 (supervised UMAP); Sikkema et al. (2023) <i>Nat Med</i> 29:1563 (Human Lung Cell Atlas 用 supervised mapping)。</p>
+<p data-lang="en">📚 <b>References</b>: McInnes, Healy & Melville (2018) UMAP paper §6 (supervised UMAP); Sikkema et al. (2023) <i>Nat Med</i> 29:1563 (Human Lung Cell Atlas uses supervised mapping).</p>
 
 <div class="callout prog">
   <strong data-lang="zh">下一步</strong><strong data-lang="en">Next</strong>:

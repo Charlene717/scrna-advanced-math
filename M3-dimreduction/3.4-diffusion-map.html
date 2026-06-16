@@ -224,6 +224,10 @@
   <a href="#s5"><span data-lang="zh">§5 互動 components</span><span data-lang="en">§5 Components</span></a>
   <a href="#s6"><span data-lang="zh">§6 連 DPT</span><span data-lang="en">§6 Link to DPT</span></a>
   <a href="#s7"><span data-lang="zh">§7 限制</span><span data-lang="en">§7 Limits</span></a>
+  <a href="#s8"><span data-lang="zh">§8 造血案例</span><span data-lang="en">§8 Hematopoiesis</span></a>
+  <a href="#s9"><span data-lang="zh">§9 PHATE/SPRING</span><span data-lang="en">§9 PHATE/SPRING</span></a>
+  <a href="#s10"><span data-lang="zh">§10 譜論深入</span><span data-lang="en">§10 spectral theory</span></a>
+  <a href="#s11"><span data-lang="zh">§11 與 PAGA 結合</span><span data-lang="en">§11 + PAGA</span></a>
 </div>
 
 <header class="cover">
@@ -479,6 +483,241 @@ sc.tl.dpt(adata)
       <td data-lang="zh">結合 UMAP 看</td>
       <td data-lang="en">combine with UMAP</td></tr>
 </table>
+
+<!-- ===================================== §8 造血案例 ===================================== -->
+<h2 id="s8"><span class="num">§8</span> <span data-lang="zh">經典案例：造血幹細胞分化的 Diffusion Map</span><span data-lang="en">Classic case: Diffusion Map of hematopoietic stem cell differentiation</span></h2>
+
+<p class="lead" data-lang="zh">
+  Haghverdi et al. (2016) 用 DPT 分析造血分化：HSC → MPP → CMP → GMP → 顆粒球 / 單核球的連續軌跡。
+  本節重現這個經典分析，看 DC1 為何就是 pseudotime。
+</p>
+<p class="lead" data-lang="en">
+  Haghverdi et al. (2016) used DPT to analyze hematopoiesis: HSC → MPP → CMP → GMP → granulocyte / monocyte continuous trajectory.
+  We reproduce this classic, seeing why DC1 IS pseudotime.
+</p>
+
+<div class="card">
+  <h3 data-lang="zh">8.1 資料：Paul et al. (2015) bone marrow myeloid progenitors</h3>
+  <h3 data-lang="en">8.1 Data: Paul et al. (2015) bone marrow myeloid progenitors</h3>
+
+  <table class="compare">
+    <tr><th data-lang="zh">細胞</th><th data-lang="en">Cell</th>
+        <th data-lang="zh">DC1 範圍</th><th data-lang="en">DC1 range</th>
+        <th>key markers</th><th>key markers</th></tr>
+    <tr><td>HSC (幹細胞)</td><td>HSC (stem)</td>
+        <td>0.0 - 0.1</td><td>0.0 - 0.1</td>
+        <td>CD34, KIT, FLT3</td><td>CD34, KIT, FLT3</td></tr>
+    <tr><td>MPP (multipotent)</td><td>MPP (multipotent)</td>
+        <td>0.1 - 0.2</td><td>0.1 - 0.2</td>
+        <td>CD34, FLT3</td><td>CD34, FLT3</td></tr>
+    <tr><td>CMP (common myeloid)</td><td>CMP (common myeloid)</td>
+        <td>0.2 - 0.4</td><td>0.2 - 0.4</td>
+        <td>CD34, IL3RA</td><td>CD34, IL3RA</td></tr>
+    <tr><td>GMP (granulocyte-mono)</td><td>GMP (granulocyte-mono)</td>
+        <td>0.4 - 0.6</td><td>0.4 - 0.6</td>
+        <td>MPO, ELANE</td><td>MPO, ELANE</td></tr>
+    <tr><td data-lang="zh">早期 顆粒球 / Mono</td><td data-lang="en">Early Gran / Mono</td>
+        <td>0.6 - 0.8</td><td>0.6 - 0.8</td>
+        <td>S100A8, LYZ</td><td>S100A8, LYZ</td></tr>
+    <tr><td data-lang="zh">成熟 顆粒球 / Mono</td><td data-lang="en">Mature Gran / Mono</td>
+        <td>0.8 - 1.0</td><td>0.8 - 1.0</td>
+        <td>CSF3R (G-CSF receptor)</td><td>CSF3R (G-CSF receptor)</td></tr>
+  </table>
+
+  <h3 data-lang="zh">8.2 沿 DC1 看 marker 表現</h3>
+  <h3 data-lang="en">8.2 Marker expression along DC1</h3>
+
+  <p data-lang="zh">如果你把 cells 按 DC1 排序，畫 marker expression：</p>
+  <p data-lang="en">If you order cells by DC1 and plot marker expression:</p>
+
+  <ul>
+    <li data-lang="zh"><b>CD34 (stem)</b>: 開始高 → 漸降 → 末端 ~0</li>
+    <li data-lang="en"><b>CD34 (stem)</b>: high at start → decreases → ~0 at end</li>
+    <li data-lang="zh"><b>MPO (early myeloid)</b>: 中段峰值（GMP stage）</li>
+    <li data-lang="en"><b>MPO (early myeloid)</b>: mid-range peak (GMP stage)</li>
+    <li data-lang="zh"><b>LYZ, S100A8 (mature mono)</b>: 末端高</li>
+    <li data-lang="en"><b>LYZ, S100A8 (mature mono)</b>: high at end</li>
+    <li data-lang="zh"><b>CSF3R (mature gran)</b>: 末端高（不同 branch）</li>
+    <li data-lang="en"><b>CSF3R (mature gran)</b>: high at end (different branch)</li>
+  </ul>
+
+  <div class="callout bio">
+    <strong data-lang="zh">DC1 直接對應「<b>分化階段</b>」</strong>
+    <strong data-lang="en">DC1 directly corresponds to "<b>differentiation stage</b>"</strong>
+    <span data-lang="zh">DC2 / DC3 通常對應「<b>fate decision</b>」（如 granulocyte vs monocyte branch）。所以分化研究的標準視覺化是 DC1 vs DC2 散佈圖 + 用 pseudotime（DPT）著色。</span>
+    <span data-lang="en">DC2 / DC3 typically correspond to "<b>fate decisions</b>" (granulocyte vs monocyte branch). Standard differentiation viz is DC1 vs DC2 scatter colored by pseudotime (DPT).</span>
+  </div>
+
+  <p data-lang="zh">📚 <b>引用</b>：Haghverdi et al. (2016) <i>Nat Methods</i> 13:845 (DPT + Paul 資料分析); Paul et al. (2015) <i>Cell</i> 163:1663 (原始 hematopoiesis 資料); Setty et al. (2019) <i>Nat Biotechnol</i> 37:451 (Palantir，DPT 衍生)。</p>
+  <p data-lang="en">📚 <b>References</b>: Haghverdi et al. (2016) <i>Nat Methods</i> 13:845 (DPT + Paul data); Paul et al. (2015) <i>Cell</i> 163:1663 (original hematopoiesis data); Setty et al. (2019) <i>Nat Biotechnol</i> 37:451 (Palantir, DPT descendant).</p>
+</div>
+
+<!-- ===================================== §9 PHATE / SPRING ===================================== -->
+<h2 id="s9"><span class="num">§9</span> <span data-lang="zh">PHATE 跟 SPRING：diffusion 思想的進階版</span><span data-lang="en">PHATE and SPRING: advanced variants of diffusion</span></h2>
+
+<p class="lead" data-lang="zh">
+  Diffusion Maps 啟發了一批「軌跡視覺化」工具。本節介紹兩個重要分支：PHATE（Moon 2019）跟 SPRING（Weinreb 2018）。
+</p>
+<p class="lead" data-lang="en">
+  Diffusion Maps inspired a family of "trajectory visualization" tools. We cover two important branches: PHATE (Moon 2019) and SPRING (Weinreb 2018).
+</p>
+
+<h3 data-lang="zh">9.1 PHATE：Potential of Heat-diffusion for Affinity-based Trajectory Embedding</h3>
+<h3 data-lang="en">9.1 PHATE: Potential of Heat-diffusion for Affinity-based Trajectory Embedding</h3>
+
+<p data-lang="zh">PHATE 的關鍵創新：用「<b>potential distance</b>」取代 diffusion distance。對 transition matrix $T$ 算<b>多 t 步</b>後對 log 取 distance：</p>
+<p data-lang="en">PHATE's key innovation: replace diffusion distance with "<b>potential distance</b>". On transition matrix $T$, take log distance after <b>multi-step</b>:</p>
+
+<div class="math-block boxed">
+  $$D_{\text{potential}}(i, j) = \| \log T^t_{i,:} - \log T^t_{j,:} \|$$
+  <div class="formula-caption" data-lang="zh">$\log$ 讓低機率 entries（遠距離）也有意義，不被 $t \to \infty$ 拉平</div>
+  <div class="formula-caption" data-lang="en">$\log$ keeps low-probability entries (long range) meaningful, not flattened by $t \to \infty$</div>
+</div>
+
+<p data-lang="zh">優勢：對<b>連續、分支軌跡</b>視覺效果好，是 single-cell trajectory 教學最常用的 plot。</p>
+<p data-lang="en">Advantage: visually excellent for <b>continuous, branching trajectories</b> — common in single-cell trajectory tutorials.</p>
+
+<h3 data-lang="zh">9.2 SPRING：force-directed layout on KNN graph</h3>
+<h3 data-lang="en">9.2 SPRING: force-directed layout on KNN graph</h3>
+
+<p data-lang="zh">SPRING（Weinreb et al. 2018）不用 diffusion 數學——它就是直接在 KNN graph 上跑<b>力導向佈局</b>（physics 模擬：吸引/排斥）。產生<b>滑順、可瀏覽的</b>軌跡圖（web 互動）。</p>
+<p data-lang="en">SPRING (Weinreb et al. 2018) doesn't use diffusion math — runs <b>force-directed layout</b> directly on KNN graph (physics: attraction/repulsion). Produces <b>smooth, browseable</b> trajectory plots (web interactive).</p>
+
+<table class="compare">
+  <tr><th></th><th>Diffusion Map</th><th>Diffusion Map</th>
+      <th>PHATE</th><th>PHATE</th>
+      <th>SPRING</th><th>SPRING</th></tr>
+  <tr><td data-lang="zh">數學基礎</td><td data-lang="en">Math basis</td>
+      <td>spectral</td><td>spectral</td>
+      <td>spectral + potential</td><td>spectral + potential</td>
+      <td>force-directed</td><td>force-directed</td></tr>
+  <tr><td data-lang="zh">分支偵測</td><td data-lang="en">Branch detection</td>
+      <td>△</td><td>△</td>
+      <td>✅</td><td>✅</td>
+      <td>△</td><td>△</td></tr>
+  <tr><td data-lang="zh">web 互動</td><td data-lang="en">Web interactive</td>
+      <td>—</td><td>—</td>
+      <td>—</td><td>—</td>
+      <td><b>✅</b></td><td><b>✅</b></td></tr>
+  <tr><td data-lang="zh">擴展性</td><td data-lang="en">Scalability</td>
+      <td>~ 50k cells</td><td>~ 50k cells</td>
+      <td>~ 50k cells</td><td>~ 50k cells</td>
+      <td>10k+ (browser)</td><td>10k+ (browser)</td></tr>
+</table>
+
+<p data-lang="zh">📚 <b>引用</b>：Moon et al. (2019) <i>Nat Biotechnol</i> 37:1482 (PHATE); Weinreb, Wolock & Klein (2018) <i>Bioinformatics</i> 34:1246 (SPRING); Coifman & Lafon (2006) <i>ACHA</i> 21:5 (Diffusion Maps 原始)。</p>
+<p data-lang="en">📚 <b>References</b>: Moon et al. (2019) <i>Nat Biotechnol</i> 37:1482 (PHATE); Weinreb, Wolock & Klein (2018) <i>Bioinformatics</i> 34:1246 (SPRING); Coifman & Lafon (2006) <i>ACHA</i> 21:5 (original Diffusion Maps).</p>
+
+<!-- ===================================== §10 譜論深入 ===================================== -->
+<h2 id="s10"><span class="num">§10</span> <span data-lang="zh">深入：為何 Diffusion Maps、Laplacian Eigenmaps、Normalized Cut 是同一件事</span><span data-lang="en">Deep dive: why Diffusion Maps, Laplacian Eigenmaps, Normalized Cut are the same thing</span></h2>
+
+<p class="lead" data-lang="zh">
+  上述方法看起來不同，但<b>都來自同一個數學家族：spectral graph theory</b>。
+  本節揭密這個統一視角。
+</p>
+<p class="lead" data-lang="en">
+  These methods look different but <b>all come from the same family: spectral graph theory</b>.
+  We expose the unifying view.
+</p>
+
+<h3 data-lang="zh">10.1 三個方法的數學對應</h3>
+<h3 data-lang="en">10.1 Mathematical correspondence</h3>
+
+<table class="compare">
+  <tr><th data-lang="zh">方法</th><th data-lang="en">Method</th>
+      <th data-lang="zh">關鍵矩陣</th><th data-lang="en">Key matrix</th>
+      <th data-lang="zh">取的特徵向量</th><th data-lang="en">Eigenvectors used</th></tr>
+  <tr><td>Laplacian Eigenmaps</td><td>Laplacian Eigenmaps</td>
+      <td>$L = D - W$</td><td>$L = D - W$</td>
+      <td data-lang="zh">最小幾個</td><td data-lang="en">smallest few</td></tr>
+  <tr><td>Normalized Cut (NCut)</td><td>Normalized Cut (NCut)</td>
+      <td>$L_{\text{norm}} = D^{-1/2} L D^{-1/2}$</td>
+      <td>$L_{\text{norm}} = D^{-1/2} L D^{-1/2}$</td>
+      <td data-lang="zh">第二個（最小特徵向量）</td><td data-lang="en">second (smallest non-trivial)</td></tr>
+  <tr><td>Diffusion Maps</td><td>Diffusion Maps</td>
+      <td>$T = D^{-1} W$</td><td>$T = D^{-1} W$</td>
+      <td data-lang="zh">最大幾個</td><td data-lang="en">largest few</td></tr>
+</table>
+
+<p data-lang="zh">關鍵關係：$L_{\text{norm}}$ 跟 $T$ 的特徵值<b>互補</b>：</p>
+<p data-lang="en">Key relation: $L_{\text{norm}}$ and $T$'s eigenvalues are <b>complementary</b>:</p>
+
+<div class="math-block boxed">
+  $$\lambda_k(L_{\text{norm}}) = 1 - \lambda_k(T)$$
+  <div class="formula-caption" data-lang="zh">最小 Laplacian eigval = 最大 diffusion eigval - 同一個方向</div>
+  <div class="formula-caption" data-lang="en">smallest Laplacian eigval = largest diffusion eigval - same direction</div>
+</div>
+
+<p data-lang="zh">所以三個方法找出的「主要方向」是<b>相同的</b>——只是用不同數學語言描述同一件事。</p>
+<p data-lang="en">So all three find the <b>same "main directions"</b> — they describe the same thing in different mathematical languages.</p>
+
+<h3 data-lang="zh">10.2 為何這對 scRNA 重要</h3>
+<h3 data-lang="en">10.2 Why this matters for scRNA</h3>
+
+<div class="callout idea">
+  <strong data-lang="zh">統一視角</strong><strong data-lang="en">Unified view</strong>:
+  <span data-lang="zh">看到 spectral clustering、Normalized Cut、Diffusion Maps、Laplacian Eigenmaps、甚至 UMAP 的 spectral init—— 你會發現它們都是 <b>同一個方程</b> 的不同包裝。一旦理解這點，看 paper 就一目了然。</span>
+  <span data-lang="en">spectral clustering, Normalized Cut, Diffusion Maps, Laplacian Eigenmaps, even UMAP's spectral init — all are <b>different wrappers around the same equation</b>. Once you see this, papers click.</span>
+</div>
+
+<p data-lang="zh">📚 <b>引用</b>：Belkin & Niyogi (2003) <i>Neural Comput</i> 15:1373 (Laplacian Eigenmaps); Shi & Malik (2000) <i>IEEE TPAMI</i> 22:888 (NCut); Coifman & Lafon (2006); von Luxburg (2007) <i>Stat Comput</i> 17:395 (spectral clustering 統一回顧)。</p>
+<p data-lang="en">📚 <b>References</b>: Belkin & Niyogi (2003) <i>Neural Comput</i> 15:1373 (Laplacian Eigenmaps); Shi & Malik (2000) <i>IEEE TPAMI</i> 22:888 (NCut); Coifman & Lafon (2006); von Luxburg (2007) <i>Stat Comput</i> 17:395 (spectral clustering unified review).</p>
+
+<!-- ===================================== §11 與 PAGA 結合 ===================================== -->
+<h2 id="s11"><span class="num">§11</span> <span data-lang="zh">與 PAGA 結合：cluster-level 軌跡視覺化</span><span data-lang="en">+ PAGA: cluster-level trajectory visualization</span></h2>
+
+<p class="lead" data-lang="zh">
+  Diffusion Map 給<b>細胞層級</b>的連續視角；PAGA（Wolf et al. 2019）給<b>cluster 層級</b>的拓樸視角。
+  結合兩者讓你看到「<b>有哪些細胞型 → 之間怎麼連通</b>」。
+</p>
+<p class="lead" data-lang="en">
+  Diffusion Map gives <b>cell-level</b> continuous view; PAGA (Wolf et al. 2019) gives <b>cluster-level</b> topological view.
+  Combined: see "<b>which cell types → how connected</b>".
+</p>
+
+<h3 data-lang="zh">11.1 PAGA 演算法</h3>
+<h3 data-lang="en">11.1 PAGA algorithm</h3>
+
+<ol>
+  <li><span data-lang="zh">用 Leiden 分群</span><span data-lang="en">Leiden cluster</span></li>
+  <li><span data-lang="zh">對每對 cluster $(A, B)$，算「<b>cluster 間連通度</b>」：
+    $\text{conn}(A, B) = \sum_{i \in A, j \in B} W_{ij} / (|A| \cdot |B|)$，
+    其中 $W$ 是 KNN connectivity matrix
+  </span>
+  <span data-lang="en">For each cluster pair $(A, B)$, compute <b>inter-cluster connectivity</b>: $\text{conn}(A, B) = \sum_{i \in A, j \in B} W_{ij} / (|A| \cdot |B|)$ where $W$ is KNN connectivity matrix</span></li>
+  <li><span data-lang="zh">畫 graph：node = cluster、edge = connectivity</span>
+      <span data-lang="en">Plot graph: nodes = clusters, edges = connectivity</span></li>
+  <li><span data-lang="zh">門檻過濾弱邊 → 得到精簡的 cluster topology</span>
+      <span data-lang="en">Threshold weak edges → clean cluster topology</span></li>
+</ol>
+
+<h3 data-lang="zh">11.2 對造血資料的解讀</h3>
+<h3 data-lang="en">11.2 Interpretation on hematopoiesis data</h3>
+
+<p data-lang="zh">在 Paul 2015 資料上 PAGA 重現 hematopoiesis 樹狀結構：</p>
+<p data-lang="en">On Paul 2015 data, PAGA reproduces hematopoietic tree:</p>
+
+<pre class="code">HSC ── MPP ── CMP ┬── GMP ── Granulocyte
+                   │              └── Monocyte
+                   └── MEP ── Erythroid
+                          └── Megakaryocyte</pre>
+
+<p data-lang="zh">這個樹結構跟 50 年累積的 hematopoiesis 教科書知識<b>完全一致</b>！PAGA 從 scRNA 資料 unbiased 地重建出 lineage hierarchy。</p>
+<p data-lang="en">This tree <b>perfectly matches</b> 50 years of hematopoietic textbook knowledge! PAGA unbiased-ly reconstructs lineage hierarchy from scRNA.</p>
+
+<pre class="code"><span class="c"># Diffusion + PAGA pipeline</span>
+sc.pp.neighbors(adata)
+sc.tl.diffmap(adata)
+sc.tl.leiden(adata, resolution=<span class="n">1.0</span>)
+sc.tl.paga(adata, groups=<span class="s">"leiden"</span>)
+sc.pl.paga(adata)            <span class="c"># cluster-level 拓樸圖</span>
+
+sc.tl.umap(adata, init_pos=<span class="s">"paga"</span>)  <span class="c"># 用 PAGA 引導 UMAP</span>
+adata.uns[<span class="s">"iroot"</span>] = <span class="n">0</span>  <span class="c"># 指定 root (HSC)</span>
+sc.tl.dpt(adata)             <span class="c"># pseudotime</span></pre>
+
+<p data-lang="zh">📚 <b>引用</b>：Wolf et al. (2019) <i>Genome Biol</i> 20:59 (PAGA); Tirosh et al. (2016) <i>Nature</i> 539:309 (melanoma trajectory 用 diffusion); Cao et al. (2019) <i>Nature</i> 566:496 (mouse organogenesis atlas, PAGA + diffusion + UMAP 結合)。</p>
+<p data-lang="en">📚 <b>References</b>: Wolf et al. (2019) <i>Genome Biol</i> 20:59 (PAGA); Tirosh et al. (2016) <i>Nature</i> 539:309 (melanoma trajectory via diffusion); Cao et al. (2019) <i>Nature</i> 566:496 (mouse organogenesis atlas combining PAGA + diffusion + UMAP).</p>
 
 <div class="callout prog">
   <strong data-lang="zh">M3 完結篇</strong><strong data-lang="en">M3 wrap-up</strong>:
