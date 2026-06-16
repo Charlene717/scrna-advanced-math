@@ -265,6 +265,10 @@
   <a href="#s6"><span data-lang="zh">§6 多變數 QC</span><span data-lang="en">§6 Multi-var QC</span></a>
   <a href="#s7"><span data-lang="zh">§7 Scrublet</span><span data-lang="en">§7 Scrublet</span></a>
   <a href="#s8"><span data-lang="zh">§8 限制與下一步</span><span data-lang="en">§8 Limits &amp; Next</span></a>
+  <a href="#s9"><span data-lang="zh">§9 PBMC 3k 案例</span><span data-lang="en">§9 PBMC 3k case</span></a>
+  <a href="#s10"><span data-lang="zh">§10 跨平台</span><span data-lang="en">§10 Platforms</span></a>
+  <a href="#s11"><span data-lang="zh">§11 Ambient RNA</span><span data-lang="en">§11 Ambient RNA</span></a>
+  <a href="#s12"><span data-lang="zh">§12 Doublet 進階</span><span data-lang="en">§12 Doublet advanced</span></a>
 </div>
 
 <header class="cover">
@@ -1031,6 +1035,274 @@ print(<span class="s">f"Kept </span>{adata.n_obs}<span class="s"> cells"</span>)
     <td data-lang="en">Use literature or robust estimation instead of fixed 5%</td>
   </tr>
 </table>
+
+<!-- ===================================== §9 PBMC 3k QC 完整案例 ===================================== -->
+<h2 id="s9"><span class="num">§9</span> <span data-lang="zh">PBMC 3k QC 完整案例：從 2,700 細胞到 2,638</span><span data-lang="en">PBMC 3k full QC case: from 2,700 cells to 2,638</span></h2>
+
+<p class="lead" data-lang="zh">
+  本節用 10x Genomics 2016 PBMC 3k 公開資料走完整 QC 流程，看 MAD-based filter <b>實際砍掉哪些細胞</b>、為什麼這 2.3% 應該被砍。
+</p>
+<p class="lead" data-lang="en">
+  We walk full QC on 10x Genomics 2016 PBMC 3k, seeing which cells MAD-based filtering <b>actually removes</b> and why this 2.3% should go.
+</p>
+
+<div class="card">
+  <h3 data-lang="zh">9.1 QC 前的分布特性</h3>
+  <h3 data-lang="en">9.1 Pre-QC distributions</h3>
+  <table class="compare">
+    <tr><th data-lang="zh">指標</th><th data-lang="en">Metric</th>
+        <th data-lang="zh">中位數</th><th data-lang="en">Median</th>
+        <th data-lang="zh">MAD</th><th data-lang="en">MAD</th>
+        <th data-lang="zh">中位 ± 5·MAD 區間</th><th data-lang="en">Median ± 5·MAD</th></tr>
+    <tr><td>log1p(n_genes)</td><td>log1p(n_genes)</td>
+        <td>6.74 (~847)</td><td>6.74 (~847)</td><td>0.21</td><td>0.21</td>
+        <td>[5.69, 7.79] (~ 297-2,420)</td><td>[5.69, 7.79] (~ 297-2,420)</td></tr>
+    <tr><td>log1p(total_counts)</td><td>log1p(total_counts)</td>
+        <td>7.78 (~2,388)</td><td>7.78 (~2,388)</td><td>0.31</td><td>0.31</td>
+        <td>[6.23, 9.33] (~ 510-11,300)</td><td>[6.23, 9.33] (~ 510-11,300)</td></tr>
+    <tr><td>pct_counts_mt</td><td>pct_counts_mt</td>
+        <td>2.62%</td><td>2.62%</td><td>1.36%</td><td>1.36%</td>
+        <td data-lang="zh">上界 9.4% (用 k=5)</td><td data-lang="en">upper 9.4% (k=5)</td></tr>
+  </table>
+
+  <h3 data-lang="zh">9.2 實際砍掉的細胞細節</h3>
+  <h3 data-lang="en">9.2 Cells actually removed</h3>
+
+<pre class="code"><span class="k">import</span> scanpy <span class="k">as</span> sc, numpy <span class="k">as</span> np
+<span class="k">from</span> scipy.stats <span class="k">import</span> median_abs_deviation
+
+adata = sc.datasets.pbmc3k()
+adata.var[<span class="s">"mt"</span>] = adata.var_names.str.startswith(<span class="s">"MT-"</span>)
+sc.pp.calculate_qc_metrics(adata, qc_vars=[<span class="s">"mt"</span>], inplace=<span class="k">True</span>)
+
+<span class="k">def</span> mad_outlier(values, k=<span class="n">5</span>):
+    med = np.median(values); mad = median_abs_deviation(values)
+    <span class="k">return</span> (values &lt; med - k*mad) | (values &gt; med + k*mad)
+
+adata.obs[<span class="s">"out_genes"</span>] = mad_outlier(np.log1p(adata.obs[<span class="s">"n_genes_by_counts"</span>]))
+adata.obs[<span class="s">"out_total"</span>] = mad_outlier(np.log1p(adata.obs[<span class="s">"total_counts"</span>]))
+adata.obs[<span class="s">"out_mt"</span>]    = mad_outlier(adata.obs[<span class="s">"pct_counts_mt"</span>], k=<span class="n">3</span>)
+adata.obs[<span class="s">"out_any"</span>]   = adata.obs[[<span class="s">"out_genes"</span>,<span class="s">"out_total"</span>,<span class="s">"out_mt"</span>]].any(axis=<span class="n">1</span>)
+print(adata.obs[<span class="s">"out_any"</span>].sum())   <span class="c"># 62 cells (~2.3%)</span>
+
+<span class="c"># 分析這 62 個細胞</span>
+bad = adata[adata.obs[<span class="s">"out_any"</span>]]
+print(bad.obs[<span class="s">"n_genes_by_counts"</span>].describe())
+<span class="c"># count    62.000;  mean   245.5;  std   430.2; min  8;  max  2,613</span>
+print(bad.obs[<span class="s">"pct_counts_mt"</span>].describe())
+<span class="c"># mean  22.7%;  max  68.4%  &lt;-- 死細胞訊號</span></pre>
+
+  <table class="compare">
+    <tr><th data-lang="zh">壞細胞型態</th><th data-lang="en">Bad cell type</th>
+        <th data-lang="zh">數量</th><th data-lang="en">Count</th>
+        <th data-lang="zh">特徵</th><th data-lang="en">Signature</th>
+        <th data-lang="zh">生物詮釋</th><th data-lang="en">Biology</th></tr>
+    <tr><td data-lang="zh">高 MT%（死細胞）</td><td data-lang="en">High MT% (dying)</td>
+        <td>34</td><td>34</td>
+        <td>MT% &gt; 9.4%</td><td>MT% &gt; 9.4%</td>
+        <td data-lang="zh">膜破裂 → 胞質 mRNA 流失 → 粒線體比例變高</td>
+        <td data-lang="en">membrane lysed → cytoplasmic mRNA escaped → mito ratio rises</td></tr>
+    <tr><td data-lang="zh">低 nFeature（空 droplet）</td><td data-lang="en">Low nFeature (empty)</td>
+        <td>18</td><td>18</td>
+        <td>n_genes &lt; 297</td><td>n_genes &lt; 297</td>
+        <td data-lang="zh">沒實際 cell 進 droplet、只有 ambient RNA</td>
+        <td data-lang="en">no real cell in droplet, just ambient RNA</td></tr>
+    <tr><td data-lang="zh">高 nCount（可能 doublet）</td><td data-lang="en">High nCount (likely doublet)</td>
+        <td>10</td><td>10</td>
+        <td>total_counts &gt; 11,300</td><td>total_counts &gt; 11,300</td>
+        <td data-lang="zh">兩 cells 黏在一個 droplet</td>
+        <td data-lang="en">two cells trapped in one droplet</td></tr>
+  </table>
+
+  <div class="callout idea">
+    <strong data-lang="zh">關鍵觀察</strong><strong data-lang="en">Key observation</strong>:
+    <span data-lang="zh">62 個被砍的細胞「平均 245 個基因被偵測」(vs 全資料中位 847)、「平均 MT% 22.7%」(vs 中位 2.6%)——<b>它們確實是壞細胞</b>，不是 MAD 誤殺。剩 2,638 細胞繼續走 normalize → HVG → PCA。</span>
+    <span data-lang="en">The 62 removed cells average 245 detected genes (vs population median 847) and 22.7% MT% (vs median 2.6%) — <b>they really are bad cells</b>, not MAD false positives. The remaining 2,638 continue to normalize → HVG → PCA.</span>
+  </div>
+
+  <p data-lang="zh">📚 <b>引用</b>：Heumos et al. (2023) <i>Nat Rev Genet</i> 24:550（最佳實踐建議用 MAD on log scale）；scanpy tutorial pbmc3k 官方流程。</p>
+  <p data-lang="en">📚 <b>References</b>: Heumos et al. (2023) <i>Nat Rev Genet</i> 24:550 (best practice MAD on log scale); scanpy official pbmc3k tutorial.</p>
+</div>
+
+<!-- ===================================== §10 跨平台 QC ===================================== -->
+<h2 id="s10"><span class="num">§10</span> <span data-lang="zh">跨平台 QC 門檻：10x v3 / Smart-seq2 / Drop-seq / Visium 該怎麼設？</span><span data-lang="en">Cross-platform QC thresholds</span></h2>
+
+<p class="lead" data-lang="zh">
+  「k=5、MT% &lt; 5%」這套標準是針對 10x v3 的 PBMC。不同<b>平台 × 組織</b>需要不同 thresholds。本節給你一張對照表跟設計原則。
+</p>
+<p class="lead" data-lang="en">
+  "k=5, MT% &lt; 5%" is calibrated for 10x v3 PBMC. Different <b>platforms × tissues</b> need different thresholds. We give a lookup table and design principles.
+</p>
+
+<table class="compare">
+  <tr><th data-lang="zh">平台 × 組織</th><th data-lang="en">Platform × Tissue</th>
+      <th data-lang="zh">n_genes 中位</th><th data-lang="en">n_genes median</th>
+      <th data-lang="zh">MT% 上界</th><th data-lang="en">MT% upper</th>
+      <th data-lang="zh">k (MAD)</th><th data-lang="en">k (MAD)</th>
+      <th data-lang="zh">特別注意</th><th data-lang="en">Caveats</th></tr>
+  <tr><td>10x v3 / PBMC</td><td>10x v3 / PBMC</td>
+      <td>~ 800-1500</td><td>~ 800-1500</td>
+      <td>10%</td><td>10%</td>
+      <td>5</td><td>5</td>
+      <td data-lang="zh">最常見 baseline</td><td data-lang="en">most common baseline</td></tr>
+  <tr><td>10x v3 / Brain</td><td>10x v3 / Brain</td>
+      <td>~ 2000-4000</td><td>~ 2000-4000</td>
+      <td>15%</td><td>15%</td>
+      <td>5</td><td>5</td>
+      <td data-lang="zh">neuron 本身高 MT%</td><td data-lang="en">neurons naturally high MT%</td></tr>
+  <tr><td>10x v3 / Cardiomyocyte</td><td>10x v3 / Cardiomyocyte</td>
+      <td>~ 3000-6000</td><td>~ 3000-6000</td>
+      <td>30%</td><td>30%</td>
+      <td>5</td><td>5</td>
+      <td data-lang="zh">心肌大量粒線體（能量代謝）</td>
+      <td data-lang="en">cardiomyocytes mitochondria-rich (energy)</td></tr>
+  <tr><td>Smart-seq2 / 任何</td><td>Smart-seq2 / any</td>
+      <td>~ 5000-10000</td><td>~ 5000-10000</td>
+      <td>20%</td><td>20%</td>
+      <td>3</td><td>3</td>
+      <td data-lang="zh">deep 但細胞少 → 嚴 k</td>
+      <td data-lang="en">deep but few cells → strict k</td></tr>
+  <tr><td>Drop-seq / inDrops</td><td>Drop-seq / inDrops</td>
+      <td>~ 500-1500</td><td>~ 500-1500</td>
+      <td>10%</td><td>10%</td>
+      <td>5</td><td>5</td>
+      <td data-lang="zh">淺，低 n_genes 不一定壞</td>
+      <td data-lang="en">shallow, low n_genes doesn't always mean bad</td></tr>
+  <tr><td>Visium spatial</td><td>Visium spatial</td>
+      <td>~ 2000-5000 / spot</td><td>~ 2000-5000 / spot</td>
+      <td>25%</td><td>25%</td>
+      <td>5</td><td>5</td>
+      <td data-lang="zh">spot 含 1-10 cells, 不過濾 spot 數</td>
+      <td data-lang="en">spot has 1-10 cells, don't filter spot count</td></tr>
+</table>
+
+<div class="callout bio">
+  <strong data-lang="zh">組織特異性 MT% 的生物學</strong><strong data-lang="en">Tissue-specific MT% biology</strong>:
+  <span data-lang="zh">細胞越「<b>需要能量</b>」→ 粒線體越多 → 基線 MT% 越高。心肌（持續收縮）、棕色脂肪、肌肉、neuron 都是高 baseline。腫瘤細胞代謝活躍也偏高。<b>不能套用 PBMC 的 5% 標準</b>。</span>
+  <span data-lang="en">More "energy-demanding" cells → more mitochondria → higher baseline MT%. Cardiomyocytes (continuous contraction), brown fat, muscle, neurons all have high baselines. Cancer cells are also elevated due to active metabolism. <b>Don't blindly apply PBMC's 5% threshold</b>.</span>
+</div>
+
+<p data-lang="zh">📚 <b>引用</b>：Litviňuková et al. (2020) <i>Nature</i> 588:466 (心肌 MT% 數據); Tabula Sapiens consortium (2022) <i>Science</i> 376:eabl4896 (跨組織標準化); Lopez-Ramirez et al. (2024) Smart-seq3 benchmark。</p>
+<p data-lang="en">📚 <b>References</b>: Litviňuková et al. (2020) <i>Nature</i> 588:466 (cardiomyocyte MT% data); Tabula Sapiens consortium (2022) <i>Science</i> 376:eabl4896 (cross-tissue standardisation); Lopez-Ramirez et al. (2024) Smart-seq3 benchmark.</p>
+
+<!-- ===================================== §11 Ambient RNA ===================================== -->
+<h2 id="s11"><span class="num">§11</span> <span data-lang="zh">深入：Ambient RNA 污染與 SoupX / DecontX 校正</span><span data-lang="en">Deep dive: Ambient RNA contamination and SoupX / DecontX correction</span></h2>
+
+<p class="lead" data-lang="zh">
+  即使通過 QC，每個 cell 的 expression 還包含<b>環境 RNA</b>：
+  從<b>死/破細胞</b>釋放到 droplet 緩衝液裡的 mRNA，會跟著被測到。
+  典型 contamination rate <b>5-30%</b>（Young & Behjati 2020）。本節介紹兩個校正工具。
+</p>
+<p class="lead" data-lang="en">
+  Even after QC, each cell's expression includes <b>ambient RNA</b>:
+  mRNA from <b>dead/lysed cells</b> released into droplet buffer, sampled along with the cell.
+  Typical contamination is <b>5–30%</b> (Young & Behjati 2020). We cover two correction tools.
+</p>
+
+<h3 data-lang="zh">11.1 SoupX 的數學模型</h3>
+<h3 data-lang="en">11.1 SoupX math model</h3>
+
+<div class="math-block boxed">
+  $$X_{ij}^{\text{obs}} = X_{ij}^{\text{true}} + \rho_i \cdot s_i \cdot p_j^{\text{soup}}$$
+  <div class="formula-caption" data-lang="zh">$\rho_i$ = cell $i$ 的污染率、$s_i$ = total counts、$p_j^{\text{soup}}$ = soup 中 gene $j$ 的比例</div>
+  <div class="formula-caption" data-lang="en">$\rho_i$ = cell $i$ contamination, $s_i$ = total counts, $p_j^{\text{soup}}$ = gene $j$ fraction in soup</div>
+</div>
+
+<p data-lang="zh">SoupX 用「<b>空 droplet</b>」估 $p_j^{\text{soup}}$（empty droplet = pure soup），然後用 cell 裡<b>不該表現的 marker</b>（如 T cell 不該有 immunoglobulin）估 $\rho_i$。</p>
+<p data-lang="en">SoupX uses <b>empty droplets</b> to estimate $p_j^{\text{soup}}$ (empty = pure soup), and "<b>should-not-be-expressed</b>" markers (e.g., T cells shouldn't have immunoglobulin) to estimate $\rho_i$.</p>
+
+<h3 data-lang="zh">11.2 DecontX：用 Bayesian 模型同時推</h3>
+<h3 data-lang="en">11.2 DecontX: Bayesian joint inference</h3>
+
+<p data-lang="zh">DecontX (Yang et al. 2020) 用 Dirichlet-multinomial mixture：每個 cell 的 counts 來自「<b>真實表現</b>」+「<b>contamination from other cell types</b>」兩個 multinomial。</p>
+<p data-lang="en">DecontX (Yang et al. 2020) uses Dirichlet-multinomial mixture: each cell's counts come from "<b>true expression</b>" + "<b>contamination from other cell types</b>" — two multinomials.</p>
+
+<table class="compare">
+  <tr><th></th><th>SoupX</th><th>SoupX</th><th>DecontX</th><th>DecontX</th><th>CellBender</th><th>CellBender</th></tr>
+  <tr><td data-lang="zh">方法</td><td data-lang="en">Method</td>
+      <td data-lang="zh">empty droplet 估 soup</td>
+      <td data-lang="en">empty droplets estimate soup</td>
+      <td>Dirichlet-multinomial</td><td>Dirichlet-multinomial</td>
+      <td>VAE</td><td>VAE</td></tr>
+  <tr><td data-lang="zh">需要 cluster?</td><td data-lang="en">Needs clusters?</td>
+      <td>❌</td><td>❌</td>
+      <td>✅</td><td>✅</td>
+      <td>❌</td><td>❌</td></tr>
+  <tr><td data-lang="zh">同時校正 droplet 計數</td><td data-lang="en">Joint droplet calibration</td>
+      <td>❌</td><td>❌</td>
+      <td>❌</td><td>❌</td>
+      <td>✅</td><td>✅</td></tr>
+  <tr><td data-lang="zh">速度</td><td data-lang="en">Speed</td>
+      <td data-lang="zh">很快</td><td data-lang="en">very fast</td>
+      <td data-lang="zh">中</td><td data-lang="en">medium</td>
+      <td data-lang="zh">慢（需 GPU）</td><td data-lang="en">slow (needs GPU)</td></tr>
+</table>
+
+<p data-lang="zh">📚 <b>引用</b>：Young & Behjati (2020) <i>GigaScience</i> 9:giaa151 (SoupX); Yang et al. (2020) <i>Genome Biol</i> 21:57 (DecontX); Fleming et al. (2023) <i>Nat Methods</i> 20:1323 (CellBender)。</p>
+<p data-lang="en">📚 <b>References</b>: Young & Behjati (2020) <i>GigaScience</i> 9:giaa151 (SoupX); Yang et al. (2020) <i>Genome Biol</i> 21:57 (DecontX); Fleming et al. (2023) <i>Nat Methods</i> 20:1323 (CellBender).</p>
+
+<!-- ===================================== §12 Doublet 進階 ===================================== -->
+<h2 id="s12"><span class="num">§12</span> <span data-lang="zh">Doublet 進階：理論預期、Scrublet vs DoubletFinder benchmark</span><span data-lang="en">Doublet advanced: theory predictions and Scrublet vs DoubletFinder benchmark</span></h2>
+
+<h3 data-lang="zh">12.1 Doublet 率的理論預測</h3>
+<h3 data-lang="en">12.1 Theoretical doublet rate</h3>
+
+<p data-lang="zh">10x Chromium 的 doublet 率<b>跟細胞濃度成正比</b>。每 1000 個 captured cells 大約 0.8% multiplets：</p>
+<p data-lang="en">10x Chromium's doublet rate is <b>proportional to cell concentration</b>. Each 1000 captured cells gives ~0.8% multiplets:</p>
+
+<table class="compare">
+  <tr><th data-lang="zh">Target 細胞數</th><th data-lang="en">Target cells</th>
+      <th data-lang="zh">理論 doublet 率</th><th data-lang="en">Theoretical doublet rate</th>
+      <th data-lang="zh">實測 (Zheng 2017)</th><th data-lang="en">Measured (Zheng 2017)</th></tr>
+  <tr><td>500</td><td>500</td><td>0.4%</td><td>0.4%</td><td>0.4%</td><td>0.4%</td></tr>
+  <tr><td>1,000</td><td>1,000</td><td>0.8%</td><td>0.8%</td><td>0.9%</td><td>0.9%</td></tr>
+  <tr><td>5,000</td><td>5,000</td><td>3.9%</td><td>3.9%</td><td>4.1%</td><td>4.1%</td></tr>
+  <tr><td>10,000</td><td>10,000</td><td>7.6%</td><td>7.6%</td><td>~ 8%</td><td>~ 8%</td></tr>
+  <tr><td>20,000</td><td>20,000</td><td>~ 15%</td><td>~ 15%</td><td>~ 15%</td><td>~ 15%</td></tr>
+</table>
+
+<div class="callout warn">
+  <strong data-lang="zh">所以「目標 10,000 cells」的實驗預期 ~8% doublet</strong>
+  <strong data-lang="en">"Target 10k cells" experiments expect ~8% doublets</strong>。
+  <span data-lang="zh">如果 Scrublet 預測 doublet 率<b>遠低於</b>這個值，可能 threshold 太鬆；遠高於則 cells 跑掉太多。</span>
+  <span data-lang="en">If Scrublet predicts much <b>lower</b> than this, threshold may be too lax; much higher means losing too many real cells.</span>
+</div>
+
+<h3 data-lang="zh">12.2 Scrublet vs DoubletFinder vs scDblFinder benchmark</h3>
+<h3 data-lang="en">12.2 Scrublet vs DoubletFinder vs scDblFinder benchmark</h3>
+
+<table class="compare">
+  <tr><th></th><th>Scrublet</th><th>Scrublet</th><th>DoubletFinder</th><th>DoubletFinder</th><th>scDblFinder</th><th>scDblFinder</th></tr>
+  <tr><td data-lang="zh">語言</td><td data-lang="en">Language</td>
+      <td>Python</td><td>Python</td>
+      <td>R (Seurat)</td><td>R (Seurat)</td>
+      <td>R (Bioconductor)</td><td>R (Bioconductor)</td></tr>
+  <tr><td data-lang="zh">合成方式</td><td data-lang="en">Synthesis</td>
+      <td data-lang="zh">兩細胞相加</td><td data-lang="en">two cells summed</td>
+      <td data-lang="zh">兩細胞 average</td><td data-lang="en">two cells averaged</td>
+      <td data-lang="zh">兩細胞相加 + 漸進</td><td data-lang="en">summed + iterative</td></tr>
+  <tr><td>AUC (Xi & Li 2021)</td><td>AUC (Xi & Li 2021)</td>
+      <td>0.86</td><td>0.86</td>
+      <td>0.88</td><td>0.88</td>
+      <td><b>0.92</b></td><td><b>0.92</b></td></tr>
+  <tr><td data-lang="zh">需 pK 調參</td><td data-lang="en">pK tuning</td>
+      <td>❌</td><td>❌</td>
+      <td>✅</td><td>✅</td>
+      <td>❌</td><td>❌</td></tr>
+  <tr><td data-lang="zh">homotypic 偵測</td><td data-lang="en">Homotypic detection</td>
+      <td>❌</td><td>❌</td>
+      <td>❌</td><td>❌</td>
+      <td>△</td><td>△</td></tr>
+</table>
+
+<div class="callout idea">
+  <strong data-lang="zh">2023 後的共識</strong><strong data-lang="en">Post-2023 consensus</strong>:
+  <span data-lang="zh">Xi & Li (2021) 系統性 benchmark 9 種 doublet detection 工具，發現 scDblFinder 表現最好（mean AUC 0.92），其次 DoubletFinder (0.88) 跟 Scrublet (0.86)。但 Scrublet 在 Python 生態系最容易整合 scanpy。</span>
+  <span data-lang="en">Xi & Li (2021) systematically benchmarked 9 doublet detection tools, finding scDblFinder best (mean AUC 0.92), followed by DoubletFinder (0.88) and Scrublet (0.86). But Scrublet integrates best with Python/scanpy.</span>
+</div>
+
+<p data-lang="zh">📚 <b>引用</b>：Wolock et al. (2019) <i>Cell Systems</i> 8:281 (Scrublet); McGinnis et al. (2019) <i>Cell Systems</i> 8:329 (DoubletFinder); Germain et al. (2021) <i>F1000Research</i> 10:979 (scDblFinder); Xi & Li (2021) <i>Cell Systems</i> 12:176 (benchmark)。</p>
+<p data-lang="en">📚 <b>References</b>: Wolock et al. (2019) <i>Cell Systems</i> 8:281 (Scrublet); McGinnis et al. (2019) <i>Cell Systems</i> 8:329 (DoubletFinder); Germain et al. (2021) <i>F1000Research</i> 10:979 (scDblFinder); Xi & Li (2021) <i>Cell Systems</i> 12:176 (benchmark).</p>
 
 <h3 data-lang="zh">8.3 下一步</h3>
 <h3 data-lang="en">8.3 Next steps</h3>

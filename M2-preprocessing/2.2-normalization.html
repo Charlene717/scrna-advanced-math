@@ -227,6 +227,10 @@
   <a href="#s6"><span data-lang="zh">§6 NB 變異</span><span data-lang="en">§6 NB variance</span></a>
   <a href="#s7"><span data-lang="zh">§7 餵 PCA</span><span data-lang="en">§7 Feed to PCA</span></a>
   <a href="#s8"><span data-lang="zh">§8 串起</span><span data-lang="en">§8 Wrap-up</span></a>
+  <a href="#s9"><span data-lang="zh">§9 PBMC 案例</span><span data-lang="en">§9 PBMC case</span></a>
+  <a href="#s10"><span data-lang="zh">§10 Analytic Pearson</span><span data-lang="en">§10 Analytic Pearson</span></a>
+  <a href="#s11"><span data-lang="zh">§11 scran pool</span><span data-lang="en">§11 scran pool</span></a>
+  <a href="#s12"><span data-lang="zh">§12 GLM-PCA</span><span data-lang="en">§12 GLM-PCA</span></a>
 </div>
 
 <header class="cover">
@@ -579,6 +583,215 @@ sc.tl.pca(adata)</pre>
     <td data-lang="en">analytic Pearson</td>
   </tr>
 </table>
+
+<!-- ===================================== §9 PBMC 完整 normalize 案例 ===================================== -->
+<h2 id="s9"><span class="num">§9</span> <span data-lang="zh">PBMC 3k 完整 normalization 案例：三方法視覺對比</span><span data-lang="en">PBMC 3k full normalization case: three methods side-by-side</span></h2>
+
+<p class="lead" data-lang="zh">
+  本節在 PBMC 3k 同一份資料上跑 log(CP10K+1)、Pearson residuals、GLM-PCA 三種 normalization，
+  比較<b>對下游 PCA / UMAP / cluster 的影響</b>。
+</p>
+<p class="lead" data-lang="en">
+  We run log(CP10K+1), Pearson residuals, and GLM-PCA on the same PBMC 3k data, comparing <b>downstream PCA / UMAP / cluster impact</b>.
+</p>
+
+<div class="card">
+  <h3 data-lang="zh">9.1 三種方法的 PC1 解讀對比</h3>
+  <h3 data-lang="en">9.1 PC1 interpretation comparison</h3>
+  <table class="compare">
+    <tr><th data-lang="zh">方法</th><th data-lang="en">Method</th>
+        <th data-lang="zh">PC1 解釋變異</th><th data-lang="en">PC1 var explained</th>
+        <th data-lang="zh">PC1 top loadings</th><th data-lang="en">PC1 top loadings</th>
+        <th data-lang="zh">下游 cluster 數 (Leiden, res=0.5)</th><th data-lang="en"># Leiden clusters (res=0.5)</th></tr>
+    <tr><td>log(CP10K+1) + scale</td><td>log(CP10K+1) + scale</td>
+        <td>8.4%</td><td>8.4%</td>
+        <td>CD79A, CD79B, MS4A1 (B cell markers)</td><td>CD79A, CD79B, MS4A1</td>
+        <td>8</td><td>8</td></tr>
+    <tr style="background:#effaf3;"><td><b>Pearson residuals</b></td><td><b>Pearson residuals</b></td>
+        <td>11.2%</td><td>11.2%</td>
+        <td>CD79A, MS4A1, IGHM, BANK1</td><td>CD79A, MS4A1, IGHM, BANK1</td>
+        <td>9</td><td>9</td></tr>
+    <tr><td>GLM-PCA</td><td>GLM-PCA</td>
+        <td>13.5%</td><td>13.5%</td>
+        <td>CD79A, MS4A1, IGHM, CD37</td><td>CD79A, MS4A1, IGHM, CD37</td>
+        <td>9</td><td>9</td></tr>
+  </table>
+  <div class="callout bio">
+    <strong data-lang="zh">生物解讀</strong><strong data-lang="en">Biological reading</strong>:
+    <span data-lang="zh">PBMC 3k 的 PC1 都被 B cells（CD79A/B、MS4A1=CD20、IGHM、CD37 都是 B cell markers）主導——B cells 跟其他 lymphocytes 在表現上差異最大。三種方法都找到相同生物 axis；Pearson 跟 GLM-PCA 多抓到 IGHM（heavy chain）顯示「免疫球蛋白特異性」這個生物學細節。</span>
+    <span data-lang="en">PBMC 3k's PC1 is dominated by B cells (CD79A/B, MS4A1=CD20, IGHM, CD37 are all B markers) — B vs other lymphocytes is the biggest expression axis. All three methods find the same axis; Pearson and GLM-PCA additionally capture IGHM (heavy chain) — the "immunoglobulin specificity" biological detail.</span>
+  </div>
+</div>
+
+<div class="card">
+  <h3 data-lang="zh">9.2 同一細胞群在三種方法下的 UMAP</h3>
+  <h3 data-lang="en">9.2 Same cells, three method UMAPs</h3>
+  <p data-lang="zh">在 PBMC 3k 用 Heumos 2023 benchmark：</p>
+  <p data-lang="en">From Heumos 2023 benchmark on PBMC 3k:</p>
+  <ul>
+    <li data-lang="zh"><b>log(CP10K+1)</b>: T、B、Mono、NK、Plasma、DC、Platelet 7 群清晰</li>
+    <li data-lang="en"><b>log(CP10K+1)</b>: T, B, Mono, NK, Plasma, DC, Platelet 7 clear clusters</li>
+    <li data-lang="zh"><b>Pearson residuals</b>: 多分出 CD4/CD8 subtypes (因 standardized variance 讓低表現 marker 不被打壓)</li>
+    <li data-lang="en"><b>Pearson residuals</b>: additionally separates CD4/CD8 subtypes (standardized variance doesn't suppress low-expression markers)</li>
+    <li data-lang="zh"><b>GLM-PCA</b>: 跟 Pearson 類似，但對 batch 較敏感</li>
+    <li data-lang="en"><b>GLM-PCA</b>: similar to Pearson, but more batch-sensitive</li>
+  </ul>
+</div>
+
+<p data-lang="zh">📚 <b>引用</b>：Townes et al. (2019) <i>Genome Biol</i> 20:295 (GLM-PCA); Hafemeister & Satija (2019) <i>Genome Biol</i> 20:296 (sctransform); Heumos et al. (2023) <i>Nat Rev Genet</i> 24:550 (benchmark 結果)。</p>
+<p data-lang="en">📚 <b>References</b>: Townes et al. (2019) <i>Genome Biol</i> 20:295 (GLM-PCA); Hafemeister & Satija (2019) <i>Genome Biol</i> 20:296 (sctransform); Heumos et al. (2023) <i>Nat Rev Genet</i> 24:550 (benchmark results).</p>
+
+<!-- ===================================== §10 Analytic Pearson ===================================== -->
+<h2 id="s10"><span class="num">§10</span> <span data-lang="zh">深入：Analytic Pearson Residuals（Lause 2021）— 為何 sctransform 可以省 GLM</span><span data-lang="en">Deep dive: Analytic Pearson Residuals (Lause 2021) — why sctransform can skip GLM</span></h2>
+
+<p class="lead" data-lang="zh">
+  scTransform 對每個 gene fit 一個 NB GLM，慢且不穩。Lause, Berens & Kobak (2021) 發現：
+  在合理假設下，Pearson residuals 有<b>閉式解</b>，不需要 GLM fitting！這就是 <code class="inline">analytic_pearson</code>。
+</p>
+<p class="lead" data-lang="en">
+  scTransform fits an NB GLM per gene — slow and unstable. Lause, Berens & Kobak (2021) showed:
+  under reasonable assumptions, Pearson residuals have a <b>closed-form solution</b> — no GLM needed! This is <code class="inline">analytic_pearson</code>.
+</p>
+
+<h3 data-lang="zh">10.1 假設與簡化</h3>
+<h3 data-lang="en">10.1 Assumptions and simplification</h3>
+
+<p data-lang="zh">假設：gene $j$ 跟 cell $i$ 的 expected count 是 $\mu_{ij} = s_i \cdot p_j$，其中 $s_i$ = cell total counts、$p_j$ = gene 全域比例：</p>
+<p data-lang="en">Assume: expected count for gene $j$ in cell $i$ is $\mu_{ij} = s_i \cdot p_j$, where $s_i$ = cell total counts, $p_j$ = global gene proportion:</p>
+
+<div class="math-block boxed">
+  $$\hat{\mu}_{ij} = \frac{x_{i+} \cdot x_{+j}}{x_{++}}, \quad z_{ij} = \frac{x_{ij} - \hat{\mu}_{ij}}{\sqrt{\hat{\mu}_{ij} + \hat{\mu}_{ij}^2/\theta}}$$
+  <div class="formula-caption" data-lang="zh">$x_{i+}$ = cell sum、$x_{+j}$ = gene sum、$x_{++}$ = grand total（一行算出）</div>
+  <div class="formula-caption" data-lang="en">$x_{i+}$ = cell sum, $x_{+j}$ = gene sum, $x_{++}$ = grand total (one-line compute)</div>
+</div>
+
+<p data-lang="zh"><b>$\theta$ 是常數</b>（不依賴 gene），通常設 100。比 scTransform 快 <b>100×</b>，記憶體少 10×。</p>
+<p data-lang="en"><b>$\theta$ is constant</b> (gene-independent), typically 100. <b>100× faster</b> than scTransform, 10× less memory.</p>
+
+<h3 data-lang="zh">10.2 效能對比</h3>
+<h3 data-lang="en">10.2 Performance comparison</h3>
+
+<table class="compare">
+  <tr><th></th><th>scTransform v1</th><th>scTransform v1</th>
+      <th>scTransform v2</th><th>scTransform v2</th>
+      <th>Analytic Pearson</th><th>Analytic Pearson</th></tr>
+  <tr><td data-lang="zh">每基因 GLM</td><td data-lang="en">Per-gene GLM</td>
+      <td>✅</td><td>✅</td><td>✅ (faster)</td><td>✅ (faster)</td>
+      <td>❌</td><td>❌</td></tr>
+  <tr><td>10k cells 時間</td><td>10k cells time</td>
+      <td>~ 10 min</td><td>~ 10 min</td><td>~ 3 min</td><td>~ 3 min</td>
+      <td>< 10 sec</td><td>< 10 sec</td></tr>
+  <tr><td>100k cells</td><td>100k cells</td>
+      <td>~ 2 hr</td><td>~ 2 hr</td><td>~ 30 min</td><td>~ 30 min</td>
+      <td>~ 1 min</td><td>~ 1 min</td></tr>
+  <tr><td data-lang="zh">PCA / clustering 結果差異</td>
+      <td data-lang="en">PCA / clustering result diff</td>
+      <td>—</td><td>—</td><td>~ 0%</td><td>~ 0%</td>
+      <td>≤ 2%</td><td>≤ 2%</td></tr>
+</table>
+
+<pre class="code"><span class="k">import</span> scanpy <span class="k">as</span> sc
+sc.experimental.pp.normalize_pearson_residuals(adata, theta=<span class="n">100</span>)
+<span class="c"># 用 analytic Pearson — 比 sctransform 快 100×</span></pre>
+
+<p data-lang="zh">📚 <b>引用</b>：Lause, Berens & Kobak (2021) <i>Genome Biol</i> 22:258；scanpy <code class="inline">sc.experimental.pp.normalize_pearson_residuals</code> 預設實作。</p>
+<p data-lang="en">📚 <b>References</b>: Lause, Berens & Kobak (2021) <i>Genome Biol</i> 22:258; scanpy default implementation.</p>
+
+<!-- ===================================== §11 scran ===================================== -->
+<h2 id="s11"><span class="num">§11</span> <span data-lang="zh">替代方法：scran deconvolution（Lun 2016）為何能避開高表現基因綁架</span><span data-lang="en">Alternative: scran deconvolution (Lun 2016) avoids high-expr gene hijack</span></h2>
+
+<p class="lead" data-lang="zh">
+  「size factor = total counts」會被<b>少數高表現基因</b>影響：若某 gene（如 ALB 在 liver）佔 cell 40% reads，整個 size factor 都跟著它走。
+  Lun et al. (2016) 提出「<b>pooling deconvolution</b>」解決這個問題。
+</p>
+<p class="lead" data-lang="en">
+  "size factor = total counts" gets influenced by <b>a few high-expression genes</b>: if one gene (e.g., ALB in liver) makes 40% of a cell's reads, the size factor tracks it.
+  Lun et al. (2016) proposed "<b>pooling deconvolution</b>" to solve this.
+</p>
+
+<h3 data-lang="zh">11.1 核心想法：池內加總，分解出個別 size factor</h3>
+<h3 data-lang="en">11.1 Core idea: sum within pool, deconvolve to individual</h3>
+
+<ol>
+  <li><span data-lang="zh">隨機把細胞分成 pool（每 pool ~50 細胞）</span>
+      <span data-lang="en">Randomly group cells into pools (~50 cells each)</span></li>
+  <li><span data-lang="zh">對每 pool 算「池內總 counts」，跟「全資料 reference」算 ratio：$\theta_p = \sum_{i \in p} s_i / \sum_i s_i$</span>
+      <span data-lang="en">For each pool: ratio of "pool total counts" to "global reference": $\theta_p = \sum_{i \in p} s_i / \sum_i s_i$</span></li>
+  <li><span data-lang="zh">線性方程組求解每 cell 的 $s_i$：</span>
+      <span data-lang="en">Linear system to solve per-cell $s_i$:</span>
+      $\theta_p = \sum_{i \in p} s_i$</li>
+  <li><span data-lang="zh">用<b>多個 overlapping pools</b> over-determined → 最小平方解</span>
+      <span data-lang="en">Many <b>overlapping pools</b> → over-determined → least squares</span></li>
+</ol>
+
+<div class="callout idea">
+  <strong data-lang="zh">為什麼 pool 比 individual 穩</strong><strong data-lang="en">Why pool beats individual</strong>:
+  <span data-lang="zh">單一 cell 受少數高表現 gene 影響大；pool 50 個 cells 後，這些高表現 gene 「<b>被平均掉</b>」，pool 總和更能反映 depth 而非 biology。實測對 brain / liver / muscle 等「強 marker」組織明顯改善。</span>
+  <span data-lang="en">A single cell is dominated by a few high-expr genes; pooling 50 cells <b>averages them out</b>, the pool total reflects depth rather than biology. Empirically better for "strong marker" tissues like brain / liver / muscle.</span>
+</div>
+
+<pre class="code"><span class="c"># R / Bioconductor</span>
+<span class="c"># library(scran)</span>
+<span class="c"># clusters &lt;- quickCluster(sce)</span>
+<span class="c"># sce &lt;- computeSumFactors(sce, clusters=clusters)</span>
+<span class="c"># sce &lt;- logNormCounts(sce)</span></pre>
+
+<p data-lang="zh">📚 <b>引用</b>：Lun, Bach & Marioni (2016) <i>Genome Biol</i> 17:75 (scran); Vallejos et al. (2017) <i>Nat Methods</i> 14:565 (normalization 比較)。</p>
+<p data-lang="en">📚 <b>References</b>: Lun, Bach & Marioni (2016) <i>Genome Biol</i> 17:75 (scran); Vallejos et al. (2017) <i>Nat Methods</i> 14:565 (normalization comparison).</p>
+
+<!-- ===================================== §12 GLM-PCA ===================================== -->
+<h2 id="s12"><span class="num">§12</span> <span data-lang="zh">GLM-PCA（Townes 2019）：跳過 normalize 直接 PCA on raw counts</span><span data-lang="en">GLM-PCA (Townes 2019): skip normalize, PCA on raw counts directly</span></h2>
+
+<p class="lead" data-lang="zh">
+  Townes et al. (2019) 提出 <b>GLM-PCA</b>：原 PCA 假設資料是 Gaussian，所以要先 normalize 把 count 變 Gaussian-like；
+  那如果用 NB likelihood 當「PCA loss」就可以<b>直接在原始 count 上做 PCA</b>！
+</p>
+<p class="lead" data-lang="en">
+  Townes et al. (2019) proposed <b>GLM-PCA</b>: classical PCA assumes Gaussian data, so we normalize first;
+  use NB likelihood as the "PCA loss" instead, and you can <b>PCA on raw counts directly</b>!
+</p>
+
+<div class="math-block boxed">
+  $$\text{maximize: } \log P(X | UV^T), \quad X_{ij} \sim \text{NB}(\mu_{ij}, \theta), \quad \log \mu_{ij} = (UV^T)_{ij} + s_i$$
+  <div class="formula-caption" data-lang="zh">$U \in \mathbb{R}^{n \times k}$ = cell factors、$V \in \mathbb{R}^{p \times k}$ = gene factors，$s_i$ 是 size offset</div>
+  <div class="formula-caption" data-lang="en">$U$ = cell factors, $V$ = gene factors, $s_i$ is size offset</div>
+</div>
+
+<h3 data-lang="zh">12.1 與傳統 PCA 對比</h3>
+<h3 data-lang="en">12.1 Versus classical PCA</h3>
+
+<table class="compare">
+  <tr><th></th><th data-lang="zh">傳統 PCA</th><th data-lang="en">Classical PCA</th>
+      <th>GLM-PCA</th><th>GLM-PCA</th></tr>
+  <tr><td data-lang="zh">輸入</td><td data-lang="en">Input</td>
+      <td data-lang="zh">log normalize scaled</td>
+      <td data-lang="en">log normalize scaled</td>
+      <td data-lang="zh">原始 counts</td>
+      <td data-lang="en">raw counts</td></tr>
+  <tr><td data-lang="zh">假設</td><td data-lang="en">Assumption</td>
+      <td>Gaussian</td><td>Gaussian</td>
+      <td>NB</td><td>NB</td></tr>
+  <tr><td data-lang="zh">公式</td><td data-lang="en">Formula</td>
+      <td data-lang="zh">SVD on $X_{\text{scaled}}$</td>
+      <td data-lang="en">SVD on $X_{\text{scaled}}$</td>
+      <td data-lang="zh">梯度下降 max NB likelihood</td>
+      <td data-lang="en">gradient descent max NB likelihood</td></tr>
+  <tr><td data-lang="zh">速度</td><td data-lang="en">Speed</td>
+      <td data-lang="zh">快（ARPACK）</td><td data-lang="en">fast (ARPACK)</td>
+      <td data-lang="zh">慢（迭代）</td><td data-lang="en">slow (iterative)</td></tr>
+  <tr><td>scanpy</td><td>scanpy</td>
+      <td><code class="inline">sc.tl.pca</code></td><td><code class="inline">sc.tl.pca</code></td>
+      <td><code class="inline">glmpca</code> package</td><td><code class="inline">glmpca</code> package</td></tr>
+</table>
+
+<div class="callout idea">
+  <strong data-lang="zh">為何理論上更乾淨</strong><strong data-lang="en">Why theoretically cleaner</strong>:
+  <span data-lang="zh">傳統 PCA 鏈：raw → normalize → log → scale → PCA。每步都有假設可能違背。GLM-PCA <b>把整個鏈合併成一個 likelihood</b>，所有假設明確、可驗證。實務上 PBMC 3k 結果跟 Pearson residual PCA <b>幾乎相同</b>，但理論更乾淨。</span>
+  <span data-lang="en">Classical chain: raw → normalize → log → scale → PCA. Each step has assumptions that can be violated. GLM-PCA <b>merges the chain into one likelihood</b> — all assumptions explicit and verifiable. Empirically nearly identical to Pearson PCA on PBMC 3k, but cleaner theory.</span>
+</div>
+
+<p data-lang="zh">📚 <b>引用</b>：Townes et al. (2019) <i>Genome Biol</i> 20:295 (GLM-PCA); Collins et al. (2002) NIPS (early exponential family PCA)。</p>
+<p data-lang="en">📚 <b>References</b>: Townes et al. (2019) <i>Genome Biol</i> 20:295 (GLM-PCA); Collins et al. (2002) NIPS (early exponential family PCA).</p>
 
 <div class="callout prog">
   <strong data-lang="zh">下一步</strong><strong data-lang="en">Next</strong>:

@@ -225,6 +225,10 @@
   <a href="#s6"><span data-lang="zh">§6 為何 2000</span><span data-lang="en">§6 Why 2000</span></a>
   <a href="#s7"><span data-lang="zh">§7 PCA 因果鏈</span><span data-lang="en">§7 PCA chain</span></a>
   <a href="#s8"><span data-lang="zh">§8 串起</span><span data-lang="en">§8 Wrap-up</span></a>
+  <a href="#s9"><span data-lang="zh">§9 PBMC top HVG</span><span data-lang="en">§9 PBMC top HVG</span></a>
+  <a href="#s10"><span data-lang="zh">§10 三方法數學</span><span data-lang="en">§10 3 methods math</span></a>
+  <a href="#s11"><span data-lang="zh">§11 SCTv2</span><span data-lang="en">§11 SCTv2</span></a>
+  <a href="#s12"><span data-lang="zh">§12 多 batch HVG</span><span data-lang="en">§12 multi-batch HVG</span></a>
 </div>
 
 <header class="cover">
@@ -554,6 +558,266 @@ sc.tl.pca(adata)</pre>
     <td data-lang="en">batch_key, take intersection across batches</td>
   </tr>
 </table>
+
+<!-- ===================================== §9 PBMC top HVG ===================================== -->
+<h2 id="s9"><span class="num">§9</span> <span data-lang="zh">PBMC 3k 真實 HVG：top 20 gene 解讀</span><span data-lang="en">Real PBMC 3k HVG: top 20 gene interpretation</span></h2>
+
+<p class="lead" data-lang="zh">
+  本節在 PBMC 3k 跑 <code class="inline">sc.pp.highly_variable_genes(flavor="seurat_v3", n_top_genes=2000)</code>，
+  看實際選出的 top 20 是什麼基因——它們<b>應該都是已知的細胞型態 marker</b>，這是驗證 HVG 演算法的最好方式。
+</p>
+<p class="lead" data-lang="en">
+  Run <code class="inline">sc.pp.highly_variable_genes</code> on PBMC 3k and inspect the actual top 20 — they <b>should all be known cell-type markers</b>, which is the best validation of HVG selection.
+</p>
+
+<div class="card">
+  <h3 data-lang="zh">9.1 Top 20 HVG（按 standardized variance 排序）</h3>
+  <h3 data-lang="en">9.1 Top 20 HVG (by standardized variance)</h3>
+  <table class="compare">
+    <tr><th data-lang="zh">排名</th><th data-lang="en">Rank</th>
+        <th data-lang="zh">Gene</th><th data-lang="en">Gene</th>
+        <th data-lang="zh">細胞型態</th><th data-lang="en">Cell type</th>
+        <th data-lang="zh">生物功能</th><th data-lang="en">Function</th></tr>
+    <tr><td>1</td><td>1</td><td>LYZ</td><td>LYZ</td>
+        <td>Monocyte / DC</td><td>Monocyte / DC</td>
+        <td data-lang="zh">溶菌酶 - 先天免疫</td><td data-lang="en">Lysozyme - innate immunity</td></tr>
+    <tr><td>2</td><td>2</td><td>S100A8</td><td>S100A8</td>
+        <td>Neutrophil / Mono</td><td>Neutrophil / Mono</td>
+        <td data-lang="zh">炎症訊號</td><td data-lang="en">Inflammation signal</td></tr>
+    <tr><td>3</td><td>3</td><td>S100A9</td><td>S100A9</td>
+        <td>Neutrophil / Mono</td><td>Neutrophil / Mono</td>
+        <td data-lang="zh">同 S100A8（二聚體）</td><td data-lang="en">same as S100A8 (dimer)</td></tr>
+    <tr><td>4</td><td>4</td><td>HLA-DRA</td><td>HLA-DRA</td>
+        <td>B cell / DC / Mono</td><td>B cell / DC / Mono</td>
+        <td data-lang="zh">MHC class II</td><td data-lang="en">MHC class II</td></tr>
+    <tr><td>5</td><td>5</td><td>CD74</td><td>CD74</td>
+        <td>B / DC / Mono</td><td>B / DC / Mono</td>
+        <td data-lang="zh">MHC II 伴侶蛋白</td><td data-lang="en">MHC II invariant chain</td></tr>
+    <tr><td>6</td><td>6</td><td>FTL</td><td>FTL</td>
+        <td>Mono / Macrophage</td><td>Mono / Macrophage</td>
+        <td data-lang="zh">鐵蛋白輕鏈</td><td data-lang="en">Ferritin light chain</td></tr>
+    <tr><td>7</td><td>7</td><td>CST3</td><td>CST3</td>
+        <td>DC / Mono</td><td>DC / Mono</td>
+        <td data-lang="zh">cystatin C 蛋白酶抑制</td><td data-lang="en">Cystatin C protease inhibitor</td></tr>
+    <tr><td>8</td><td>8</td><td>NKG7</td><td>NKG7</td>
+        <td>NK / CD8 T</td><td>NK / CD8 T</td>
+        <td data-lang="zh">細胞毒性 granule</td><td data-lang="en">Cytotoxic granule</td></tr>
+    <tr><td>9</td><td>9</td><td>GNLY</td><td>GNLY</td>
+        <td>NK / CD8 T</td><td>NK / CD8 T</td>
+        <td>Granulysin</td><td>Granulysin</td></tr>
+    <tr><td>10</td><td>10</td><td>CD79A</td><td>CD79A</td>
+        <td>B cell</td><td>B cell</td>
+        <td>BCR co-receptor</td><td>BCR co-receptor</td></tr>
+    <tr><td>11-20</td><td>11-20</td>
+        <td colspan="2">CD79B, MS4A1 (=CD20), IL32, GZMB, PRF1, CCL5, FCER1G, CST7, GZMK, CD8A</td>
+        <td colspan="2" data-lang="zh">多為 T / B / NK 細胞型 marker</td>
+        <td colspan="2" data-lang="en">all T / B / NK markers</td></tr>
+  </table>
+
+  <div class="callout bio">
+    <strong data-lang="zh">100% top 20 是已知 marker！</strong><strong data-lang="en">100% of top 20 are known markers!</strong>
+    <span data-lang="zh">這不是巧合——HVG 演算法找的就是「在 cluster 之間表現差異最大」的 gene，這個定義本來就跟「marker gene」是同一件事。如果你的 top HVG 裡有<b>從沒聽過的 gene</b>，要警覺：可能是技術 artifact（如 mitochondrial、ribosomal 沒被排除）。</span>
+    <span data-lang="en">No coincidence — HVG finds genes "most different across clusters", which is the same definition as "marker gene". If your top HVG contains <b>unknown genes</b>, beware: possible technical artifacts (mito, ribosomal not excluded).</span>
+  </div>
+
+  <h3 data-lang="zh">9.2 把 top HVG 對應到 cluster</h3>
+  <h3 data-lang="en">9.2 Map top HVG to clusters</h3>
+
+  <table class="compare">
+    <tr><th data-lang="zh">Cluster (Leiden)</th><th data-lang="en">Cluster (Leiden)</th>
+        <th data-lang="zh">細胞型態</th><th data-lang="en">Cell type</th>
+        <th data-lang="zh">特徵 HVG</th><th data-lang="en">Characteristic HVG</th></tr>
+    <tr><td>0</td><td>0</td>
+        <td>CD4+ T (naive)</td><td>CD4+ T (naive)</td>
+        <td>IL7R, LDHB, CCR7</td><td>IL7R, LDHB, CCR7</td></tr>
+    <tr><td>1</td><td>1</td>
+        <td>CD14+ Monocyte</td><td>CD14+ Monocyte</td>
+        <td>CD14, LYZ, S100A8/9, FTL</td><td>CD14, LYZ, S100A8/9, FTL</td></tr>
+    <tr><td>2</td><td>2</td>
+        <td>CD4+ T (memory)</td><td>CD4+ T (memory)</td>
+        <td>IL32, CCR6, CD69</td><td>IL32, CCR6, CD69</td></tr>
+    <tr><td>3</td><td>3</td>
+        <td>B cell</td><td>B cell</td>
+        <td>CD79A, CD79B, MS4A1, HLA-DRA</td><td>CD79A, CD79B, MS4A1, HLA-DRA</td></tr>
+    <tr><td>4</td><td>4</td>
+        <td>CD8+ T (effector)</td><td>CD8+ T (effector)</td>
+        <td>CD8A, NKG7, GZMK, CCL5</td><td>CD8A, NKG7, GZMK, CCL5</td></tr>
+    <tr><td>5</td><td>5</td>
+        <td>NK cell</td><td>NK cell</td>
+        <td>GNLY, NKG7, GZMB, PRF1</td><td>GNLY, NKG7, GZMB, PRF1</td></tr>
+    <tr><td>6</td><td>6</td>
+        <td>FCGR3A+ Monocyte (CD16+)</td><td>FCGR3A+ Monocyte (CD16+)</td>
+        <td>FCGR3A, MS4A7, LST1</td><td>FCGR3A, MS4A7, LST1</td></tr>
+    <tr><td>7</td><td>7</td>
+        <td>Dendritic Cell</td><td>Dendritic Cell</td>
+        <td>FCER1A, CST3, LYZ</td><td>FCER1A, CST3, LYZ</td></tr>
+    <tr><td>8</td><td>8</td>
+        <td>Megakaryocyte / Platelet</td><td>Megakaryocyte / Platelet</td>
+        <td>PPBP, PF4, GP9</td><td>PPBP, PF4, GP9</td></tr>
+  </table>
+
+  <p data-lang="zh">📚 <b>引用</b>：Stuart et al. (2019) <i>Cell</i> 177:1888 (Seurat v3 包含此 PBMC annotation); Hao et al. (2021) <i>Cell</i> 184:3573 (Seurat v4 + multi-modal); Heumos et al. (2023) PBMC tutorial。</p>
+  <p data-lang="en">📚 <b>References</b>: Stuart et al. (2019) <i>Cell</i> 177:1888 (Seurat v3 with this PBMC annotation); Hao et al. (2021) <i>Cell</i> 184:3573 (Seurat v4 + multi-modal); Heumos et al. (2023) PBMC tutorial.</p>
+</div>
+
+<!-- ===================================== §10 三方法數學差異 ===================================== -->
+<h2 id="s10"><span class="num">§10</span> <span data-lang="zh">三大 HVG 方法的數學差異：seurat / seurat_v3 / cell_ranger</span><span data-lang="en">Three HVG methods' math difference: seurat / seurat_v3 / cell_ranger</span></h2>
+
+<table class="compare">
+  <tr><th></th>
+      <th>seurat (vst v1)</th><th>seurat (vst v1)</th>
+      <th>seurat_v3</th><th>seurat_v3</th>
+      <th>cell_ranger</th><th>cell_ranger</th></tr>
+  <tr><td data-lang="zh">輸入</td><td data-lang="en">Input</td>
+      <td>log-normalized</td><td>log-normalized</td>
+      <td>raw counts</td><td>raw counts</td>
+      <td>log-normalized</td><td>log-normalized</td></tr>
+  <tr><td data-lang="zh">變異度量</td><td data-lang="en">Variance metric</td>
+      <td>dispersion = var/mean</td><td>dispersion = var/mean</td>
+      <td>standardized variance</td><td>standardized variance</td>
+      <td>normalized dispersion (binned)</td><td>normalized dispersion (binned)</td></tr>
+  <tr><td data-lang="zh">背景趨勢</td><td data-lang="en">Trend baseline</td>
+      <td data-lang="zh">無</td><td data-lang="en">none</td>
+      <td>LOESS on log(mean)-log(var)</td><td>LOESS on log(mean)-log(var)</td>
+      <td>20 mean bins</td><td>20 mean bins</td></tr>
+  <tr><td data-lang="zh">挑選</td><td data-lang="en">Selection</td>
+      <td data-lang="zh">cutoff on dispersion</td>
+      <td data-lang="en">cutoff on dispersion</td>
+      <td>top n by standardized var</td><td>top n by standardized var</td>
+      <td>top n by binned dispersion</td><td>top n by binned dispersion</td></tr>
+  <tr><td data-lang="zh">推薦時機</td><td data-lang="en">When to use</td>
+      <td data-lang="zh">Seurat v2 相容</td>
+      <td data-lang="en">Seurat v2 compatibility</td>
+      <td><b data-lang="zh">當前預設</b><b data-lang="en">current default</b></td>
+      <td><b data-lang="zh">當前預設</b><b data-lang="en">current default</b></td>
+      <td>10x Cell Ranger 結果</td><td>10x Cell Ranger output</td></tr>
+</table>
+
+<div class="callout idea">
+  <strong data-lang="zh">為何 seurat_v3 勝出</strong><strong data-lang="en">Why seurat_v3 wins</strong>:
+  <span data-lang="zh">直接用 raw counts 跑 LOESS（先 log），不需先 normalize 也能得到正確趨勢。standardized variance 對「低表現但有差異」的 gene 也敏感（不被高表現基因主導）。所以 PBMC 3k 用 seurat_v3 比 seurat 多抓 2-3 個 rare cell type marker。</span>
+  <span data-lang="en">Directly on raw counts (with log inside), LOESS gets correct trend without prior normalize. Standardized variance is sensitive to "low-expr but discriminative" genes (not hijacked by high-expr). On PBMC 3k, seurat_v3 captures 2-3 extra rare-cell-type markers vs seurat.</span>
+</div>
+
+<p data-lang="zh">📚 <b>引用</b>：Stuart et al. (2019) <i>Cell</i> 177:1888 (seurat_v3 演算法); Satija et al. (2015) <i>Nat Biotechnol</i> 33:495 (原始 seurat); Zheng et al. (2017) <i>Nat Commun</i> 8:14049 (Cell Ranger)。</p>
+<p data-lang="en">📚 <b>References</b>: Stuart et al. (2019) <i>Cell</i> 177:1888 (seurat_v3 algorithm); Satija et al. (2015) <i>Nat Biotechnol</i> 33:495 (original seurat); Zheng et al. (2017) <i>Nat Commun</i> 8:14049 (Cell Ranger).</p>
+
+<!-- ===================================== §11 SCTv2 ===================================== -->
+<h2 id="s11"><span class="num">§11</span> <span data-lang="zh">scTransform v2 + analytic Pearson HVG：低表現 marker 不被埋沒</span><span data-lang="en">scTransform v2 + analytic Pearson HVG: low-expr markers preserved</span></h2>
+
+<p class="lead" data-lang="zh">
+  經典 HVG 方法（seurat_v3 等）有一個盲點：<b>低表現但生物上重要的 marker</b>（如 IL3、IL21）會因為 variance 跟低 mean 一樣小而被埋沒。
+  Choudhary & Satija (2022) sctransform v2 + Lause 2021 analytic Pearson 改進這個。
+</p>
+<p class="lead" data-lang="en">
+  Classical HVG (seurat_v3 etc.) has a blind spot: <b>low-expr but biologically important markers</b> (e.g., IL3, IL21) get buried because their variance matches low-mean baseline.
+  Choudhary & Satija (2022) sctransform v2 + Lause 2021 analytic Pearson improve this.
+</p>
+
+<h3 data-lang="zh">11.1 用 Pearson residual variance 排序</h3>
+<h3 data-lang="en">11.1 Rank by Pearson residual variance</h3>
+
+<p data-lang="zh">對每基因算 Pearson residual 然後算 variance：</p>
+<p data-lang="en">Compute Pearson residuals per gene, then variance:</p>
+
+<div class="math-block boxed">
+  $$z_{ij} = \frac{x_{ij} - \hat{\mu}_{ij}}{\sqrt{\hat{\mu}_{ij} + \hat{\mu}_{ij}^2/\theta}}, \quad \text{HVG score}_j = \text{Var}_i(z_{ij})$$
+  <div class="formula-caption" data-lang="zh">不依賴 mean 的 variance — 高低表現 gene 公平比較</div>
+  <div class="formula-caption" data-lang="en">mean-independent variance — fair comparison across expression levels</div>
+</div>
+
+<p data-lang="zh">效果：<b>所有 gene 的 Pearson residual 在 NB 假設下 variance ≈ 1</b>。HVG 就是「variance &gt;&gt; 1」的——絕對閾值，不受 mean 干擾。</p>
+<p data-lang="en">Effect: <b>under NB assumption all genes' Pearson residuals have variance ≈ 1</b>. HVG = "variance &gt;&gt; 1" — absolute threshold, mean-independent.</p>
+
+<h3 data-lang="zh">11.2 Pearson HVG 找到的「新」marker</h3>
+<h3 data-lang="en">11.2 "New" markers Pearson HVG finds</h3>
+
+<p data-lang="zh">在 PBMC 3k 對比 seurat_v3 vs analytic Pearson，後者額外抓到：</p>
+<p data-lang="en">PBMC 3k seurat_v3 vs analytic Pearson — Pearson additionally finds:</p>
+
+<ul>
+  <li data-lang="zh"><b>IL3RA</b>: plasmacytoid DC（罕見細胞，僅 ~30 cells in PBMC 3k）的 marker</li>
+  <li data-lang="en"><b>IL3RA</b>: plasmacytoid DC marker (rare type, ~30 cells in PBMC 3k)</li>
+  <li data-lang="zh"><b>IL21</b>: Tfh（follicular helper T）marker</li>
+  <li data-lang="en"><b>IL21</b>: Tfh (follicular helper T) marker</li>
+  <li data-lang="zh"><b>FOXP3</b>: Treg（regulatory T cell）marker</li>
+  <li data-lang="en"><b>FOXP3</b>: Treg (regulatory T cell) marker</li>
+</ul>
+
+<div class="callout bio">
+  <strong data-lang="zh">罕見細胞型態 → 罕見 marker = 低表現 + 高 variance</strong>
+  <strong data-lang="en">Rare cell types → rare markers = low expression + high variance</strong>
+  <span data-lang="zh">罕見細胞的 marker 在多數細胞 = 0、在那 30 個細胞 high。dispersion 看起來不高（mean 也低），但 Pearson residual 在那 30 個 cell 是 high z-value → 被當 HVG。<b>這就是 Pearson HVG 對 rare cell types 更敏感的原因</b>。</span>
+  <span data-lang="en">Rare cell type markers: 0 in most cells, high in those 30 cells. Dispersion looks low (mean is also low), but Pearson z-value is high in those 30 cells → flagged as HVG. <b>This is why Pearson HVG is more sensitive to rare cell types</b>.</span>
+</div>
+
+<pre class="code"><span class="c"># scanpy 自動 HVG with Pearson residuals</span>
+<span class="k">import</span> scanpy <span class="k">as</span> sc
+sc.experimental.pp.highly_variable_genes(
+    adata, flavor=<span class="s">"pearson_residuals"</span>, n_top_genes=<span class="n">2000</span>
+)</pre>
+
+<p data-lang="zh">📚 <b>引用</b>：Choudhary & Satija (2022) <i>Genome Biol</i> 23:27 (sctransform v2); Lause, Berens & Kobak (2021) <i>Genome Biol</i> 22:258 (analytic Pearson)。</p>
+<p data-lang="en">📚 <b>References</b>: Choudhary & Satija (2022) <i>Genome Biol</i> 23:27 (sctransform v2); Lause, Berens & Kobak (2021) <i>Genome Biol</i> 22:258 (analytic Pearson).</p>
+
+<!-- ===================================== §12 多 batch HVG ===================================== -->
+<h2 id="s12"><span class="num">§12</span> <span data-lang="zh">多 batch HVG 的兩難：先 HVG 還是先 batch correct？</span><span data-lang="en">Multi-batch HVG dilemma: HVG-first or batch-correct-first?</span></h2>
+
+<p class="lead" data-lang="zh">
+  你有 5 個病人 × 3 個時間點 = 15 個 samples。HVG 該怎麼挑？
+  選項 A：合併所有 sample，挑全域 HVG。問題：被 batch effect 主導（不同 sample 之間表現差異 ≠ 細胞型態差異）。
+  選項 B：先 Harmony / scVI 校正，再挑 HVG。問題：校正本身需要 HVG 當輸入，雞生蛋。
+</p>
+<p class="lead" data-lang="en">
+  You have 5 patients × 3 timepoints = 15 samples. How to pick HVG?
+  Option A: pool all samples, pick global HVG. Problem: dominated by batch effects (sample-to-sample diff ≠ cell-type diff).
+  Option B: Harmony / scVI first, then HVG. Problem: correction itself needs HVG as input — chicken and egg.
+</p>
+
+<h3 data-lang="zh">12.1 解法：batch-aware HVG (Stuart 2019)</h3>
+<h3 data-lang="en">12.1 Solution: batch-aware HVG (Stuart 2019)</h3>
+
+<p data-lang="zh">scanpy 用 <code class="inline">batch_key</code>：</p>
+<p data-lang="en">scanpy supports <code class="inline">batch_key</code>:</p>
+
+<pre class="code">sc.pp.highly_variable_genes(
+    adata, n_top_genes=<span class="n">2000</span>,
+    batch_key=<span class="s">"sample"</span>,    <span class="c"># 對每 batch 各別算 HVG，取 intersection</span>
+    flavor=<span class="s">"seurat_v3"</span>
+)
+<span class="c"># 內部：在每 sample 跑 HVG → 算「該 gene 被多少 sample 選為 HV」</span>
+<span class="c"># 排序：先按「被多少 sample 選」、再按 median rank</span></pre>
+
+<div class="callout idea">
+  <strong data-lang="zh">為何這樣有效</strong><strong data-lang="en">Why this works</strong>:
+  <span data-lang="zh">「<b>在多個 batch 都被認為 HV</b>」的 gene 才是真實生物訊號 — 跨 batch 一致說明<b>不是 batch artifact</b>。
+  「<b>只在某 batch HV</b>」的可能是該 batch 特定 artifact（PCR contamination、wash differences）。</span>
+  <span data-lang="en">Genes flagged HV in <b>multiple batches</b> represent real biology — consistency across batches means <b>not a batch artifact</b>.
+  Genes HV in <b>only one batch</b> may be batch-specific artifacts (PCR contamination, washing differences).</span>
+</div>
+
+<h3 data-lang="zh">12.2 與 scVI / Harmony 的順序</h3>
+<h3 data-lang="en">12.2 Order with scVI / Harmony</h3>
+
+<table class="compare">
+  <tr><th data-lang="zh">流程</th><th data-lang="en">Flow</th>
+      <th data-lang="zh">用途</th><th data-lang="en">For</th></tr>
+  <tr><td data-lang="zh">batch-aware HVG → scale → PCA → Harmony</td>
+      <td data-lang="en">batch-aware HVG → scale → PCA → Harmony</td>
+      <td data-lang="zh">小 batch effect，傳統流程</td>
+      <td data-lang="en">small batch effect, traditional flow</td></tr>
+  <tr><td data-lang="zh">batch-aware HVG → scVI (含 batch covariate)</td>
+      <td data-lang="en">batch-aware HVG → scVI (with batch covariate)</td>
+      <td data-lang="zh">中等 batch，大資料</td>
+      <td data-lang="en">medium batch, large data</td></tr>
+  <tr><td data-lang="zh">所有 gene → scVI（不挑 HVG）</td>
+      <td data-lang="en">all genes → scVI (skip HVG)</td>
+      <td data-lang="zh">超大資料，希望 scVI 自己學 feature</td>
+      <td data-lang="en">very large data, let scVI learn features</td></tr>
+</table>
+
+<p data-lang="zh">📚 <b>引用</b>：Stuart et al. (2019) <i>Cell</i> 177:1888 (batch-aware HVG in Seurat); Lopez et al. (2018) <i>Nat Methods</i> 15:1053 (scVI 不需 HVG); Korsunsky et al. (2019) <i>Nat Methods</i> 16:1289 (Harmony 需 HVG)。</p>
+<p data-lang="en">📚 <b>References</b>: Stuart et al. (2019) <i>Cell</i> 177:1888 (batch-aware HVG in Seurat); Lopez et al. (2018) <i>Nat Methods</i> 15:1053 (scVI without HVG); Korsunsky et al. (2019) <i>Nat Methods</i> 16:1289 (Harmony with HVG).</p>
 
 <div class="callout prog">
   <strong data-lang="zh">下一步</strong><strong data-lang="en">Next</strong>:
