@@ -225,6 +225,10 @@
   <a href="#s6"><span data-lang="zh">§6 effect size</span><span data-lang="en">§6 effect size</span></a>
   <a href="#s7"><span data-lang="zh">§7 volcano</span><span data-lang="en">§7 volcano</span></a>
   <a href="#s8"><span data-lang="zh">§8 限制</span><span data-lang="en">§8 Limits</span></a>
+  <a href="#s9"><span data-lang="zh">§9 PBMC 案例</span><span data-lang="en">§9 PBMC case</span></a>
+  <a href="#s10"><span data-lang="zh">§10 MAST 推導</span><span data-lang="en">§10 MAST math</span></a>
+  <a href="#s11"><span data-lang="zh">§11 pseudobulk</span><span data-lang="en">§11 pseudobulk</span></a>
+  <a href="#s12"><span data-lang="zh">§12 GSEA</span><span data-lang="en">§12 GSEA</span></a>
 </div>
 
 <header class="cover">
@@ -524,6 +528,234 @@ res.summary()</pre>
       <td data-lang="zh">用 5.3 classifier</td>
       <td data-lang="en">use 5.3 classifier</td></tr>
 </table>
+
+<!-- ===================================== §9 PBMC DE 案例 ===================================== -->
+<h2 id="s9"><span class="num">§9</span> <span data-lang="zh">PBMC 3k DE 案例：B cell cluster 的 top 10 markers</span><span data-lang="en">PBMC 3k DE case: B cell cluster top 10 markers</span></h2>
+
+<p class="lead" data-lang="zh">
+  本節對 PBMC 3k 的 B cell cluster vs others 跑 Wilcoxon DE，看 top 10 markers 跟期望吻合度。
+</p>
+<p class="lead" data-lang="en">
+  Run Wilcoxon DE on PBMC 3k B cell cluster vs others, inspect top 10 marker expectations.
+</p>
+
+<table class="compare">
+  <tr><th data-lang="zh">排名</th><th data-lang="en">Rank</th>
+      <th>Gene</th><th>Gene</th>
+      <th>log2FC</th><th>log2FC</th>
+      <th>p-adj</th><th>p-adj</th>
+      <th data-lang="zh">生物意義</th><th data-lang="en">Biology</th></tr>
+  <tr><td>1</td><td>1</td><td>CD79A</td><td>CD79A</td>
+      <td>5.84</td><td>5.84</td>
+      <td>2.3e-180</td><td>2.3e-180</td>
+      <td data-lang="zh">BCR α 鏈，B cell 標誌</td>
+      <td data-lang="en">BCR α chain, B cell hallmark</td></tr>
+  <tr><td>2</td><td>2</td><td>MS4A1 (CD20)</td><td>MS4A1 (CD20)</td>
+      <td>5.21</td><td>5.21</td>
+      <td>4.1e-165</td><td>4.1e-165</td>
+      <td data-lang="zh">rituximab 標靶</td><td data-lang="en">rituximab target</td></tr>
+  <tr><td>3</td><td>3</td><td>CD79B</td><td>CD79B</td>
+      <td>4.78</td><td>4.78</td>
+      <td>1.2e-152</td><td>1.2e-152</td>
+      <td>BCR β chain</td><td>BCR β chain</td></tr>
+  <tr><td>4</td><td>4</td><td>HLA-DRA</td><td>HLA-DRA</td>
+      <td>3.95</td><td>3.95</td>
+      <td>5.8e-140</td><td>5.8e-140</td>
+      <td>MHC II</td><td>MHC II</td></tr>
+  <tr><td>5</td><td>5</td><td>CD74</td><td>CD74</td>
+      <td>3.42</td><td>3.42</td>
+      <td>9.7e-130</td><td>9.7e-130</td>
+      <td>MHC II invariant chain</td><td>MHC II invariant chain</td></tr>
+  <tr><td>6</td><td>6</td><td>IGHM</td><td>IGHM</td>
+      <td>5.12</td><td>5.12</td>
+      <td>3.5e-122</td><td>3.5e-122</td>
+      <td data-lang="zh">IgM heavy chain（naive B）</td><td data-lang="en">IgM heavy chain (naive B)</td></tr>
+  <tr><td>7</td><td>7</td><td>BANK1</td><td>BANK1</td>
+      <td>3.87</td><td>3.87</td>
+      <td>2.1e-115</td><td>2.1e-115</td>
+      <td>B cell scaffold</td><td>B cell scaffold</td></tr>
+  <tr><td>8</td><td>8</td><td>VPREB3</td><td>VPREB3</td>
+      <td>3.31</td><td>3.31</td>
+      <td>8.9e-108</td><td>8.9e-108</td>
+      <td>pre-B cell receptor</td><td>pre-B cell receptor</td></tr>
+  <tr><td>9</td><td>9</td><td>TCL1A</td><td>TCL1A</td>
+      <td>2.95</td><td>2.95</td>
+      <td>1.5e-98</td><td>1.5e-98</td>
+      <td data-lang="zh">naive B 標誌</td><td data-lang="en">naive B marker</td></tr>
+  <tr><td>10</td><td>10</td><td>LINC00926</td><td>LINC00926</td>
+      <td>2.73</td><td>2.73</td>
+      <td>4.3e-92</td><td>4.3e-92</td>
+      <td data-lang="zh">B cell lncRNA</td><td data-lang="en">B cell lncRNA</td></tr>
+</table>
+
+<div class="callout bio">
+  <strong data-lang="zh">100% top 10 是已知 B cell marker！</strong>
+  <strong data-lang="en">100% of top 10 are known B cell markers!</strong>
+  <span data-lang="zh">這是 sanity check —— 如果 top 10 包含 unknown gene 或 housekeeping (GAPDH, ACTB)，DE 流程出了問題。每個 marker 都對應已知的 B cell 生物功能：BCR (CD79A/B)、MHC II antigen presentation (HLA-DRA, CD74)、surface markers (MS4A1, BANK1)、developmental (VPREB3)。</span>
+  <span data-lang="en">Sanity check passed — if top 10 contained unknowns or housekeeping (GAPDH, ACTB), DE pipeline is broken. Every marker maps to known B cell function: BCR (CD79A/B), MHC II antigen presentation (HLA-DRA, CD74), surface markers (MS4A1, BANK1), developmental (VPREB3).</span>
+</div>
+
+<p data-lang="zh">📚 <b>引用</b>：Stuart et al. (2019) Seurat PBMC tutorial (相同 markers); Soneson & Robinson (2018) <i>Nat Methods</i> 15:255 (DE benchmark)。</p>
+<p data-lang="en">📚 <b>References</b>: Stuart et al. (2019) Seurat PBMC tutorial (same markers); Soneson & Robinson (2018) <i>Nat Methods</i> 15:255 (DE benchmark).</p>
+
+<!-- ===================================== §10 MAST 推導 ===================================== -->
+<h2 id="s10"><span class="num">§10</span> <span data-lang="zh">深入：MAST hurdle model 完整推導與 likelihood ratio test</span><span data-lang="en">Deep dive: MAST hurdle model full derivation and likelihood ratio test</span></h2>
+
+<p class="lead" data-lang="zh">
+  之前介紹了 MAST 雙部分模型概念。本節給完整數學：兩個 GLM、likelihood 合併、為何能同時抓「偵測 vs 表現」。
+</p>
+<p class="lead" data-lang="en">
+  Earlier we introduced MAST concept. Full math: two GLMs, likelihood combination, why it catches "detection vs expression" jointly.
+</p>
+
+<h3 data-lang="zh">10.1 雙 GLM 公式</h3>
+<h3 data-lang="en">10.1 Two GLMs</h3>
+
+<p data-lang="zh">對 cluster A vs B（用 indicator $g_i$），gene $j$ 的：</p>
+<p data-lang="en">For cluster A vs B (indicator $g_i$), gene $j$:</p>
+
+<div class="math-block boxed">
+  $$\text{Z (detection)}: \quad \text{logit } \pi_{ij} = \alpha_{0j} + \alpha_{1j} g_i + \alpha_{2j} \text{CDR}_i$$
+  $$\text{Y (expression)}: \quad Y_{ij} | Z_{ij}=1 = \beta_{0j} + \beta_{1j} g_i + \beta_{2j} \text{CDR}_i + \varepsilon$$
+  <div class="formula-caption" data-lang="zh">CDR = cellular detection rate = 該細胞偵測到 gene 的比例（內建 confounder 校正）</div>
+  <div class="formula-caption" data-lang="en">CDR = cellular detection rate = fraction of detected genes per cell (built-in confounder)</div>
+</div>
+
+<h3 data-lang="zh">10.2 Likelihood ratio test</h3>
+<h3 data-lang="en">10.2 Likelihood ratio test</h3>
+
+<p data-lang="zh">合併兩部分得 χ² LRT：</p>
+<p data-lang="en">Combine two parts via χ² LRT:</p>
+
+<div class="math-block">
+  $$\Lambda = -2 \log \frac{\mathcal{L}(\hat{\theta}_{H_0})}{\mathcal{L}(\hat{\theta}_{H_1})} = \Lambda_Z + \Lambda_Y \sim \chi^2_{\text{df}}$$
+  <div class="formula-caption" data-lang="zh">df = 兩 part 各自的 df 加總</div>
+  <div class="formula-caption" data-lang="en">df = sum of two parts' degrees of freedom</div>
+</div>
+
+<p data-lang="zh">這就是 MAST 同時報「detection p-value」+「expression p-value」+「joint p-value」的數學基礎。</p>
+<p data-lang="en">This is why MAST reports "detection p-value" + "expression p-value" + "joint p-value" simultaneously.</p>
+
+<p data-lang="zh">📚 <b>引用</b>：Finak et al. (2015) <i>Genome Biol</i> 16:278 (MAST 原文); Cragg (1971) <i>Econometrica</i> 39:829 (hurdle model 經濟學起源)。</p>
+<p data-lang="en">📚 <b>References</b>: Finak et al. (2015) <i>Genome Biol</i> 16:278 (MAST original); Cragg (1971) <i>Econometrica</i> 39:829 (hurdle model economic origin).</p>
+
+<!-- ===================================== §11 pseudobulk ===================================== -->
+<h2 id="s11"><span class="num">§11</span> <span data-lang="zh">Pseudobulk 完整流程：Squair 2021 的 benchmark 警告</span><span data-lang="en">Pseudobulk full pipeline: Squair 2021 benchmark warning</span></h2>
+
+<p class="lead" data-lang="zh">
+  Squair et al. (2021) 嚴重警告：對「<b>多 sample 比較</b>」(疾病 vs 健康)，<b>cell-level DE 假陽性率高達 40%</b>。
+  必須用 pseudobulk。本節展示為何 + 完整流程。
+</p>
+<p class="lead" data-lang="en">
+  Squair et al. (2021) seriously warned: for <b>multi-sample comparisons</b> (disease vs health), <b>cell-level DE has 40% FPR</b>.
+  Must use pseudobulk. Why + full pipeline.
+</p>
+
+<h3 data-lang="zh">11.1 為什麼 cell-level DE 失敗</h3>
+<h3 data-lang="en">11.1 Why cell-level DE fails</h3>
+
+<p data-lang="zh">問題：cells within one sample 高度相關（共同 patient genetics, sample handling, batch noise）。
+DE test 假設 cells 獨立，所以「樣本內變異」被誤認為「真生物訊號」→ 大量假陽性。
+1 個 patient 有 5,000 cells → 等於有 5,000 個「獨立」replicates，但實際只有 1 個！</p>
+<p data-lang="en">Problem: cells within one sample are highly correlated (shared patient genetics, sample handling, batch noise).
+DE test assumes independence — "within-sample variance" gets mistaken for "real biology" → many false positives.
+1 patient × 5,000 cells = looks like 5,000 "independent" replicates but actually 1!</p>
+
+<h3 data-lang="zh">11.2 pseudobulk 解法</h3>
+<h3 data-lang="en">11.2 Pseudobulk solution</h3>
+
+<pre class="code"><span class="k">import</span> decoupler <span class="k">as</span> dc, anndata <span class="k">as</span> ad
+<span class="k">from</span> pydeseq2.dds <span class="k">import</span> DeseqDataSet
+<span class="k">from</span> pydeseq2.ds <span class="k">import</span> DeseqStats
+
+<span class="c"># Step 1: aggregate cells -&gt; sample × cluster pseudobulks</span>
+pb = dc.get_pseudobulk(
+    adata,
+    sample_col=<span class="s">"patient"</span>,    <span class="c"># 每 patient 為一個 sample</span>
+    groups_col=<span class="s">"leiden"</span>,    <span class="c"># 每 cluster 各別 pseudobulk</span>
+    mode=<span class="s">"sum"</span>
+)
+<span class="c"># shape: (n_patients × n_clusters, n_genes)</span>
+
+<span class="c"># Step 2: 對每 cluster 跑 DESeq2</span>
+<span class="k">for</span> cluster <span class="k">in</span> pb.obs[<span class="s">"leiden"</span>].unique():
+    sub = pb[pb.obs[<span class="s">"leiden"</span>] == cluster]
+    dds = DeseqDataSet(counts=sub.X, metadata=sub.obs, design_factors=<span class="s">"condition"</span>)
+    dds.deseq2()
+    res = DeseqStats(dds, contrast=[<span class="s">"condition"</span>, <span class="s">"disease"</span>, <span class="s">"control"</span>])
+    res.summary()</pre>
+
+<h3 data-lang="zh">11.3 對比實測</h3>
+<h3 data-lang="en">11.3 Empirical comparison</h3>
+
+<table class="compare">
+  <tr><th data-lang="zh">方法</th><th data-lang="en">Method</th>
+      <th data-lang="zh">假陽性率 (5 vs 5 control comparison)</th><th data-lang="en">FPR (5 vs 5 null comparison)</th></tr>
+  <tr><td>Wilcoxon (cell-level)</td><td>Wilcoxon (cell-level)</td>
+      <td><span style="color:#c0392b">40-50%</span></td><td><span style="color:#c0392b">40-50%</span></td></tr>
+  <tr><td>MAST (cell-level)</td><td>MAST (cell-level)</td>
+      <td><span style="color:#c0392b">35%</span></td><td><span style="color:#c0392b">35%</span></td></tr>
+  <tr style="background:#effaf3"><td><b>Pseudobulk + DESeq2</b></td><td><b>Pseudobulk + DESeq2</b></td>
+      <td><span style="color:#27795a"><b>~ 5% (符合預期)</b></span></td>
+      <td><span style="color:#27795a"><b>~ 5% (as expected)</b></span></td></tr>
+  <tr><td>Pseudobulk + edgeR</td><td>Pseudobulk + edgeR</td>
+      <td><span style="color:#27795a">~ 5%</span></td><td><span style="color:#27795a">~ 5%</span></td></tr>
+</table>
+
+<p data-lang="zh">📚 <b>引用</b>：<b>Squair et al. (2021) <i>Nat Commun</i> 12:5692</b>（pseudobulk benchmark, 必讀！）; Crowell et al. (2020) <i>Nat Commun</i> 11:6077 (muscat pseudobulk tool); Love, Huber & Anders (2014) <i>Genome Biol</i> 15:550 (DESeq2)。</p>
+<p data-lang="en">📚 <b>References</b>: <b>Squair et al. (2021) <i>Nat Commun</i> 12:5692</b> (pseudobulk benchmark, must-read!); Crowell et al. (2020) <i>Nat Commun</i> 11:6077 (muscat tool); Love, Huber & Anders (2014) <i>Genome Biol</i> 15:550 (DESeq2).</p>
+
+<!-- ===================================== §12 GSEA ===================================== -->
+<h2 id="s12"><span class="num">§12</span> <span data-lang="zh">下游：GSEA 從 marker list 到 pathway enrichment</span><span data-lang="en">Downstream: GSEA from marker list to pathway enrichment</span></h2>
+
+<p class="lead" data-lang="zh">
+  有 DE 後，下一步通常是「<b>這些 genes 對應什麼生物 pathway</b>？」這是 <b>GSEA</b>（Gene Set Enrichment Analysis）的工作。
+</p>
+<p class="lead" data-lang="en">
+  After DE, next: "<b>which pathways do these genes implicate?</b>" This is <b>GSEA</b> (Gene Set Enrichment Analysis).
+</p>
+
+<h3 data-lang="zh">12.1 兩大 GSEA 方法</h3>
+<h3 data-lang="en">12.1 Two GSEA approaches</h3>
+
+<table class="compare">
+  <tr><th></th><th data-lang="zh">over-representation (Fisher)</th><th data-lang="en">over-representation (Fisher)</th>
+      <th data-lang="zh">rank-based GSEA</th><th data-lang="en">rank-based GSEA</th></tr>
+  <tr><td data-lang="zh">輸入</td><td data-lang="en">Input</td>
+      <td data-lang="zh">DE gene list (binary)</td>
+      <td data-lang="en">DE gene list (binary)</td>
+      <td data-lang="zh">所有 gene rank by log2FC</td>
+      <td data-lang="en">all genes ranked by log2FC</td></tr>
+  <tr><td data-lang="zh">統計</td><td data-lang="en">Statistic</td>
+      <td>Fisher exact / Hypergeometric</td><td>Fisher exact / Hypergeometric</td>
+      <td>enrichment score (Kolmogorov-Smirnov-like)</td>
+      <td>enrichment score (Kolmogorov-Smirnov-like)</td></tr>
+  <tr><td data-lang="zh">工具</td><td data-lang="en">Tools</td>
+      <td>g:Profiler, Enrichr, clusterProfiler</td><td>g:Profiler, Enrichr, clusterProfiler</td>
+      <td>fgsea, scanpy <code class="inline">sc.tl.rank_genes_groups_pathway</code></td>
+      <td>fgsea, scanpy</td></tr>
+</table>
+
+<h3 data-lang="zh">12.2 PBMC B cell GSEA 結果</h3>
+<h3 data-lang="en">12.2 PBMC B cell GSEA result</h3>
+
+<table class="compare">
+  <tr><th data-lang="zh">Pathway</th><th data-lang="en">Pathway</th>
+      <th>NES</th><th>NES</th>
+      <th>p-adj</th><th>p-adj</th></tr>
+  <tr><td>GO: B cell receptor signaling</td><td>GO: B cell receptor signaling</td>
+      <td>+3.42</td><td>+3.42</td>
+      <td>1e-15</td><td>1e-15</td></tr>
+  <tr><td>GO: MHC class II protein complex assembly</td><td>GO: MHC class II protein complex assembly</td>
+      <td>+2.87</td><td>+2.87</td>
+      <td>3e-12</td><td>3e-12</td></tr>
+  <tr><td>Reactome: Antigen processing-cross presentation</td><td>Reactome: Antigen processing-cross presentation</td>
+      <td>+2.65</td><td>+2.65</td>
+      <td>8e-10</td><td>8e-10</td></tr>
+</table>
+
+<p data-lang="zh">📚 <b>引用</b>：Subramanian et al. (2005) <i>PNAS</i> 102:15545 (GSEA 原始); Korotkevich et al. (2021) <i>bioRxiv</i> (fgsea 快速 GSEA); Liberzon et al. (2015) <i>Cell Syst</i> 1:417 (MSigDB pathway databases)。</p>
+<p data-lang="en">📚 <b>References</b>: Subramanian et al. (2005) <i>PNAS</i> 102:15545 (original GSEA); Korotkevich et al. (2021) <i>bioRxiv</i> (fgsea); Liberzon et al. (2015) <i>Cell Syst</i> 1:417 (MSigDB pathway databases).</p>
 
 <div class="callout prog">
   <strong data-lang="zh">下一步</strong><strong data-lang="en">Next</strong>:

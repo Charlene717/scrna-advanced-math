@@ -225,6 +225,10 @@
   <a href="#s6"><span data-lang="zh">§6 q-value</span><span data-lang="en">§6 q-value</span></a>
   <a href="#s7"><span data-lang="zh">§7 scRNA 意義</span><span data-lang="en">§7 scRNA meaning</span></a>
   <a href="#s8"><span data-lang="zh">§8 限制</span><span data-lang="en">§8 Limits</span></a>
+  <a href="#s9"><span data-lang="zh">§9 BH 證明</span><span data-lang="en">§9 BH proof</span></a>
+  <a href="#s10"><span data-lang="zh">§10 PBMC FDR</span><span data-lang="en">§10 PBMC FDR</span></a>
+  <a href="#s11"><span data-lang="zh">§11 BY / IHW</span><span data-lang="en">§11 BY / IHW</span></a>
+  <a href="#s12"><span data-lang="zh">§12 local FDR</span><span data-lang="en">§12 local FDR</span></a>
 </div>
 
 <header class="cover">
@@ -562,6 +566,152 @@ sig = df[(df[<span class="s">"0_p_adj"</span>] &lt; <span class="n">0.05</span>)
     <td data-lang="en">understand list-level interpretation</td>
   </tr>
 </table>
+
+<!-- ===================================== §9 BH 完整證明 ===================================== -->
+<h2 id="s9"><span class="num">§9</span> <span data-lang="zh">深入：Benjamini-Hochberg 1995 完整證明大綱</span><span data-lang="en">Deep dive: Benjamini-Hochberg 1995 full proof sketch</span></h2>
+
+<p class="lead" data-lang="zh">
+  §4 給了 BH 演算法。本節證明「BH 真的控制 FDR ≤ α」這個關鍵結論——理解後你會真的相信這個方法。
+</p>
+<p class="lead" data-lang="en">
+  §4 gave the BH algorithm. We prove "BH actually controls FDR ≤ α" — once you understand this, you'll truly trust the method.
+</p>
+
+<h3 data-lang="zh">9.1 設定</h3>
+<h3 data-lang="en">9.1 Setup</h3>
+
+<p data-lang="zh">$m$ 個獨立假設檢定，其中 $m_0$ 個是 null（H₀ 真），$m_1 = m - m_0$ 個是 alternative。
+排序 p-value：$p_{(1)} \le p_{(2)} \le \cdots \le p_{(m)}$。
+BH 找最大的 $k^* = \max\{i : p_{(i)} \le i\alpha/m\}$，拒絕 rank 1 到 $k^*$。</p>
+<p data-lang="en">$m$ independent tests, of which $m_0$ are null and $m_1 = m - m_0$ are alternative.
+Sort p-values: $p_{(1)} \le p_{(2)} \le \cdots \le p_{(m)}$.
+BH finds largest $k^* = \max\{i : p_{(i)} \le i\alpha/m\}$, rejects rank 1 to $k^*$.</p>
+
+<h3 data-lang="zh">9.2 證明大綱</h3>
+<h3 data-lang="en">9.2 Proof sketch</h3>
+
+<p data-lang="zh">關鍵 lemma：對 null hypothesis $H_0^{(i)}$，$P_i$ 在 H₀ 下是 Uniform(0,1)。考慮事件「第 $i$ 個 null hypothesis 被拒絕」：</p>
+<p data-lang="en">Key lemma: under $H_0^{(i)}$, $P_i$ is Uniform(0,1). Consider event "null hypothesis $i$ is rejected":</p>
+
+<div class="math-block">
+  $$E[\text{FDR}] = E\!\left[\frac{V}{\max(R, 1)}\right] = \sum_{i \in H_0} E\!\left[\frac{\mathbb{1}\{i \text{ rejected}\}}{R \vee 1}\right]$$
+  <div class="formula-caption" data-lang="zh">$V$ = 假陽性數、$R$ = 總拒絕數</div>
+  <div class="formula-caption" data-lang="en">$V$ = # false positives, $R$ = # rejections</div>
+</div>
+
+<p data-lang="zh">用「step-up」性質：BH 拒絕 rank 1..k* → $R = k^*$ → $p_{(k^*)} \le k^* \alpha / m$。對每個 null $H_0^{(i)}$：</p>
+<p data-lang="en">Step-up property: BH rejects rank 1..k* → $R = k^*$ → $p_{(k^*)} \le k^* \alpha / m$. For each null $H_0^{(i)}$:</p>
+
+<div class="math-block">
+  $$E\!\left[\frac{\mathbb{1}\{p_i \le R\alpha/m\}}{R}\right] = \frac{\alpha}{m} \cdot E\!\left[\frac{\mathbb{1}\{p_i \le R\alpha/m\}}{R \alpha / m}\right] \le \frac{\alpha}{m}$$
+</div>
+
+<p data-lang="zh">加總所有 $m_0$ 個 null 得：</p>
+<p data-lang="en">Sum over all $m_0$ nulls:</p>
+
+<div class="math-block boxed">
+  $$E[\text{FDR}] \le \frac{m_0}{m} \cdot \alpha \le \alpha$$
+  <div class="formula-caption" data-lang="zh">BH 嚴格控制 FDR ≤ α，等號當 $m_0 = m$（全 null）</div>
+  <div class="formula-caption" data-lang="en">BH strictly controls FDR ≤ α, equality when $m_0 = m$ (all null)</div>
+</div>
+
+<div class="callout idea">
+  <strong data-lang="zh">後續推廣</strong><strong data-lang="en">Subsequent extensions</strong>:
+  <span data-lang="zh">原證明假設 independence；Benjamini & Yekutieli (2001) 推廣到 positive regression dependence (PRDS)（許多 scRNA 情境符合）。對任意依賴改用 BY procedure（更嚴格）。</span>
+  <span data-lang="en">Original assumes independence; Benjamini & Yekutieli (2001) extended to positive regression dependence (PRDS), covering many scRNA scenarios. For arbitrary dependence, use BY procedure (stricter).</span>
+</div>
+
+<p data-lang="zh">📚 <b>引用</b>：Benjamini & Hochberg (1995) <i>JRSS B</i> 57:289 (原始證明); Benjamini & Yekutieli (2001) <i>Ann Stat</i> 29:1165 (BY 推廣); Storey (2002) <i>JRSS B</i> 64:479 (q-value)。</p>
+<p data-lang="en">📚 <b>References</b>: Benjamini & Hochberg (1995) <i>JRSS B</i> 57:289 (original proof); Benjamini & Yekutieli (2001) <i>Ann Stat</i> 29:1165 (BY extension); Storey (2002) <i>JRSS B</i> 64:479 (q-value).</p>
+
+<!-- ===================================== §10 PBMC FDR ===================================== -->
+<h2 id="s10"><span class="num">§10</span> <span data-lang="zh">PBMC 3k FDR 案例：32,738 個 gene 中有多少真實 marker?</span><span data-lang="en">PBMC 3k FDR case: how many real markers among 32,738 genes?</span></h2>
+
+<p class="lead" data-lang="zh">
+  本節對 PBMC 3k 的 B cell vs others 做 Wilcoxon DE，比較 raw p、Bonferroni、BH 三種校正的結果。
+</p>
+<p class="lead" data-lang="en">
+  Run Wilcoxon DE on PBMC 3k B vs others, compare raw / Bonferroni / BH corrected results.
+</p>
+
+<table class="compare">
+  <tr><th data-lang="zh">門檻</th><th data-lang="en">Threshold</th>
+      <th data-lang="zh">通過 gene 數</th><th data-lang="en"># Genes pass</th>
+      <th data-lang="zh">解讀</th><th data-lang="en">Interpretation</th></tr>
+  <tr><td>raw p &lt; 0.05</td><td>raw p &lt; 0.05</td>
+      <td>3,247</td><td>3,247</td>
+      <td data-lang="zh">期望 1,637 假陽性，<b>list 有 50% noise</b></td>
+      <td data-lang="en">expect 1,637 false positives, <b>list is 50% noise</b></td></tr>
+  <tr><td>Bonferroni p &lt; 0.05 (= raw p &lt; 1.5e-6)</td><td>Bonferroni p &lt; 0.05</td>
+      <td>~ 180</td><td>~ 180</td>
+      <td data-lang="zh">過於嚴格，弱 marker 漏掉</td>
+      <td data-lang="en">too strict, weak markers missed</td></tr>
+  <tr style="background:#effaf3"><td><b>BH p-adj &lt; 0.05</b></td><td><b>BH p-adj &lt; 0.05</b></td>
+      <td><b>~ 1,920</b></td><td><b>~ 1,920</b></td>
+      <td><b data-lang="zh">5% FDR — 預期 96 假陽性</b><b data-lang="en">5% FDR — expect 96 false positives</b></td></tr>
+  <tr><td>BH p-adj &lt; 0.05 + log2FC &gt; 1</td><td>BH p-adj &lt; 0.05 + log2FC &gt; 1</td>
+      <td>~ 450</td><td>~ 450</td>
+      <td data-lang="zh">標準 marker 篩選</td><td data-lang="en">standard marker filter</td></tr>
+</table>
+
+<div class="callout bio">
+  <strong data-lang="zh">為何 PBMC B cell 有 ~ 2000 個 DE genes？</strong>
+  <strong data-lang="en">Why PBMC B cell has ~2000 DE genes?</strong>
+  <span data-lang="zh">B cell vs T/Mono/NK 是<b>不同 lineage</b>，差異本來就大。包括 immunoglobulin 全套（IGH/IGK/IGL）+ MHC II 全套 + BCR 訊號 + B cell 發育 + 等等，~ 2000 個是合理的。</span>
+  <span data-lang="en">B vs T/Mono/NK is <b>cross-lineage</b> — natural large differences. Includes full immunoglobulin set (IGH/IGK/IGL), MHC II family, BCR signaling, B cell development — ~ 2000 is reasonable.</span>
+</div>
+
+<p data-lang="zh">📚 <b>引用</b>：Heumos et al. (2023) PBMC tutorial; scanpy <code class="inline">rank_genes_groups</code> 預設用 BH。</p>
+<p data-lang="en">📚 <b>References</b>: Heumos et al. (2023) PBMC tutorial; scanpy <code class="inline">rank_genes_groups</code> default uses BH.</p>
+
+<!-- ===================================== §11 BY / IHW ===================================== -->
+<h2 id="s11"><span class="num">§11</span> <span data-lang="zh">BY procedure 跟 IHW：BH 的進階替代</span><span data-lang="en">BY procedure and IHW: advanced BH alternatives</span></h2>
+
+<h3 data-lang="zh">11.1 BY (Benjamini-Yekutieli 2001)</h3>
+<h3 data-lang="en">11.1 BY (Benjamini-Yekutieli 2001)</h3>
+
+<p data-lang="zh">BH 假設 independence/PRDS。若<b>任意依賴</b>，用 BY：</p>
+<p data-lang="en">BH assumes independence/PRDS. For <b>arbitrary dependence</b>, use BY:</p>
+
+<div class="math-block">
+  $$k^* = \max\!\left\{ i : p_{(i)} \le \frac{i}{m \cdot c(m)} \alpha \right\}, \quad c(m) = \sum_{j=1}^{m} \frac{1}{j} \approx \log m$$
+</div>
+
+<p data-lang="zh">對 20,000 genes，$c(m) \approx 9.9$ → 等於把 α 切成 1/10。<b>更嚴格但保證</b>。</p>
+<p data-lang="en">For 20,000 genes, $c(m) \approx 9.9$ → α effectively divided by 10. <b>Stricter but guaranteed</b>.</p>
+
+<h3 data-lang="zh">11.2 IHW (Ignatiadis 2016): Independent Hypothesis Weighting</h3>
+<h3 data-lang="en">11.2 IHW (Ignatiadis 2016): Independent Hypothesis Weighting</h3>
+
+<p data-lang="zh">IHW 用「<b>輔助 covariate</b>」改善 power：對每 hypothesis 分配權重 $w_i$，先驗信心高的 gene 給更寬鬆的門檻。對 scRNA：gene 平均表現量、HVG score 都是合理 covariate。</p>
+<p data-lang="en">IHW uses "<b>auxiliary covariate</b>" for better power: weight $w_i$ per hypothesis, high prior-confidence genes get looser threshold. For scRNA: gene mean expression, HVG score are good covariates.</p>
+
+<p data-lang="zh">📚 <b>引用</b>：Benjamini & Yekutieli (2001) <i>Ann Stat</i> 29:1165 (BY); Ignatiadis et al. (2016) <i>Nat Methods</i> 13:577 (IHW); Korthauer et al. (2019) <i>Genome Biol</i> 20:118 (FDR benchmark on genomics)。</p>
+<p data-lang="en">📚 <b>References</b>: Benjamini & Yekutieli (2001) <i>Ann Stat</i> 29:1165 (BY); Ignatiadis et al. (2016) <i>Nat Methods</i> 13:577 (IHW); Korthauer et al. (2019) <i>Genome Biol</i> 20:118 (FDR benchmark on genomics).</p>
+
+<!-- ===================================== §12 local FDR ===================================== -->
+<h2 id="s12"><span class="num">§12</span> <span data-lang="zh">Local FDR (Efron 2008)：每個 gene 自己的 confidence</span><span data-lang="en">Local FDR (Efron 2008): per-gene confidence</span></h2>
+
+<p class="lead" data-lang="zh">
+  「<b>q-value 0.05 = list 中 5% 是假</b>」是 list-level。
+  Local FDR 給每個 gene 自己的「<b>是 null 的機率</b>」——更精準的個體判定。
+</p>
+<p class="lead" data-lang="en">
+  "<b>q-value 0.05 = 5% of list is false</b>" is list-level.
+  Local FDR gives per-gene "<b>probability of being null</b>" — more precise individual judgment.
+</p>
+
+<div class="math-block boxed">
+  $$\text{fdr}(z) = P(H_0 | Z = z) = \frac{\pi_0 \cdot f_0(z)}{f(z)}$$
+  <div class="formula-caption" data-lang="zh">$f_0$ = null 分布 (Gaussian)、$f$ = 整體 z-statistic 分布、$\pi_0$ = null 比例</div>
+  <div class="formula-caption" data-lang="en">$f_0$ = null distribution (Gaussian), $f$ = overall z-statistic distribution, $\pi_0$ = null proportion</div>
+</div>
+
+<p data-lang="zh">直覺：給定觀察 z=3.5 的 gene，它「是 null」的機率是多少？這個 per-gene 解讀對 follow-up experimental validation 特別有用。</p>
+<p data-lang="en">Intuition: given a gene with z=3.5, what's its probability of being null? This per-gene interpretation is especially useful for follow-up experimental validation.</p>
+
+<p data-lang="zh">📚 <b>引用</b>：Efron (2008) <i>Stat Sci</i> 23:1 (local FDR); Efron et al. (2001) <i>JASA</i> 96:1151 (empirical Bayes 多重檢定)。</p>
+<p data-lang="en">📚 <b>References</b>: Efron (2008) <i>Stat Sci</i> 23:1 (local FDR); Efron et al. (2001) <i>JASA</i> 96:1151 (empirical Bayes multiple testing).</p>
 
 <div class="callout prog">
   <strong data-lang="zh">下一步</strong><strong data-lang="en">Next</strong>:

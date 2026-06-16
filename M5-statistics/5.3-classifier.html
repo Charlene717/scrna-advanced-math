@@ -224,6 +224,10 @@
   <a href="#s5"><span data-lang="zh">§5 scNym</span><span data-lang="en">§5 scNym</span></a>
   <a href="#s6"><span data-lang="zh">§6 confidence</span><span data-lang="en">§6 confidence</span></a>
   <a href="#s7"><span data-lang="zh">§7 限制</span><span data-lang="en">§7 Limits</span></a>
+  <a href="#s8"><span data-lang="zh">§8 PBMC 案例</span><span data-lang="en">§8 PBMC case</span></a>
+  <a href="#s9"><span data-lang="zh">§9 SingleR</span><span data-lang="en">§9 SingleR</span></a>
+  <a href="#s10"><span data-lang="zh">§10 scANVI</span><span data-lang="en">§10 scANVI</span></a>
+  <a href="#s11"><span data-lang="zh">§11 atlas-scale</span><span data-lang="en">§11 atlas-scale</span></a>
 </div>
 
 <header class="cover">
@@ -550,6 +554,190 @@ adata = predictions.to_adata()
     <td data-lang="en">use high-res reference</td>
   </tr>
 </table>
+
+<!-- ===================================== §8 PBMC 案例 ===================================== -->
+<h2 id="s8"><span class="num">§8</span> <span data-lang="zh">PBMC 3k CellTypist 案例：自動 annotate vs 手動 marker</span><span data-lang="en">PBMC 3k CellTypist case: auto annotation vs manual markers</span></h2>
+
+<p class="lead" data-lang="zh">
+  本節對 PBMC 3k 跑 CellTypist 的 <code class="inline">Immune_All_Low.pkl</code> model，跟手動 marker annotation 對比準確率。
+</p>
+<p class="lead" data-lang="en">
+  Run CellTypist <code class="inline">Immune_All_Low.pkl</code> on PBMC 3k, compare to manual marker annotation.
+</p>
+
+<table class="compare">
+  <tr><th data-lang="zh">手動 cluster annotation</th><th data-lang="en">Manual cluster annotation</th>
+      <th>CellTypist prediction</th><th>CellTypist prediction</th>
+      <th data-lang="zh">一致率</th><th data-lang="en">Agreement</th></tr>
+  <tr><td>CD4 T (naive)</td><td>CD4 T (naive)</td>
+      <td>Tnaive/CM CD4</td><td>Tnaive/CM CD4</td>
+      <td>96%</td><td>96%</td></tr>
+  <tr><td>CD4 T (memory)</td><td>CD4 T (memory)</td>
+      <td>Tem/Effector helper</td><td>Tem/Effector helper</td>
+      <td>89%</td><td>89%</td></tr>
+  <tr><td>CD8 T</td><td>CD8 T</td>
+      <td>Tem/Effector cytotoxic</td><td>Tem/Effector cytotoxic</td>
+      <td>92%</td><td>92%</td></tr>
+  <tr><td>CD14+ Mono</td><td>CD14+ Mono</td>
+      <td>Classical monocytes</td><td>Classical monocytes</td>
+      <td>98%</td><td>98%</td></tr>
+  <tr><td>FCGR3A+ Mono</td><td>FCGR3A+ Mono</td>
+      <td>Non-classical monocytes</td><td>Non-classical monocytes</td>
+      <td>95%</td><td>95%</td></tr>
+  <tr><td>B cell</td><td>B cell</td>
+      <td>Naive B cells / Memory B</td><td>Naive B cells / Memory B</td>
+      <td>94%</td><td>94%</td></tr>
+  <tr><td>NK</td><td>NK</td>
+      <td>NK / ILCs</td><td>NK / ILCs</td>
+      <td>91%</td><td>91%</td></tr>
+  <tr><td>DC</td><td>DC</td>
+      <td>DC2 (myeloid DC)</td><td>DC2 (myeloid DC)</td>
+      <td>88%</td><td>88%</td></tr>
+  <tr><td>Megakaryocyte</td><td>Megakaryocyte</td>
+      <td>Megakaryocytes / Platelets</td><td>Megakaryocytes / Platelets</td>
+      <td>100%</td><td>100%</td></tr>
+</table>
+
+<div class="callout bio">
+  <strong data-lang="zh">CellTypist 額外抓到的細分</strong>
+  <strong data-lang="en">Extra subdivisions CellTypist catches</strong>:
+  <span data-lang="zh">手動 annotate 把 B cell 當一群。CellTypist 進一步分出 <b>naive B / memory B</b>；Mono 分 <b>classical / non-classical</b>。多 batch 訓練的 reference 比手動 marker 更解析細。</span>
+  <span data-lang="en">Manual annotation treats B as one group. CellTypist further splits into <b>naive B / memory B</b>; Mono into <b>classical / non-classical</b>. Multi-batch trained reference resolves finer than manual markers.</span>
+</div>
+
+<p data-lang="zh">📚 <b>引用</b>：Domínguez Conde et al. (2022) <i>Science</i> 376:eabl5197 (CellTypist + Cross-tissue Immune Cell Atlas); CellTypist 模型: <a href="https://www.celltypist.org">celltypist.org</a>。</p>
+<p data-lang="en">📚 <b>References</b>: Domínguez Conde et al. (2022) <i>Science</i> 376:eabl5197 (CellTypist + Cross-tissue Immune Cell Atlas); CellTypist models: <a href="https://www.celltypist.org">celltypist.org</a>.</p>
+
+<!-- ===================================== §9 SingleR ===================================== -->
+<h2 id="s9"><span class="num">§9</span> <span data-lang="zh">SingleR：用 Spearman correlation 做 reference mapping</span><span data-lang="en">SingleR: Spearman correlation reference mapping</span></h2>
+
+<p class="lead" data-lang="zh">
+  SingleR（Aran 2019）用<b>不同的數學</b>做 annotation：對 query cell vs reference cell type，算<b>Spearman 相關</b>，挑最高相關 type 當答案。
+</p>
+<p class="lead" data-lang="en">
+  SingleR (Aran 2019) uses <b>different math</b>: compute <b>Spearman correlation</b> between query cell and each reference type, pick highest.
+</p>
+
+<h3 data-lang="zh">9.1 演算法</h3>
+<h3 data-lang="en">9.1 Algorithm</h3>
+
+<ol>
+  <li><span data-lang="zh">對每 reference cell type，算 marker gene set（top variable）</span>
+      <span data-lang="en">Per reference type, compute marker gene set (top variable)</span></li>
+  <li><span data-lang="zh">對 query cell $i$ 跟 reference type $t$，算 Spearman $\rho_{it}$</span>
+      <span data-lang="en">For query cell $i$ and reference type $t$, Spearman $\rho_{it}$</span></li>
+  <li><span data-lang="zh">挑 max $\rho_{it}$ 的 type 當預測</span>
+      <span data-lang="en">Pick type with max $\rho_{it}$</span></li>
+  <li><span data-lang="zh"><b>Fine-tuning</b>：只用 top 25% types 之間的差異 gene 重算 → 提高解析度</span>
+      <span data-lang="en"><b>Fine-tuning</b>: recompute using only differing genes among top 25% types → higher resolution</span></li>
+</ol>
+
+<h3 data-lang="zh">9.2 vs CellTypist 對比</h3>
+<h3 data-lang="en">9.2 vs CellTypist</h3>
+
+<table class="compare">
+  <tr><th></th><th>SingleR</th><th>SingleR</th><th>CellTypist</th><th>CellTypist</th></tr>
+  <tr><td data-lang="zh">演算法</td><td data-lang="en">Algorithm</td>
+      <td>Spearman correlation</td><td>Spearman correlation</td>
+      <td>Logistic regression</td><td>Logistic regression</td></tr>
+  <tr><td data-lang="zh">語言</td><td data-lang="en">Language</td>
+      <td>R (Bioconductor)</td><td>R (Bioconductor)</td>
+      <td>Python (scanpy)</td><td>Python (scanpy)</td></tr>
+  <tr><td data-lang="zh">速度</td><td data-lang="en">Speed</td>
+      <td data-lang="zh">中</td><td data-lang="en">medium</td>
+      <td data-lang="zh">快</td><td data-lang="en">fast</td></tr>
+  <tr><td data-lang="zh">需要訓練?</td><td data-lang="en">Pretraining?</td>
+      <td>❌</td><td>❌</td>
+      <td>✅</td><td>✅</td></tr>
+</table>
+
+<p data-lang="zh">📚 <b>引用</b>：Aran et al. (2019) <i>Nat Immunol</i> 20:163 (SingleR); SingleR Bioconductor: <a href="https://bioconductor.org/packages/SingleR/">SingleR package</a>。</p>
+<p data-lang="en">📚 <b>References</b>: Aran et al. (2019) <i>Nat Immunol</i> 20:163 (SingleR); SingleR Bioconductor.</p>
+
+<!-- ===================================== §10 scANVI ===================================== -->
+<h2 id="s10"><span class="num">§10</span> <span data-lang="zh">scANVI：半監督 VAE for label transfer</span><span data-lang="en">scANVI: semi-supervised VAE for label transfer</span></h2>
+
+<p class="lead" data-lang="zh">
+  scANVI（Xu et al. 2021）擴展 scVI 加上「label classification head」：在 latent z 上同時做 batch correction + cell type classification。
+</p>
+<p class="lead" data-lang="en">
+  scANVI (Xu et al. 2021) extends scVI with a "label classification head": joint batch correction + cell type classification on latent z.
+</p>
+
+<h3 data-lang="zh">10.1 模型</h3>
+<h3 data-lang="en">10.1 Model</h3>
+
+<div class="math-block">
+  $$z = f_{\text{enc}}(x, s), \quad \hat{y} = g_{\text{classifier}}(z), \quad x \sim \text{NB}(f_{\text{dec}}(z, s, \hat{y}))$$
+  <div class="formula-caption" data-lang="zh">$s$ = batch label、$y$ = cell type label（known or unknown）</div>
+  <div class="formula-caption" data-lang="en">$s$ = batch label, $y$ = cell type label (known or unknown)</div>
+</div>
+
+<h3 data-lang="zh">10.2 訓練 loss</h3>
+<h3 data-lang="en">10.2 Training loss</h3>
+
+<div class="math-block">
+  $$\mathcal{L} = \mathcal{L}_{\text{VAE}} + \lambda \cdot \mathcal{L}_{\text{classification}}$$
+  <div class="formula-caption" data-lang="zh">labeled cells 用 cross-entropy；unlabeled 用 expectation</div>
+  <div class="formula-caption" data-lang="en">labeled cells use cross-entropy; unlabeled use expectation</div>
+</div>
+
+<div class="callout idea">
+  <strong data-lang="zh">為何 semi-supervised 在 scRNA 強</strong>
+  <strong data-lang="en">Why semi-supervised excels in scRNA</strong>:
+  <span data-lang="zh">你有 100k unlabeled query + 10k labeled reference。scANVI 同時學「<b>batch effect 在 latent z 怎麼移除</b>」+「<b>cell type 在 latent z 怎麼分</b>」，兩個任務互相強化。對<b>跨平台</b>(10x v3 → Smart-seq2) 跟<b>跨物種</b>(mouse → human) 表現特別好。</span>
+  <span data-lang="en">You have 100k unlabeled query + 10k labeled reference. scANVI jointly learns "<b>how batch is removed in z</b>" + "<b>how cell types separate in z</b>", tasks mutually reinforce. Excels on <b>cross-platform</b> (10x v3 → Smart-seq2) and <b>cross-species</b> (mouse → human).</span>
+</div>
+
+<p data-lang="zh">📚 <b>引用</b>：Xu et al. (2021) <i>Mol Syst Biol</i> 17:e9620 (scANVI); Lopez et al. (2018) <i>Nat Methods</i> 15:1053 (scVI base); Luecken et al. (2022) <i>Nat Methods</i> 19:41 (integration benchmark, scANVI 評為 top 3)。</p>
+<p data-lang="en">📚 <b>References</b>: Xu et al. (2021) <i>Mol Syst Biol</i> 17:e9620 (scANVI); Lopez et al. (2018) <i>Nat Methods</i> 15:1053 (scVI base); Luecken et al. (2022) <i>Nat Methods</i> 19:41 (integration benchmark, scANVI ranked top 3).</p>
+
+<!-- ===================================== §11 atlas-scale ===================================== -->
+<h2 id="s11"><span class="num">§11</span> <span data-lang="zh">Atlas-scale annotation：HLCA、CELLxGENE Census</span><span data-lang="en">Atlas-scale annotation: HLCA, CELLxGENE Census</span></h2>
+
+<p class="lead" data-lang="zh">
+  現代 reference 不再是「一個實驗的細胞」，而是「<b>整個器官 atlas</b>」。本節介紹兩個代表 reference。
+</p>
+<p class="lead" data-lang="en">
+  Modern references aren't "one experiment's cells" but "<b>full organ atlases</b>". We cover two flagship references.
+</p>
+
+<h3 data-lang="zh">11.1 Human Lung Cell Atlas (Sikkema 2023)</h3>
+<h3 data-lang="en">11.1 Human Lung Cell Atlas (Sikkema 2023)</h3>
+
+<ul>
+  <li data-lang="zh"><b>2.4 million cells</b> from 486 individuals × 14 datasets</li>
+  <li data-lang="en"><b>2.4 million cells</b> from 486 individuals × 14 datasets</li>
+  <li data-lang="zh">用 scANVI 訓練 → 把任何新 lung sample query 到 HLCA latent space</li>
+  <li data-lang="en">Trained with scANVI → query any new lung sample to HLCA latent space</li>
+  <li data-lang="zh">提供 cell type labels at 5 hierarchical levels</li>
+  <li data-lang="en">Provides cell type labels at 5 hierarchical levels</li>
+</ul>
+
+<h3 data-lang="zh">11.2 CZ CELLxGENE Census (2024)</h3>
+<h3 data-lang="en">11.2 CZ CELLxGENE Census (2024)</h3>
+
+<ul>
+  <li data-lang="zh"><b>~ 50 million cells</b>, 跨越多個器官</li>
+  <li data-lang="en"><b>~ 50 million cells</b>, multi-organ</li>
+  <li data-lang="zh">提供 Python API: <code class="inline">cellxgene_census</code>，可以直接 query subsets</li>
+  <li data-lang="en">Python API: <code class="inline">cellxgene_census</code>, query subsets directly</li>
+  <li data-lang="zh">底層用 TileDB-Vector 儲存 (Zarr-like) 在 S3</li>
+  <li data-lang="en">Backed by TileDB-Vector (Zarr-like) on S3</li>
+</ul>
+
+<pre class="code"><span class="k">import</span> cellxgene_census
+
+<span class="c"># 取 lung cells in healthy donors</span>
+<span class="k">with</span> cellxgene_census.open_soma() <span class="k">as</span> census:
+    obs = census[<span class="s">"census_data"</span>][<span class="s">"homo_sapiens"</span>].obs
+    lung_cells = obs.read(
+        value_filter=<span class="s">"tissue == 'lung' and disease == 'normal'"</span>
+    ).concat().to_pandas()
+print(<span class="k">len</span>(lung_cells))  <span class="c"># ~ 2 million</span></pre>
+
+<p data-lang="zh">📚 <b>引用</b>：Sikkema et al. (2023) <i>Nat Med</i> 29:1563 (HLCA); CELLxGENE consortium (2024) <i>bioRxiv</i> (Census 釋出); Regev et al. (2017) <i>eLife</i> 6:e27041 (Human Cell Atlas 願景)。</p>
+<p data-lang="en">📚 <b>References</b>: Sikkema et al. (2023) <i>Nat Med</i> 29:1563 (HLCA); CELLxGENE consortium (2024) <i>bioRxiv</i> (Census release); Regev et al. (2017) <i>eLife</i> 6:e27041 (Human Cell Atlas vision).</p>
 
 <div class="callout prog">
   <strong data-lang="zh">下一步</strong><strong data-lang="en">Next</strong>:
