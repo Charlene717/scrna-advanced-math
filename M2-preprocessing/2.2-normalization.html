@@ -260,73 +260,64 @@
 <!-- ===== 🧬 scRNA-seq 視角 panel ===== -->
 <div class="card" style="border-left: 6px solid var(--green); background: linear-gradient(135deg, #effaf3 0%, #fff 70%);">
   <h3 style="color: var(--green); margin-top: 0">
-    <span data-lang="zh">🧬 scRNA-seq 視角：為什麼「同樣 T 細胞 counts 不同」這件事決定 PCA 找到什麼</span>
-    <span data-lang="en">🧬 scRNA-seq perspective: why "same T cells with different counts" determines what PCA finds</span>
+    <span data-lang="zh">🧬 scRNA-seq 視角：normalize 是「貨幣匯率換算」</span>
+    <span data-lang="en">🧬 scRNA-seq perspective: normalize is "currency conversion"</span>
   </h3>
 
-  <h4 data-lang="zh">📍 在 scRNA-seq 流程中的位置</h4>
-  <h4 data-lang="en">📍 Position in scRNA-seq pipeline</h4>
-  <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; padding: 12px; background: #f4f1ea; border-radius: 6px;">
-    <span data-lang="zh">QC (M2.1) →</span><span data-lang="en">QC (M2.1) →</span>
-    <b style="color: #27795a"> 【normalize：消除測序深度差異 (本章)】 </b>
-    → HVG (M2.3) → scale (M2.4) → PCA (M3.1) → ...
-    <br><br>
-    <span data-lang="zh">⚠️ <b>沒 normalize，PC1 會抓「哪個 cell 測序深度高」這個無關生物的方向</b>——所有下游發現變廢。</span>
-    <span data-lang="en">⚠️ <b>Without normalize, PC1 captures "which cell has higher sequencing depth"</b> — a biology-free direction that ruins all downstream findings.</span>
+  <p style="font-size: 1.02em; line-height: 1.7">
+    <span data-lang="zh">假設你要比較<b>紐約一個漢堡 8 美元</b>跟<b>東京一個漢堡 800 日圓</b>，誰比較貴？直接看數字 8 vs 800 你會說東京貴 100 倍——<b>但這是你沒換匯率的錯，不是漢堡的錯</b>。scRNA-seq 的每個細胞就像一個國家，<b>total_counts</b> 是那個細胞的「貨幣單位數量」。同一個 T 細胞在細胞 A 可能 total=2000、在細胞 B 卻 total=8000——不是 B 比較「興奮」，是它<b>剛好被多抓了 4 倍 mRNA</b>。</span>
+    <span data-lang="en">Imagine comparing <b>$8 for a burger in NYC</b> with <b>¥800 for a burger in Tokyo</b>. Looking at the bare numbers, you'd say Tokyo is 100× pricier — <b>but that's your fault for not converting currency, not the burger's</b>. In scRNA-seq each cell is like a country, and <b>total_counts</b> is its "currency unit count". The same T cell might show total=2000 in cell A and total=8000 in cell B — not because B is "more excited", but because B simply got <b>4× more mRNA captured</b>.</span>
+  </p>
+  <p style="font-size: 1.02em; line-height: 1.7">
+    <span data-lang="zh">為什麼 scRNA 的「匯率」這麼亂？因為 droplet 大小、capture efficiency、細胞在 M 期還是 G1 期，每個都讓 total_counts 變 10 倍（bulk RNA-seq 只變 ~2 倍）。<b>不換匯率就跑 PCA</b>，PC1 抓到的不會是「T cell 還是 B cell」，而是「<b>誰錢包比較鼓</b>」——換句話說，<b>PC1 在量 sequencing depth，不在量生物</b>。</span>
+    <span data-lang="en">Why is scRNA's "exchange rate" so wild? Droplet size, capture efficiency, cell-cycle stage (M-phase has more mRNA) — each can swing total_counts 10× (bulk RNA-seq only ~2×). <b>Run PCA without converting</b> and PC1 won't reveal "T cell vs B cell" — it'll reveal "<b>who has the fatter wallet</b>". In other words, <b>PC1 measures sequencing depth, not biology</b>.</span>
+  </p>
+
+  <h4>📍 <span data-lang="zh">在流程中的位置</span><span data-lang="en">Pipeline position</span></h4>
+  <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f7f9fb; padding: 10px; border-radius: 6px; line-height: 1.8">
+    QC →
+    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b>normalize（CP10K + log1p / Pearson residuals）</b></span>
+    → HVG → scale → PCA → ...
   </div>
 
-  <h4 data-lang="zh">🎯 為什麼 scRNA-seq <b>必須</b> normalize（bulk RNA-seq 也要但問題更小）</h4>
-  <h4 data-lang="en">🎯 Why scRNA-seq <b>must</b> normalize (bulk also needs but less critical)</h4>
-  <ul>
-    <li data-lang="zh"><b>細胞間 depth 變異大</b>：10x 一份資料中，total_counts 在 1,500-20,000 之間（10× 變異），bulk RNA-seq 只 ~2× 變異</li>
-    <li data-lang="en"><b>Large cell-to-cell depth variation</b>: in one 10x dataset, total_counts ranges 1,500-20,000 (10× variation); bulk RNA-seq only ~2× variation</li>
-    <li data-lang="zh"><b>原因</b>：droplet 體積差異 + capture efficiency 變異 + cell cycle phase（M phase 有更多 mRNA）</li>
-    <li data-lang="en"><b>Causes</b>: droplet volume variation + capture efficiency variation + cell cycle phase (M phase has more mRNA)</li>
-    <li data-lang="zh"><b>後果</b>：兩個<b>完全一樣的 T 細胞</b>，一個 total=2000, 另一個 total=8000 → raw counts 全差 4 倍 → 看起來像不同 cell type</li>
-    <li data-lang="en"><b>Consequence</b>: two <b>identical T cells</b>, one total=2000, other total=8000 → raw counts differ 4× → appear as different types</li>
-  </ul>
-
-  <h4 data-lang="zh">💥 不 normalize 會發生什麼？PBMC 3k 實證對比</h4>
-  <h4 data-lang="en">💥 What happens without normalize? PBMC 3k empirical comparison</h4>
+  <h4>💥 <span data-lang="zh">不換匯率會發生什麼？PC1 變成「錢包大小」</span><span data-lang="en">Skip the conversion, PC1 becomes "wallet size"</span></h4>
   <table class="compare">
-    <tr><th data-lang="zh">流程</th><th data-lang="en">Pipeline</th>
-        <th data-lang="zh">PC1 top loadings</th><th data-lang="en">PC1 top loadings</th>
-        <th data-lang="zh">PC1 的意義</th><th data-lang="en">PC1 meaning</th></tr>
-    <tr style="background:#fdecec"><td data-lang="zh">raw counts → PCA</td><td data-lang="en">raw counts → PCA</td>
-        <td>MALAT1, RPL10, RPS27 (全 housekeeping)</td>
-        <td>MALAT1, RPL10, RPS27 (all housekeeping)</td>
-        <td data-lang="zh"><b>cell depth 方向</b>（生物 = 0）</td>
-        <td data-lang="en"><b>cell depth axis</b> (biology = 0)</td></tr>
-    <tr style="background:#effaf3"><td data-lang="zh">CP10K + log1p → PCA</td><td data-lang="en">CP10K + log1p → PCA</td>
-        <td>CD79A, MS4A1, CD79B (B cell markers)</td>
-        <td>CD79A, MS4A1, CD79B (B cell markers)</td>
-        <td data-lang="zh">✅ 真實 cell type</td><td data-lang="en">✅ real cell type</td></tr>
-    <tr><td data-lang="zh">Pearson residual → PCA</td><td data-lang="en">Pearson residual → PCA</td>
+    <thead><tr>
+      <th><span data-lang="zh">流程</span><span data-lang="en">Pipeline</span></th>
+      <th><span data-lang="zh">PC1 top 基因</span><span data-lang="en">PC1 top genes</span></th>
+      <th><span data-lang="zh">PC1 在量什麼？</span><span data-lang="en">What does PC1 measure?</span></th>
+    </tr></thead>
+    <tbody>
+      <tr style="background: #fdecec"><td><span data-lang="zh">raw counts 直接 PCA</span><span data-lang="en">raw counts → PCA</span></td>
+        <td>MALAT1, RPL10, RPS27（housekeeping 軍團）</td>
+        <td>💰 <span data-lang="zh">錢包大小（depth）</span><span data-lang="en">wallet size (depth)</span></td></tr>
+      <tr style="background: #effaf3"><td><span data-lang="zh">CP10K + log1p → PCA</span><span data-lang="en">CP10K + log1p → PCA</span></td>
+        <td>CD79A, MS4A1, CD79B（B cell marker）</td>
+        <td>✅ <span data-lang="zh">真實細胞型</span><span data-lang="en">real cell type</span></td></tr>
+      <tr style="background: #effaf3"><td><span data-lang="zh">Pearson residual → PCA</span><span data-lang="en">Pearson residual → PCA</span></td>
         <td>CD79A, MS4A1, IGHM, CD37</td>
-        <td>CD79A, MS4A1, IGHM, CD37</td>
-        <td data-lang="zh">✅ 含 IGHM (subtype 細節)</td>
-        <td data-lang="en">✅ + IGHM (subtype detail)</td></tr>
+        <td>✅ <span data-lang="zh">細胞型 + subtype 細節</span><span data-lang="en">cell type + subtype detail</span></td></tr>
+    </tbody>
   </table>
 
-  <h4 data-lang="zh">🔗 對下游每個 scRNA 步驟的具體影響</h4>
-  <h4 data-lang="en">🔗 Concrete impact on each downstream scRNA step</h4>
+  <h4>🔗 <span data-lang="zh">沒換匯率，下游每一站都報錯</span><span data-lang="en">Skip conversion, every downstream stop reports errors</span></h4>
   <ul>
-    <li data-lang="zh"><b>HVG (M2.3)</b>：normalize 後 mean-variance trend 才對應 NB curve。未 normalize 的 HVG list 都是「高表現 housekeeping」</li>
-    <li data-lang="en"><b>HVG (M2.3)</b>: post-normalize mean-variance trend matches NB curve. Unnormalized HVG list is all "high-expr housekeeping"</li>
-    <li data-lang="zh"><b>PCA (M3.1)</b>：見上表，決定 PC1-PC50 找到的是「生物」還是「technical noise」</li>
-    <li data-lang="en"><b>PCA (M3.1)</b>: see table — decides if PC1-PC50 find "biology" or "technical noise"</li>
-    <li data-lang="zh"><b>KNN graph (M4.1)</b>：未 normalize 的細胞距離跟 depth 高度相關 → KNN 把「同 depth」當鄰居</li>
-    <li data-lang="en"><b>KNN graph (M4.1)</b>: unnormalized distances correlate with depth → KNN groups "same depth" as neighbors</li>
-    <li data-lang="zh"><b>DE (M5.1)</b>：未 normalize 對「同 cell type 但不同 sample depth」會出現大量假 marker</li>
-    <li data-lang="en"><b>DE (M5.1)</b>: unnormalized DE on "same type but different sample depth" produces many false markers</li>
-    <li data-lang="zh"><b>Integration (M6.1)</b>：Harmony / scVI 都假設輸入已 normalize；未 normalize → batch correction 變成「depth correction」</li>
-    <li data-lang="en"><b>Integration (M6.1)</b>: Harmony / scVI assume normalized input; unnormalized → batch correction becomes "depth correction"</li>
+    <li><b>HVG：</b><span data-lang="zh">沒 normalize，mean-variance 圖被「高表現 housekeeping」整個拉斜 → 選出的 HVG 都是 RPL/RPS 兄弟團，不是 marker。</span>
+      <span data-lang="en">Without normalize, the mean-variance plot tilts under high-expression housekeeping → HVGs picked are the RPL/RPS brotherhood, not markers.</span></li>
+    <li><b>PCA：</b><span data-lang="zh">PC1 = depth、PC2 = depth × cell cycle、PC3 = 才剛輪到生物學......</span>
+      <span data-lang="en">PC1 = depth, PC2 = depth × cell cycle, PC3 = biology finally gets a turn...</span></li>
+    <li><b>KNN：</b><span data-lang="zh">細胞距離跟 depth 高度相關 → KNN 把「同錢包」的細胞當好鄰居（不是同細胞型）。</span>
+      <span data-lang="en">Distance correlates with depth → KNN groups "same wallet" cells as friends (not same cell type).</span></li>
+    <li><b>DE：</b><span data-lang="zh">「<b>同 cell type 但 depth 不同</b>」會跑出一堆假 marker——基本上你在找「哪個 sample 測得深」的代理基因。</span>
+      <span data-lang="en">"<b>Same type, different depth</b>" produces tons of fake markers — basically a proxy hunt for "which sample was sequenced deeper".</span></li>
+    <li><b>Integration：</b><span data-lang="zh">Harmony / scVI 都<b>預設你已 normalize</b>；沒 normalize，batch correction 變成 depth correction。</span>
+      <span data-lang="en">Harmony / scVI <b>assume you've normalized</b>; without it, batch correction degrades into depth correction.</span></li>
   </ul>
 
-  <div class="callout bio" style="margin-top: 14px;">
-    <strong data-lang="zh">⭐ 一句話總結</strong><strong data-lang="en">⭐ One-line summary</strong>:
-    <span data-lang="zh">normalize 不是「美化」，是「<b>把 technical noise 跟 biological signal 分開的數學手術</b>」。scTransform 跟 GLM-PCA 整個方法論建立在「正確 normalize」這件事上。</span>
-    <span data-lang="en">Normalize isn't "cosmetic" — it's "<b>the mathematical surgery separating technical noise from biological signal</b>". scTransform and GLM-PCA methodology rests on doing this right.</span>
+  <div class="callout bio">
+    <strong>⭐ <span data-lang="zh">一句話總結</span><span data-lang="en">One-line summary</span></strong>：
+    <span data-lang="zh">normalize 是「把所有細胞調到同一個貨幣」這個動作。沒做匯率換算，你的 paper 永遠在比「誰測得深」而不是「誰是什麼細胞」。scTransform 跟 GLM-PCA 的存在就是因為<b>連 log(1+x) 都不夠好</b>，要更精細的匯率公式。</span>
+    <span data-lang="en">Normalize is the act of "putting every cell on the same currency". Skip the conversion and your paper forever compares "who was sequenced deeper" instead of "which cell is which". scTransform and GLM-PCA exist precisely because <b>even log(1+x) isn't precise enough</b> — they're better exchange-rate formulas.</span>
   </div>
 </div>
 

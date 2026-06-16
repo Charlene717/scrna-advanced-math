@@ -298,72 +298,64 @@
 <!-- ===== 🧬 scRNA-seq 視角 panel ===== -->
 <div class="card" style="border-left: 6px solid var(--green); background: linear-gradient(135deg, #effaf3 0%, #fff 70%);">
   <h3 style="color: var(--green); margin-top: 0">
-    <span data-lang="zh">🧬 scRNA-seq 視角：為什麼 QC 是「<b>免責聲明</b>」而非「<b>形式步驟</b>」</span>
-    <span data-lang="en">🧬 scRNA-seq perspective: QC is a "<b>liability disclaimer</b>", not a "<b>formality</b>"</span>
+    <span data-lang="zh">🧬 scRNA-seq 視角：QC 是夜店保鑣，把屍體跟連體嬰擋在門外</span>
+    <span data-lang="en">🧬 scRNA-seq perspective: QC is the bouncer keeping corpses and conjoined twins out of the club</span>
   </h3>
 
-  <h4 data-lang="zh">📍 在 scRNA-seq 流程中的位置</h4>
-  <h4 data-lang="en">📍 Position in scRNA-seq pipeline</h4>
-  <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; padding: 12px; background: #f4f1ea; border-radius: 6px;">
-    <span data-lang="zh">10x cellranger 輸出 → 稀疏儲存 (M1.1) →</span>
-    <span data-lang="en">10x cellranger output → Sparse storage (M1.1) →</span>
-    <b style="color: #8e44ad"> 【QC：砍壞細胞 (本章)】 </b>
-    → normalize (M2.2) → HVG → scale → PCA → ...
-    <br><br>
-    <span data-lang="zh">⚠️ <b>QC 是「進入下游分析的守門員」</b>——壞細胞流到下游會「假裝」成 cluster，造成假發現。</span>
-    <span data-lang="en">⚠️ <b>QC is the gatekeeper into downstream analysis</b> — bad cells flow downstream and "pretend" to be clusters, causing false discoveries.</span>
+  <p style="font-size: 1.02em; line-height: 1.7">
+    <span data-lang="zh">想像你是夜店的保鑣。隊伍裡有<b>三種人</b>千萬不能放進來：(1) 已經<b>死掉但站著</b>的客人（一進門就會嚇到 DJ）；(2) <b>兩個人黏在一起</b>但只買了一張票的（會被誤認成「特殊新物種」）；(3) <b>空衣服</b>——飄進來的<b>環境 RNA</b>（沒有細胞，只有衣服味道）。10x 的 droplet 流程恰恰是這三種雜質的溫床，QC 就是把它們攔下來的那個保鑣。</span>
+    <span data-lang="en">Picture yourself as a club bouncer. Three types must never get in: (1) <b>dead patrons still standing</b> (they'll scare the DJ); (2) <b>two people fused together but holding one ticket</b> (mistaken for a "new species"); (3) <b>empty clothes</b> — ambient RNA drifting in (no cell, just clothes smell). 10x's droplet workflow breeds all three, and QC is the bouncer turning them away at the door.</span>
+  </p>
+  <p style="font-size: 1.02em; line-height: 1.7">
+    <span data-lang="zh">放壞細胞進去會發生什麼？它們會<b>自己組一個 cluster</b>，DJ（Leiden）會幫它取名字，下游的 marker DE 會驕傲地宣布「<b>發現新細胞型！</b>」結果 top marker 是 MT-CO1、MT-ND1——<b>那是粒線體的求救訊號</b>，不是新發現。Heumos 2023 best practice review 把 QC 排在「<b>絕對不能跳過</b>」的位置就是這個原因。</span>
+    <span data-lang="en">Let bad cells through and they'll <b>form their own cluster</b>; the DJ (Leiden) names it proudly, downstream DE shouts "<b>NEW CELL TYPE!</b>", and the top markers turn out to be MT-CO1, MT-ND1 — <b>those are mitochondrial distress flares</b>, not discoveries. That's why Heumos 2023's best-practice review puts QC firmly in the "<b>do not skip</b>" tier.</span>
+  </p>
+
+  <h4>📍 <span data-lang="zh">QC 站在門口</span><span data-lang="en">QC stands at the door</span></h4>
+  <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f7f9fb; padding: 10px; border-radius: 6px; line-height: 1.8">
+    10x raw matrix →
+    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b>QC (MAD + Scrublet)</b></span>
+    → normalize → HVG → PCA → KNN → Leiden → 你的所有結論
   </div>
 
-  <h4 data-lang="zh">🎯 為什麼 scRNA-seq <b>必須</b>做 QC（不像 bulk RNA-seq）</h4>
-  <h4 data-lang="en">🎯 Why scRNA-seq <b>must</b> do QC (unlike bulk RNA-seq)</h4>
-  <ul>
-    <li data-lang="zh"><b>空 droplet 問題</b>：10x 把細胞跟 GEM beads 混合時，會有空 droplet 只裝環境 RNA。cellranger 已過濾，但約 5-10% 漏掉</li>
-    <li data-lang="en"><b>Empty droplet problem</b>: 10x mixes cells with GEM beads — empty droplets capture only ambient RNA. cellranger filters most, but ~5–10% slip through</li>
-    <li data-lang="zh"><b>死細胞問題</b>：膜破裂 → 胞質 mRNA 流失 → 只剩粒線體 RNA → MT% 暴升 → 偽 marker 訊號</li>
-    <li data-lang="en"><b>Dying cell problem</b>: membrane lysis → cytoplasmic mRNA escapes → only mito RNA remains → MT% spikes → fake marker signals</li>
-    <li data-lang="zh"><b>Doublet 問題</b>：2 個細胞落同 droplet → 看起來是「<b>嵌合細胞型</b>」（如 T+B → 假的 plasmacytoid cell）</li>
-    <li data-lang="en"><b>Doublet problem</b>: 2 cells in one droplet → appear as "<b>chimeric cell type</b>" (e.g., T+B → fake plasmacytoid cell)</li>
-  </ul>
-
-  <h4 data-lang="zh">💥 不 QC 會發生什麼？PBMC 3k 實證對比</h4>
-  <h4 data-lang="en">💥 What happens without QC? Empirical PBMC 3k comparison</h4>
+  <h4>💥 <span data-lang="zh">不 QC = 你的 paper 多了兩個「鬼魂 cluster」</span><span data-lang="en">No QC = two "ghost clusters" haunt your paper</span></h4>
   <table class="compare">
-    <tr><th></th><th data-lang="zh">無 QC</th><th data-lang="en">No QC</th>
-        <th data-lang="zh">標準 QC (MAD k=5)</th><th data-lang="en">Standard QC (MAD k=5)</th></tr>
-    <tr><td data-lang="zh">細胞數</td><td data-lang="en">Cells</td>
-        <td>2,700</td><td>2,700</td><td>2,638</td><td>2,638</td></tr>
-    <tr><td data-lang="zh">Leiden cluster 數</td><td data-lang="en"># Leiden clusters</td>
-        <td>12 (含 2 個「假」)</td><td>12 (incl. 2 "fake")</td>
-        <td><b>9 真實 cell types</b></td><td><b>9 real cell types</b></td></tr>
-    <tr><td data-lang="zh">DE top marker</td><td data-lang="en">Top DE marker</td>
-        <td>cluster 10: MALAT1, MT-CO1 (<span style="color:#c0392b">死細胞訊號！</span>)</td>
-        <td>cluster 10: MALAT1, MT-CO1 (<span style="color:#c0392b">dying cell signal!</span>)</td>
-        <td data-lang="zh">無此 cluster</td><td data-lang="en">no such cluster</td></tr>
-    <tr><td data-lang="zh">假 plasmacytoid pseudo-cluster</td>
-        <td data-lang="en">Fake plasmacytoid pseudo-cluster</td>
-        <td>+1 (T+B 混合 doublets)</td><td>+1 (T+B mixed doublets)</td>
-        <td>0</td><td>0</td></tr>
+    <thead><tr>
+      <th></th>
+      <th><span data-lang="zh">不做 QC（任性派）</span><span data-lang="en">No QC (rebel mode)</span></th>
+      <th><span data-lang="zh">標準 QC（MAD k=5 + Scrublet）</span><span data-lang="en">Standard QC (MAD k=5 + Scrublet)</span></th>
+    </tr></thead>
+    <tbody>
+      <tr><td><span data-lang="zh">PBMC 3k 細胞數</span><span data-lang="en">PBMC 3k cells</span></td><td>2,700</td><td>2,638</td></tr>
+      <tr><td><span data-lang="zh">Leiden cluster 數</span><span data-lang="en"># Leiden clusters</span></td>
+        <td style="background:#fdecec">12（含 2 個「鬼魂」）</td><td style="background:#effaf3"><b>9 個真細胞型</b></td></tr>
+      <tr><td><span data-lang="zh">cluster 10 的 top marker</span><span data-lang="en">Cluster 10's top marker</span></td>
+        <td style="background:#fdecec">MT-CO1, MT-ND1（💀 死細胞訊號）</td>
+        <td style="background:#effaf3"><span data-lang="zh">該 cluster 不存在</span><span data-lang="en">cluster does not exist</span></td></tr>
+      <tr><td><span data-lang="zh">假的「T+B 嵌合」 cluster</span><span data-lang="en">Fake "T+B chimeric" cluster</span></td>
+        <td style="background:#fdecec">+1（doublets 偽裝成 plasmacytoid）</td>
+        <td style="background:#effaf3">0</td></tr>
+    </tbody>
   </table>
 
-  <h4 data-lang="zh">🔗 對下游每個 scRNA 步驟的具體影響</h4>
-  <h4 data-lang="en">🔗 Concrete impact on each downstream scRNA step</h4>
+  <h4>🔗 <span data-lang="zh">放它進來，下游每一站都遭殃</span><span data-lang="en">Let one in, every downstream station suffers</span></h4>
   <ul>
-    <li data-lang="zh"><b>Normalize (M2.2)</b>：壞細胞的 total_counts 異常 → size factor 估計偏差 → 整批 normalize 失準</li>
-    <li data-lang="en"><b>Normalize (M2.2)</b>: bad cells' abnormal total_counts → biased size factor → whole batch normalization off</li>
-    <li data-lang="zh"><b>HVG (M2.3)</b>：死細胞的 MT-* gene 變異大 → 全部 mt-gene 被誤選為 HVG → PC1 主導為 MT%</li>
-    <li data-lang="en"><b>HVG (M2.3)</b>: dying cells' MT-* genes have high variance → all mt-genes wrongly picked as HVG → PC1 dominated by MT%</li>
-    <li data-lang="zh"><b>Clustering (M4.2)</b>：壞細胞自成 cluster；doublets 形成「<b>假的 transitional</b>」cluster 誤導軌跡分析</li>
-    <li data-lang="en"><b>Clustering (M4.2)</b>: bad cells form own cluster; doublets create "<b>fake transitional</b>" clusters misleading trajectory analysis</li>
-    <li data-lang="zh"><b>DE (M5.1)</b>：壞細胞 cluster vs others 會給出 MT-*, RP-* 等「噪音 marker」當 top marker</li>
-    <li data-lang="en"><b>DE (M5.1)</b>: bad-cell cluster vs others yields MT-*, RP-* "noise markers" at top</li>
-    <li data-lang="zh"><b>Trajectory (M6.2)</b>：doublets 落在「兩 cell types 之間」 → 偽造 fake transition 軌跡（嚴重）</li>
-    <li data-lang="en"><b>Trajectory (M6.2)</b>: doublets land "between two types" → fabricate fake transition trajectory (serious!)</li>
+    <li><b>Normalize：</b><span data-lang="zh">死細胞 total counts 不正常 → size factor 估歪 → 整批細胞 normalize 全跟著歪。</span>
+      <span data-lang="en">Dead cells have weird total counts → size factor skews → the whole batch gets normalized wrong.</span></li>
+    <li><b>HVG：</b><span data-lang="zh">MT-* 基因變異被「炒高」 → 它們被選成 HVG → PC1 變成「死亡指數」軸，再也不是生物學軸。</span>
+      <span data-lang="en">MT-* gene variance gets inflated → they sneak into HVGs → PC1 becomes a "death index", not a biology axis.</span></li>
+    <li><b>Cluster：</b><span data-lang="zh">壞細胞自成「殭屍 cluster」，doublets 形成「<b>假過渡型</b>」 → 誤導軌跡分析。</span>
+      <span data-lang="en">Bad cells form a "zombie cluster"; doublets become "<b>fake transitional</b>" cells → mislead trajectory analysis.</span></li>
+    <li><b>DE：</b><span data-lang="zh">「鬼魂 cluster」vs 其他跑 DE，top marker 永遠是 MT-*、RP-*（粒線體 + 核糖體）——你會以為自己發現了新型細胞。</span>
+      <span data-lang="en">Ghost cluster vs others gives MT-*, RP-* (mito + ribo) at the top — you'll think you've discovered a new cell type.</span></li>
+    <li><b>Trajectory：</b><span data-lang="zh">doublets 卡在「兩個 cluster 中間」 → 偽造「分化過渡」軌跡（最嚴重的悲劇）。</span>
+      <span data-lang="en">Doublets sit "between two clusters" → fabricate a "differentiation transition" trajectory (the worst tragedy).</span></li>
   </ul>
 
-  <div class="callout bio" style="margin-top: 14px;">
-    <strong data-lang="zh">⭐ 一句話總結</strong><strong data-lang="en">⭐ One-line summary</strong>:
-    <span data-lang="zh">QC 不是「砍掉一些細胞」這麼簡單——它是<b>確保你的所有下游發現都是真實生物學</b>的數學免責聲明。Heumos 2023 best practice review 把 QC 放在「不可省」的位置。</span>
-    <span data-lang="en">QC isn't just "remove some cells" — it's the <b>mathematical disclaimer ensuring all downstream findings are real biology</b>. Heumos 2023 best practice review places QC in the "non-negotiable" category.</span>
+  <div class="callout bio">
+    <strong>⭐ <span data-lang="zh">一句話總結</span><span data-lang="en">One-line summary</span></strong>：
+    <span data-lang="zh">QC 不是「砍幾個 outlier」這麼閒散——它是<b>保證你 paper 結論是真細胞、不是死細胞跟連體嬰</b>的法律免責聲明。Heumos 2023 寫得很清楚：「<b>跳過 QC = 從第一頁就在說謊</b>。」</span>
+    <span data-lang="en">QC isn't a casual "trim some outliers" — it's the <b>legal disclaimer that your paper's findings are real cells, not corpses and conjoined twins</b>. Heumos 2023 puts it bluntly: "<b>skipping QC = lying from page one</b>".</span>
   </div>
 </div>
 

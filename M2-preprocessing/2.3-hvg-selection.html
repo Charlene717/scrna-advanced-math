@@ -254,69 +254,70 @@
 <!-- ===== 🧬 scRNA-seq 視角 panel ===== -->
 <div class="card" style="border-left: 6px solid var(--green); background: linear-gradient(135deg, #effaf3 0%, #fff 70%);">
   <h3 style="color: var(--green); margin-top: 0">
-    <span data-lang="zh">🧬 scRNA-seq 視角：為什麼「挑 2000 個基因」決定後面所有 cluster 是否能看到</span>
-    <span data-lang="en">🧬 scRNA-seq perspective: why "picking 2000 genes" decides if you can see all clusters</span>
+    <span data-lang="zh">🧬 scRNA-seq 視角：HVG 是「警察筆錄裡留下哪些證人」</span>
+    <span data-lang="en">🧬 scRNA-seq perspective: HVG is "which witnesses make it onto the police report"</span>
   </h3>
 
-  <h4 data-lang="zh">📍 在 scRNA-seq 流程中的位置</h4>
-  <h4 data-lang="en">📍 Position in scRNA-seq pipeline</h4>
-  <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; padding: 12px; background: #f4f1ea; border-radius: 6px;">
-    normalize (M2.2) → <b style="color: #d97706">【HVG 選擇 (本章)】</b> → scale (M2.4) → PCA (M3.1) → KNN (M4.1) → Leiden (M4.2)
-    <br><br>
-    <span data-lang="zh">⚠️ <b>PCA 之後所有方法都「只看你挑的那 2000 個 gene」</b>——HVG 漏掉某個 marker，下游就<b>絕對</b>看不到那種 cell type。</span>
-    <span data-lang="en">⚠️ <b>Everything after PCA only "sees the 2000 HVGs you picked"</b> — miss a marker in HVG, downstream <b>absolutely cannot</b> see that cell type.</span>
+  <p style="font-size: 1.02em; line-height: 1.7">
+    <span data-lang="zh">你是辦案警察，要從 30,000 個目擊者裡找出兇手線索。但 30,000 個全寫進筆錄不切實際，而且大多數人說的都是「<b>那天我吃了早餐、上班、睡覺</b>」——對破案毫無幫助。你要挑出<b>說法跟別人不一樣</b>的那 2,000 個關鍵證人。scRNA 的<b>HVG selection 就是這個過程</b>：從 30k gene 裡挑出那些「在不同細胞間表現量差異很大」的——它們才帶細胞型態的資訊。</span>
+    <span data-lang="en">You're a detective sifting 30,000 witnesses for clues. Putting all 30,000 into the report is impractical, and most people just say "<b>I had breakfast, went to work, slept</b>" — useless for the case. You want the 2,000 witnesses <b>whose stories differ wildly</b>. <b>HVG selection IS this process</b> in scRNA: from 30k genes, pick the ones with high cell-to-cell variation — those carry the cell-type information.</span>
+  </p>
+  <p style="font-size: 1.02em; line-height: 1.7">
+    <span data-lang="zh">問題是：<b>挑錯證人，整個案子破不了</b>。你漏掉 IRF7 這個 pDC 的關鍵 marker，下游所有方法<b>絕對看不到 pDC 這個 cluster</b>——它在 PCA、UMAP、Leiden 都會被「隱形」。這也是為什麼 rare cell（罕見細胞型）的研究<b>對 HVG 策略特別敏感</b>：scanpy 預設 seurat_v3 對 PBMC 大致夠用，但要找 pDC（佔 0.5%）你<b>必須</b>用 Pearson residual HVG（Townes 2019），否則它根本不會出現在你的 figure 上。</span>
+    <span data-lang="en">The problem: <b>pick the wrong witnesses, the case dies</b>. Miss IRF7 — pDC's key marker — and every downstream method becomes <b>blind to the pDC cluster</b>; PCA, UMAP, Leiden all "lose sight" of it. That's why rare-cell studies are <b>especially HVG-sensitive</b>: scanpy's default seurat_v3 is fine for PBMC overall, but to find pDC (0.5%) you <b>must</b> use Pearson residual HVG (Townes 2019) — otherwise it never makes it into your figure.</span>
+  </p>
+
+  <h4>📍 <span data-lang="zh">在流程中的位置</span><span data-lang="en">Pipeline position</span></h4>
+  <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f7f9fb; padding: 10px; border-radius: 6px; line-height: 1.8">
+    normalize →
+    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b>HVG selection（挑 2000 個關鍵證人）</b></span>
+    → scale → PCA → KNN → Leiden → 你的「破案結論」
   </div>
+  <p style="margin-top: 6px; font-size: 0.93em; color: #555">
+    <span data-lang="zh">⚠️ PCA 之後所有方法<b>只看你挑的那 2000 個 gene</b>——HVG 漏掉某個 marker，整條分析鏈下游<b>絕對看不到</b>那種 cell type。HVG 是<b>單一最重要的「Yes/No 決定」</b>。</span>
+    <span data-lang="en">⚠️ Everything after PCA <b>only sees the 2000 HVGs you picked</b> — miss a marker in HVG, downstream cannot see that cell type, period. HVG is <b>the single most consequential yes/no decision</b>.</span>
+  </p>
 
-  <h4 data-lang="zh">🎯 為什麼 scRNA-seq <b>必須</b>挑 HVG（不能用全部 20,000）</h4>
-  <h4 data-lang="en">🎯 Why scRNA-seq <b>must</b> pick HVGs (can't use all 20,000)</h4>
-  <ul>
-    <li data-lang="zh"><b>計算成本</b>：PCA on 20k genes 慢 10×，1M cells 跑不完</li>
-    <li data-lang="en"><b>Compute cost</b>: PCA on 20k genes is 10× slower; 1M cells infeasible</li>
-    <li data-lang="zh"><b>雜訊壓制</b>：housekeeping genes (GAPDH, ACTB) 在所有 cells 都同樣高 → 沒有區分力但會佔 PCA capacity</li>
-    <li data-lang="en"><b>Noise suppression</b>: housekeeping genes (GAPDH, ACTB) are equally high in all cells → no discriminative power but consumes PCA capacity</li>
-    <li data-lang="zh"><b>細胞型態的 marker 只佔少數</b>：CD3D (T)、CD79A (B)、CD14 (Mono) 等真正帶生物資訊的 gene 才 ~ 2,000-3,000 個</li>
-    <li data-lang="en"><b>Cell-type markers are minority</b>: CD3D (T), CD79A (B), CD14 (Mono) and other biologically informative genes total only ~2,000–3,000</li>
-  </ul>
-
-  <h4 data-lang="zh">💥 HVG 沒挑好會發生什麼？實證對比</h4>
-  <h4 data-lang="en">💥 What happens with bad HVG? Empirical comparison</h4>
+  <h4>💥 <span data-lang="zh">挑錯證人，pDC（罕見細胞）消失</span><span data-lang="en">Pick the wrong witnesses, pDC (rare cell) disappears</span></h4>
   <table class="compare">
-    <tr><th data-lang="zh">HVG 策略</th><th data-lang="en">HVG strategy</th>
-        <th data-lang="zh">能解析的細胞型數</th><th data-lang="en">Resolvable cell types</th>
-        <th data-lang="zh">pDC (rare, ~30 cells) 找得到?</th><th data-lang="en">pDC (rare, ~30 cells) detected?</th></tr>
-    <tr style="background:#fdecec"><td data-lang="zh">用全部 32k genes</td><td data-lang="en">All 32k genes</td>
-        <td>~ 6 (housekeeping 主導 PC1)</td><td>~ 6 (housekeeping dominates PC1)</td>
-        <td>❌</td><td>❌</td></tr>
-    <tr><td>top 500 by variance</td><td>top 500 by variance</td>
-        <td>~ 7 (rare cell marker 遺漏)</td><td>~ 7 (rare cell markers missed)</td>
-        <td>❌</td><td>❌</td></tr>
-    <tr style="background:#effaf3"><td><b>top 2000, seurat_v3</b></td><td><b>top 2000, seurat_v3</b></td>
-        <td><b>9 主要 cell types</b></td><td><b>9 main types</b></td>
-        <td>△ (與 cDC 混)</td><td>△ (merged with cDC)</td></tr>
-    <tr><td>top 2000 with Pearson residuals</td><td>top 2000 with Pearson residuals</td>
-        <td>11 (含 pDC, Treg)</td><td>11 (incl. pDC, Treg)</td>
-        <td><b>✅</b></td><td><b>✅</b></td></tr>
+    <thead><tr>
+      <th><span data-lang="zh">HVG 策略</span><span data-lang="en">HVG strategy</span></th>
+      <th><span data-lang="zh">能看到幾種細胞型</span><span data-lang="en">Cell types visible</span></th>
+      <th><span data-lang="zh">pDC（0.5%, ~30 cells）找到？</span><span data-lang="en">pDC (~30 cells) found?</span></th>
+    </tr></thead>
+    <tbody>
+      <tr style="background: #fdecec"><td><span data-lang="zh">全部 32k gene 都用</span><span data-lang="en">All 32k genes</span></td>
+        <td>~6（housekeeping 霸佔 PC1）</td>
+        <td>❌ <span data-lang="zh">被噪音淹沒</span><span data-lang="en">drowned in noise</span></td></tr>
+      <tr style="background: #fdecec"><td><span data-lang="zh">top 500 by variance</span><span data-lang="en">top 500 by variance</span></td>
+        <td>~7（rare marker 漏）</td><td>❌</td></tr>
+      <tr style="background: #fff8e1"><td><b>seurat_v3 top 2000（scanpy 預設）</b></td>
+        <td><b>9 種主要型別</b></td>
+        <td>△ <span data-lang="zh">跟 cDC 混在一起</span><span data-lang="en">merged with cDC</span></td></tr>
+      <tr style="background: #effaf3"><td><b><span data-lang="zh">Pearson residual top 2000</span><span data-lang="en">Pearson residual top 2000</span></b></td>
+        <td>11 <span data-lang="zh">（含 pDC、Treg）</span><span data-lang="en">(incl. pDC, Treg)</span></td>
+        <td>✅</td></tr>
+    </tbody>
   </table>
 
-  <h4 data-lang="zh">🔗 對下游每個 scRNA 步驟的具體影響</h4>
-  <h4 data-lang="en">🔗 Concrete impact on each downstream scRNA step</h4>
+  <h4>🔗 <span data-lang="zh">證人名單錯了，每一步都查錯方向</span><span data-lang="en">Wrong witness list, every step investigates the wrong angle</span></h4>
   <ul>
-    <li data-lang="zh"><b>PCA (M3.1)</b>：PCA 只在 HVG subspace 找方向。HVG 漏 CD3D → 你的 PCA 看不到 T cell axis</li>
-    <li data-lang="en"><b>PCA (M3.1)</b>: PCA only finds directions in HVG subspace. HVG missing CD3D → your PCA can't see T cell axis</li>
-    <li data-lang="zh"><b>UMAP (M3.3)</b>：UMAP 用 PCA 的結果 → HVG 漏 marker → UMAP 上對應 cluster 不分離</li>
-    <li data-lang="en"><b>UMAP (M3.3)</b>: UMAP uses PCA → HVG missing marker → corresponding cluster won't separate on UMAP</li>
-    <li data-lang="zh"><b>Leiden (M4.2)</b>：cluster detection 依賴 HVG-based KNN graph → HVG 漏掉 → 那個 cell type 找不到 cluster</li>
-    <li data-lang="en"><b>Leiden (M4.2)</b>: cluster detection depends on HVG-based KNN → missing HVG → that cell type gets no cluster</li>
-    <li data-lang="zh"><b>DE (M5.1)</b>：HVG 篩選後的 PCA 跟 cluster → DE 還是會找回 marker，<b>但</b> rare cluster 沒被檢出 → DE 也沒機會跑</li>
-    <li data-lang="en"><b>DE (M5.1)</b>: post-HVG PCA + cluster → DE still finds markers, <b>but</b> rare cluster undetected → no DE chance</li>
-    <li data-lang="zh"><b>細胞分類 (M5.3)</b>：CellTypist 訓練時用 HVG。你的 query data 用同樣 HVG-selection 才能正確 query</li>
-    <li data-lang="en"><b>Cell classifier (M5.3)</b>: CellTypist trains on HVG. Your query data needs the same HVG-selection for accurate matching</li>
+    <li><b>PCA：</b><span data-lang="zh">只在 HVG 子空間找方向。HVG 沒 CD3D → PCA 看不到 T cell 軸。</span>
+      <span data-lang="en">Only searches within the HVG subspace. No CD3D in HVG → PCA can't see the T cell axis.</span></li>
+    <li><b>UMAP：</b><span data-lang="zh">承襲 PCA 結果 → 該分開的 cluster 在 UMAP 上糊成一團。</span>
+      <span data-lang="en">Inherits PCA's blind spots → clusters that should separate become one blob on UMAP.</span></li>
+    <li><b>Leiden：</b><span data-lang="zh">cluster 在 HVG-based KNN graph 上找 → 漏掉 IRF7 → pDC 根本沒 cluster。</span>
+      <span data-lang="en">Looks for clusters in HVG-based KNN graph → missing IRF7 → pDC has no cluster, period.</span></li>
+    <li><b>DE：</b><span data-lang="zh">cluster 不存在就沒機會跑 DE → 你連「pDC 表現什麼」這個問題都問不了。</span>
+      <span data-lang="en">No cluster = no DE chance → you can't even ask "what does pDC express".</span></li>
+    <li><b>CellTypist：</b><span data-lang="zh">classifier 是用 reference 的 HVG 訓練的；你的 query 必須用同樣 HVG list 否則 feature space 對不上。</span>
+      <span data-lang="en">Classifier trained on reference HVGs; your query must use the same HVG list, or feature spaces mismatch.</span></li>
   </ul>
 
-  <div class="callout bio" style="margin-top: 14px;">
-    <strong data-lang="zh">⭐ 一句話總結</strong><strong data-lang="en">⭐ One-line summary</strong>:
-    <span data-lang="zh">HVG 是「<b>scRNA 分析能不能看到 rare cell types</b>」的<b>單一最重要決策</b>。scanpy 預設 seurat_v3 + n_top_genes=2000 對 PBMC 夠用，但<b>rare cell research 一定要 Pearson HVG</b>。</span>
-    <span data-lang="en">HVG is <b>the single most important decision</b> for "whether scRNA analysis can see rare cell types". scanpy default seurat_v3 + n_top_genes=2000 suffices for PBMC, but <b>rare cell research absolutely needs Pearson HVG</b>.</span>
+  <div class="callout bio">
+    <strong>⭐ <span data-lang="zh">一句話總結</span><span data-lang="en">One-line summary</span></strong>：
+    <span data-lang="zh">HVG 是<b>「決定 paper 能不能看到某種細胞」的單一最重要選擇</b>。對 PBMC 主要型別，seurat_v3 + 2000 就夠；但只要你要找 rare cell（pDC、ILC3、stem-like cancer cell），<b>Pearson residual HVG 不是選項，是<b style="color:#c0392b">必須</b></b>。</span>
+    <span data-lang="en">HVG is <b>the single most important choice deciding whether a cell type even shows up in your paper</b>. For PBMC main types, seurat_v3 + 2000 suffices; but the moment you hunt rare cells (pDC, ILC3, stem-like cancer cells), <b>Pearson residual HVG isn't optional — it's <b style="color:#c0392b">mandatory</b></b>.</span>
   </div>
 </div>
 

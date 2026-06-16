@@ -264,73 +264,70 @@
 <!-- ===== 🧬 scRNA-seq 視角 panel ===== -->
 <div class="card" style="border-left: 6px solid var(--green); background: linear-gradient(135deg, #effaf3 0%, #fff 70%);">
   <h3 style="color: var(--green); margin-top: 0">
-    <span data-lang="zh">🧬 scRNA-seq 視角：為什麼「資料分布」決定整個分析的成敗</span>
-    <span data-lang="en">🧬 scRNA-seq perspective: why "data distribution" makes or breaks the entire analysis</span>
+    <span data-lang="zh">🧬 scRNA-seq 視角：問細胞要 mRNA，像問乞丐口袋有幾個銅板</span>
+    <span data-lang="en">🧬 scRNA-seq perspective: asking a cell for mRNA is like counting coins in a beggar's pocket</span>
   </h3>
 
-  <h4 data-lang="zh">📍 在 scRNA-seq 流程中的位置</h4>
-  <h4 data-lang="en">📍 Position in scRNA-seq pipeline</h4>
-  <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; padding: 12px; background: #f4f1ea; border-radius: 6px;">
-    <span data-lang="zh">儲存 (M1.1) →</span><span data-lang="en">Storage (M1.1) →</span>
-    <b style="color: #4338ca"> 【選對的計數模型 (本章)】 </b>
-    → <span data-lang="zh">為 normalize / DE / 整合 提供「統計假設」</span><span data-lang="en">provides "statistical assumption" for normalize / DE / integration</span>
-    <br><br>
-    <span data-lang="zh">⚠️ <b>後續所有「機率」相關工具（Pearson residuals、MAST、scVI、DESeq2）都依賴你選的分布</b>。選錯 → 後面全部假設破壞。</span>
-    <span data-lang="en">⚠️ <b>All downstream "probabilistic" tools (Pearson residuals, MAST, scVI, DESeq2) depend on the distribution you choose</b>. Wrong choice → downstream assumptions broken.</span>
+  <p style="font-size: 1.02em; line-height: 1.7">
+    <span data-lang="zh">想像你是統計學家，要描述「<b>一群人口袋有幾個銅板</b>」這件事。<b>絕對不能</b>用常態分布——因為：(1) 銅板是<b>個數</b>，沒有 1.7 個銅板這種事；(2) 多數人口袋是 0、少數人 1-2、極少數人 30 個——<b>右偏到爆</b>；(3) 連測 100 個人，你會看到變異數遠大於平均值（有錢的特別有錢）。<b>scRNA-seq 的 mRNA count 就是這個問題的細胞版</b>。</span>
+    <span data-lang="en">Imagine you're a statistician describing "<b>how many coins each person has in their pocket</b>". You absolutely <b>cannot</b> use a normal distribution because: (1) coins are <b>integers</b> — nobody has 1.7 coins; (2) most pockets have 0, a few have 1-2, the rare lucky one has 30 — <b>insanely right-skewed</b>; (3) variance dwarfs the mean (the rich are very rich). <b>scRNA-seq mRNA counts are this exact problem at the cell level</b>.</span>
+  </p>
+  <p style="font-size: 1.02em; line-height: 1.7">
+    <span data-lang="zh">用<b>常態分布</b>硬套會犯三個錯：把離散當連續、把右偏當對稱、把「變異數=平均」當「變異數遠大於平均」。Poisson 解決了前兩個，但 scRNA 還是「<b>過度離散</b>」（variance 比 mean 大 4-8 倍）——因為不同細胞表現量本身就有差異（hidden Gamma）。<b>NB（負二項分布）= Poisson + Gamma 混合</b>，剛好捕捉這件事。</span>
+    <span data-lang="en">Forcing a <b>Normal</b> commits three sins: continuous-instead-of-discrete, symmetric-instead-of-skewed, and "variance=mean" when reality is "variance ≫ mean". Poisson fixes the first two but scRNA is still <b>overdispersed</b> (variance 4-8× the mean) — because different cells have intrinsically different expression rates (a hidden Gamma). <b>NB = Poisson + Gamma mixture</b>, hitting this nail on the head.</span>
+  </p>
+
+  <h4>📍 <span data-lang="zh">它決定整套工具的「語言」</span><span data-lang="en">It defines the language of the whole toolkit</span></h4>
+  <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f7f9fb; padding: 10px; border-radius: 6px; line-height: 1.8">
+    sparse matrix →
+    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b>「我假設 mRNA 服從 NB 分布」</b></span>
+    → Pearson residuals · MAST · scVI · DESeq2 · scTransform · GLM-PCA
   </div>
+  <p style="margin-top: 6px; font-size: 0.93em; color: #555">
+    <span data-lang="zh">這四個字「<b>服從 NB</b>」是 sctransform、scVI、MAST、DESeq2 通通遵守的家規。改用「<b>常態</b>」就像在中華料理店點 espresso——廚師會看著你不知道該做什麼。</span>
+    <span data-lang="en">Those four characters "<b>follows NB</b>" are the house rules sctransform, scVI, MAST, DESeq2 all obey. Use "<b>Normal</b>" instead, and it's like ordering espresso at a dim-sum house — the chef stares blankly.</span>
+  </p>
 
-  <h4 data-lang="zh">🎯 為什麼 scRNA-seq <b>必須</b>用 NB 不能用 Normal</h4>
-  <h4 data-lang="en">🎯 Why scRNA-seq <b>must</b> use NB, not Normal</h4>
-  <ul>
-    <li data-lang="zh"><b>離散</b>：scRNA 是<b>分子計數</b>（mRNA 是離散個數），不是連續量。Normal 假設違反</li>
-    <li data-lang="en"><b>Discrete</b>: scRNA is a <b>molecular count</b> (mRNA in discrete molecules), not continuous. Normal violates this</li>
-    <li data-lang="zh"><b>右偏</b>：實測 CD3D 在 1000 cells 中 52% = 0、少數 = 30+。Normal 對稱假設違反</li>
-    <li data-lang="en"><b>Right-skewed</b>: empirically CD3D in 1000 cells: 52% are 0, a few are 30+. Normal symmetry violated</li>
-    <li data-lang="zh"><b>variance &gt; mean</b>（overdispersion）：實測 variance/mean ~ 4-8×；Poisson 假設 variance=mean 也違反 → 用 NB</li>
-    <li data-lang="en"><b>variance &gt; mean</b> (overdispersion): empirical variance/mean ~ 4-8×; Poisson's variance=mean also violated → use NB</li>
-  </ul>
-
-  <h4 data-lang="zh">💥 用錯分布會發生什麼？實證對比</h4>
-  <h4 data-lang="en">💥 What happens with wrong distribution? Empirical comparison</h4>
+  <h4>💥 <span data-lang="zh">用錯分布會發生什麼？三個悲劇</span><span data-lang="en">Three tragedies of picking the wrong distribution</span></h4>
   <table class="compare">
-    <tr><th data-lang="zh">假設分布</th><th data-lang="en">Assumed distribution</th>
-        <th data-lang="zh">PCA 結果</th><th data-lang="en">PCA result</th>
-        <th>DE FPR (Soneson 2018)</th><th>DE FPR (Soneson 2018)</th>
-        <th data-lang="zh">下游 cluster</th><th data-lang="en">Downstream cluster</th></tr>
-    <tr><td>Normal (假設 log)</td><td>Normal (log-assumed)</td>
-        <td data-lang="zh">高表現 housekeeping 主導</td>
-        <td data-lang="en">housekeeping dominates</td>
-        <td>~ 20%</td><td>~ 20%</td>
-        <td data-lang="zh">細胞型混淆</td><td data-lang="en">cell types confused</td></tr>
-    <tr><td>Poisson (假設 = NB)</td><td>Poisson</td>
-        <td data-lang="zh">overdispersed gene 過度懲罰</td>
-        <td data-lang="en">overdispersed genes over-penalized</td>
-        <td>~ 12%</td><td>~ 12%</td>
-        <td data-lang="zh">rare cluster 漏</td><td data-lang="en">rare clusters missed</td></tr>
-    <tr style="background:#effaf3"><td><b>NB</b> (正確)</td><td><b>NB</b> (correct)</td>
-        <td data-lang="zh">✅ 抓到細胞型 marker</td>
-        <td data-lang="en">✅ catches cell-type markers</td>
-        <td>~ 5% (符合 α)</td><td>~ 5% (matches α)</td>
-        <td>✅</td><td>✅</td></tr>
+    <thead><tr>
+      <th><span data-lang="zh">假設</span><span data-lang="en">Assumption</span></th>
+      <th><span data-lang="zh">人間情境的比喻</span><span data-lang="en">Real-world analogy</span></th>
+      <th><span data-lang="zh">PCA 結果</span><span data-lang="en">PCA result</span></th>
+      <th><span data-lang="zh">DE 假陽性率</span><span data-lang="en">DE false-positive rate</span></th>
+    </tr></thead>
+    <tbody>
+      <tr style="background: #fdecec"><td><b>Normal</b></td>
+        <td><span data-lang="zh">假裝每人口袋 2.34 個銅板</span><span data-lang="en">Pretending everyone has 2.34 coins</span></td>
+        <td><span data-lang="zh">housekeeping gene 一個人霸佔 PC1</span><span data-lang="en">Housekeeping genes hog PC1</span></td>
+        <td>~20%</td></tr>
+      <tr style="background: #fdecec"><td><b>Poisson</b></td>
+        <td><span data-lang="zh">假裝有錢人不存在（variance = mean）</span><span data-lang="en">Pretending the rich don't exist (variance = mean)</span></td>
+        <td><span data-lang="zh">少數高變異 gene 被過度懲罰</span><span data-lang="en">High-variance genes over-penalized</span></td>
+        <td>~12%</td></tr>
+      <tr style="background: #effaf3"><td><b>NB</b> ✓</td>
+        <td><span data-lang="zh">承認有些人特別有錢、變異很大</span><span data-lang="en">Acknowledge the rich are very rich</span></td>
+        <td><span data-lang="zh">cell-type marker 正確凸顯</span><span data-lang="en">Cell-type markers correctly surface</span></td>
+        <td>~5% ✓</td></tr>
+    </tbody>
   </table>
 
-  <h4 data-lang="zh">🔗 對下游每個 scRNA 步驟的具體影響</h4>
-  <h4 data-lang="en">🔗 Concrete impact on each downstream scRNA step</h4>
+  <h4>🔗 <span data-lang="zh">它怎麼撐起下游每一步？</span><span data-lang="en">How it props up every downstream step</span></h4>
   <ul>
-    <li data-lang="zh"><b>Normalization (M2.2)</b>：Pearson residuals 公式 $(x - \mu)/\sqrt{\mu + \mu^2/\theta}$ 的分母<b>就是 NB 的 σ</b>。沒有 NB 假設這個公式沒意義</li>
-    <li data-lang="en"><b>Normalization (M2.2)</b>: Pearson residuals' denominator $\sqrt{\mu + \mu^2/\theta}$ <b>IS the NB σ</b>. Without NB this formula is meaningless</li>
-    <li data-lang="zh"><b>HVG (M2.3)</b>：mean-variance plot 的 baseline 就是 NB curve $\text{Var} = \mu + \mu^2/\theta$。HVG = 偏離此 curve 的 gene</li>
-    <li data-lang="en"><b>HVG (M2.3)</b>: mean-variance plot baseline IS the NB curve. HVG = genes deviating from it</li>
-    <li data-lang="zh"><b>DE (M5.1)</b>：MAST 雙部分模型、DESeq2 GLM 都建立在 NB 上。Wilcoxon 不需分布假設但<b>失去 power</b></li>
-    <li data-lang="en"><b>DE (M5.1)</b>: MAST hurdle model and DESeq2 GLM both build on NB. Wilcoxon avoids assumption but <b>loses power</b></li>
-    <li data-lang="zh"><b>Integration (M6.1)</b>：scVI 用 NB likelihood 作 decoder。換 distribution = 整個模型重寫</li>
-    <li data-lang="en"><b>Integration (M6.1)</b>: scVI uses NB likelihood as decoder. Change distribution = rewrite the model</li>
+    <li><b>Normalization：</b><span data-lang="zh">Pearson residuals 公式裡的分母 $\sqrt{\mu+\mu^2/\theta}$ <b>就是 NB 的標準差</b>。沒 NB，這條公式只是亂寫的符號。</span>
+      <span data-lang="en">Pearson residuals' denominator $\sqrt{\mu+\mu^2/\theta}$ <b>IS the NB standard deviation</b>. Without NB it's just doodle.</span></li>
+    <li><b>HVG：</b><span data-lang="zh">mean-variance 圖的「正常曲線」就是 NB 的 $\text{Var}=\mu+\mu^2/\theta$；偏離這條線的 gene 才被選成 HVG。</span>
+      <span data-lang="en">The "expected" curve on the mean-variance plot IS the NB curve; genes that deviate become HVGs.</span></li>
+    <li><b>DE：</b><span data-lang="zh">MAST、DESeq2 全建在 NB 上；Wilcoxon 不假設分布但<b>付出 power 的代價</b>（漏報微弱真信號）。</span>
+      <span data-lang="en">MAST and DESeq2 both build on NB; Wilcoxon is assumption-free but <b>pays in lost power</b> (misses subtle signals).</span></li>
+    <li><b>scVI / 整合：</b><span data-lang="zh">scVI 的 decoder 直接吐 NB likelihood；換假設等於整個 deep model 重訓練。</span>
+      <span data-lang="en">scVI's decoder spits NB likelihood directly; swap distribution = retrain the whole deep model.</span></li>
   </ul>
 
-  <div class="callout bio" style="margin-top: 14px;">
-    <strong data-lang="zh">⭐ 一句話總結</strong><strong data-lang="en">⭐ One-line summary</strong>:
-    <span data-lang="zh">NB 不是「眾多選項之一」——它是<b>scRNA-seq 從 sctransform 到 scVI 整個工具生態系的數學語言</b>。理解它後，所有後續 paper 的「Var(X) = μ + μ²/θ」「Pearson residual」「NB GLM」都不再神秘。</span>
-    <span data-lang="en">NB isn't "one of many options" — it's <b>the mathematical language of the entire scRNA-seq toolkit from sctransform to scVI</b>. Understanding it demystifies "Var(X) = μ + μ²/θ", "Pearson residual", "NB GLM" across all subsequent papers.</span>
+  <div class="callout bio">
+    <strong>⭐ <span data-lang="zh">一句話總結</span><span data-lang="en">One-line summary</span></strong>：
+    <span data-lang="zh">NB 不是隨便選的分布，它是<b>整個 scRNA-seq 工具圈的官方語言</b>。你要進這個圈子，就要學會「Var(X) = μ + μ²/θ」這句通關密語。</span>
+    <span data-lang="en">NB isn't a casual choice — it's the <b>official language of the entire scRNA-seq toolkit</b>. The password to enter the club is "Var(X) = μ + μ²/θ".</span>
   </div>
 </div>
 

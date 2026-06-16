@@ -255,65 +255,59 @@
 <!-- ===== 🧬 scRNA-seq 視角 panel ===== -->
 <div class="card" style="border-left: 6px solid var(--green); background: linear-gradient(135deg, #effaf3 0%, #fff 70%);">
   <h3 style="color: var(--green); margin-top: 0">
-    <span data-lang="zh">🧬 scRNA-seq 視角：為什麼「不 scale」會讓 PCA 找到 MALAT1 而不是 CD3D</span>
-    <span data-lang="en">🧬 scRNA-seq perspective: why "no scaling" makes PCA find MALAT1 instead of CD3D</span>
+    <span data-lang="zh">🧬 scRNA-seq 視角：scaling 是「強迫每個基因發言時間一樣長」</span>
+    <span data-lang="en">🧬 scRNA-seq perspective: scaling forces every gene to "speak the same length of time"</span>
   </h3>
 
-  <h4 data-lang="zh">📍 在 scRNA-seq 流程中的位置</h4>
-  <h4 data-lang="en">📍 Position in scRNA-seq pipeline</h4>
-  <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; padding: 12px; background: #f4f1ea; border-radius: 6px;">
-    HVG (M2.3) → <b style="color: #0d9488">【scale + clip (本章)】</b> → PCA (M3.1) → KNN → Leiden → ...
-    <br><br>
-    <span data-lang="zh">⚠️ <b>PCA 看「絕對 variance 最大」的方向</b>——若沒先把每個 gene 拉成 σ=1，<b>高表現 gene 永遠贏</b>，PC1 就是「哪個 gene 表現最高」這種無聊方向。</span>
-    <span data-lang="en">⚠️ <b>PCA finds directions of "max absolute variance"</b> — without scaling each gene to σ=1, <b>high-expression genes always win</b>, and PC1 becomes "which gene is highest" — a useless direction.</span>
+  <p style="font-size: 1.02em; line-height: 1.7">
+    <span data-lang="zh">想像一場「<b>細胞型態圓桌會議</b>」，每個 gene 都是一位發言人。PCA 是會議紀錄員，它會把「<b>發言最多的人</b>」的觀點寫進 PC1。問題來了：MALAT1 是個<b>愛講話的大叔</b>（每個細胞都喊著「我在！我在！」），他講話的<b>音量（變異數）</b>是 CD3D 的 9 倍。會議紀錄員把整個 PC1 都寫成 MALAT1 的廢話，CD3D 講的「我是 T 細胞 marker」反而沒人聽到。</span>
+    <span data-lang="en">Picture a <b>cell-type round-table meeting</b> where every gene is a speaker. PCA is the secretary, writing whoever <b>talks most</b> into PC1. Problem: MALAT1 is the <b>chatty uncle</b> ("I'm here! I'm here!" in every cell), and his <b>volume (variance)</b> is 9× CD3D's. The secretary fills PC1 entirely with MALAT1 babble, and CD3D's important "I'm a T-cell marker" gets drowned out.</span>
+  </p>
+  <p style="font-size: 1.02em; line-height: 1.7">
+    <span data-lang="zh">Scaling 就是會議主持人說：「<b>請每個發言人都只能講 1 分鐘，不准超時</b>」（z-score 把每個 gene 拉成 σ=1）。瞬間 MALAT1 的音量被壓下來，CD3D 跟所有 marker gene 公平競爭——PCA 終於能寫出「<b>誰是 B 細胞、誰是 T 細胞</b>」這種有意義的紀錄。順便還有<b>clip @ 10</b>規則，防止某個發言人突然<b>大喊一聲（outlier）</b>把整個會議帶歪。</span>
+    <span data-lang="en">Scaling is the moderator's rule: "<b>each speaker gets exactly 1 minute, no overtime</b>" (z-score forces every gene to σ=1). Suddenly MALAT1's volume drops, CD3D competes on equal terms — PCA can finally write meaningful minutes like "<b>this is B cells, that's T cells</b>". And a <b>clip @ 10</b> rule prevents one speaker from <b>screaming once (outlier)</b> and derailing the whole meeting.</span>
+  </p>
+
+  <h4>📍 <span data-lang="zh">在流程中的位置</span><span data-lang="en">Pipeline position</span></h4>
+  <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f7f9fb; padding: 10px; border-radius: 6px; line-height: 1.8">
+    HVG →
+    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b>scale + clip（音量管制）</b></span>
+    → PCA → KNN → Leiden → ...
   </div>
 
-  <h4 data-lang="zh">🎯 為什麼 scRNA-seq <b>必須</b> scale（即使已 log normalize）</h4>
-  <h4 data-lang="en">🎯 Why scRNA-seq <b>must</b> scale (even after log normalize)</h4>
-  <ul>
-    <li data-lang="zh"><b>log normalize 不夠</b>：log(CP10K+1) 後高表現 housekeeping (MALAT1, RPL10) σ ≈ 1.5，cell-type marker (CD3D) σ ≈ 0.5。PCA 仍偏好 housekeeping</li>
-    <li data-lang="en"><b>log normalize isn't enough</b>: after log(CP10K+1), housekeeping (MALAT1, RPL10) σ ≈ 1.5, cell-type markers (CD3D) σ ≈ 0.5. PCA still favors housekeeping</li>
-    <li data-lang="zh"><b>z-score 拉平公平性</b>：把所有 gene 變 mean=0, σ=1 → PCA 公平比較「<b>哪個 gene 在 cluster 之間區分力最強</b>」</li>
-    <li data-lang="en"><b>z-score levels the field</b>: all genes mean=0, σ=1 → PCA fairly compares "<b>which gene best discriminates clusters</b>"</li>
-    <li data-lang="zh"><b>clip @ 10 防 outlier</b>：scRNA 偶爾有 z=50+ 的 outlier（單 cell 單 gene 極端表現）→ 不 clip 整個 PCA 被該 1 cell 拉走</li>
-    <li data-lang="en"><b>clip @ 10 prevents outliers</b>: scRNA occasionally has z=50+ outliers (single cell + gene extreme expression) → without clip, PCA chases that one cell</li>
-  </ul>
-
-  <h4 data-lang="zh">💥 不 scale 會發生什麼？PBMC 3k 實證</h4>
-  <h4 data-lang="en">💥 What happens without scaling? PBMC 3k empirical</h4>
+  <h4>💥 <span data-lang="zh">不限制音量，PC1 變成「MALAT1 大叔的演講台」</span><span data-lang="en">No volume control, PC1 becomes "Uncle MALAT1's soapbox"</span></h4>
   <table class="compare">
-    <tr><th data-lang="zh">設定</th><th data-lang="en">Setting</th>
-        <th>PC1 top loadings</th><th>PC1 top loadings</th>
-        <th data-lang="zh">PC1 解釋變異</th><th data-lang="en">PC1 var explained</th></tr>
-    <tr style="background:#fdecec"><td data-lang="zh">不 scale</td><td data-lang="en">No scale</td>
-        <td>MALAT1, RPL10, RPS27 (housekeeping)</td>
-        <td>MALAT1, RPL10, RPS27 (housekeeping)</td>
-        <td>22.4% <span data-lang="zh">(噪音)</span><span data-lang="en">(noise)</span></td>
-        <td>22.4% (noise)</td></tr>
-    <tr style="background:#effaf3"><td>scale + clip 10</td><td>scale + clip 10</td>
-        <td>CD79A, MS4A1, CD79B (B markers)</td>
-        <td>CD79A, MS4A1, CD79B (B markers)</td>
-        <td>11.2% <span data-lang="zh">(真實生物)</span><span data-lang="en">(real biology)</span></td>
-        <td>11.2% (real biology)</td></tr>
+    <thead><tr>
+      <th><span data-lang="zh">設定</span><span data-lang="en">Setting</span></th>
+      <th>PC1 top loadings</th>
+      <th><span data-lang="zh">PC1 在量什麼？</span><span data-lang="en">What does PC1 measure?</span></th>
+    </tr></thead>
+    <tbody>
+      <tr style="background: #fdecec"><td><span data-lang="zh">不 scale</span><span data-lang="en">No scale</span></td>
+        <td>MALAT1, RPL10, RPS27（家管軍團）</td>
+        <td>🎤 <span data-lang="zh">「誰最大聲」（無聊）</span><span data-lang="en">"Who's loudest" (boring)</span></td></tr>
+      <tr style="background: #effaf3"><td><span data-lang="zh">scale + clip 10</span><span data-lang="en">scale + clip 10</span></td>
+        <td>CD79A, MS4A1, CD79B（B marker）</td>
+        <td>✅ <span data-lang="zh">「誰是什麼細胞」</span><span data-lang="en">"Who is which cell" (signal)</span></td></tr>
+    </tbody>
   </table>
 
-  <h4 data-lang="zh">🔗 對下游每個 scRNA 步驟的具體影響</h4>
-  <h4 data-lang="en">🔗 Concrete impact on each downstream scRNA step</h4>
+  <h4>🔗 <span data-lang="zh">沒做音量管制，下游全亂</span><span data-lang="en">No volume control, downstream chaos</span></h4>
   <ul>
-    <li data-lang="zh"><b>PCA (M3.1)</b>：決定 PC1-PC50 抓到的是「真實 cell type axis」還是「housekeeping/depth axis」</li>
-    <li data-lang="en"><b>PCA (M3.1)</b>: decides if PC1-PC50 captures "real cell-type axes" or "housekeeping/depth axis"</li>
-    <li data-lang="zh"><b>KNN (M4.1)</b>：距離是基於 PCA → scale 錯 PCA 錯 KNN 也錯，整個 cluster 結構崩壞</li>
-    <li data-lang="en"><b>KNN (M4.1)</b>: distances built on PCA → wrong scale → wrong PCA → wrong KNN → cluster structure collapses</li>
-    <li data-lang="zh"><b>regress-out</b>：scale 流程中可選擇加 confounder removal (total_counts, cell cycle phase)，影響 batch correction</li>
-    <li data-lang="en"><b>regress-out</b>: scale flow optionally includes confounder removal (total_counts, cell cycle), affects batch correction</li>
-    <li data-lang="zh"><b>Pearson residual 可省此步</b>：σ 已 = 1 → 不需 scale。M2.2 介紹的 analytic Pearson 路徑跳過本章</li>
-    <li data-lang="en"><b>Pearson residual skips this step</b>: σ already = 1 → no scaling needed. The M2.2 analytic Pearson route bypasses this chapter</li>
+    <li><b>PCA：</b><span data-lang="zh">PC1-50 全部被 housekeeping/depth 主導，真實 cell type 軸被擠到 PC51 後（你看不到）。</span>
+      <span data-lang="en">PC1-50 hijacked by housekeeping/depth; real cell-type axes pushed past PC51 (invisible to you).</span></li>
+    <li><b>KNN：</b><span data-lang="zh">距離是 PCA 空間量的 → PCA 錯，KNN 把「<b>表現量近的</b>」當鄰居（不是「<b>細胞型相近的</b>」）。</span>
+      <span data-lang="en">Distances live in PCA space → wrong PCA, KNN groups "<b>cells with similar expression levels</b>" not "<b>similar cell types</b>".</span></li>
+    <li><b>regress-out：</b><span data-lang="zh">scaling 階段是把 total_counts / cell cycle 等已知干擾因子「踢出去」的最後機會。</span>
+      <span data-lang="en">Scaling stage is the last chance to "kick out" known confounders like total_counts / cell cycle.</span></li>
+    <li><b>Pearson residual 路線：</b><span data-lang="zh">如果你用 §M2.2 介紹的 Pearson residuals，σ 已經 = 1，這章直接跳過。</span>
+      <span data-lang="en">If you took the Pearson residuals route in §M2.2, σ is already 1 — you can skip this chapter entirely.</span></li>
   </ul>
 
-  <div class="callout bio" style="margin-top: 14px;">
-    <strong data-lang="zh">⭐ 一句話總結</strong><strong data-lang="en">⭐ One-line summary</strong>:
-    <span data-lang="zh">scale 是「<b>讓 PCA 看到生物學而非數量級</b>」的最後一道手續。沒有它，PC1 永遠是 housekeeping/depth。</span>
-    <span data-lang="en">Scaling is "<b>the final step letting PCA see biology, not magnitude</b>". Without it, PC1 is forever housekeeping/depth.</span>
+  <div class="callout bio">
+    <strong>⭐ <span data-lang="zh">一句話總結</span><span data-lang="en">One-line summary</span></strong>：
+    <span data-lang="zh">沒 scaling，PCA 永遠在問「誰最大聲」；做了 scaling，PCA 才開始問「<b>誰在講有意義的話</b>」。這是讓 PCA 從噪音偵測器變成<b>細胞型態雷達</b>的關鍵一步。</span>
+    <span data-lang="en">Without scaling, PCA forever asks "who's loudest"; with scaling, PCA finally asks "<b>who's saying something meaningful</b>". This is the step that upgrades PCA from a noise meter into a <b>cell-type radar</b>.</span>
   </div>
 </div>
 
