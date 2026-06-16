@@ -225,6 +225,10 @@
   <a href="#s6"><span data-lang="zh">§6 Leiden 修正</span><span data-lang="en">§6 Leiden fix</span></a>
   <a href="#s7"><span data-lang="zh">§7 Resolution</span><span data-lang="en">§7 Resolution</span></a>
   <a href="#s8"><span data-lang="zh">§8 限制</span><span data-lang="en">§8 Limits</span></a>
+  <a href="#s9"><span data-lang="zh">§9 PBMC 案例</span><span data-lang="en">§9 PBMC case</span></a>
+  <a href="#s10"><span data-lang="zh">§10 CPM</span><span data-lang="en">§10 CPM</span></a>
+  <a href="#s11"><span data-lang="zh">§11 consensus</span><span data-lang="en">§11 consensus</span></a>
+  <a href="#s12"><span data-lang="zh">§12 hierarchical</span><span data-lang="en">§12 hierarchical</span></a>
 </div>
 
 <header class="cover">
@@ -584,6 +588,188 @@ sc.tl.leiden(adata, resolution=<span class="n">1.0</span>)
     <td data-lang="en">batch correction, right n_pcs</td>
   </tr>
 </table>
+
+<!-- ===================================== §9 PBMC Leiden 案例 ===================================== -->
+<h2 id="s9"><span class="num">§9</span> <span data-lang="zh">PBMC 3k Leiden 案例：resolution sweep 找穩定 cluster 數</span><span data-lang="en">PBMC 3k Leiden case: resolution sweep for stable cluster count</span></h2>
+
+<p class="lead" data-lang="zh">
+  PBMC 3k 「應該」分幾群？文獻共識是 8-9 個（CD4 / CD8 / Mono CD14 / Mono CD16 / B / NK / DC / Megakaryocyte / Plasma）。
+  本節展示如何用 resolution sweep 找到這個穩定點。
+</p>
+<p class="lead" data-lang="en">
+  How many clusters "should" PBMC 3k have? Literature consensus: 8-9 (CD4 / CD8 / Mono CD14 / Mono CD16 / B / NK / DC / Megakaryocyte / Plasma).
+  Use resolution sweep to find this stable point.
+</p>
+
+<table class="compare">
+  <tr><th>resolution γ</th><th>resolution γ</th>
+      <th data-lang="zh">群數</th><th data-lang="en">Clusters</th>
+      <th>Q (modularity)</th><th>Q</th>
+      <th data-lang="zh">解讀</th><th data-lang="en">Interpretation</th></tr>
+  <tr><td>0.1</td><td>0.1</td>
+      <td>3</td><td>3</td>
+      <td>0.68</td><td>0.68</td>
+      <td data-lang="zh">T / Mono / B (大尺度)</td>
+      <td data-lang="en">T / Mono / B (macro)</td></tr>
+  <tr><td>0.3</td><td>0.3</td>
+      <td>7</td><td>7</td>
+      <td>0.72</td><td>0.72</td>
+      <td data-lang="zh">主要型態，T 不分 CD4/CD8</td>
+      <td data-lang="en">main types, T not split</td></tr>
+  <tr style="background:#effaf3"><td><b>0.5</b></td><td><b>0.5</b></td>
+      <td><b>9</b></td><td><b>9</b></td>
+      <td><b>0.75</b></td><td><b>0.75</b></td>
+      <td><b data-lang="zh">標準 PBMC annotation</b><b data-lang="en">standard PBMC annotation</b></td></tr>
+  <tr><td>0.8</td><td>0.8</td>
+      <td>12</td><td>12</td>
+      <td>0.74</td><td>0.74</td>
+      <td data-lang="zh">CD4 分 naive/memory; B 分 naive/memory</td>
+      <td data-lang="en">CD4 splits naive/memory; B splits</td></tr>
+  <tr><td>1.5</td><td>1.5</td>
+      <td>17</td><td>17</td>
+      <td>0.69</td><td>0.69</td>
+      <td data-lang="zh">過度切碎，技術噪音群出現</td>
+      <td data-lang="en">over-split, tech noise clusters appear</td></tr>
+</table>
+
+<div class="callout bio">
+  <strong data-lang="zh">如何找「正確」的 resolution</strong><strong data-lang="en">Finding "right" resolution</strong>:
+  <span data-lang="zh">1️⃣ 跑 γ ∈ {0.3, 0.5, 0.8, 1.0, 1.5}；2️⃣ 看每群的 top marker 是否有<b>明確生物意義</b>（known marker gene）；3️⃣ 觀察 Q 曲線是否有 plateau；4️⃣ 用 <b>clustree</b>（Zappia & Oshlack 2018）視覺化不同 res 之間 cluster 怎麼合併分裂。PBMC 3k 在 γ=0.5 時 9 個 cluster 都是 well-known marker，是穩定點。</span>
+  <span data-lang="en">1️⃣ Try γ ∈ {0.3, 0.5, 0.8, 1.0, 1.5}; 2️⃣ Check each cluster's top markers for <b>clear biological meaning</b>; 3️⃣ Look for Q plateau; 4️⃣ Use <b>clustree</b> (Zappia & Oshlack 2018) to visualize cluster splits/merges across res. PBMC 3k at γ=0.5 gives 9 clusters all with known markers — stable.</span>
+</div>
+
+<p data-lang="zh">📚 <b>引用</b>：Zappia & Oshlack (2018) <i>GigaScience</i> 7:giy083 (clustree); Heumos et al. (2023) PBMC tutorial。</p>
+<p data-lang="en">📚 <b>References</b>: Zappia & Oshlack (2018) <i>GigaScience</i> 7:giy083 (clustree); Heumos et al. (2023) PBMC tutorial.</p>
+
+<!-- ===================================== §10 CPM ===================================== -->
+<h2 id="s10"><span class="num">§10</span> <span data-lang="zh">深入：Constant Potts Model (CPM) — Leiden 的另一個 quality function</span><span data-lang="en">Deep dive: Constant Potts Model (CPM) — Leiden's alternative quality function</span></h2>
+
+<p class="lead" data-lang="zh">
+  Leiden 不只支援 modularity，還支援 <b>CPM</b>（Traag, Van Dooren & Nesterov 2011）。
+  CPM 避免 modularity 的 resolution limit，對「<b>同樣大小的小 cluster 都能找到</b>」特別好。
+</p>
+<p class="lead" data-lang="en">
+  Leiden supports not only modularity but also <b>CPM</b> (Traag, Van Dooren & Nesterov 2011).
+  CPM avoids modularity's resolution limit, especially good at finding "<b>small clusters of similar size</b>".
+</p>
+
+<h3 data-lang="zh">10.1 CPM 公式</h3>
+<h3 data-lang="en">10.1 CPM formula</h3>
+
+<div class="math-block boxed">
+  $$\mathcal{H}_{\text{CPM}} = \sum_c \left[ e_c - \gamma \binom{n_c}{2} \right]$$
+  <div class="formula-caption" data-lang="zh">$e_c$ = cluster $c$ 內邊數、$n_c$ = cluster size、$\gamma$ = resolution（密度門檻）</div>
+  <div class="formula-caption" data-lang="en">$e_c$ = within-cluster edges, $n_c$ = cluster size, $\gamma$ = resolution (density threshold)</div>
+</div>
+
+<h3 data-lang="zh">10.2 CPM vs modularity 的關鍵差</h3>
+<h3 data-lang="en">10.2 Key difference: CPM vs modularity</h3>
+
+<table class="compare">
+  <tr><th></th><th>Modularity</th><th>Modularity</th><th>CPM</th><th>CPM</th></tr>
+  <tr><td data-lang="zh">參考</td><td data-lang="en">Reference</td>
+      <td data-lang="zh">隨機圖（依現有 degree 分布）</td>
+      <td data-lang="en">random graph (degree-preserving)</td>
+      <td data-lang="zh">純密度（cluster 內邊密度 ≥ γ）</td>
+      <td data-lang="en">pure density (within-cluster edge density ≥ γ)</td></tr>
+  <tr><td data-lang="zh">resolution limit</td><td data-lang="en">Resolution limit</td>
+      <td>✅ <span data-lang="zh">有</span><span data-lang="en">yes</span></td>
+      <td>✅ yes</td>
+      <td>❌ <span data-lang="zh">沒</span><span data-lang="en">no</span></td>
+      <td>❌ no</td></tr>
+  <tr><td data-lang="zh">適合</td><td data-lang="en">Suited for</td>
+      <td data-lang="zh">cluster size 不均</td>
+      <td data-lang="en">unequal cluster sizes</td>
+      <td data-lang="zh">cluster size 相似、要 rare 細胞</td>
+      <td data-lang="en">similar sizes, finding rare cells</td></tr>
+</table>
+
+<pre class="code"><span class="c"># 用 CPM 而非 modularity</span>
+sc.tl.leiden(adata, partition_type=<span class="s">"CPMVertexPartition"</span>, resolution_parameter=<span class="n">0.02</span>)
+<span class="c"># 注意：CPM 的 γ 範圍不同於 modularity (通常更小)</span></pre>
+
+<p data-lang="zh">📚 <b>引用</b>：Traag, Van Dooren & Nesterov (2011) <i>Phys Rev E</i> 84:016114 (CPM); Traag, Waltman & van Eck (2019) <i>Sci Rep</i> 9:5233 (Leiden + CPM 整合)。</p>
+<p data-lang="en">📚 <b>References</b>: Traag, Van Dooren & Nesterov (2011) <i>Phys Rev E</i> 84:016114 (CPM); Traag, Waltman & van Eck (2019) <i>Sci Rep</i> 9:5233 (Leiden + CPM integration).</p>
+
+<!-- ===================================== §11 consensus ===================================== -->
+<h2 id="s11"><span class="num">§11</span> <span data-lang="zh">Consensus clustering：穩定 cluster 的最佳實踐</span><span data-lang="en">Consensus clustering: best practice for stable clusters</span></h2>
+
+<p class="lead" data-lang="zh">
+  Leiden 是 stochastic 的（受 seed 影響）。同一個 γ 跑 100 次可能得到略不同 cluster。
+  <b>Consensus clustering</b>（Monti 2003）跑多次後取「<b>共同</b>」結果，得更穩定 cluster。
+</p>
+<p class="lead" data-lang="en">
+  Leiden is stochastic (seed-dependent). Same γ run 100 times may give slightly different clusters.
+  <b>Consensus clustering</b> (Monti 2003) takes "<b>shared</b>" results across many runs for stability.
+</p>
+
+<h3 data-lang="zh">11.1 演算法</h3>
+<h3 data-lang="en">11.1 Algorithm</h3>
+
+<ol>
+  <li><span data-lang="zh">跑 Leiden 100 次（不同 seed）</span>
+      <span data-lang="en">Run Leiden 100× (different seeds)</span></li>
+  <li><span data-lang="zh">對每對 cell (i, j) 算「他們被分到同 cluster 的次數比例」</span>
+      <span data-lang="en">For each cell pair (i, j), compute "fraction of runs they're in same cluster"</span></li>
+  <li><span data-lang="zh">得 <b>consensus matrix</b> M (n × n)</span>
+      <span data-lang="en">Get <b>consensus matrix</b> M (n × n)</span></li>
+  <li><span data-lang="zh">對 M 做 hierarchical clustering 得最終 cluster</span>
+      <span data-lang="en">Hierarchical cluster on M → final clusters</span></li>
+</ol>
+
+<h3 data-lang="zh">11.2 工具</h3>
+<h3 data-lang="en">11.2 Tools</h3>
+
+<ul>
+  <li data-lang="zh"><b>SC3</b>（Kiselev 2017）: 第一個 scRNA consensus clustering，整合 PCA / Laplacian / Spectral</li>
+  <li data-lang="en"><b>SC3</b> (Kiselev 2017): first scRNA consensus clustering, integrates PCA / Laplacian / Spectral</li>
+  <li data-lang="zh"><b>scanpy + 自己 loop</b>: 跑 100 次 leiden 然後手算 consensus</li>
+  <li data-lang="en"><b>scanpy + manual loop</b>: 100× leiden + manual consensus</li>
+  <li data-lang="zh"><b>RaceID3</b>（Herman 2018）: 用 outlier-aware consensus</li>
+  <li data-lang="en"><b>RaceID3</b> (Herman 2018): outlier-aware consensus</li>
+</ul>
+
+<p data-lang="zh">📚 <b>引用</b>：Monti et al. (2003) <i>Machine Learning</i> 52:91 (consensus clustering 原始); Kiselev et al. (2017) <i>Nat Methods</i> 14:483 (SC3); Herman, Sagar & Grün (2018) <i>Nat Methods</i> 15:379 (RaceID3)。</p>
+<p data-lang="en">📚 <b>References</b>: Monti et al. (2003) <i>Machine Learning</i> 52:91 (original consensus); Kiselev et al. (2017) <i>Nat Methods</i> 14:483 (SC3); Herman, Sagar & Grün (2018) <i>Nat Methods</i> 15:379 (RaceID3).</p>
+
+<!-- ===================================== §12 hierarchical ===================================== -->
+<h2 id="s12"><span class="num">§12</span> <span data-lang="zh">Hierarchical Leiden：找 nested cell types</span><span data-lang="en">Hierarchical Leiden: nested cell types</span></h2>
+
+<p class="lead" data-lang="zh">
+  細胞型態是<b>階層的</b>：T cell → CD4 T → CD4 naive / memory；B cell → naive B / memory B / plasma。
+  單一 γ 抓不到所有層級。Hierarchical Leiden 解這個。
+</p>
+<p class="lead" data-lang="en">
+  Cell types are <b>hierarchical</b>: T cell → CD4 T → CD4 naive / memory; B cell → naive / memory / plasma B.
+  Single γ misses some levels. Hierarchical Leiden solves this.
+</p>
+
+<h3 data-lang="zh">12.1 兩階段方法</h3>
+<h3 data-lang="en">12.1 Two-stage approach</h3>
+
+<pre class="code"><span class="c"># Stage 1: coarse clustering</span>
+sc.tl.leiden(adata, resolution=<span class="n">0.3</span>, key_added=<span class="s">"leiden_coarse"</span>)
+<span class="c"># → 7 clusters: T / Mono / B / NK / DC / Plasma / Mega</span>
+
+<span class="c"># Stage 2: 對每個 coarse cluster 內部 sub-cluster</span>
+<span class="k">for</span> cluster <span class="k">in</span> adata.obs[<span class="s">"leiden_coarse"</span>].unique():
+    mask = adata.obs[<span class="s">"leiden_coarse"</span>] == cluster
+    sub_adata = adata[mask].copy()
+    sc.pp.neighbors(sub_adata, n_neighbors=<span class="n">10</span>)
+    sc.tl.leiden(sub_adata, resolution=<span class="n">1.0</span>, key_added=<span class="s">"sub"</span>)
+    adata.obs.loc[mask, <span class="s">"leiden_fine"</span>] = (
+        cluster + <span class="s">"_"</span> + sub_adata.obs[<span class="s">"sub"</span>].astype(<span class="k">str</span>)
+    )
+<span class="c"># → "T_0", "T_1", "T_2" (CD4/CD8/...) etc.</span></pre>
+
+<h3 data-lang="zh">12.2 Hierarchical UMAP for atlas-scale</h3>
+<h3 data-lang="en">12.2 Hierarchical UMAP for atlas-scale</h3>
+
+<p data-lang="zh">對 Tabula Sapiens (483k cells) 等 atlas，Wang 2024 提出 hierarchical Leiden + 各層 mini-UMAP，能 navigate 大資料而不失去 detail。</p>
+<p data-lang="en">For atlases like Tabula Sapiens (483k cells), Wang 2024 proposed hierarchical Leiden + per-level mini-UMAP — navigate huge data without losing detail.</p>
+
+<p data-lang="zh">📚 <b>引用</b>：Tabula Sapiens consortium (2022) <i>Science</i> 376:eabl4896 (hierarchical clustering 標準); Hao et al. (2021) <i>Cell</i> 184:3573 (Seurat v4 multi-resolution); CZ CELLxGENE Census schema (2024)。</p>
+<p data-lang="en">📚 <b>References</b>: Tabula Sapiens consortium (2022) <i>Science</i> 376:eabl4896 (hierarchical clustering standard); Hao et al. (2021) <i>Cell</i> 184:3573 (Seurat v4 multi-resolution); CZ CELLxGENE Census schema (2024).</p>
 
 <div class="callout prog">
   <strong data-lang="zh">下一步</strong><strong data-lang="en">Next</strong>:

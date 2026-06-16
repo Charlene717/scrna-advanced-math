@@ -225,6 +225,10 @@
   <a href="#s6"><span data-lang="zh">§6 PCA 前提</span><span data-lang="en">§6 PCA prereq</span></a>
   <a href="#s7"><span data-lang="zh">§7 Connectivity</span><span data-lang="en">§7 Connectivity</span></a>
   <a href="#s8"><span data-lang="zh">§8 限制</span><span data-lang="en">§8 Limits</span></a>
+  <a href="#s9"><span data-lang="zh">§9 PBMC 案例</span><span data-lang="en">§9 PBMC case</span></a>
+  <a href="#s10"><span data-lang="zh">§10 mutual KNN</span><span data-lang="en">§10 mutual KNN</span></a>
+  <a href="#s11"><span data-lang="zh">§11 UMAP fuzzy 連接</span><span data-lang="en">§11 UMAP fuzzy link</span></a>
+  <a href="#s12"><span data-lang="zh">§12 PyNNDescent</span><span data-lang="en">§12 PyNNDescent</span></a>
 </div>
 
 <header class="cover">
@@ -603,6 +607,183 @@ adata.obsp[<span class="s">"connectivities"</span>]   <span class="c"># sparse: 
     <td data-lang="en">Harmony / BBKNN first</td>
   </tr>
 </table>
+
+<!-- ===================================== §9 PBMC KNN 案例 ===================================== -->
+<h2 id="s9"><span class="num">§9</span> <span data-lang="zh">PBMC 3k KNN graph 案例：k 對下游 Leiden cluster 的影響</span><span data-lang="en">PBMC 3k KNN case: k effect on downstream Leiden clusters</span></h2>
+
+<p class="lead" data-lang="zh">
+  本節在 PBMC 3k 上用不同 k（5/15/50/100）建 KNN graph，看後續 Leiden cluster 數量怎麼變。
+</p>
+<p class="lead" data-lang="en">
+  Build KNN with different k (5/15/50/100) on PBMC 3k, watch downstream Leiden cluster counts.
+</p>
+
+<table class="compare">
+  <tr><th>k</th><th>k</th>
+      <th data-lang="zh">邊數</th><th data-lang="en">Edges</th>
+      <th data-lang="zh">Leiden (res=0.5) 群數</th><th data-lang="en">Leiden (res=0.5) clusters</th>
+      <th data-lang="zh">能否分出 pDC?</th><th data-lang="en">pDC resolved?</th></tr>
+  <tr><td>5</td><td>5</td>
+      <td>~ 13,000</td><td>~ 13,000</td>
+      <td>14</td><td>14</td>
+      <td>✅</td><td>✅</td></tr>
+  <tr style="background:#dbeafe"><td><b>15</b></td><td><b>15</b></td>
+      <td>~ 40,000</td><td>~ 40,000</td>
+      <td>9</td><td>9</td>
+      <td>△ (與 cDC 混)</td><td>△ (merged with cDC)</td></tr>
+  <tr><td>50</td><td>50</td>
+      <td>~ 130,000</td><td>~ 130,000</td>
+      <td>6</td><td>6</td>
+      <td>❌</td><td>❌</td></tr>
+  <tr><td>100</td><td>100</td>
+      <td>~ 260,000</td><td>~ 260,000</td>
+      <td>4</td><td>4</td>
+      <td>❌</td><td>❌</td></tr>
+</table>
+
+<div class="callout bio">
+  <strong data-lang="zh">k 跟 cluster 解析度</strong><strong data-lang="en">k and cluster resolution</strong>:
+  <span data-lang="zh">k 小 → 圖較稀疏 → Leiden 切碎 → 高解析度。但 k 太小 (k=2-3) 圖會斷裂、isolated points 變單獨 cluster。<b>k=15 是 scanpy 的 sweet spot</b>：均衡 sparse vs 連通性。要看 rare cells 用 k=5；想看 major lineage 用 k=50-100。</span>
+  <span data-lang="en">Small k → sparse graph → Leiden splits more → high res. But too small (k=2-3) → disconnected, isolated points become standalone clusters. <b>k=15 is scanpy's sweet spot</b>: balances sparsity vs connectivity. For rare cells use k=5; for major lineages k=50-100.</span>
+</div>
+
+<p data-lang="zh">📚 <b>引用</b>：Wolf et al. (2018) <i>Genome Biol</i> 19:15 (scanpy n_neighbors 預設 15); Heumos et al. (2023) <i>Nat Rev Genet</i> 24:550。</p>
+<p data-lang="en">📚 <b>References</b>: Wolf et al. (2018) <i>Genome Biol</i> 19:15 (scanpy n_neighbors=15 default); Heumos et al. (2023) <i>Nat Rev Genet</i> 24:550.</p>
+
+<!-- ===================================== §10 Mutual KNN ===================================== -->
+<h2 id="s10"><span class="num">§10</span> <span data-lang="zh">深入：Mutual KNN 為何比 KNN 更穩</span><span data-lang="en">Deep dive: why mutual KNN beats plain KNN</span></h2>
+
+<p class="lead" data-lang="zh">
+  「k 個最近鄰」這個定義有<b>不對稱性</b>：A 可能說「B 是我的鄰居」，但 B 不認為 A 是它的鄰居（A 距離 B 較遠的鄰居們更近）。
+  Mutual KNN（MNN）只保留<b>雙向</b>鄰居，得到更可靠的圖。
+</p>
+<p class="lead" data-lang="en">
+  "k nearest neighbors" is <b>asymmetric</b>: A may say "B is my neighbor", but B doesn't say A back (B's neighbors are closer than A is to B).
+  Mutual KNN (MNN) keeps only <b>bidirectional</b> neighbors — more reliable.
+</p>
+
+<h3 data-lang="zh">10.1 MNN 的數學</h3>
+<h3 data-lang="en">10.1 MNN math</h3>
+
+<div class="math-block boxed">
+  $$E_{\text{MNN}} = \{(i, j) : i \in \mathcal{N}_k(j) \text{ AND } j \in \mathcal{N}_k(i)\}$$
+  <div class="formula-caption" data-lang="zh">只保「雙方都認可」的邊</div>
+  <div class="formula-caption" data-lang="en">Keep only "mutually acknowledged" edges</div>
+</div>
+
+<h3 data-lang="zh">10.2 在 batch correction 的應用 (Haghverdi 2018)</h3>
+<h3 data-lang="en">10.2 Application to batch correction (Haghverdi 2018)</h3>
+
+<p data-lang="zh">MNN 在<b>跨 batch</b>找鄰居：batch A 細胞 找 batch B 中的鄰居 + batch B 細胞找 batch A 中的鄰居，只保 mutual。這些 mutual neighbors 跨 batch 的 vector 差就是「<b>batch effect 方向</b>」，從而校正。fastMNN, mnnCorrect 是這個原理的工具。</p>
+<p data-lang="en">MNN finds <b>cross-batch</b> neighbors: batch A cells find neighbors in batch B + vice versa, keep only mutual. The vector difference between mutual neighbors gives the "<b>batch effect direction</b>" for correction. fastMNN, mnnCorrect implement this.</p>
+
+<p data-lang="zh">📚 <b>引用</b>：Haghverdi et al. (2018) <i>Nat Biotechnol</i> 36:421 (MNN-based batch correction); Lun & Marioni (2019) <i>Biostatistics</i> 20:677 (fastMNN)。</p>
+<p data-lang="en">📚 <b>References</b>: Haghverdi et al. (2018) <i>Nat Biotechnol</i> 36:421 (MNN batch correction); Lun & Marioni (2019) <i>Biostatistics</i> 20:677 (fastMNN).</p>
+
+<!-- ===================================== §11 UMAP fuzzy 連接 ===================================== -->
+<h2 id="s11"><span class="num">§11</span> <span data-lang="zh">深入：scanpy connectivities 為何是「fuzzy graph」</span><span data-lang="en">Deep dive: why scanpy connectivities is a "fuzzy graph"</span></h2>
+
+<p class="lead" data-lang="zh">
+  scanpy 的 <code class="inline">adata.obsp["connectivities"]</code> <b>不是</b> 0/1 KNN graph，是 <b>UMAP 的 fuzzy simplicial set</b>。
+  本節揭密這個關鍵差別。
+</p>
+<p class="lead" data-lang="en">
+  scanpy's <code class="inline">adata.obsp["connectivities"]</code> is <b>not</b> 0/1 KNN — it's the <b>UMAP fuzzy simplicial set</b>.
+  We expose this key difference.
+</p>
+
+<h3 data-lang="zh">11.1 raw KNN vs fuzzy connectivity</h3>
+<h3 data-lang="en">11.1 raw KNN vs fuzzy connectivity</h3>
+
+<table class="compare">
+  <tr><th></th><th data-lang="zh">raw KNN</th><th data-lang="en">raw KNN</th>
+      <th>UMAP fuzzy</th><th>UMAP fuzzy</th></tr>
+  <tr><td data-lang="zh">邊權重</td><td data-lang="en">Edge weight</td>
+      <td>0/1</td><td>0/1</td>
+      <td>(0, 1] continuous</td><td>(0, 1] continuous</td></tr>
+  <tr><td data-lang="zh">局部尺度</td><td data-lang="en">Local scale</td>
+      <td data-lang="zh">無</td><td data-lang="en">none</td>
+      <td>$\rho_i, \sigma_i$ 各自</td><td>$\rho_i, \sigma_i$ per cell</td></tr>
+  <tr><td data-lang="zh">對稱化</td><td data-lang="en">Symmetrize</td>
+      <td>OR / AND</td><td>OR / AND</td>
+      <td>probabilistic t-conorm</td><td>probabilistic t-conorm</td></tr>
+  <tr><td data-lang="zh">scanpy 用途</td><td data-lang="en">scanpy use</td>
+      <td>—</td><td>—</td>
+      <td>Leiden, UMAP, PAGA</td><td>Leiden, UMAP, PAGA</td></tr>
+</table>
+
+<h3 data-lang="zh">11.2 為何 Leiden 接 fuzzy graph 比 raw 好</h3>
+<h3 data-lang="en">11.2 Why Leiden on fuzzy beats Leiden on raw</h3>
+
+<div class="callout idea">
+  <strong data-lang="zh">理由</strong><strong data-lang="en">Reason</strong>:
+  <span data-lang="zh">fuzzy weight 讓 Leiden 的 modularity 計算能「分辨強鄰居 vs 弱鄰居」——強連通邊在 modularity 公式裡貢獻大，弱邊小。比 raw 0/1 graph 更能找出真實 cluster boundary，cluster 也更<b>stable across seeds</b>。</span>
+  <span data-lang="en">Fuzzy weights let Leiden's modularity differentiate "strong vs weak neighbors" — strong edges contribute more in the modularity sum. Better at finding true cluster boundaries than 0/1, more <b>stable across seeds</b>.</span>
+</div>
+
+<p data-lang="zh">📚 <b>引用</b>：McInnes, Healy & Melville (2018) UMAP paper §3 (fuzzy graph); Wolf et al. (2018) <i>Genome Biol</i> 19:15 (scanpy 採用)。</p>
+<p data-lang="en">📚 <b>References</b>: McInnes, Healy & Melville (2018) UMAP paper §3 (fuzzy graph); Wolf et al. (2018) <i>Genome Biol</i> 19:15 (scanpy adoption).</p>
+
+<!-- ===================================== §12 PyNNDescent ===================================== -->
+<h2 id="s12"><span class="num">§12</span> <span data-lang="zh">PyNNDescent：scanpy 預設的 ANN 後端</span><span data-lang="en">PyNNDescent: scanpy's default ANN backend</span></h2>
+
+<p class="lead" data-lang="zh">
+  scanpy 的 <code class="inline">sc.pp.neighbors(method='umap')</code> 預設用 <b>PyNNDescent</b>（NN-descent 演算法）找 ANN。
+  Dong, Charikar & Li (2011) 的 NN-descent 跟 HNSW 是完全不同的演算法家族——本節介紹。
+</p>
+<p class="lead" data-lang="en">
+  scanpy's <code class="inline">sc.pp.neighbors(method='umap')</code> defaults to <b>PyNNDescent</b> (NN-descent algorithm) for ANN.
+  Dong, Charikar & Li (2011)'s NN-descent is a completely different family from HNSW.
+</p>
+
+<h3 data-lang="zh">12.1 NN-descent 演算法</h3>
+<h3 data-lang="en">12.1 NN-descent algorithm</h3>
+
+<p data-lang="zh">核心想法：「<b>朋友的朋友很可能是朋友</b>」。</p>
+<p data-lang="en">Core idea: "<b>friend of a friend is likely a friend</b>".</p>
+
+<ol>
+  <li><span data-lang="zh">給每細胞隨機初始 k 個鄰居</span>
+      <span data-lang="en">Initialize random k neighbors per cell</span></li>
+  <li><span data-lang="zh">迭代：對細胞 $i$，檢查 $i$ 的鄰居的鄰居—— 看是否比現有鄰居更近</span>
+      <span data-lang="en">Iterate: for cell $i$, check $i$'s neighbors' neighbors — are they closer than current?</span></li>
+  <li><span data-lang="zh">如果是 → 替換</span><span data-lang="en">If yes → replace</span></li>
+  <li><span data-lang="zh">直到沒新替換為止（通常 ~ 5 iterations）</span>
+      <span data-lang="en">Until no replacements (typically ~5 iter)</span></li>
+</ol>
+
+<h3 data-lang="zh">12.2 跟 HNSW 對比</h3>
+<h3 data-lang="en">12.2 vs HNSW</h3>
+
+<table class="compare">
+  <tr><th></th><th>PyNNDescent</th><th>PyNNDescent</th>
+      <th>HNSW (hnswlib)</th><th>HNSW (hnswlib)</th></tr>
+  <tr><td data-lang="zh">資料結構</td><td data-lang="en">Structure</td>
+      <td data-lang="zh">迭代 KNN 自身</td><td data-lang="en">iterative KNN itself</td>
+      <td data-lang="zh">分層 small-world graph</td><td data-lang="en">hierarchical small-world</td></tr>
+  <tr><td data-lang="zh">記憶體</td><td data-lang="en">Memory</td>
+      <td>$O(nk)$</td><td>$O(nk)$</td>
+      <td>$O(nM)$ M=16 typically</td><td>$O(nM)$ M=16</td></tr>
+  <tr><td data-lang="zh">速度（10k cells）</td><td data-lang="en">Speed (10k cells)</td>
+      <td>~ 30 sec</td><td>~ 30 sec</td>
+      <td>~ 10 sec</td><td>~ 10 sec</td></tr>
+  <tr><td data-lang="zh">scanpy 預設</td><td data-lang="en">scanpy default</td>
+      <td><b>✅</b></td><td><b>✅</b></td>
+      <td data-lang="zh">可選</td><td data-lang="en">optional</td></tr>
+  <tr><td data-lang="zh">支援 metric</td><td data-lang="en">Supports metric</td>
+      <td>40+ metrics</td><td>40+ metrics</td>
+      <td>L2 / cosine / IP</td><td>L2 / cosine / IP</td></tr>
+</table>
+
+<div class="callout idea">
+  <strong data-lang="zh">為何 scanpy 用 PyNNDescent 不用 HNSW？</strong>
+  <strong data-lang="en">Why scanpy uses PyNNDescent over HNSW?</strong>
+  <span data-lang="zh">PyNNDescent 支援更多 metric（cosine, correlation, Mahalanobis...）；HNSW 限制較多。對 scRNA 不同 normalize 後可能用不同 metric，PyNNDescent 更靈活。但 hnswlib 速度快、適合超大資料。</span>
+  <span data-lang="en">PyNNDescent supports more metrics (cosine, correlation, Mahalanobis...); HNSW is restricted. Different scRNA normalizations may use different metrics — PyNNDescent more flexible. But hnswlib is faster for very large data.</span>
+</div>
+
+<p data-lang="zh">📚 <b>引用</b>：Dong, Charikar & Li (2011) <i>WWW</i> 577 (NN-descent 原始); PyNNDescent: <a href="https://github.com/lmcinnes/pynndescent">github.com/lmcinnes/pynndescent</a>（McInnes 維護）。</p>
+<p data-lang="en">📚 <b>References</b>: Dong, Charikar & Li (2011) <i>WWW</i> 577 (original NN-descent); PyNNDescent: <a href="https://github.com/lmcinnes/pynndescent">github.com/lmcinnes/pynndescent</a> (maintained by McInnes).</p>
 
 <div class="callout prog">
   <strong data-lang="zh">下一步</strong><strong data-lang="en">Next</strong>:
