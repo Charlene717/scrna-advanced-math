@@ -255,6 +255,107 @@
   </div>
 </header>
 
+<!-- ===== 🧬 scRNA-seq 視角 panel ===== -->
+<div class="card" style="border-left: 6px solid var(--green); background: linear-gradient(135deg, #effaf3 0%, #fff 70%);">
+  <h3 style="color: var(--green); margin-top: 0">
+    <span data-lang="zh">🧬 scRNA-seq 視角：UMAP 是 scRNA-seq atlas 時代的「視覺通用語言」</span>
+    <span data-lang="en">🧬 scRNA-seq perspective: UMAP is the universal visual language of the scRNA-seq atlas era</span>
+  </h3>
+
+  <h4>📍 <span data-lang="zh">在 scRNA-seq 流程中的位置</span><span data-lang="en">Position in scRNA-seq pipeline</span></h4>
+  <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f7f9fb; padding: 10px; border-radius: 6px; line-height: 1.8">
+    QC → normalize → HVG → scale → PCA (50-D) → KNN graph → Leiden cluster →
+    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b>UMAP (2-D embedding)</b></span>
+    → annotation → DE → trajectory / cell communication
+  </div>
+  <p style="margin-top: 6px; font-size: 0.9em; color: #555">
+    <span data-lang="zh">UMAP 拿 PCA 的 50-D 表示，壓成 2-D 給人看；它<b>不取代分群</b>（Leiden 才負責），它只負責「視覺化 + 探索」。但因為論文 figure 都用 UMAP，它實際決定了我們<b>怎麼想像細胞之間的關係</b>。</span>
+    <span data-lang="en">UMAP takes PCA's 50-D representation and squashes it to 2-D for humans; it does <b>not</b> do clustering (Leiden does), it handles "visualization + exploration". But because every paper figure uses UMAP, it actually decides <b>how we imagine cell-cell relationships</b>.</span>
+  </p>
+
+  <h4>🎯 <span data-lang="zh">為什麼 scRNA-seq 一定要用 UMAP（而不是 PCA 或 t-SNE）</span><span data-lang="en">Why scRNA-seq must use UMAP (vs PCA or t-SNE)</span></h4>
+  <ul>
+    <li>
+      <b><span data-lang="zh">PCA 不夠彎</span><span data-lang="en">PCA can't bend</span></b>：
+      <span data-lang="zh">PBMC 細胞型在 50-D 空間是「曲面」（manifold），PC1-PC2 平面投影會把分化路徑壓扁、相鄰 cluster 重疊。UMAP 用 force-directed embedding 把彎曲流形「攤平」（Becht et al., Nat Biotechnol 2019）。</span>
+      <span data-lang="en">PBMC cell types form a "curved manifold" in 50-D; PC1-PC2 projection flattens differentiation paths and overlaps adjacent clusters. UMAP uses force-directed embedding to "unroll" the curved manifold (Becht et al., Nat Biotechnol 2019).</span>
+    </li>
+    <li>
+      <b><span data-lang="zh">t-SNE 不夠快、不夠全局、不能 transform</span><span data-lang="en">t-SNE: not fast, not global, no transform</span></b>：
+      <span data-lang="zh">t-SNE 在 100k cells 要跑 1 小時、cluster 間距離不可信、新 query cell 無法投影。UMAP 解決<b>全部三個問題</b>：1.3M cells/15min、保留 global、提供 transform → CellTypist / Azimuth reference mapping 的基礎（§M5.3）。</span>
+      <span data-lang="en">t-SNE takes 1h for 100k cells, inter-cluster distance unreliable, no projection for new query cells. UMAP solves <b>all three</b>: 1.3M cells in 15 min, preserves global, provides transform → basis for CellTypist / Azimuth reference mapping (§M5.3).</span>
+    </li>
+    <li>
+      <b><span data-lang="zh">scRNA atlas 已是 50M cells 規模</span><span data-lang="en">scRNA atlas scale is now 50M cells</span></b>：
+      <span data-lang="zh">CELLxGENE 集成 50M+ cells、HCA 全人類 atlas、Tabula Sapiens 全身——這些<b>都用 UMAP 視覺化</b>，因為只有 UMAP 跑得動。t-SNE 在 1M+ cells 已不可行。</span>
+      <span data-lang="en">CELLxGENE aggregates 50M+ cells, HCA whole-human atlas, Tabula Sapiens whole-body — <b>all use UMAP</b> because only UMAP scales. t-SNE is infeasible at 1M+ cells.</span>
+    </li>
+  </ul>
+
+  <h4>💥 <span data-lang="zh">不做 UMAP、或 UMAP 做錯會發生什麼</span><span data-lang="en">What happens without UMAP, or with bad UMAP</span></h4>
+  <table class="compare">
+    <thead>
+      <tr>
+        <th><span data-lang="zh">情境</span><span data-lang="en">Scenario</span></th>
+        <th><span data-lang="zh">PBMC 3k 結果</span><span data-lang="en">PBMC 3k result</span></th>
+        <th><span data-lang="zh">下游災難</span><span data-lang="en">Downstream disaster</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="background: #fdecec">
+        <td><span data-lang="zh">只看 PC1-PC2</span><span data-lang="en">Only look at PC1-PC2</span></td>
+        <td><span data-lang="zh">CD4 T / CD8 T 完全重疊</span><span data-lang="en">CD4 T / CD8 T fully overlap</span></td>
+        <td><span data-lang="zh">看不出 T cell 亞型 → 漏報重要免疫差異</span><span data-lang="en">Can't see T subtypes → miss key immune signals</span></td>
+      </tr>
+      <tr style="background: #fdecec">
+        <td><span data-lang="zh">n_neighbors=2（過小）</span><span data-lang="en">n_neighbors=2 (too small)</span></td>
+        <td><span data-lang="zh">每個 cell 變一個 tiny island，「假亞型」滿天飛</span><span data-lang="en">Every cell becomes a tiny island, "fake subtypes" everywhere</span></td>
+        <td><span data-lang="zh">Leiden 過分 → 50+ 假 cluster → 註解全錯</span><span data-lang="en">Leiden over-partitions → 50+ fake clusters → annotation all wrong</span></td>
+      </tr>
+      <tr style="background: #fdecec">
+        <td><span data-lang="zh">n_neighbors=500（過大）</span><span data-lang="en">n_neighbors=500 (too large)</span></td>
+        <td><span data-lang="zh">所有 cell type 揉成一坨 blob</span><span data-lang="en">All cell types merged into one blob</span></td>
+        <td><span data-lang="zh">看不到 rare population、軌跡無法畫</span><span data-lang="en">Rare populations invisible, trajectory unrecoverable</span></td>
+      </tr>
+      <tr style="background: #effaf3">
+        <td><span data-lang="zh">UMAP 預設 n_neighbors=15、min_dist=0.5</span><span data-lang="en">UMAP default n_neighbors=15, min_dist=0.5</span></td>
+        <td><span data-lang="zh">8 個明確 cluster、T cell 亞型分得開</span><span data-lang="en">8 clear clusters, T subtypes separable</span></td>
+        <td><span data-lang="zh">標準 PBMC 3k figure（Seurat tutorial 同款）</span><span data-lang="en">Standard PBMC 3k figure (matches Seurat tutorial)</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h4>🔗 <span data-lang="zh">對下游每個 scRNA 步驟的具體影響</span><span data-lang="en">Concrete downstream impact</span></h4>
+  <ul>
+    <li><b><span data-lang="zh">註解（annotation）</span><span data-lang="en">Annotation</span></b>：
+      <span data-lang="zh">CellTypist / Azimuth 把 query cells 透過 UMAP transform 投到 reference embedding，找最近鄰標 label → UMAP 的<b>穩定 embedding</b> 是 reference mapping 能不能 reproduce 的關鍵。</span>
+      <span data-lang="en">CellTypist / Azimuth project query cells through UMAP transform onto reference embedding, label by nearest neighbor → stable UMAP embedding is what makes reference mapping reproducible.</span>
+    </li>
+    <li><b><span data-lang="zh">軌跡分析（trajectory）</span><span data-lang="en">Trajectory</span></b>：
+      <span data-lang="zh">Monocle 3 / PAGA 直接在 UMAP 空間上跑分化軌跡 → UMAP 「保 global」的特性決定了軌跡形狀對不對。t-SNE 不行（branch 距離無意義）。</span>
+      <span data-lang="en">Monocle 3 / PAGA run trajectories directly in UMAP space → UMAP's "preserves global" makes trajectory shape interpretable. t-SNE can't (branch distance meaningless).</span>
+    </li>
+    <li><b><span data-lang="zh">整合（integration）</span><span data-lang="en">Integration</span></b>：
+      <span data-lang="zh">Harmony / scVI 整合後的視覺化<b>幾乎一律</b>用 UMAP 對齊 → 看 batch 是不是混好、cell type 有沒有跨樣本對齊。</span>
+      <span data-lang="en">Harmony / scVI integration results are <b>almost always</b> visualized in UMAP — to check batches mix, cell types align across samples.</span>
+    </li>
+    <li><b><span data-lang="zh">差異表達（DE）</span><span data-lang="en">DE</span></b>：
+      <span data-lang="zh">DE 不是在 UMAP 上算，但畫 gene expression 在 UMAP 上 (sc.pl.umap(color='CD3D')) 是看 marker gene 是否定義 cluster 的標準方式。</span>
+      <span data-lang="en">DE is not computed on UMAP, but plotting gene expression on UMAP (sc.pl.umap(color='CD3D')) is the standard way to check marker genes define clusters.</span>
+    </li>
+    <li><b><span data-lang="zh">細胞通訊（cell communication）</span><span data-lang="en">Cell communication</span></b>：
+      <span data-lang="zh">CellChat 預測 ligand-receptor 後，結果常以 chord diagram + UMAP 配對展示，UMAP 給 spatial context。</span>
+      <span data-lang="en">CellChat predicts ligand-receptor pairs; results are typically shown as chord diagram + UMAP, where UMAP gives spatial context.</span>
+    </li>
+  </ul>
+
+  <div class="callout bio">
+    <strong>⭐ <span data-lang="zh">一句話總結</span><span data-lang="en">One-line summary</span></strong>：
+    <span data-lang="zh">UMAP 不是分析工具，它是「壓縮成 figure」的工具——但因為人類用眼睛思考細胞之間的關係，UMAP 的<b>視覺幾何就成了 scRNA-seq 的事實標準</b>。把它做對、做穩定、做可比較，整篇 paper 的可信度就贏一半。</span>
+    <span data-lang="en">UMAP is not an analysis tool, it's a "compress-to-figure" tool — but because humans think about cell-cell relationships with their eyes, UMAP's <b>visual geometry becomes the de facto standard of scRNA-seq</b>. Get it right, stable, and comparable, and half the paper's credibility is already won.</span>
+  </div>
+</div>
+
 <div class="toc">
   <h4 data-lang="zh">目錄</h4>
   <h4 data-lang="en">Table of Contents</h4>

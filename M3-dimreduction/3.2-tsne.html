@@ -255,6 +255,62 @@
   </div>
 </header>
 
+<!-- ===== 🧬 scRNA-seq 視角 panel ===== -->
+<div class="card" style="border-left: 6px solid var(--green); background: linear-gradient(135deg, #effaf3 0%, #fff 70%);">
+  <h3 style="color: var(--green); margin-top: 0">
+    <span data-lang="zh">🧬 scRNA-seq 視角：t-SNE 是「<b>把 cluster 用力分開</b>」給人看的工具</span>
+    <span data-lang="en">🧬 scRNA-seq perspective: t-SNE is "<b>force-separate clusters</b>" visualization for humans</span>
+  </h3>
+
+  <h4 data-lang="zh">📍 在 scRNA-seq 流程中的位置</h4>
+  <h4 data-lang="en">📍 Position in scRNA-seq pipeline</h4>
+  <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; padding: 12px; background: #f4f1ea; border-radius: 6px;">
+    PCA 50-D (M3.1) → <b style="color: #9f1239">【t-SNE 2D 視覺化 (本章)】</b> → <span data-lang="zh">人看 plot 確認 cluster 結構</span><span data-lang="en">human inspection of plot</span>
+    <br><br>
+    <span data-lang="zh">⚠️ t-SNE 是<b>視覺化工具不是分析工具</b>——cluster 結構分析還是用 PCA + KNN + Leiden 為主，t-SNE 只是「<b>給人看</b>」。</span>
+    <span data-lang="en">⚠️ t-SNE is a <b>visualization tool, not analysis tool</b> — cluster analysis uses PCA + KNN + Leiden; t-SNE is just "<b>for human eyes</b>".</span>
+  </div>
+
+  <h4 data-lang="zh">🎯 為什麼 scRNA-seq 還需要 t-SNE（除了已有 PCA）</h4>
+  <h4 data-lang="en">🎯 Why scRNA-seq still needs t-SNE (besides PCA)</h4>
+  <ul>
+    <li data-lang="zh"><b>PCA 是線性</b>：cell types 在 high-D 沿非線性 manifold 分開，PC1/PC2 plot 上常重疊</li>
+    <li data-lang="en"><b>PCA is linear</b>: cell types separate along nonlinear manifolds in high-D; PC1/PC2 plots often overlap</li>
+    <li data-lang="zh"><b>t-SNE 強行分開</b>：用 KL divergence + Student-t 重尾，把 cluster 之間用力推開 → 適合「給 reviewer / collaborator 看清楚」</li>
+    <li data-lang="en"><b>t-SNE force-separates</b>: KL divergence + Student-t heavy tail pushes clusters apart → great for "show reviewer/collaborator"</li>
+    <li data-lang="zh"><b>history</b>：t-SNE (van der Maaten 2008) 是 2014-2017 scRNA-seq 主流，後被 UMAP 取代但仍廣泛使用</li>
+    <li data-lang="en"><b>History</b>: t-SNE (van der Maaten 2008) was 2014-2017 mainstream; replaced by UMAP but still widely used</li>
+  </ul>
+
+  <h4 data-lang="zh">⚠️ scRNA 用 t-SNE 的<b>致命誤讀</b>（每個必須知道）</h4>
+  <h4 data-lang="en">⚠️ <b>Critical misreadings</b> of t-SNE in scRNA (must know)</h4>
+  <ul>
+    <li data-lang="zh"><b>不要看「cluster 之間距離」</b>：t-SNE 隨機 init → cluster 在哪個位置是隨機的</li>
+    <li data-lang="en"><b>Don't read "inter-cluster distance"</b>: t-SNE random init → cluster positions are random</li>
+    <li data-lang="zh"><b>不要看「cluster 大小」</b>：t-SNE 把所有 cluster 「normalize」到差不多大小</li>
+    <li data-lang="en"><b>Don't read "cluster size"</b>: t-SNE normalizes all clusters to similar sizes</li>
+    <li data-lang="zh"><b>不能 transform 新資料</b>：加新 sample 要重跑整個 t-SNE</li>
+    <li data-lang="en"><b>Can't transform new data</b>: adding samples requires full t-SNE rerun</li>
+  </ul>
+
+  <h4 data-lang="zh">🔗 對下游 scRNA 分析的影響</h4>
+  <h4 data-lang="en">🔗 Impact on downstream scRNA analysis</h4>
+  <ul>
+    <li data-lang="zh"><b>UMAP (M3.3)</b>: scRNA 從 2018 後逐漸從 t-SNE 轉到 UMAP（保 local + global 結構）</li>
+    <li data-lang="en"><b>UMAP (M3.3)</b>: scRNA shifted from t-SNE to UMAP post-2018 (preserves local + global)</li>
+    <li data-lang="zh"><b>Annotation</b>: 細胞型 annotate 後用 t-SNE 著色看 cluster 是否分得開 → 確認 marker 有效</li>
+    <li data-lang="en"><b>Annotation</b>: post-annotation, color t-SNE by cell type to confirm cluster separation → validate markers</li>
+    <li data-lang="zh"><b>Trajectory (M6.2)</b>: t-SNE 上看不到「<b>軌跡連續性</b>」（t-SNE 把連續變不連續），所以 trajectory analysis 必須用 PCA / diffusion</li>
+    <li data-lang="en"><b>Trajectory (M6.2)</b>: t-SNE can't show "<b>trajectory continuity</b>" (it discretizes continuum), so trajectory needs PCA / diffusion</li>
+  </ul>
+
+  <div class="callout bio" style="margin-top: 14px;">
+    <strong data-lang="zh">⭐ 一句話總結</strong><strong data-lang="en">⭐ One-line summary</strong>:
+    <span data-lang="zh">t-SNE 是「<b>scRNA paper 的 Figure 1</b>」——絕大多數 scRNA 論文用 t-SNE 或 UMAP 當主視覺化。但分析方法上<b>不要</b>用 t-SNE 距離做任何 quantitative 推論。</span>
+    <span data-lang="en">t-SNE is "<b>scRNA paper's Figure 1</b>" — most scRNA papers use t-SNE or UMAP as main viz. But <b>never</b> use t-SNE distances for quantitative inference.</span>
+  </div>
+</div>
+
 <div class="toc">
   <h4 data-lang="zh">目錄</h4>
   <h4 data-lang="en">Table of Contents</h4>

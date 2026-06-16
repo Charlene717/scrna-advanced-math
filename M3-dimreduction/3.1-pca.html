@@ -591,6 +591,74 @@
   </div>
 </header>
 
+<!-- ===== 🧬 scRNA-seq 視角 panel ===== -->
+<div class="card" style="border-left: 6px solid var(--green); background: linear-gradient(135deg, #effaf3 0%, #fff 70%);">
+  <h3 style="color: var(--green); margin-top: 0">
+    <span data-lang="zh">🧬 scRNA-seq 視角：PCA 是「20000 維 → 50 維」的<b>單一最重要</b>轉換</span>
+    <span data-lang="en">🧬 scRNA-seq perspective: PCA is "20000-D → 50-D", the <b>single most important</b> transformation</span>
+  </h3>
+
+  <h4 data-lang="zh">📍 在 scRNA-seq 流程中的位置</h4>
+  <h4 data-lang="en">📍 Position in scRNA-seq pipeline</h4>
+  <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; padding: 12px; background: #f4f1ea; border-radius: 6px;">
+    scale (M2.4) → <b style="color: #2c5aa0">【PCA：20k → 50 維 (本章)】</b> → KNN (M4.1) → Leiden (M4.2) / UMAP (M3.3) / DPT (M6.2) / Harmony (M6.1)
+    <br><br>
+    <span data-lang="zh">⚠️ <b>scanpy/Seurat 的所有 graph-based 方法（UMAP, Leiden, DPT, Harmony, scVI 訓練輸入）都用 PCA 50 維為輸入</b>。PCA 沒做好，全部下游崩</span>
+    <span data-lang="en">⚠️ <b>All graph-based methods in scanpy/Seurat (UMAP, Leiden, DPT, Harmony, scVI training input) use PCA 50-D</b>. PCA fails → all downstream fails</span>
+  </div>
+
+  <h4 data-lang="zh">🎯 為什麼 scRNA-seq <b>必須</b>做 PCA（不直接用 raw 跑下游）</h4>
+  <h4 data-lang="en">🎯 Why scRNA-seq <b>must</b> do PCA (not use raw downstream)</h4>
+  <ul>
+    <li data-lang="zh"><b>維度詛咒</b>：20,000 維歐式距離幾乎全等距 → KNN 失靈、Leiden 無結構</li>
+    <li data-lang="en"><b>Curse of dimensionality</b>: in 20k-D, distances are near-equal → KNN breaks, Leiden has no structure</li>
+    <li data-lang="zh"><b>雜訊壓制</b>：前 50 PC 抓「生物 variance」，後 19,950 PC 多是雜訊；丟掉後信號清晰</li>
+    <li data-lang="en"><b>Noise suppression</b>: top 50 PCs catch "biological variance"; remaining 19,950 are mostly noise; discarding clarifies signal</li>
+    <li data-lang="zh"><b>計算速度</b>：50 維 vs 20k 維 → KNN 快 400×、Leiden 快 100×。沒 PCA 大資料跑不動</li>
+    <li data-lang="en"><b>Compute speed</b>: 50-D vs 20k-D → KNN 400× faster, Leiden 100× faster. No PCA = large data infeasible</li>
+  </ul>
+
+  <h4 data-lang="zh">💥 PCA 配置錯誤的下游災難</h4>
+  <h4 data-lang="en">💥 PCA misconfiguration downstream disasters</h4>
+  <table class="compare">
+    <tr><th data-lang="zh">錯誤</th><th data-lang="en">Error</th>
+        <th data-lang="zh">下游後果</th><th data-lang="en">Downstream consequence</th></tr>
+    <tr><td data-lang="zh">未先 scale</td><td data-lang="en">Skip scaling</td>
+        <td data-lang="zh">PC1 = housekeeping; Leiden 找 housekeeping cluster</td>
+        <td data-lang="en">PC1 = housekeeping; Leiden finds housekeeping cluster</td></tr>
+    <tr><td data-lang="zh">n_pcs 太少 (5)</td><td data-lang="en">Too few PCs (5)</td>
+        <td data-lang="zh">細微 subtype 訊號漏掉；rare cell type 找不到</td>
+        <td data-lang="en">Subtle subtype signals missed; rare types undetected</td></tr>
+    <tr><td data-lang="zh">n_pcs 太多 (200)</td><td data-lang="en">Too many PCs (200)</td>
+        <td data-lang="zh">引入雜訊；UMAP/Leiden 結果不穩</td>
+        <td data-lang="en">Noise added; UMAP/Leiden unstable</td></tr>
+    <tr><td data-lang="zh">未先 batch correct (有多 sample)</td><td data-lang="en">No batch correction (multi-sample)</td>
+        <td data-lang="zh">PC1 = batch axis；以為發現了「新 cell type」其實是 batch</td>
+        <td data-lang="en">PC1 = batch axis; "new cell type" discovery is actually batch</td></tr>
+  </table>
+
+  <h4 data-lang="zh">🔗 對下游每個 scRNA 步驟的具體影響</h4>
+  <h4 data-lang="en">🔗 Concrete impact on each downstream scRNA step</h4>
+  <ul>
+    <li data-lang="zh"><b>t-SNE/UMAP (M3.2/3.3)</b>：t-SNE perplexity 對 PCA-50 計算的 distance 才有意義；raw 20k-D 上算 perplexity 全是噪音</li>
+    <li data-lang="en"><b>t-SNE/UMAP (M3.2/3.3)</b>: t-SNE perplexity is meaningful on PCA-50 distances; raw 20k-D yields noise</li>
+    <li data-lang="zh"><b>KNN (M4.1)</b>：PCA 維度（30-50）是 scanpy 預設 KNN 輸入。<b>本章的 n_pcs 選擇直接決定 KNN graph</b></li>
+    <li data-lang="en"><b>KNN (M4.1)</b>: PCA dim (30-50) is scanpy's default KNN input. <b>n_pcs choice directly determines KNN graph</b></li>
+    <li data-lang="zh"><b>Leiden (M4.2)</b>：modularity 在 PCA-based graph 計算；錯 PCA → 錯 cluster</li>
+    <li data-lang="en"><b>Leiden (M4.2)</b>: modularity computed on PCA-based graph; wrong PCA → wrong clusters</li>
+    <li data-lang="zh"><b>Harmony (M6.1)</b>：直接在 PCA 50 維空間做 batch correction → PCA 不好 Harmony 也救不了</li>
+    <li data-lang="en"><b>Harmony (M6.1)</b>: corrects batch in PCA 50-D space → bad PCA can't be saved by Harmony</li>
+    <li data-lang="zh"><b>DPT pseudotime (M6.2)</b>：diffusion map 從 PCA-based KNN 構造；PCA 漏掉軌跡方向 → pseudotime 錯</li>
+    <li data-lang="en"><b>DPT pseudotime (M6.2)</b>: diffusion map built on PCA-based KNN; PCA misses trajectory direction → pseudotime wrong</li>
+  </ul>
+
+  <div class="callout bio" style="margin-top: 14px;">
+    <strong data-lang="zh">⭐ 一句話總結</strong><strong data-lang="en">⭐ One-line summary</strong>:
+    <span data-lang="zh">PCA 是 scRNA-seq pipeline 的「<b>信號濾波器</b>」——50 維 PCA embedding 是後續所有 graph-based 方法的「<b>通用語言</b>」。本章<b>理解越深，後面 M3/M4/M6 都越輕鬆</b>。</span>
+    <span data-lang="en">PCA is the scRNA-seq pipeline's "<b>signal filter</b>" — the 50-D PCA embedding is the "<b>lingua franca</b>" of all downstream graph methods. <b>The deeper you understand this chapter, the easier M3/M4/M6 become</b>.</span>
+  </div>
+</div>
+
 <div class="toc">
   <h4 data-lang="zh">目錄</h4>
   <h4 data-lang="en">Table of Contents</h4>
