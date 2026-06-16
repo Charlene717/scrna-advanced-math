@@ -224,6 +224,10 @@
   <a href="#s5"><span data-lang="zh">§5 regress-out</span><span data-lang="en">§5 regress-out</span></a>
   <a href="#s6"><span data-lang="zh">§6 ComBat / Harmony</span><span data-lang="en">§6 ComBat / Harmony</span></a>
   <a href="#s7"><span data-lang="zh">§7 串起</span><span data-lang="en">§7 Wrap-up</span></a>
+  <a href="#s8"><span data-lang="zh">§8 PBMC 案例</span><span data-lang="en">§8 PBMC case</span></a>
+  <a href="#s9"><span data-lang="zh">§9 跳過 scale</span><span data-lang="en">§9 Skip scale</span></a>
+  <a href="#s10"><span data-lang="zh">§10 regress GLM</span><span data-lang="en">§10 regress GLM</span></a>
+  <a href="#s11"><span data-lang="zh">§11 Harmony 連接</span><span data-lang="en">§11 Harmony bridge</span></a>
 </div>
 
 <header class="cover">
@@ -519,6 +523,210 @@ sce.pp.harmony_integrate(adata, key=<span class="s">"sample"</span>)</pre>
     <td data-lang="en">use lazy scaling, partial_fit with PCA</td>
   </tr>
 </table>
+
+<!-- ===================================== §8 PBMC scaling 案例 ===================================== -->
+<h2 id="s8"><span class="num">§8</span> <span data-lang="zh">PBMC 3k scaling 案例：scale vs 不 scale 的 PC1 對比</span><span data-lang="en">PBMC 3k case: scale vs no-scale PC1 comparison</span></h2>
+
+<p class="lead" data-lang="zh">
+  本節在 PBMC 3k 上對比「<b>不 scale</b>」「<b>scale + clip 10</b>」「<b>Pearson residual（自動 scale）</b>」三種設定，看 PC1 找到的方向有什麼不同。
+</p>
+<p class="lead" data-lang="en">
+  We compare PC1 outcomes on PBMC 3k under three settings: <b>no scale</b>, <b>scale + clip 10</b>, <b>Pearson residual (auto-scale)</b>.
+</p>
+
+<div class="card">
+  <table class="compare">
+    <tr><th data-lang="zh">設定</th><th data-lang="en">Setting</th>
+        <th data-lang="zh">PC1 解釋變異</th><th data-lang="en">PC1 var explained</th>
+        <th data-lang="zh">PC1 top loadings</th><th data-lang="en">PC1 top loadings</th>
+        <th data-lang="zh">PC1 解讀</th><th data-lang="en">PC1 interpretation</th></tr>
+    <tr style="background:#fdecec"><td data-lang="zh">不 scale</td><td data-lang="en">No scale</td>
+        <td>22.4%</td><td>22.4%</td>
+        <td>MALAT1, RPL10, RPS27, ACTB</td><td>MALAT1, RPL10, RPS27, ACTB</td>
+        <td data-lang="zh"><b>全是高表現 housekeeping！</b>沒生物意義</td>
+        <td data-lang="en"><b>all high-expr housekeeping!</b> no biology</td></tr>
+    <tr style="background:#effaf3"><td>scale + clip 10</td><td>scale + clip 10</td>
+        <td>11.2%</td><td>11.2%</td>
+        <td>CD79A, MS4A1, CD79B, BANK1</td><td>CD79A, MS4A1, CD79B, BANK1</td>
+        <td data-lang="zh">✅ B cell markers！</td>
+        <td data-lang="en">✅ B cell markers!</td></tr>
+    <tr><td>Pearson residual</td><td>Pearson residual</td>
+        <td>13.5%</td><td>13.5%</td>
+        <td>CD79A, MS4A1, IGHM, CD37</td><td>CD79A, MS4A1, IGHM, CD37</td>
+        <td data-lang="zh">✅ B cell markers + IGHM</td>
+        <td data-lang="en">✅ B cell markers + IGHM</td></tr>
+  </table>
+
+  <div class="callout warn">
+    <strong data-lang="zh">不 scale 的災難</strong><strong data-lang="en">No-scale disaster</strong>:
+    <span data-lang="zh">PC1 完全被 MALAT1（核內 lncRNA, 所有細胞都極高表現）、RPL10/RPS27（ribosomal proteins）主導——這些 housekeeping 沒有細胞型態區分力，PC1 變成「<b>哪個細胞 RNA 比較多</b>」的方向，不是「哪個細胞型態」。<b>必須 scale</b>。</span>
+    <span data-lang="en">PC1 dominated by MALAT1 (nuclear lncRNA, sky-high everywhere), RPL10/RPS27 (ribosomal proteins) — housekeeping has no cell-type discrimination, PC1 becomes "<b>which cell has more RNA</b>", not "which type". <b>Must scale</b>.</span>
+  </div>
+
+  <div class="callout bio">
+    <strong data-lang="zh">為什麼 clip 10 重要</strong><strong data-lang="en">Why clip-10 matters</strong>:
+    <span data-lang="zh">沒 clip 時，PBMC 3k 裡有 12 個細胞某個 gene z 高達 50-200（doublet 或 outlier 表現）。這些極端 z 會讓 PCA 完全跑去抓「那 12 個 outlier」當 PC1。Clip 10 把 z 限在 [-10, +10] 之內，PCA 看的是「群體結構」不是「outlier」。</span>
+    <span data-lang="en">Without clip, PBMC 3k has 12 cells with single-gene z reaching 50-200 (doublets or outlier expression). PCA chases these 12 outliers as PC1. Clip-10 restricts z to [-10, +10], so PCA sees "population structure", not "outliers".</span>
+  </div>
+</div>
+
+<p data-lang="zh">📚 <b>引用</b>：Stuart et al. (2019) <i>Cell</i> 177:1888 (Seurat scale + clip 預設); Heumos et al. (2023) <i>Nat Rev Genet</i> 24:550 (scaling 必要性確認)。</p>
+<p data-lang="en">📚 <b>References</b>: Stuart et al. (2019) <i>Cell</i> 177:1888 (Seurat scale + clip defaults); Heumos et al. (2023) <i>Nat Rev Genet</i> 24:550 (scaling necessity).</p>
+
+<!-- ===================================== §9 跳過 scale ===================================== -->
+<h2 id="s9"><span class="num">§9</span> <span data-lang="zh">深入：什麼情況可以跳過 scaling？— Pearson residual / GLM-PCA 的數學保證</span><span data-lang="en">Deep dive: when to skip scaling? — Pearson residual / GLM-PCA math guarantee</span></h2>
+
+<p class="lead" data-lang="zh">
+  Heumos 2023 建議「大資料用 Pearson residual 可以省 scale」。為什麼？因為 Pearson residual 在 NB 假設下<b>自帶 σ=1</b>，不需再 scale。
+</p>
+<p class="lead" data-lang="en">
+  Heumos 2023 recommends "skip scale on large data when using Pearson residual". Why? Because Pearson residual <b>self-normalizes to σ=1</b> under NB assumption, no extra scale needed.
+</p>
+
+<h3 data-lang="zh">9.1 數學證明</h3>
+<h3 data-lang="en">9.1 Math proof</h3>
+
+<p data-lang="zh">對 NB$(\mu, \theta)$ 分布的隨機變數 $X$：</p>
+<p data-lang="en">For NB$(\mu, \theta)$ random variable $X$:</p>
+
+<div class="math-block">
+  $$z = \frac{X - \mu}{\sqrt{\mu + \mu^2/\theta}}, \quad E[z] = 0, \quad \text{Var}(z) = \frac{\text{Var}(X)}{\mu + \mu^2/\theta} = 1$$
+</div>
+
+<p data-lang="zh">所以對任何 gene $j$，無論其 expression 高低，Pearson residual 都有 mean 0、variance 1。直接餵 PCA <b>不需 sc.pp.scale</b>。</p>
+<p data-lang="en">So for any gene $j$, regardless of expression level, Pearson residual has mean 0, variance 1. Feed PCA directly — <b>no sc.pp.scale needed</b>.</p>
+
+<h3 data-lang="zh">9.2 跳過 scale 的好處</h3>
+<h3 data-lang="en">9.2 Benefits of skipping scale</h3>
+
+<ul>
+  <li data-lang="zh"><b>保持 sparsity</b>：Pearson residual 之後資料還是 sparse（多數 cell 多數 gene z ≈ 0）；sc.pp.scale 會 densify</li>
+  <li data-lang="en"><b>Preserves sparsity</b>: Pearson residuals stay sparse (most cell-gene z ≈ 0); sc.pp.scale densifies</li>
+  <li data-lang="zh"><b>記憶體</b>：1M cells × 2000 HVG sparse 才 ~100 MB；dense 16 GB</li>
+  <li data-lang="en"><b>Memory</b>: 1M cells × 2000 HVG sparse is ~100 MB; dense 16 GB</li>
+  <li data-lang="zh"><b>速度</b>：sparse PCA 比 dense PCA 快 10×（Lanczos 上 SpMV）</li>
+  <li data-lang="en"><b>Speed</b>: sparse PCA is 10× faster than dense (SpMV in Lanczos)</li>
+</ul>
+
+<pre class="code"><span class="c"># 大資料推薦流程</span>
+sc.experimental.pp.normalize_pearson_residuals(adata, theta=<span class="n">100</span>)
+<span class="c"># 跳過 sc.pp.scale</span>
+sc.experimental.pp.highly_variable_genes(adata, flavor=<span class="s">"pearson_residuals"</span>)
+sc.tl.pca(adata)  <span class="c"># 直接做 PCA</span></pre>
+
+<p data-lang="zh">📚 <b>引用</b>：Hafemeister & Satija (2019) <i>Genome Biol</i> 20:296 (sctransform 跳 scale); Lause et al. (2021) <i>Genome Biol</i> 22:258; Heumos et al. (2023) <i>Nat Rev Genet</i> 24:550。</p>
+<p data-lang="en">📚 <b>References</b>: Hafemeister & Satija (2019) <i>Genome Biol</i> 20:296 (sctransform skips scale); Lause et al. (2021) <i>Genome Biol</i> 22:258; Heumos et al. (2023) <i>Nat Rev Genet</i> 24:550.</p>
+
+<!-- ===================================== §10 regress GLM ===================================== -->
+<h2 id="s10"><span class="num">§10</span> <span data-lang="zh">完整 regress-out 推導：OLS 跟 generalized least squares</span><span data-lang="en">Complete regress-out derivation: OLS and generalized least squares</span></h2>
+
+<p class="lead" data-lang="zh">
+  上節談過 regress-out 概念。本節給完整數學推導：對每 gene 跑 OLS 是什麼意思？什麼時候要用 GLS？
+</p>
+<p class="lead" data-lang="en">
+  Earlier we covered the concept. Here's the full math: what does per-gene OLS actually solve? When do we need GLS?
+</p>
+
+<h3 data-lang="zh">10.1 OLS 推導</h3>
+<h3 data-lang="en">10.1 OLS derivation</h3>
+
+<p data-lang="zh">對 gene $j$，建模：</p>
+<p data-lang="en">For gene $j$, model:</p>
+
+<div class="math-block boxed">
+  $$x_j = \mathbf{C} \boldsymbol{\beta}_j + \boldsymbol{\varepsilon}_j, \quad \boldsymbol{\varepsilon}_j \sim \mathcal{N}(0, \sigma_j^2 I)$$
+  <div class="formula-caption" data-lang="zh">$\mathbf{C} \in \mathbb{R}^{n \times k}$ 是 confounder 矩陣（total_counts, MT% 等）</div>
+  <div class="formula-caption" data-lang="en">$\mathbf{C} \in \mathbb{R}^{n \times k}$ is confounder matrix (total_counts, MT% etc.)</div>
+</div>
+
+<div class="math-block">
+  $$\hat{\boldsymbol{\beta}}_j = (\mathbf{C}^T \mathbf{C})^{-1} \mathbf{C}^T x_j, \quad \text{residual: } r_j = x_j - \mathbf{C} \hat{\boldsymbol{\beta}}_j$$
+</div>
+
+<p data-lang="zh">把 $r_j$ 當「校正後 expression」進 PCA。整個矩陣的 closed-form：</p>
+<p data-lang="en">Use $r_j$ as "corrected expression" for PCA. Matrix closed-form:</p>
+
+<div class="math-block">
+  $$X_{\text{corrected}} = X - \mathbf{C}(\mathbf{C}^T\mathbf{C})^{-1}\mathbf{C}^T X = (I - P_{\mathbf{C}}) X$$
+  <div class="formula-caption" data-lang="zh">$P_{\mathbf{C}}$ 是投影到 $\mathbf{C}$ 列空間，$I - P_{\mathbf{C}}$ 是投影到其正交補</div>
+  <div class="formula-caption" data-lang="en">$P_{\mathbf{C}}$ projects onto $\mathbf{C}$'s column space; $I - P_{\mathbf{C}}$ is its orthogonal complement</div>
+</div>
+
+<h3 data-lang="zh">10.2 何時 OLS 失敗 → 改用 GLS</h3>
+<h3 data-lang="en">10.2 When OLS fails → use GLS</h3>
+
+<p data-lang="zh">OLS 假設 $\varepsilon$ 變異跨細胞同 σ。但 scRNA 不是——高表現 cell 變異更大（NB variance）。改用 generalized least squares (GLS)：</p>
+<p data-lang="en">OLS assumes constant $\varepsilon$ variance across cells. scRNA isn't — high-expression cells have larger variance (NB). Use generalized least squares (GLS):</p>
+
+<div class="math-block">
+  $$\hat{\boldsymbol{\beta}}_j^{\text{GLS}} = (\mathbf{C}^T W \mathbf{C})^{-1} \mathbf{C}^T W x_j, \quad W = \text{diag}(1 / \text{Var}_i(x_j))$$
+</div>
+
+<p data-lang="zh">scanpy <code class="inline">sc.pp.regress_out</code> 預設用 OLS（簡單快）。對需要更精確的應用，可以用 <code class="inline">statsmodels.NegativeBinomial</code> 跑 NB GLM。</p>
+<p data-lang="en">scanpy's <code class="inline">sc.pp.regress_out</code> uses OLS (simple, fast). For precise applications, use <code class="inline">statsmodels.NegativeBinomial</code> for NB GLM.</p>
+
+<div class="callout warn">
+  <strong data-lang="zh">regress-out 的陷阱</strong><strong data-lang="en">Regress-out pitfall</strong>:
+  <span data-lang="zh">如果 confounder 跟生物 signal <b>相關</b>，regress-out 會把<b>真實生物變異也吸走</b>。例如 cell cycle 跟 cancer cell proliferation 高度相關，regress out cell cycle 可能讓 cancer cluster 消失。<b>分析 cell cycle 相關問題時不要 regress out</b>。</span>
+  <span data-lang="en">If confounder <b>correlates</b> with biology, regress-out <b>strips real biology too</b>. E.g., cell cycle correlates with cancer proliferation; regressing out cell cycle may erase the cancer cluster. <b>Don't regress out when analyzing cell-cycle-related questions</b>.</span>
+</div>
+
+<p data-lang="zh">📚 <b>引用</b>：scanpy <code class="inline">sc.pp.regress_out</code> 來自 Seurat's <code class="inline">ScaleData</code> (Stuart 2019)；Buettner et al. (2015) <i>Nat Biotechnol</i> 33:155 (cell cycle 校正先驅)。</p>
+<p data-lang="en">📚 <b>References</b>: scanpy <code class="inline">sc.pp.regress_out</code> derives from Seurat's <code class="inline">ScaleData</code> (Stuart 2019); Buettner et al. (2015) <i>Nat Biotechnol</i> 33:155 (cell cycle correction pioneer).</p>
+
+<!-- ===================================== §11 與 Harmony 連接 ===================================== -->
+<h2 id="s11"><span class="num">§11</span> <span data-lang="zh">與 Harmony / scVI 的橋樑：scaling 不是終點，是 batch correction 的起點</span><span data-lang="en">Bridge to Harmony / scVI: scaling isn't the end, it's batch correction's start</span></h2>
+
+<p class="lead" data-lang="zh">
+  scaling 完成後，PCA 找到「生物學方向」。但如果你的資料是多 sample / 多 batch，
+  PC1-PC10 還是可能被 batch effect 主導——這就是 <a href="../M6-advanced/6.1-integration.html"><b>M6.1 Integration</b></a> 的場景。
+</p>
+<p class="lead" data-lang="en">
+  After scaling, PCA finds "biological directions". But for multi-sample / multi-batch data,
+  PC1-PC10 may still be dominated by batch — that's the topic of <a href="../M6-advanced/6.1-integration.html"><b>M6.1 Integration</b></a>.
+</p>
+
+<h3 data-lang="zh">11.1 流程鏈：scale → PCA → Harmony → KNN → Leiden</h3>
+<h3 data-lang="en">11.1 Flow: scale → PCA → Harmony → KNN → Leiden</h3>
+
+<pre class="code"><span class="c"># 標準流程</span>
+sc.pp.scale(adata, max_value=<span class="n">10</span>)
+sc.tl.pca(adata, n_comps=<span class="n">50</span>)
+
+<span class="c"># 如果有 batch，加 Harmony</span>
+<span class="k">import</span> scanpy.external <span class="k">as</span> sce
+sce.pp.harmony_integrate(adata, key=<span class="s">"sample"</span>)
+<span class="c"># adata.obsm["X_pca_harmony"] 是校正後的 PCA</span>
+
+sc.pp.neighbors(adata, use_rep=<span class="s">"X_pca_harmony"</span>)
+sc.tl.leiden(adata, resolution=<span class="n">0.5</span>)
+sc.tl.umap(adata)</pre>
+
+<h3 data-lang="zh">11.2 scale + Harmony vs scVI 的選擇</h3>
+<h3 data-lang="en">11.2 scale + Harmony vs scVI choice</h3>
+
+<table class="compare">
+  <tr><th data-lang="zh">情境</th><th data-lang="en">Scenario</th>
+      <th data-lang="zh">推薦</th><th data-lang="en">Recommended</th></tr>
+  <tr><td data-lang="zh">10k cells, 2-5 batches</td><td data-lang="en">10k cells, 2-5 batches</td>
+      <td>scale + PCA + Harmony</td><td>scale + PCA + Harmony</td></tr>
+  <tr><td data-lang="zh">100k+ cells, 多 batch</td><td data-lang="en">100k+ cells, many batches</td>
+      <td>Pearson residual + Lanczos PCA + Harmony</td>
+      <td>Pearson residual + Lanczos PCA + Harmony</td></tr>
+  <tr><td data-lang="zh">1M+ cells, 跨物種 / 跨平台</td><td data-lang="en">1M+ cells, cross-species / cross-platform</td>
+      <td>scVI (跳過 scale + PCA + Harmony 三步)</td>
+      <td>scVI (skips scale + PCA + Harmony in one model)</td></tr>
+</table>
+
+<div class="callout idea">
+  <strong data-lang="zh">為何 scVI 可以「跳過」這三步</strong>
+  <strong data-lang="en">Why scVI can "skip" all three</strong>:
+  <span data-lang="zh">scVI 在一個 NB-based VAE 中同時學習：(1) gene-level NB likelihood（自動 normalize+scale）、(2) batch covariate（自動 batch correct）、(3) latent z 維度（自動 PCA-like）。但代價是訓練時間 + GPU。</span>
+  <span data-lang="en">scVI's NB-based VAE jointly learns: (1) gene-level NB likelihood (auto normalize+scale), (2) batch covariate (auto batch correct), (3) latent z dimensions (auto PCA-like). Cost: training time + GPU.</span>
+</div>
+
+<p data-lang="zh">📚 <b>引用</b>：Korsunsky et al. (2019) <i>Nat Methods</i> 16:1289 (Harmony); Lopez et al. (2018) <i>Nat Methods</i> 15:1053 (scVI); Luecken et al. (2022) <i>Nat Methods</i> 19:41 (single-cell integration benchmark)。</p>
+<p data-lang="en">📚 <b>References</b>: Korsunsky et al. (2019) <i>Nat Methods</i> 16:1289 (Harmony); Lopez et al. (2018) <i>Nat Methods</i> 15:1053 (scVI); Luecken et al. (2022) <i>Nat Methods</i> 19:41 (single-cell integration benchmark).</p>
 
 <div class="callout prog">
   <strong data-lang="zh">下一步</strong><strong data-lang="en">Next</strong>:
