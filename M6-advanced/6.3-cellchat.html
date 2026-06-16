@@ -253,9 +253,18 @@
 <!-- ===== 🧬 scRNA-seq 視角 panel ===== -->
 <div class="card" style="border-left: 6px solid var(--green); background: linear-gradient(135deg, #effaf3 0%, #fff 70%);">
   <h3 style="color: var(--green); margin-top: 0">
-    <span data-lang="zh">🧬 scRNA-seq 視角：CellChat 把「單細胞圖譜」變成「細胞社會學」</span>
-    <span data-lang="en">🧬 scRNA-seq perspective: CellChat turns a "single-cell atlas" into "cellular sociology"</span>
+    <span data-lang="zh">🧬 scRNA-seq 視角：CellChat 是細胞界的「<b>抖音直播 + 私訊紀錄</b>」</span>
+    <span data-lang="en">🧬 scRNA-seq perspective: CellChat is the cellular world's "<b>group chat log</b>"</span>
   </h3>
+
+  <p style="font-size: 1.02em; line-height: 1.7">
+    <span data-lang="zh">前面 scRNA 所有步驟（QC → cluster → annotation）做的事，就像是<b>幫一個公司寫員工名冊</b>：「<b>這 100 人是行銷、這 50 人是工程、這 30 人是 HR</b>」。但<b>知道誰是誰</b> ≠ <b>知道公司怎麼運作</b>。真正的公司是<b>大家用 Slack、Email、會議在彼此溝通</b>——而<b>CellChat 就是把細胞間的「Slack 紀錄」挖出來給你看</b>：「<b>macrophage 在群組裡發了 IL-1β 訊息、T cell 在 IL1R 群組讀到了</b>」。L-R（ligand-receptor）就是細胞間的<b>訊息語言</b>。</span>
+    <span data-lang="en">Everything scRNA does before this step (QC → cluster → annotation) is like <b>writing an employee directory</b>: "<b>these 100 are marketing, these 50 engineering, these 30 HR</b>". But <b>knowing who is who</b> ≠ <b>understanding how the company works</b>. A real company runs on <b>Slack messages, emails, and meetings</b> — and <b>CellChat extracts the "Slack log" between cells</b>: "<b>macrophage posted IL-1β in the group chat, T cell read it via IL1R</b>". L-R (ligand-receptor) is the <b>language cells use to message each other</b>.</span>
+  </p>
+  <p style="font-size: 1.02em; line-height: 1.7">
+    <span data-lang="zh">為什麼這層分析<b>是 scRNA 才做得到</b>？因為 bulk RNA-seq 把所有細胞攪在一起，<b>沒辦法問「IL-1β 是 macrophage 發的，還是 T cell 自己分泌的</b>」。scRNA 因為<b>每個 cell type 有獨立 expression profile</b>，CellChat 才能把「<b>誰發訊息、誰收訊息</b>」分開算。腫瘤免疫的核心發現—— PD-L1 / PD-1 checkpoint—就是<b>cell-cell signaling 異常</b>；癌症藥物的下一個風潮、纖維化、再生醫學、發育生物學，<b>核心 paper 結論都在這層 signaling network 裡</b>。CellChat 還會用 permutation test 過濾掉 noise，給你「<b>30-100 個高信心 L-R 對</b>」當 paper figure。</span>
+    <span data-lang="en">Why does this layer <b>only work in scRNA</b>? Because bulk RNA-seq blends all cells together, you <b>can't ask "did macrophage send IL-1β or did T cell self-secrete</b>". scRNA gives <b>each cell type its own expression profile</b>, letting CellChat separate "<b>who sent vs who received</b>". Cancer immunology's flagship discovery — PD-L1 / PD-1 checkpoint — IS a <b>cell-cell signaling defect</b>; the next wave of cancer drugs, fibrosis, regenerative medicine, developmental biology — <b>their core paper conclusions all live in this signaling network</b>. CellChat further uses permutation tests to filter noise, giving you <b>30-100 high-confidence L-R pairs</b> for your paper figure.</span>
+  </p>
 
   <h4>📍 <span data-lang="zh">在 scRNA-seq 流程中的位置</span><span data-lang="en">Position in scRNA-seq pipeline</span></h4>
   <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f7f9fb; padding: 10px; border-radius: 6px; line-height: 1.8">

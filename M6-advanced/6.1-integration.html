@@ -260,9 +260,18 @@
 <!-- ===== 🧬 scRNA-seq 視角 panel ===== -->
 <div class="card" style="border-left: 6px solid var(--green); background: linear-gradient(135deg, #effaf3 0%, #fff 70%);">
   <h3 style="color: var(--green); margin-top: 0">
-    <span data-lang="zh">🧬 scRNA-seq 視角：Integration 是多 sample 研究「能不能比」的前提</span>
-    <span data-lang="en">🧬 scRNA-seq perspective: Integration is the prerequisite for comparing multi-sample studies</span>
+    <span data-lang="zh">🧬 scRNA-seq 視角：Integration 是把不同樂團「<b>調到同一個音準</b>」</span>
+    <span data-lang="en">🧬 scRNA-seq perspective: Integration tunes different orchestras to the same pitch</span>
   </h3>
+
+  <p style="font-size: 1.02em; line-height: 1.7">
+    <span data-lang="zh">想像紐約愛樂、東京交響、柏林愛樂三個樂團要<b>合奏同一首貝多芬第九</b>。問題：紐約樂團校準到 A=440Hz、東京到 442Hz、柏林到 443Hz——<b>同一個音 La 三個樂團聽起來都不一樣</b>。如果你不先調音就讓他們一起拉，<b>聽眾會以為「紐約小提琴跟柏林小提琴是不同樂器」</b>。<b>scRNA 多 sample 的 batch effect 就是這件事</b>：lab A 用 10x v2、lab B 用 v3、lab C 換了 reagent 批號——三邊的 PBMC<b>本來是同樣的細胞</b>，但 PCA 跑出來會按 lab 分群，不是按 cell type。</span>
+    <span data-lang="en">Imagine the NY Philharmonic, Tokyo Symphony, and Berlin Philharmonic <b>jointly performing Beethoven's 9th</b>. Problem: NY tunes to A=440Hz, Tokyo to 442Hz, Berlin to 443Hz — <b>the same note A sounds different in each orchestra</b>. Without tuning first, <b>the audience thinks "NY violins and Berlin violins are different instruments"</b>. <b>scRNA's multi-sample batch effect is exactly this</b>: lab A uses 10x v2, lab B uses v3, lab C changed reagent batches — the PBMCs are biologically <b>the same cells</b>, but PCA groups them by lab, not cell type.</span>
+  </p>
+  <p style="font-size: 1.02em; line-height: 1.7">
+    <span data-lang="zh">Integration 就是「<b>統一調音</b>」。Harmony 一邊一邊地把每個 batch 的細胞拉到「<b>跨 batch 的中心</b>」，scVI 用 deep learning 把 batch 當「干擾因子」減掉。<b>但小心過度校正</b>：你不能把「<b>不同樂團演奏速度</b>」（真實的疾病差異）也校掉，否則「<b>紐約是 disease group、柏林是 healthy</b>」這個你要找的差異也<b>被一起抹平了</b>。所以 integration 是場走鋼索的遊戲——kBET 量「<b>batch 是否混好</b>」、cell-type ARI 量「<b>細胞型是否保持原樣</b>」，兩個分數要同時高才算成功。</span>
+    <span data-lang="en">Integration is "<b>unified tuning</b>". Harmony iteratively pulls each batch's cells toward the "<b>cross-batch center</b>"; scVI uses deep learning to subtract batch as a confounder. <b>But beware over-correction</b>: you can't tune away "<b>different tempo between orchestras</b>" (real disease differences), or else the "<b>NY is disease, Berlin is healthy</b>" signal you want to find <b>also gets erased</b>. So integration is a tightrope walk — kBET measures "<b>are batches mixed</b>", cell-type ARI measures "<b>are cell types preserved</b>"; both must score high for success.</span>
+  </p>
 
   <h4>📍 <span data-lang="zh">在 scRNA-seq 流程中的位置</span><span data-lang="en">Position in scRNA-seq pipeline</span></h4>
   <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f7f9fb; padding: 10px; border-radius: 6px; line-height: 1.8">

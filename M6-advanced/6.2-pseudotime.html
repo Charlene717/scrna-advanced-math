@@ -257,9 +257,18 @@
 <!-- ===== 🧬 scRNA-seq 視角 panel ===== -->
 <div class="card" style="border-left: 6px solid var(--green); background: linear-gradient(135deg, #effaf3 0%, #fff 70%);">
   <h3 style="color: var(--green); margin-top: 0">
-    <span data-lang="zh">🧬 scRNA-seq 視角：Pseudotime 把「快照」變成「電影」</span>
-    <span data-lang="en">🧬 scRNA-seq perspective: Pseudotime turns "snapshots" into "movies"</span>
+    <span data-lang="zh">🧬 scRNA-seq 視角：Pseudotime 把「全校畢業照」<b>重組成「人生紀錄片</b>」</span>
+    <span data-lang="en">🧬 scRNA-seq perspective: Pseudotime reorders "a high-school graduation photo" into "<b>a life documentary</b>"</span>
   </h3>
+
+  <p style="font-size: 1.02em; line-height: 1.7">
+    <span data-lang="zh">scRNA 有個<b>無法解決的限制</b>：每個細胞<b>測一次就死了</b>，你無法追蹤同一隻細胞「過去 → 未來」。這就像你只有一張<b>全校 1500 人的畢業照</b>，沒辦法看每個人 10 年的成長過程。但聰明的方法是: 在這張畢業照裡，<b>有人才剛 18 歲（HSC 幹細胞）、有人 22 歲（progenitor）、有人 25 歲（成熟細胞）</b>——只要<b>按年齡排序</b>，你就能<b>從一張照片重建出「人生軌跡」</b>。<b>Pseudotime 就是這個排序動作</b>：把細胞按「<b>成熟度</b>」沿軌跡排好，靜態快照就變成了動態電影。</span>
+    <span data-lang="en">scRNA has a <b>fundamental limitation</b>: each cell is <b>measured once and dies</b>, you can never track the same cell from "past → future". This is like having only <b>one graduation photo of 1,500 students</b> — you can't watch each person grow over 10 years. But the clever trick: in that photo, <b>some are 18 (stem cell), some 22 (progenitor), some 25 (mature)</b> — just <b>sort by age</b> and you can <b>reconstruct a "life trajectory" from one photo</b>. <b>Pseudotime is that sorting</b>: rank cells along a "<b>maturity axis</b>", and the static snapshot becomes a dynamic movie.</span>
+  </p>
+  <p style="font-size: 1.02em; line-height: 1.7">
+    <span data-lang="zh">為什麼 cluster 分析不夠、必須做 pseudotime？因為<b>分化是連續的</b>——HSC → MPP → CMP → MEP → 紅血球之間沒有明顯邊界，Leiden 切的 5 個 cluster 是「人為定義的青春期/成年期/中年期」，但生物上重要的是「<b>怎麼從 18 歲變 25 歲</b>」，這個「<b>怎麼</b>」才是 pseudotime 要回答的。沿 pseudotime 看，你會發現 GATA1（紅血球決定因子）<b>什麼時候開始上升</b>、PU.1（髓系決定）<b>什麼時候轉折</b>——這些<b>命運決定 gene 的開關時機</b>是疾病、發育、衰老研究的核心，分群完全答不出來。</span>
+    <span data-lang="en">Why isn't clustering enough — why need pseudotime? Because <b>differentiation is continuous</b> — HSC → MPP → CMP → MEP → erythrocyte has no sharp boundaries, and Leiden's 5 clusters are "artificially defined teenage / young adult / middle age". The biologically critical question is "<b>how does one go from 18 to 25</b>", and that "<b>how</b>" is what pseudotime answers. Along pseudotime, you see when GATA1 (erythroid fate) starts to rise and when PU.1 (myeloid fate) flips — these <b>fate-switch gene timings</b> are the core of disease, development, and aging research, which clustering simply can't answer.</span>
+  </p>
 
   <h4>📍 <span data-lang="zh">在 scRNA-seq 流程中的位置</span><span data-lang="en">Position in scRNA-seq pipeline</span></h4>
   <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f7f9fb; padding: 10px; border-radius: 6px; line-height: 1.8">
