@@ -253,96 +253,64 @@
 <!-- ===== 🧬 scRNA-seq 視角 panel ===== -->
 <div class="card" style="border-left: 6px solid var(--green); background: linear-gradient(135deg, #effaf3 0%, #fff 70%);">
   <h3 style="color: var(--green); margin-top: 0">
-    <span data-lang="zh">🧬 scRNA-seq 視角：Diffusion Maps 是分化軌跡（trajectory）的「正確距離」</span>
-    <span data-lang="en">🧬 scRNA-seq perspective: Diffusion Maps gives the "correct distance" for differentiation trajectories</span>
+    <span data-lang="zh">🧬 scRNA-seq 視角：細胞分化像爬山，不能走直線</span>
+    <span data-lang="en">🧬 scRNA-seq perspective: cell differentiation is mountaineering — you can't take a straight line</span>
   </h3>
 
-  <h4>📍 <span data-lang="zh">在 scRNA-seq 流程中的位置</span><span data-lang="en">Position in scRNA-seq pipeline</span></h4>
-  <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f7f9fb; padding: 10px; border-radius: 6px; line-height: 1.8">
-    QC → normalize → HVG → PCA → KNN graph →
-    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b>Diffusion Maps (流形距離)</b></span>
-    → DPT pseudotime → branching analysis (Wishbone / Palantir / PAGA)
-  </div>
-  <p style="margin-top: 6px; font-size: 0.9em; color: #555">
-    <span data-lang="zh">Diffusion Maps 不是「視覺化工具」，它是「<b>給連續過程用的距離度量</b>」。當細胞處於 HSC → progenitor → mature 這種<b>連續分化</b>而不是離散分群時，UMAP/t-SNE 的歐式距離會把分化路徑弄斷，diffusion distance 才能正確排序<b>偽時間（pseudotime）</b>。</span>
-    <span data-lang="en">Diffusion Maps is not a "visualization tool", it's a <b>distance metric for continuous processes</b>. When cells are along HSC → progenitor → mature <b>continuous differentiation</b> instead of discrete clusters, Euclidean distance in UMAP/t-SNE breaks the differentiation path; only diffusion distance correctly orders <b>pseudotime</b>.</span>
+  <p style="font-size: 1.02em; line-height: 1.7">
+    <span data-lang="zh">想像台北 101 跟陽明山頂直線距離 6 公里。如果你問 Google Maps「<b>直線</b>距離」，它會說 6 km；但實際從 101 走到陽明山頂，你<b>不能穿牆、不能飛、不能跳過山谷</b>，你得<b>沿著道路</b>走 20+ 公里。<b>歐式距離騙你、走路距離才真實</b>——這就是 scRNA 細胞分化的場景：HSC（造血幹細胞）跟成熟紅血球在 PCA 空間「直線距離」很近，但生物上你<b>必須經過 MEP → proerythroblast</b>這條山路，不能瞬移。</span>
+    <span data-lang="en">Imagine Taipei 101 and Yangmingshan summit, straight-line 6 km apart. Google Maps' "<b>straight line</b>" says 6 km, but to actually walk from 101 to the summit you <b>can't pass through walls, can't fly, can't jump over valleys</b> — you follow roads for 20+ km. <b>Euclidean distance lies, walking distance is true</b> — that's exactly scRNA cell differentiation: HSC (stem cell) and mature erythrocyte are "straight-line close" in PCA space, but biologically you <b>must pass through MEP → proerythroblast</b> — no teleporting allowed.</span>
+  </p>
+  <p style="font-size: 1.02em; line-height: 1.7">
+    <span data-lang="zh">Diffusion Maps 就是「<b>沿著資料密集的路</b>」算距離。它<b>派出一個隨機漫步者</b>，每步只能跳到鄰居（有東西的地方），算「從 A 到 B 平均要走幾步」——這就是 diffusion distance。Coifman & Lafon 2006 提出，Haghverdi 2016 把它帶進 scRNA。<b>它對 dropout 和 noise 特別魯棒</b>，因為「多步漫步」是機率平均，單一 outlier cell 影響不了大局。所有你聽過的 trajectory 工具——DPT、Palantir、PAGA、Monocle 3、CellRank——<b>底盤全是 diffusion</b>。沒它，scRNA 永遠只能說「有什麼細胞」，說不出「細胞怎麼變」。</span>
+    <span data-lang="en">Diffusion Maps measures distance "<b>along data-dense paths</b>". It <b>sends out a random walker</b> who can only hop between neighbors (filled spaces), then asks "on average, how many steps to walk from A to B" — that's diffusion distance. Coifman & Lafon 2006 proposed it; Haghverdi 2016 brought it to scRNA. <b>It's extra robust to dropout and noise</b> because multi-step walks are probabilistic averages — one outlier cell doesn't derail the whole journey. Every trajectory tool you've heard of — DPT, Palantir, PAGA, Monocle 3, CellRank — <b>runs on diffusion underneath</b>. Without it, scRNA can only say "what cells exist", never "how cells transform".</span>
   </p>
 
-  <h4>🎯 <span data-lang="zh">為什麼 scRNA-seq 軌跡分析必須用它</span><span data-lang="en">Why scRNA-seq trajectory analysis must use it</span></h4>
-  <ul>
-    <li>
-      <b><span data-lang="zh">分化是流形上的「連通路徑」</span><span data-lang="en">Differentiation is a "connected path" on a manifold</span></b>：
-      <span data-lang="zh">HSC → MEP → erythrocyte 是<b>連續過程</b>，PCA / Euclidean 距離會把中間 progenitor「跳過去」（兩個 cluster 直線最近，但生物上必須經過 MEP）。Diffusion distance 沿著「資料密集的路徑」走，自動<b>順著分化軌跡</b>（Haghverdi et al., Nat Methods 2016）。</span>
-      <span data-lang="en">HSC → MEP → erythrocyte is a <b>continuous process</b>; PCA/Euclidean distance "skips" intermediate progenitors (two clusters' straight line is closest, but biologically must pass through MEP). Diffusion distance walks along "data-dense paths", automatically <b>following differentiation trajectories</b> (Haghverdi et al., Nat Methods 2016).</span>
-    </li>
-    <li>
-      <b><span data-lang="zh">對 noise 和 dropout 魯棒</span><span data-lang="en">Robust to noise and dropout</span></b>：
-      <span data-lang="zh">scRNA 的 dropout / sampling 變異會讓單一細胞的位置很噪，但隨機漫步是<b>機率平均</b>——多步漫步天然「smooth out」噪聲，distance 對單一 outlier cell 不敏感。</span>
-      <span data-lang="en">scRNA dropout / sampling noise makes single-cell positions noisy, but random walk is a <b>probabilistic average</b> — multi-step walks naturally "smooth out" noise, distance insensitive to individual outlier cells.</span>
-    </li>
-    <li>
-      <b><span data-lang="zh">給 DPT、Palantir、PAGA、Monocle 3 用的數學基礎</span><span data-lang="en">Math foundation for DPT, Palantir, PAGA, Monocle 3</span></b>：
-      <span data-lang="zh">你看到的所有 scRNA 軌跡工具<b>幾乎都建構在 diffusion components 上</b>：DPT 直接用 diffusion distance、Palantir 用 Markov 過程模擬命運機率、PAGA 用 transition probabilities 連 cluster。沒 diffusion theory，沒這些方法。</span>
-      <span data-lang="en">Nearly all scRNA trajectory tools are <b>built on diffusion components</b>: DPT uses diffusion distance directly, Palantir uses Markov process for fate probability, PAGA uses transition probabilities between clusters. No diffusion theory → no these methods.</span>
-    </li>
-  </ul>
+  <h4>📍 <span data-lang="zh">在流程中的位置</span><span data-lang="en">Pipeline position</span></h4>
+  <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f7f9fb; padding: 10px; border-radius: 6px; line-height: 1.8">
+    PCA → KNN →
+    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b>Diffusion Maps（走路距離）</b></span>
+    → DPT pseudotime → branching · fate · velocity（Palantir / PAGA / CellRank）
+  </div>
 
-  <h4>💥 <span data-lang="zh">不用 diffusion、改用歐式距離會發生什麼</span><span data-lang="en">What happens with Euclidean instead of diffusion</span></h4>
+  <h4>💥 <span data-lang="zh">用「直線距離」估走路時間，你會迷路</span><span data-lang="en">Use "straight line" for walking time, you get lost</span></h4>
   <table class="compare">
-    <thead>
-      <tr>
-        <th><span data-lang="zh">距離選擇</span><span data-lang="en">Distance choice</span></th>
-        <th><span data-lang="zh">造血分化（HSC → 紅血球）</span><span data-lang="en">Hematopoiesis (HSC → erythrocyte)</span></th>
-        <th><span data-lang="zh">後果</span><span data-lang="en">Consequence</span></th>
-      </tr>
-    </thead>
+    <thead><tr>
+      <th><span data-lang="zh">用什麼距離？</span><span data-lang="en">Which distance?</span></th>
+      <th><span data-lang="zh">造血分化（HSC → 紅血球）</span><span data-lang="en">Hematopoiesis (HSC → erythrocyte)</span></th>
+      <th><span data-lang="zh">後果</span><span data-lang="en">Consequence</span></th>
+    </tr></thead>
     <tbody>
-      <tr style="background: #fdecec">
-        <td><span data-lang="zh">PCA Euclidean 距離</span><span data-lang="en">PCA Euclidean distance</span></td>
-        <td><span data-lang="zh">HSC 跟 erythrocyte「直線距離」最近，跳過 MEP / proerythroblast</span><span data-lang="en">HSC and erythrocyte "straight-line" closest, skipping MEP / proerythroblast</span></td>
-        <td><span data-lang="zh">pseudotime 排序錯誤，progenitor 被排在「終末」</span><span data-lang="en">Wrong pseudotime order; progenitors ranked as "terminal"</span></td>
-      </tr>
-      <tr style="background: #fdecec">
-        <td><span data-lang="zh">UMAP 2-D 上量距離</span><span data-lang="en">Distance in UMAP 2-D</span></td>
-        <td><span data-lang="zh">UMAP 跑出的形狀有<b>視覺扭曲</b>，2-D 距離不可信</span><span data-lang="en">UMAP-rendered shape has <b>visual distortion</b>; 2-D distance unreliable</span></td>
-        <td><span data-lang="zh">branching point 位置漂移 → 分支偏 → 命運機率偏</span><span data-lang="en">Branching point drifts → branch bias → fate probability bias</span></td>
-      </tr>
-      <tr style="background: #effaf3">
-        <td><span data-lang="zh">Diffusion distance (Haghverdi 2016)</span><span data-lang="en">Diffusion distance (Haghverdi 2016)</span></td>
-        <td><span data-lang="zh">距離自動沿著 HSC → CMP → MEP → proery → ery，正確順序</span><span data-lang="en">Distance auto-follows HSC → CMP → MEP → proery → ery in correct order</span></td>
-        <td><span data-lang="zh">DPT pseudotime 跟<b>已知 marker gene 時序</b>一致（GATA1 ↑、HBB ↑）</span><span data-lang="en">DPT pseudotime matches <b>known marker gene timeline</b> (GATA1 ↑, HBB ↑)</span></td>
-      </tr>
+      <tr style="background: #fdecec"><td><span data-lang="zh">PCA 歐式（穿牆派）</span><span data-lang="en">PCA Euclidean (wall-piercing)</span></td>
+        <td><span data-lang="zh">HSC 跟紅血球「直線最近」，跳過 MEP / proerythroblast</span><span data-lang="en">HSC and erythrocyte "straight-line closest", skipping MEP / proerythroblast</span></td>
+        <td><span data-lang="zh">pseudotime 排錯，progenitor 變終點</span><span data-lang="en">Pseudotime order wrong; progenitors ranked as endpoints</span></td></tr>
+      <tr style="background: #fdecec"><td><span data-lang="zh">UMAP 2-D 量距離</span><span data-lang="en">Distance on UMAP 2-D</span></td>
+        <td><span data-lang="zh">UMAP 形狀有視覺扭曲，距離不可信</span><span data-lang="en">UMAP shape distorted; distances unreliable</span></td>
+        <td><span data-lang="zh">branching point 漂移 → 命運機率算錯</span><span data-lang="en">Branching point drifts → fate probability wrong</span></td></tr>
+      <tr style="background: #effaf3"><td><span data-lang="zh">Diffusion（沿路走派）</span><span data-lang="en">Diffusion (walk-the-roads)</span></td>
+        <td><span data-lang="zh">自動沿 HSC → CMP → MEP → proery → ery 真實路徑</span><span data-lang="en">Auto-follows HSC → CMP → MEP → proery → ery</span></td>
+        <td><span data-lang="zh">DPT pseudotime 跟已知 marker（GATA1↑、HBB↑）對得上</span><span data-lang="en">DPT pseudotime matches known markers (GATA1↑, HBB↑)</span></td></tr>
     </tbody>
   </table>
 
-  <h4>🔗 <span data-lang="zh">對下游每個 scRNA 步驟的具體影響</span><span data-lang="en">Concrete downstream impact</span></h4>
+  <h4>🔗 <span data-lang="zh">這個「走路距離」撐起整個軌跡分析家族</span><span data-lang="en">This "walking distance" props up the entire trajectory family</span></h4>
   <ul>
-    <li><b><span data-lang="zh">DPT pseudotime（§M6.2）</span><span data-lang="en">DPT pseudotime (§M6.2)</span></b>：
-      <span data-lang="zh">Diffusion components 直接定義 pseudotime $= \|\psi_i - \psi_{\text{root}}\|$；root cell 選錯、diffusion DC 截錯，整個 pseudotime 全錯。</span>
-      <span data-lang="en">Diffusion components directly define pseudotime $= \|\psi_i - \psi_{\text{root}}\|$; wrong root cell or wrong DC cutoff → entire pseudotime wrong.</span>
-    </li>
-    <li><b><span data-lang="zh">PAGA cluster 連接</span><span data-lang="en">PAGA cluster connectivity</span></b>：
-      <span data-lang="zh">PAGA 把 cluster 視為 node、cluster 間 diffusion transition probability 視為 edge → 自動顯示「哪些 cluster 是分化路徑上的鄰居」。</span>
-      <span data-lang="en">PAGA treats clusters as nodes, cluster-cluster diffusion transition probability as edges → automatically shows "which clusters are neighbors in differentiation path".</span>
-    </li>
-    <li><b><span data-lang="zh">細胞命運（fate probability）</span><span data-lang="en">Cell fate probability</span></b>：
-      <span data-lang="zh">Palantir 跑 Markov absorbing process，從中間 progenitor 算「跑到 erythrocyte / megakaryocyte / lymphoid」三個命運的機率——完全依賴 diffusion 機率框架。</span>
-      <span data-lang="en">Palantir runs Markov absorbing process from intermediate progenitors to compute "probability of reaching erythrocyte / megakaryocyte / lymphoid" — entirely relies on diffusion probability framework.</span>
-    </li>
-    <li><b><span data-lang="zh">分支基因動力學</span><span data-lang="en">Branch-specific gene dynamics</span></b>：
-      <span data-lang="zh">沿 pseudotime 畫 gene expression（如 GATA1 隨 erythroid branch 上升），這個 pseudotime 必須是 diffusion-based 才靠譜。</span>
-      <span data-lang="en">Gene expression along pseudotime (e.g. GATA1 rising along erythroid branch) — only reliable if pseudotime is diffusion-based.</span>
-    </li>
-    <li><b><span data-lang="zh">RNA velocity 整合</span><span data-lang="en">RNA velocity integration</span></b>：
-      <span data-lang="zh">CellRank 把 RNA velocity vector field 投影到 diffusion components 上 → 給 velocity 一個正確的距離度量，否則 velocity vector 飄向「資料空洞」。</span>
-      <span data-lang="en">CellRank projects RNA velocity vector field onto diffusion components → giving velocity a correct distance metric; otherwise velocity vectors drift into "data voids".</span>
-    </li>
+    <li><b>DPT pseudotime：</b><span data-lang="zh">直接定義 pseudotime = $\|\psi_i - \psi_{\text{root}}\|$。root 選錯，pseudotime 全錯。</span>
+      <span data-lang="en">Directly defines pseudotime = $\|\psi_i - \psi_{\text{root}}\|$. Wrong root → wrong pseudotime.</span></li>
+    <li><b>PAGA：</b><span data-lang="zh">把 cluster 當村莊、diffusion 機率當道路 → 自動畫出「哪些村莊互通」的地圖。</span>
+      <span data-lang="en">Treats clusters as villages, diffusion probabilities as roads → auto-draws the "which villages connect" map.</span></li>
+    <li><b>Palantir 命運機率：</b><span data-lang="zh">從中間 progenitor 算「跑到紅血球 / 巨核 / 淋巴」三個目的地的機率——完全依賴 diffusion 框架。</span>
+      <span data-lang="en">From an intermediate progenitor, compute "probability of reaching erythrocyte / megakaryocyte / lymphoid" — entirely on diffusion.</span></li>
+    <li><b>分支 gene dynamics：</b><span data-lang="zh">畫 GATA1 沿紅血球分支上升、PU.1 沿髓系分支上升 → pseudotime 是 diffusion-based 才靠譜。</span>
+      <span data-lang="en">Plot GATA1 rising along erythroid branch, PU.1 along myeloid — only reliable if pseudotime is diffusion-based.</span></li>
+    <li><b>RNA velocity（CellRank）：</b><span data-lang="zh">scVelo 的 velocity vector 投到 diffusion components 上才有正確距離度量，否則 vector 飄向「資料空洞」。</span>
+      <span data-lang="en">scVelo's velocity vectors only have correct distance metric when projected onto diffusion components; otherwise they drift into "data voids".</span></li>
   </ul>
 
   <div class="callout bio">
     <strong>⭐ <span data-lang="zh">一句話總結</span><span data-lang="en">One-line summary</span></strong>：
-    <span data-lang="zh">當 scRNA 細胞是「連續分化」而不是「離散分群」，<b>歐式距離騙人、diffusion 距離才老實</b>。Diffusion Maps 是把 scRNA-seq 從「靜態快照」變成「動態軌跡」的數學鑰匙。</span>
-    <span data-lang="en">When scRNA cells are "continuous differentiation" not "discrete clusters", <b>Euclidean distance lies and diffusion distance tells the truth</b>. Diffusion Maps is the math key that turns scRNA-seq from "static snapshot" into "dynamic trajectory".</span>
+    <span data-lang="zh">當 scRNA 細胞是<b>連續分化</b>而不是離散分群，<b>歐式距離騙人、diffusion 距離才老實</b>。Diffusion Maps 是把 scRNA-seq 從「靜態快照」升級成「<b>動態電影</b>」的那把數學鑰匙。</span>
+    <span data-lang="en">When scRNA cells are <b>continuous differentiation</b> rather than discrete clusters, <b>Euclidean lies, diffusion tells the truth</b>. Diffusion Maps is the mathematical key that upgrades scRNA-seq from "static snapshot" to "<b>dynamic movie</b>".</span>
   </div>
 </div>
 

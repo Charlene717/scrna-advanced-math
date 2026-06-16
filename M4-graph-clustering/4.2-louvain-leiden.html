@@ -258,39 +258,18 @@
 <!-- ===== 🧬 scRNA-seq 視角 panel ===== -->
 <div class="card" style="border-left: 6px solid var(--green); background: linear-gradient(135deg, #effaf3 0%, #fff 70%);">
   <h3 style="color: var(--green); margin-top: 0">
-    <span data-lang="zh">🧬 scRNA-seq 視角：Leiden 是「細胞型態到底有幾種」的最終決策</span>
-    <span data-lang="en">🧬 scRNA-seq perspective: Leiden is the final verdict on "how many cell types are there"</span>
+    <span data-lang="zh">🧬 scRNA-seq 視角：Leiden 是把「人群」分桌的婚宴企劃</span>
+    <span data-lang="en">🧬 scRNA-seq perspective: Leiden is the wedding planner who decides who sits at which table</span>
   </h3>
 
-  <h4>📍 <span data-lang="zh">在 scRNA-seq 流程中的位置</span><span data-lang="en">Position in scRNA-seq pipeline</span></h4>
-  <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f7f9fb; padding: 10px; border-radius: 6px; line-height: 1.8">
-    QC → normalize → HVG → PCA → KNN graph →
-    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b>Leiden cluster (sc.tl.leiden)</b></span>
-    → marker DE → annotation → 所有 cluster-level 分析
-  </div>
-  <p style="margin-top: 6px; font-size: 0.9em; color: #555">
-    <span data-lang="zh">Leiden 把「連續的細胞狀態雲」變成「有名字的細胞型態」。<b>它定義了「細胞型態」這個生物學概念在這份資料裡的具體實例</b>——你接下來看的所有 cluster-level 結果（marker、proportion、DE、軌跡終點）都建立在 Leiden 切的 partition 上。</span>
-    <span data-lang="en">Leiden turns "a continuous cell-state cloud" into "named cell types". <b>It defines the biological concept of "cell type" as concrete instances in this dataset</b> — all downstream cluster-level results (markers, proportions, DE, trajectory endpoints) build on Leiden's partition.</span>
+  <p style="font-size: 1.02em; line-height: 1.7">
+    <span data-lang="zh">想像你是<b>婚宴企劃</b>，要把 200 位賓客<b>分桌</b>。你有一份「<b>每個人 15 個朋友</b>」的名冊（KNN graph）。聰明的做法不是先決定「分 10 桌」（k-means 的做法）——而是看「<b>哪些人彼此熟、那群就坐一桌</b>」（Leiden 的做法）。Leiden 用一個叫 <b>modularity</b> 的分數衡量分桌好不好：「<b>同桌的人比預期更熟</b>」分數就高。它<b>自己決定該分幾桌</b>，不用你預先告訴它。</span>
+    <span data-lang="en">Imagine you're a <b>wedding planner</b> seating 200 guests. You have a "<b>15 best friends per guest</b>" register (KNN graph). The smart move isn't to declare "10 tables" upfront (that's k-means) — it's to ask "<b>which guests know each other well, put them at one table</b>" (that's Leiden). Leiden scores seating arrangements with <b>modularity</b>: "<b>guests at the same table are friendlier than expected</b>" → high score. It <b>decides table count itself</b>, no need to pre-specify.</span>
   </p>
-
-  <h4>🎯 <span data-lang="zh">為什麼 scRNA-seq 用 graph-based 分群而不是 k-means / 階層</span><span data-lang="en">Why scRNA-seq uses graph-based clustering, not k-means/hierarchical</span></h4>
-  <ul>
-    <li>
-      <b><span data-lang="zh">不用先指定 k</span><span data-lang="en">No need to pre-specify k</span></b>：
-      <span data-lang="zh">k-means 必須先告訴它「分幾群」，但 scRNA 一開始<b>就不知道有幾種細胞</b>。Leiden 只要給 resolution γ，演算法<b>自己找最佳群數</b>。</span>
-      <span data-lang="en">k-means requires k upfront, but scRNA <b>doesn't know cell type count</b> at the start. Leiden only needs resolution γ; algorithm <b>finds optimal cluster count itself</b>.</span>
-    </li>
-    <li>
-      <b><span data-lang="zh">不假設 cluster 球形 / 等大小</span><span data-lang="en">No assumption of spherical / equal-size clusters</span></b>：
-      <span data-lang="zh">k-means 用歐式距離 → 假設 cluster 是球形。但 PBMC 裡 monocyte 數量可能是 pDC 的 100 倍（大小極不平衡），T cell 在 PCA 空間是「彎曲流形」（非球形）。Graph modularity 對<b>形狀和大小</b>都不挑剔。</span>
-      <span data-lang="en">k-means uses Euclidean → assumes spherical clusters. In PBMC, monocyte count may be 100× pDC (severe imbalance); T cells form "curved manifold" in PCA space. Graph modularity is agnostic to <b>shape and size</b>.</span>
-    </li>
-    <li>
-      <b><span data-lang="zh">Leiden 修正 Louvain 的「斷裂群」 bug（Traag 2019）</span><span data-lang="en">Leiden fixes Louvain's "disconnected community" bug (Traag 2019)</span></b>：
-      <span data-lang="zh">Louvain 會產生「<b>同一個 cluster 在圖上不連通</b>」的 cluster，生物上完全錯誤（兩坨不相干細胞被叫成同一型）。Leiden 用三階段（local-move → refinement → aggregate）<b>保證每個 cluster 連通</b>。scanpy 1.5+ 預設 Leiden 不再用 Louvain。</span>
-      <span data-lang="en">Louvain produces clusters that are <b>disconnected in the graph</b> — biologically wrong (two unrelated blobs labeled same type). Leiden's 3-phase (local-move → refinement → aggregate) <b>guarantees connected clusters</b>. Scanpy 1.5+ defaults to Leiden, not Louvain.</span>
-    </li>
-  </ul>
+  <p style="font-size: 1.02em; line-height: 1.7">
+    <span data-lang="zh">為什麼 scRNA 一定要用 Leiden 而不是<b>老派的 k-means</b>？因為 (1) 你<b>一開始不知道</b>有幾種細胞型（pDC 可能 0.5%、monocyte 可能 30%，差 60 倍）；(2) cell type 在 PCA 空間是<b>奇形怪狀的曲面</b>，k-means 的「球形假設」整個崩盤；(3) Leiden 還修了它<b>哥哥 Louvain 的一個重大 bug</b>——Louvain 會把「<b>兩桌不認識的人</b>」標成同一桌（圖上不連通的 cluster），Leiden 用三階段流程保證<b>每桌的人都互相認識</b>（Traag 2019）。所以 scanpy 1.5+ 預設用 Leiden，告別 Louvain。</span>
+    <span data-lang="en">Why must scRNA use Leiden instead of <b>old-school k-means</b>? Because (1) you <b>don't know</b> the cell-type count upfront (pDC might be 0.5%, monocyte 30% — 60× imbalance); (2) cell types form <b>weirdly curved surfaces</b> in PCA space, totally breaking k-means' spherical assumption; (3) Leiden patches a <b>major bug in its older brother Louvain</b> — Louvain sometimes labels "<b>two tables of strangers</b>" as one table (graph-disconnected cluster); Leiden's 3-phase pipeline guarantees <b>everyone at the same table actually knows each other</b> (Traag 2019). That's why scanpy 1.5+ defaults to Leiden, retiring Louvain.</span>
+  </p>
 
   <h4>💥 <span data-lang="zh">不做 Leiden、或 resolution 錯會發生什麼</span><span data-lang="en">What happens without Leiden, or with wrong resolution</span></h4>
   <table class="compare">
@@ -356,8 +335,8 @@
 
   <div class="callout bio">
     <strong>⭐ <span data-lang="zh">一句話總結</span><span data-lang="en">One-line summary</span></strong>：
-    <span data-lang="zh">Leiden 的<b>每一個 cluster 邊界決定論文裡每一張 figure 怎麼長</b>。選 Leiden + 用合理 resolution + 跨 seed 檢驗穩定性，是把 scRNA-seq 從「圖很漂亮」做到「結論可信」的關鍵步驟。</span>
-    <span data-lang="en">Each Leiden cluster boundary decides <b>how every figure in the paper looks</b>. Choose Leiden + reasonable resolution + cross-seed stability checks — this is the key step turning scRNA-seq from "pretty plot" to "trustworthy conclusion".</span>
+    <span data-lang="zh">Leiden 的<b>每一條桌界，決定論文裡每一張 figure 怎麼長</b>。選 Leiden（不是 Louvain）+ 用合理 resolution + 跨 seed 檢驗穩定 = 把 scRNA-seq 從「圖很漂亮」做到「結論可信」的最後一道把關。</span>
+    <span data-lang="en">Each <b>table boundary in Leiden decides what every figure in the paper looks like</b>. Pick Leiden (not Louvain) + reasonable resolution + cross-seed stability — that's the final gatekeeper turning scRNA-seq from "pretty plot" to "trustworthy conclusion".</span>
   </div>
 </div>
 
