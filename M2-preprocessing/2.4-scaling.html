@@ -252,6 +252,71 @@
   </div>
 </header>
 
+<!-- ===== 🧬 scRNA-seq 視角 panel ===== -->
+<div class="card" style="border-left: 6px solid var(--green); background: linear-gradient(135deg, #effaf3 0%, #fff 70%);">
+  <h3 style="color: var(--green); margin-top: 0">
+    <span data-lang="zh">🧬 scRNA-seq 視角：為什麼「不 scale」會讓 PCA 找到 MALAT1 而不是 CD3D</span>
+    <span data-lang="en">🧬 scRNA-seq perspective: why "no scaling" makes PCA find MALAT1 instead of CD3D</span>
+  </h3>
+
+  <h4 data-lang="zh">📍 在 scRNA-seq 流程中的位置</h4>
+  <h4 data-lang="en">📍 Position in scRNA-seq pipeline</h4>
+  <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; padding: 12px; background: #f4f1ea; border-radius: 6px;">
+    HVG (M2.3) → <b style="color: #0d9488">【scale + clip (本章)】</b> → PCA (M3.1) → KNN → Leiden → ...
+    <br><br>
+    <span data-lang="zh">⚠️ <b>PCA 看「絕對 variance 最大」的方向</b>——若沒先把每個 gene 拉成 σ=1，<b>高表現 gene 永遠贏</b>，PC1 就是「哪個 gene 表現最高」這種無聊方向。</span>
+    <span data-lang="en">⚠️ <b>PCA finds directions of "max absolute variance"</b> — without scaling each gene to σ=1, <b>high-expression genes always win</b>, and PC1 becomes "which gene is highest" — a useless direction.</span>
+  </div>
+
+  <h4 data-lang="zh">🎯 為什麼 scRNA-seq <b>必須</b> scale（即使已 log normalize）</h4>
+  <h4 data-lang="en">🎯 Why scRNA-seq <b>must</b> scale (even after log normalize)</h4>
+  <ul>
+    <li data-lang="zh"><b>log normalize 不夠</b>：log(CP10K+1) 後高表現 housekeeping (MALAT1, RPL10) σ ≈ 1.5，cell-type marker (CD3D) σ ≈ 0.5。PCA 仍偏好 housekeeping</li>
+    <li data-lang="en"><b>log normalize isn't enough</b>: after log(CP10K+1), housekeeping (MALAT1, RPL10) σ ≈ 1.5, cell-type markers (CD3D) σ ≈ 0.5. PCA still favors housekeeping</li>
+    <li data-lang="zh"><b>z-score 拉平公平性</b>：把所有 gene 變 mean=0, σ=1 → PCA 公平比較「<b>哪個 gene 在 cluster 之間區分力最強</b>」</li>
+    <li data-lang="en"><b>z-score levels the field</b>: all genes mean=0, σ=1 → PCA fairly compares "<b>which gene best discriminates clusters</b>"</li>
+    <li data-lang="zh"><b>clip @ 10 防 outlier</b>：scRNA 偶爾有 z=50+ 的 outlier（單 cell 單 gene 極端表現）→ 不 clip 整個 PCA 被該 1 cell 拉走</li>
+    <li data-lang="en"><b>clip @ 10 prevents outliers</b>: scRNA occasionally has z=50+ outliers (single cell + gene extreme expression) → without clip, PCA chases that one cell</li>
+  </ul>
+
+  <h4 data-lang="zh">💥 不 scale 會發生什麼？PBMC 3k 實證</h4>
+  <h4 data-lang="en">💥 What happens without scaling? PBMC 3k empirical</h4>
+  <table class="compare">
+    <tr><th data-lang="zh">設定</th><th data-lang="en">Setting</th>
+        <th>PC1 top loadings</th><th>PC1 top loadings</th>
+        <th data-lang="zh">PC1 解釋變異</th><th data-lang="en">PC1 var explained</th></tr>
+    <tr style="background:#fdecec"><td data-lang="zh">不 scale</td><td data-lang="en">No scale</td>
+        <td>MALAT1, RPL10, RPS27 (housekeeping)</td>
+        <td>MALAT1, RPL10, RPS27 (housekeeping)</td>
+        <td>22.4% <span data-lang="zh">(噪音)</span><span data-lang="en">(noise)</span></td>
+        <td>22.4% (noise)</td></tr>
+    <tr style="background:#effaf3"><td>scale + clip 10</td><td>scale + clip 10</td>
+        <td>CD79A, MS4A1, CD79B (B markers)</td>
+        <td>CD79A, MS4A1, CD79B (B markers)</td>
+        <td>11.2% <span data-lang="zh">(真實生物)</span><span data-lang="en">(real biology)</span></td>
+        <td>11.2% (real biology)</td></tr>
+  </table>
+
+  <h4 data-lang="zh">🔗 對下游每個 scRNA 步驟的具體影響</h4>
+  <h4 data-lang="en">🔗 Concrete impact on each downstream scRNA step</h4>
+  <ul>
+    <li data-lang="zh"><b>PCA (M3.1)</b>：決定 PC1-PC50 抓到的是「真實 cell type axis」還是「housekeeping/depth axis」</li>
+    <li data-lang="en"><b>PCA (M3.1)</b>: decides if PC1-PC50 captures "real cell-type axes" or "housekeeping/depth axis"</li>
+    <li data-lang="zh"><b>KNN (M4.1)</b>：距離是基於 PCA → scale 錯 PCA 錯 KNN 也錯，整個 cluster 結構崩壞</li>
+    <li data-lang="en"><b>KNN (M4.1)</b>: distances built on PCA → wrong scale → wrong PCA → wrong KNN → cluster structure collapses</li>
+    <li data-lang="zh"><b>regress-out</b>：scale 流程中可選擇加 confounder removal (total_counts, cell cycle phase)，影響 batch correction</li>
+    <li data-lang="en"><b>regress-out</b>: scale flow optionally includes confounder removal (total_counts, cell cycle), affects batch correction</li>
+    <li data-lang="zh"><b>Pearson residual 可省此步</b>：σ 已 = 1 → 不需 scale。M2.2 介紹的 analytic Pearson 路徑跳過本章</li>
+    <li data-lang="en"><b>Pearson residual skips this step</b>: σ already = 1 → no scaling needed. The M2.2 analytic Pearson route bypasses this chapter</li>
+  </ul>
+
+  <div class="callout bio" style="margin-top: 14px;">
+    <strong data-lang="zh">⭐ 一句話總結</strong><strong data-lang="en">⭐ One-line summary</strong>:
+    <span data-lang="zh">scale 是「<b>讓 PCA 看到生物學而非數量級</b>」的最後一道手續。沒有它，PC1 永遠是 housekeeping/depth。</span>
+    <span data-lang="en">Scaling is "<b>the final step letting PCA see biology, not magnitude</b>". Without it, PC1 is forever housekeeping/depth.</span>
+  </div>
+</div>
+
 <div class="toc">
   <h4 data-lang="zh">目錄</h4>
   <h4 data-lang="en">Table of Contents</h4>
