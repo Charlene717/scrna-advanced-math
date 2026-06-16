@@ -232,6 +232,9 @@
   <a href="#s5"><span data-lang="zh">§5 SpMV</span><span data-lang="en">§5 SpMV</span></a>
   <a href="#s6"><span data-lang="zh">§6 PCA vs KNN</span><span data-lang="en">§6 PCA vs KNN</span></a>
   <a href="#s7"><span data-lang="zh">§7 AnnData + 限制</span><span data-lang="en">§7 AnnData + limits</span></a>
+  <a href="#s8"><span data-lang="zh">§8 PBMC 3k 案例</span><span data-lang="en">§8 PBMC 3k</span></a>
+  <a href="#s9"><span data-lang="zh">§9 Lanczos / ARPACK</span><span data-lang="en">§9 Lanczos / ARPACK</span></a>
+  <a href="#s10"><span data-lang="zh">§10 h5ad 剖析</span><span data-lang="en">§10 h5ad anatomy</span></a>
 </div>
 
 <header class="cover">
@@ -312,6 +315,49 @@ print(X.nbytes / <span class="n">1e9</span>)  <span class="c"># 1.6</span></pre>
     在真實 10x 矩陣（95% 稀疏），COO 大約只用 dense 的 <b>4-5%</b> 記憶體。</span>
     <span data-lang="en">Even on this tiny matrix, COO saves 60% space.
     On real 10x data (95% sparse), COO uses only <b>4–5%</b> of dense memory.</span>
+  </div>
+</div>
+
+<div class="card">
+  <h3 data-lang="zh">§0-2 為什麼 scRNA-seq <b>必然</b>稀疏 — 生物學三大原因</h3>
+  <h3 data-lang="en">§0-2 Why scRNA-seq is <b>inherently</b> sparse — three biological reasons</h3>
+
+  <p data-lang="zh">稀疏不是「巧合」或「技術瑕疵」——它直接來自單細胞 mRNA 的物理現實。理解這三個原因，你就會知道為什麼<b>無論你怎麼改進實驗，scRNA 矩陣永遠會是稀疏的</b>。</p>
+  <p data-lang="en">Sparsity isn't a "coincidence" or "technical flaw" — it comes directly from the physical reality of single-cell mRNA. Understanding the three causes tells you why <b>no matter how you improve the assay, scRNA matrices will always be sparse</b>.</p>
+
+  <ol>
+    <li>
+      <b data-lang="zh">原因 1：mRNA 分子數本來就少。</b><b data-lang="en">Reason 1: mRNA molecules are physically scarce.</b>
+      <span data-lang="zh">一個典型哺乳動物細胞只有約 <b>200,000–500,000 個 mRNA 分子</b>（Marinov et al. 2014）分散在 20,000 個基因上。即使「沒任何技術損失」，也代表平均每個基因只有 10-25 個分子，很多基因 = 0 或 1。</span>
+      <span data-lang="en">A typical mammalian cell holds only ~<b>200,000–500,000 mRNA molecules</b> (Marinov et al. 2014) spread across 20,000 genes. Even with <b>zero</b> technical loss, that's 10–25 molecules per gene on average — many genes will be 0 or 1.</span>
+    </li>
+    <li>
+      <b data-lang="zh">原因 2：捕捉效率低（technical dropout）。</b><b data-lang="en">Reason 2: low capture efficiency (technical dropout).</b>
+      <span data-lang="zh">10x Chromium v3 的 mRNA capture efficiency 約 <b>10–30%</b>（Zheng et al. 2017）——細胞裡 100 個分子，只有 10-30 個被測到。
+      Smart-seq2 高一點（~50%）但 throughput 低。Drop-seq、inDrops 更低（~5%）。</span>
+      <span data-lang="en">10x Chromium v3's mRNA capture efficiency is ~<b>10–30%</b> (Zheng et al. 2017) — of 100 molecules in a cell, only 10–30 are detected.
+      Smart-seq2 is higher (~50%) but lower throughput. Drop-seq, inDrops are lower (~5%).</span>
+    </li>
+    <li>
+      <b data-lang="zh">原因 3：許多基因確實「沒有表現」(true zero)。</b><b data-lang="en">Reason 3: many genes are truly unexpressed (true zero).</b>
+      <span data-lang="zh">B 細胞不表現 CD3、神經元不表現 GAPDH-like housekeeping 之外的肝臟特異基因。
+      一個細胞在<b>整個轉錄組</b>裡，平均只有 <b>3,000–8,000 個基因</b>有可偵測表現（Heumos et al. 2023）。剩下 12,000–17,000 個就是真實 0，不是雜訊。</span>
+      <span data-lang="en">B cells don't express CD3; neurons don't express liver-specific genes.
+      A cell typically expresses <b>3,000–8,000 detectable genes</b> out of 20,000 (Heumos et al. 2023). The remaining 12,000–17,000 are <b>true zeros</b>, not noise.</span>
+    </li>
+  </ol>
+
+  <div class="callout bio">
+    <strong data-lang="zh">合計效應</strong><strong data-lang="en">Combined effect</strong>:
+    <span data-lang="zh">原因 1 (本來就少) × 原因 2 (capture 10–30%) × 原因 3 (大半基因真不表現) = <b>實測 90–95% 的 entries 是 0</b>。Smart-seq2 (deep) 約 60–75%，Drop-seq 約 95–98%。<b>越深的測序也降不到 50% 以下</b>，因為原因 3 是生物事實。</span>
+    <span data-lang="en">Cause 1 (scarce) × Cause 2 (10–30% capture) × Cause 3 (most genes truly off) = <b>90–95% empirical zero rate</b>. Smart-seq2 (deep) ~60–75%, Drop-seq ~95–98%. <b>Even infinitely deep sequencing can't break the 50% floor</b> — Cause 3 is biological.</span>
+  </div>
+
+  <div class="callout warn">
+    <strong data-lang="zh">推論：稀疏儲存不是「速度優化」，而是「<b>讓 scRNA 計算可行的前提</b>」</strong>
+    <strong data-lang="en">Implication: sparse storage isn't "speed optimization" — it's "<b>what makes scRNA computation possible at all</b>"</strong>.
+    <span data-lang="zh">2016 年 10x 推出 Chromium 後，cells 從 100 跳到 10,000、現在 (2024) 常見 100,000–1,000,000。沒有稀疏儲存，1M cells × 30,000 genes 的 dense 矩陣是 <b>240 GB</b>——任何單機跑不動。稀疏只要 ~2.4 GB，普通 workstation 就能處理。</span>
+    <span data-lang="en">After 10x Chromium launched in 2016, cell counts grew from 100 → 10,000, now (2024) routinely 100k–1M. Without sparse storage, 1M cells × 30,000 genes dense is <b>240 GB</b> — no workstation can handle it. Sparse is ~2.4 GB — runs on any laptop.</span>
   </div>
 </div>
 
@@ -641,6 +687,399 @@ sc.pp.regress_out(adata, [<span class="s">"total_counts"</span>])  <span class="
     <td data-lang="en">design pipeline to keep one format</td>
   </tr>
 </table>
+
+<!-- ===================================== §8 PBMC 3k 案例 ===================================== -->
+<h2 id="s8"><span class="num">§8</span> <span data-lang="zh">完整案例：PBMC 3k 從讀檔到 PCA 的記憶體軌跡</span><span data-lang="en">Complete case study: PBMC 3k from load to PCA, memory traced</span></h2>
+
+<p class="lead" data-lang="zh">
+  10x Genomics 2016 公開的 <b>PBMC 3k</b>（Peripheral Blood Mononuclear Cells，n=2,700 cells × 32,738 genes）
+  是 scanpy / Seurat 教程的「Hello World」資料集。它<b>真實</b>、<b>下載免費</b>、且每個分析步驟的記憶體變化都可以實測。本節用它走完整流程。
+</p>
+<p class="lead" data-lang="en">
+  10x Genomics' 2016 public <b>PBMC 3k</b> (Peripheral Blood Mononuclear Cells, n=2,700 cells × 32,738 genes)
+  is the "Hello World" dataset of scanpy / Seurat tutorials. It's <b>real</b>, <b>free</b>, and every analysis step's memory footprint is reproducible. We walk the full pipeline.
+</p>
+
+<div class="card">
+  <h3 data-lang="zh">8.1 原始資料的數字真相</h3>
+  <h3 data-lang="en">8.1 The raw numbers</h3>
+  <table class="compare">
+    <tr><th data-lang="zh">指標</th><th data-lang="en">Metric</th>
+        <th data-lang="zh">數值</th><th data-lang="en">Value</th>
+        <th data-lang="zh">註解</th><th data-lang="en">Note</th></tr>
+    <tr><td data-lang="zh">細胞數</td><td data-lang="en"># cells</td>
+        <td>2,700</td><td>2,700</td>
+        <td data-lang="zh">通過 cellranger 過濾</td><td data-lang="en">cellranger-filtered</td></tr>
+    <tr><td data-lang="zh">基因數</td><td data-lang="en"># genes</td>
+        <td>32,738</td><td>32,738</td>
+        <td data-lang="zh">人類 GRCh38 全部</td><td data-lang="en">full human GRCh38</td></tr>
+    <tr><td data-lang="zh">總元素</td><td data-lang="en">Total entries</td>
+        <td>88,392,600</td><td>88,392,600</td>
+        <td data-lang="zh">~ 8800 萬</td><td data-lang="en">~ 88 M</td></tr>
+    <tr style="background:#dbeafe;"><td data-lang="zh"><b>非零數 nnz</b></td><td data-lang="en"><b>non-zeros (nnz)</b></td>
+        <td><b>2,286,884</b></td><td><b>2,286,884</b></td>
+        <td data-lang="zh">~ 230 萬</td><td data-lang="en">~ 2.3 M</td></tr>
+    <tr><td data-lang="zh"><b>稀疏度</b></td><td data-lang="en"><b>Sparsity</b></td>
+        <td><b>97.41%</b></td><td><b>97.41%</b></td>
+        <td data-lang="zh">非常稀疏！</td><td data-lang="en">very sparse</td></tr>
+    <tr><td data-lang="zh">每細胞平均偵測基因</td><td data-lang="en">Avg detected genes/cell</td>
+        <td>847</td><td>847</td>
+        <td data-lang="zh">符合「3000-8000 detected」之低端（PBMC 偏淺）</td>
+        <td data-lang="en">low end of "3k-8k detected" (PBMC is shallow)</td></tr>
+  </table>
+
+  <h4 data-lang="zh">8.2 三種格式記憶體實測</h4>
+  <h4 data-lang="en">8.2 Three formats, measured memory</h4>
+
+<pre class="code"><span class="k">import</span> scanpy <span class="k">as</span> sc, numpy <span class="k">as</span> np, scipy.sparse <span class="k">as</span> sp
+
+adata = sc.datasets.pbmc3k()
+X = adata.X
+print(<span class="k">type</span>(X))                            <span class="c"># &lt;class 'scipy.sparse.csr_matrix'&gt;</span>
+print(X.shape, X.nnz)                     <span class="c"># (2700, 32738) 2286884</span>
+
+<span class="c"># Memory footprints (bytes)</span>
+print(<span class="s">"CSR :"</span>, X.data.nbytes + X.indices.nbytes + X.indptr.nbytes)
+<span class="c"># CSR : 2286884*4 + 2286884*4 + 2701*4   = 18,308,776  ≈ 17.5 MB</span>
+
+X_csc = X.tocsc()
+print(<span class="s">"CSC :"</span>, X_csc.data.nbytes + X_csc.indices.nbytes + X_csc.indptr.nbytes)
+<span class="c"># CSC : 同 CSR 數量但 indptr 較大 (32739*4)   = 18,439,932  ≈ 17.6 MB</span>
+
+X_dense = X.toarray()
+print(<span class="s">"Dense:"</span>, X_dense.nbytes)
+<span class="c"># Dense: 2700 * 32738 * 4 (float32) = 353,570,400  ≈ 337 MB</span>
+<span class="c"># 比 sparse 大 19 倍！</span></pre>
+
+  <div class="callout idea">
+    <strong data-lang="zh">關鍵觀察</strong><strong data-lang="en">Key observation</strong>:
+    <span data-lang="zh">PBMC 3k 是「<b>小</b>」資料集，dense 才 337 MB，看起來還好。但放到 PBMC 68k (Zheng 2017) 就是 8.5 GB；放到 Tabula Sapiens (Quake lab 2022, n=483,152 cells) 是 <b>60 GB dense</b> vs <b>3 GB sparse</b>。<b>稀疏儲存在「平均規模」資料就是必需的</b>。</span>
+    <span data-lang="en">PBMC 3k is a <b>small</b> dataset — 337 MB dense looks fine. But PBMC 68k (Zheng 2017) is 8.5 GB; Tabula Sapiens (Quake lab 2022, n=483,152) is <b>60 GB dense</b> vs <b>3 GB sparse</b>. <b>Sparse storage is mandatory at average scale.</b></span>
+  </div>
+</div>
+
+<div class="card">
+  <h3 data-lang="zh">8.3 Pipeline 每一步的記憶體軌跡</h3>
+  <h3 data-lang="en">8.3 Memory at each pipeline step</h3>
+  <table class="compare">
+    <tr><th data-lang="zh">步驟</th><th data-lang="en">Step</th>
+        <th data-lang="zh">shape</th><th data-lang="en">shape</th>
+        <th data-lang="zh">格式</th><th data-lang="en">Format</th>
+        <th data-lang="zh">記憶體</th><th data-lang="en">Memory</th>
+        <th data-lang="zh">為什麼</th><th data-lang="en">Why</th></tr>
+    <tr><td>1. read_10x_h5</td><td>1. read_10x_h5</td>
+        <td>2700 × 32738</td><td>2700 × 32738</td>
+        <td>CSR</td><td>CSR</td>
+        <td>17.5 MB</td><td>17.5 MB</td>
+        <td data-lang="zh">10x 直接給 sparse</td><td data-lang="en">10x ships sparse</td></tr>
+    <tr><td data-lang="zh">2. QC 篩選</td><td data-lang="en">2. QC filter</td>
+        <td>2638 × 32738</td><td>2638 × 32738</td>
+        <td>CSR</td><td>CSR</td>
+        <td>17.2 MB</td><td>17.2 MB</td>
+        <td data-lang="zh">砍 62 cells (~2%)</td><td data-lang="en">remove 62 cells (~2%)</td></tr>
+    <tr><td data-lang="zh">3. normalize+log1p</td><td data-lang="en">3. normalize+log1p</td>
+        <td>2638 × 32738</td><td>2638 × 32738</td>
+        <td>CSR (float32)</td><td>CSR (float32)</td>
+        <td>17.2 MB</td><td>17.2 MB</td>
+        <td data-lang="zh">0 仍是 0，sparse 保持</td><td data-lang="en">0 stays 0, sparse intact</td></tr>
+    <tr><td data-lang="zh">4. HVG 篩選 (top 2000)</td><td data-lang="en">4. HVG (top 2000)</td>
+        <td>2638 × 2000</td><td>2638 × 2000</td>
+        <td>CSR</td><td>CSR</td>
+        <td>3.2 MB</td><td>3.2 MB</td>
+        <td data-lang="zh">大幅縮</td><td data-lang="en">shrinks fast</td></tr>
+    <tr style="background:#fdecec;"><td><b>5. sc.pp.scale</b></td><td><b>5. sc.pp.scale</b></td>
+        <td>2638 × 2000</td><td>2638 × 2000</td>
+        <td><b>Dense float32</b></td><td><b>Dense float32</b></td>
+        <td><b>21 MB</b></td><td><b>21 MB</b></td>
+        <td data-lang="zh">減 mean → 0 變非零，<b>densify!</b></td>
+        <td data-lang="en">subtract mean → 0 becomes nonzero, <b>densifies!</b></td></tr>
+    <tr><td>6. PCA (n=50)</td><td>6. PCA (n=50)</td>
+        <td>2638 × 50</td><td>2638 × 50</td>
+        <td>Dense</td><td>Dense</td>
+        <td>0.5 MB</td><td>0.5 MB</td>
+        <td data-lang="zh">輸出小</td><td data-lang="en">tiny output</td></tr>
+  </table>
+
+  <div class="callout warn">
+    <strong data-lang="zh">第 5 步是記憶體陷阱</strong><strong data-lang="en">Step 5 is the memory trap</strong>:
+    <span data-lang="zh">PBMC 3k 只到 21 MB 還好。但 1M cells × 2000 HVG dense 是 <b>16 GB</b>。實務上 (Heumos et al. 2023) 建議：對大資料 <b>跳過 sc.pp.scale</b>，改用 Pearson residuals（不需 scale）或在 PCA 函數內部用 lazy scaling。</span>
+    <span data-lang="en">PBMC 3k stays at 21 MB — fine. But 1M cells × 2000 HVG dense is <b>16 GB</b>. Per Heumos et al. 2023: for large data, <b>skip sc.pp.scale</b> — use Pearson residuals (no scaling needed) or lazy scaling inside PCA.</span>
+  </div>
+
+  <p data-lang="zh">📚 <b>引用</b>：Zheng et al. (2017) <i>Nat Commun</i> 8:14049 (PBMC 68k 釋出 + 10x 化學)；Heumos et al. (2023) <i>Nat Rev Genet</i> 24:550 (current best practices)；Wolf et al. (2018) <i>Genome Biol</i> 19:15 (scanpy)。</p>
+  <p data-lang="en">📚 <b>References</b>: Zheng et al. (2017) <i>Nat Commun</i> 8:14049 (PBMC 68k release + 10x chemistry); Heumos et al. (2023) <i>Nat Rev Genet</i> 24:550 (current best practices); Wolf et al. (2018) <i>Genome Biol</i> 19:15 (scanpy).</p>
+</div>
+
+<!-- ===================================== §9 Lanczos / ARPACK ===================================== -->
+<h2 id="s9"><span class="num">§9</span> <span data-lang="zh">深入：Lanczos / ARPACK 為何讓 PCA 強制要 CSC</span><span data-lang="en">Deep dive: why Lanczos / ARPACK forces PCA to use CSC</span></h2>
+
+<p class="lead" data-lang="zh">
+  你已經知道 PCA 用 CSC、KNN 用 CSR。但「為什麼」這個決定 — 涉及 scanpy 跑 PCA 時用的 <b>Lanczos iteration</b> 演算法。本節打開這個黑盒。
+</p>
+<p class="lead" data-lang="en">
+  You know PCA uses CSC, KNN uses CSR. The <b>why</b> involves the <b>Lanczos iteration</b> algorithm scanpy uses to compute PCA. This section opens the black box.
+</p>
+
+<h3 data-lang="zh">9.1 為什麼 PCA 不直接算 eigen(C)？</h3>
+<h3 data-lang="en">9.1 Why doesn't PCA just call eig(C)?</h3>
+
+<p data-lang="zh">
+  傳統教科書 PCA：(1) 算共變異數矩陣 $C = X^T X / (n-1)$，(2) 對 $C$ 做特徵分解，(3) 取前 50 個特徵向量。
+  問題：對 PBMC 3k 的 HVG（2000 genes），$C$ 是 <b>2000 × 2000 = 16 MB dense</b>。對 Tabula Sapiens 用全 32738 genes，$C$ 是 <b>32738² × 4 bytes = 4.3 GB</b>！
+  而且 <code class="inline">np.linalg.eig</code> 對 dense 是 $O(p^3)$ — 對 $p=32738$ 是 $3.5 \times 10^{13}$ flops，跑 1 小時都不夠。
+</p>
+<p data-lang="en">
+  Textbook PCA: (1) compute covariance $C = X^T X / (n-1)$, (2) eigendecompose $C$, (3) take top 50 eigenvectors.
+  Problem: for PBMC 3k HVG (2000 genes), $C$ is <b>2000 × 2000 = 16 MB dense</b>. For Tabula Sapiens with all 32,738 genes, $C$ is <b>32738² × 4 bytes = 4.3 GB</b>!
+  And <code class="inline">np.linalg.eig</code> on dense is $O(p^3)$ — for $p=32738$ that's $3.5 \times 10^{13}$ flops, would take hours.
+</p>
+
+<h3 data-lang="zh">9.2 Lanczos 的核心想法：只算最大 k 個特徵值</h3>
+<h3 data-lang="en">9.2 Lanczos's core idea: only compute top-k eigenvalues</h3>
+
+<p data-lang="zh">
+  Lanczos iteration（Cornelius Lanczos 1950）發現：
+  你<b>不需要</b>顯式構造 $C$，只需要能算「<b>$C \cdot v$ 對任意向量 $v$</b>」這個動作。
+  從隨機向量 $v_0$ 開始，反覆套用 $C$ 跟 Gram-Schmidt，就會收斂到前 k 個特徵向量。
+</p>
+<p data-lang="en">
+  Lanczos iteration (Cornelius Lanczos 1950) realized:
+  you <b>don't need</b> to explicitly form $C$ — you only need to compute "<b>$C \cdot v$ for any vector $v$</b>".
+  Starting from a random $v_0$, iteratively apply $C$ + Gram-Schmidt, and you converge to the top-k eigenvectors.
+</p>
+
+<div class="math-block boxed">
+  $$C \cdot v = \frac{1}{n-1} X^T (X v)$$
+  <div class="formula-caption" data-lang="zh">兩次 SpMV，不用形成 $C$！</div>
+  <div class="formula-caption" data-lang="en">Two SpMV calls — never form $C$!</div>
+</div>
+
+<p data-lang="zh">關鍵：$X v$ 是 SpMV，<b>$X^T (Xv)$ 是 $X^T$ 跟一個 dense 向量做 SpMV</b>。對 $X \in \mathbb{R}^{n \times p}$ 存成 CSR，$Xv$ 是 $O(\text{nnz})$ 一氣呵成；但 $X^T u$ 需要對 $X$ 「<b>按列</b>走訪」——這正好是 CSC 的強項！</p>
+<p data-lang="en">Critical: $Xv$ is SpMV; <b>$X^T(Xv)$ is SpMV of $X^T$ against a dense vector</b>. For $X \in \mathbb{R}^{n \times p}$ stored as CSR, $Xv$ is $O(\text{nnz})$ in one pass; but $X^T u$ requires "<b>column-wise traversal</b>" of $X$ — exactly CSC's strength!</p>
+
+<h3 data-lang="zh">9.3 完整 Lanczos 演算法（簡化版）</h3>
+<h3 data-lang="en">9.3 Complete Lanczos algorithm (simplified)</h3>
+
+<pre class="code"><span class="c"># 給定: X (n×p sparse), k = 期望特徵向量數 (e.g. 50)</span>
+v_0 = random(p); v_0 /= norm(v_0)
+V = [v_0]; T = []
+<span class="k">for</span> j <span class="k">in range</span>(k + 20):  <span class="c"># 多算 20 個增加穩定性</span>
+    w = X.T @ (X @ V[j])          <span class="c"># &lt;-- 兩次 SpMV !</span>
+    alpha = w @ V[j]
+    w = w - alpha * V[j]
+    <span class="k">if</span> j &gt; 0: w = w - beta * V[j-1]
+    beta = norm(w)
+    V.append(w / beta)
+    T.append((alpha, beta))         <span class="c"># 三對角矩陣</span>
+<span class="c"># 對小的三對角矩陣 T 做 eigen（O(k^2) 便宜）</span>
+eigvals, U = eig_tridiag(T)
+top_eigvecs = V @ U[:, :k]          <span class="c"># Ritz vectors</span></pre>
+
+<h3 data-lang="zh">9.4 複雜度比較</h3>
+<h3 data-lang="en">9.4 Complexity comparison</h3>
+
+<table class="compare">
+  <tr><th data-lang="zh">方法</th><th data-lang="en">Method</th>
+      <th data-lang="zh">複雜度</th><th data-lang="en">Complexity</th>
+      <th data-lang="zh">記憶體</th><th data-lang="en">Memory</th>
+      <th data-lang="zh">scanpy 預設?</th><th data-lang="en">Scanpy default?</th></tr>
+  <tr><td>full eig(C)</td><td>full eig(C)</td>
+      <td>$O(p^3)$</td><td>$O(p^3)$</td>
+      <td>$O(p^2)$</td><td>$O(p^2)$</td>
+      <td>❌</td><td>❌</td></tr>
+  <tr><td>SVD(X)</td><td>SVD(X)</td>
+      <td>$O(\min(n,p)^2 \max(n,p))$</td><td>$O(\min(n,p)^2 \max(n,p))$</td>
+      <td>$O(np)$</td><td>$O(np)$</td>
+      <td data-lang="zh">小資料用</td><td data-lang="en">small data</td></tr>
+  <tr style="background:#dbeafe;"><td><b>Lanczos / ARPACK</b></td><td><b>Lanczos / ARPACK</b></td>
+      <td><b>$O(k \cdot \text{nnz})$</b></td><td><b>$O(k \cdot \text{nnz})$</b></td>
+      <td><b>$O((n+p) k)$</b></td><td><b>$O((n+p) k)$</b></td>
+      <td><b>✅</b> (sc.tl.pca with svd_solver='arpack')</td>
+      <td><b>✅</b> (sc.tl.pca with svd_solver='arpack')</td></tr>
+</table>
+
+<p data-lang="zh">對 PBMC 3k 用 k=50：full eig 是 $8 \times 10^9$ flops、Lanczos 是 50 × 2.3M × 2 = $2.3 \times 10^8$ — <b>快 35×</b>。
+對 Tabula Sapiens (483k cells, nnz ~ 500M): full eig 不可能、Lanczos 是 $5 \times 10^{10}$ — <b>幾分鐘</b>內完成。</p>
+<p data-lang="en">For PBMC 3k with k=50: full eig is $8 \times 10^9$ flops, Lanczos is 50 × 2.3M × 2 = $2.3 \times 10^8$ — <b>35× faster</b>.
+For Tabula Sapiens (483k cells, nnz ~ 500M): full eig is impossible, Lanczos is $5 \times 10^{10}$ — <b>completes in minutes</b>.</p>
+
+<details>
+<summary data-lang="zh">▸ 為什麼 Lanczos 收斂這麼快？(Krylov 子空間)</summary>
+<summary data-lang="en">▸ Why does Lanczos converge so fast? (Krylov subspaces)</summary>
+<p data-lang="zh">
+Lanczos 構造的 $V$ 是 <b>Krylov 子空間</b> $\mathcal{K}_k(C, v_0) = \text{span}\{v_0, Cv_0, C^2 v_0, \ldots, C^{k-1} v_0\}$。
+這個空間的關鍵性質：對任何多項式 $p$ 的 $p(C) v_0$ 都落在裡面。
+特徵值大的特徵向量會被 $C^j v_0$ <b>指數放大</b>（$C^j$ 把 $\lambda_1$ 放大 $\lambda_1^j$ 倍），
+所以 $k$ 步後最大的幾個特徵向量已經<b>主導</b> Krylov 空間。Lanczos 在這個空間裡找最佳近似——
+理論上 $k$ 步可以精確得到前 $k$ 個特徵值（精度受浮點誤差限制，實務多算 20 個冗餘）。
+</p>
+<p data-lang="en">
+Lanczos builds $V$ as a <b>Krylov subspace</b> $\mathcal{K}_k(C, v_0) = \text{span}\{v_0, Cv_0, C^2 v_0, \ldots, C^{k-1} v_0\}$.
+Key property: any polynomial $p(C) v_0$ lives in this space.
+Largest eigenvalues' eigenvectors are <b>exponentially amplified</b> by $C^j v_0$ ($C^j$ scales $\lambda_1$ by $\lambda_1^j$),
+so after $k$ steps the top eigenvectors <b>dominate</b> Krylov space. Lanczos finds best approximation in this space —
+theoretically $k$ steps give exact top-$k$ eigenvalues (limited by floating-point, hence 20 extra iters in practice).
+</p>
+</details>
+
+<p data-lang="zh">📚 <b>引用</b>：Lanczos (1950) <i>J Res Nat Bur Std</i> 45:255；Lehoucq, Sorensen & Yang (1998) <i>ARPACK Users' Guide</i> (SIAM)；scanpy 內部呼叫 <code class="inline">scipy.sparse.linalg.eigsh</code>，後端 = ARPACK。</p>
+<p data-lang="en">📚 <b>References</b>: Lanczos (1950) <i>J Res Nat Bur Std</i> 45:255; Lehoucq, Sorensen & Yang (1998) <i>ARPACK Users' Guide</i> (SIAM); scanpy internally calls <code class="inline">scipy.sparse.linalg.eigsh</code>, backed by ARPACK.</p>
+
+<!-- ===================================== §10 h5ad anatomy ===================================== -->
+<h2 id="s10"><span class="num">§10</span> <span data-lang="zh">AnnData / h5ad 完整剖析：scRNA 標準格式背後的設計</span><span data-lang="en">AnnData / h5ad anatomy: design behind the scRNA standard format</span></h2>
+
+<p class="lead" data-lang="zh">
+  scanpy 用 AnnData 物件；存到磁碟用 <code class="inline">.h5ad</code> 格式。
+  Bioconductor / Seurat 用 SingleCellExperiment / Seurat 物件，跨工具用 <code class="inline">.h5seurat</code> 或 <code class="inline">.h5ad</code> 轉換。
+  本節打開這個格式的內部結構——理解後你會知道為什麼 scanpy 跑這麼快、哪些操作會慢、怎麼跟 R 互通。
+</p>
+<p class="lead" data-lang="en">
+  Scanpy uses AnnData objects; on disk as <code class="inline">.h5ad</code>.
+  Bioconductor / Seurat use SingleCellExperiment / Seurat objects; cross-tool exchange via <code class="inline">.h5seurat</code> or <code class="inline">.h5ad</code>.
+  Opening this format reveals why scanpy is fast, which ops are slow, and how to interop with R.
+</p>
+
+<h3 data-lang="zh">10.1 AnnData 的 5 大成員</h3>
+<h3 data-lang="en">10.1 AnnData's five members</h3>
+
+<table class="compare">
+  <tr><th data-lang="zh">成員</th><th data-lang="en">Member</th>
+      <th data-lang="zh">維度</th><th data-lang="en">Shape</th>
+      <th data-lang="zh">內容</th><th data-lang="en">Content</th>
+      <th data-lang="zh">通常格式</th><th data-lang="en">Typical format</th></tr>
+  <tr><td><code class="inline">.X</code></td><td><code class="inline">.X</code></td>
+      <td>n × p</td><td>n × p</td>
+      <td data-lang="zh">主表現矩陣（count 或 normalized）</td>
+      <td data-lang="en">Main expression matrix (count or normalized)</td>
+      <td>CSR / dense</td><td>CSR / dense</td></tr>
+  <tr><td><code class="inline">.layers</code></td><td><code class="inline">.layers</code></td>
+      <td>n × p</td><td>n × p</td>
+      <td data-lang="zh">同 shape 的「平行版本」(raw, log, spliced, unspliced…)</td>
+      <td data-lang="en">Same-shape "parallel versions" (raw, log, spliced, unspliced…)</td>
+      <td>CSR</td><td>CSR</td></tr>
+  <tr><td><code class="inline">.obs</code></td><td><code class="inline">.obs</code></td>
+      <td>n × m1</td><td>n × m1</td>
+      <td data-lang="zh">細胞層 metadata（cluster, sample, MT%, leiden…）</td>
+      <td data-lang="en">Per-cell metadata (cluster, sample, MT%, leiden…)</td>
+      <td>pandas DataFrame</td><td>pandas DataFrame</td></tr>
+  <tr><td><code class="inline">.var</code></td><td><code class="inline">.var</code></td>
+      <td>p × m2</td><td>p × m2</td>
+      <td data-lang="zh">基因層 metadata（gene name, highly_variable, mt…）</td>
+      <td data-lang="en">Per-gene metadata (gene name, highly_variable, mt…)</td>
+      <td>pandas DataFrame</td><td>pandas DataFrame</td></tr>
+  <tr><td><code class="inline">.obsm</code> / <code class="inline">.varm</code></td><td><code class="inline">.obsm</code> / <code class="inline">.varm</code></td>
+      <td>n × d / p × d</td><td>n × d / p × d</td>
+      <td data-lang="zh">嵌入 (X_pca, X_umap, X_diffmap…)</td>
+      <td data-lang="en">Embeddings (X_pca, X_umap, X_diffmap…)</td>
+      <td>dense ndarray</td><td>dense ndarray</td></tr>
+  <tr><td><code class="inline">.obsp</code> / <code class="inline">.varp</code></td><td><code class="inline">.obsp</code> / <code class="inline">.varp</code></td>
+      <td>n × n / p × p</td><td>n × n / p × p</td>
+      <td data-lang="zh">成對關係（KNN graph, connectivities, distances）</td>
+      <td data-lang="en">Pairwise (KNN graph, connectivities, distances)</td>
+      <td>CSR</td><td>CSR</td></tr>
+</table>
+
+<div class="callout idea">
+  <strong data-lang="zh">設計哲學</strong><strong data-lang="en">Design philosophy</strong>:
+  <span data-lang="zh">AnnData = 「一個 cell × gene 矩陣 + 所有相關 metadata 一起傳」。<b>避免 scattered files</b>（不像早期 CellRanger 把 barcodes / features / matrix 分三個檔）。所有 downstream 結果都附加進同一個物件，<b>下游分析的可重現性大幅提升</b>。</span>
+  <span data-lang="en">AnnData = "one cell × gene matrix + all related metadata, traveling together". <b>Avoids scattered files</b> (unlike early CellRanger's barcodes / features / matrix split). All downstream results attach to the same object, <b>dramatically improving reproducibility</b>.</span>
+</div>
+
+<h3 data-lang="zh">10.2 h5ad 檔案的物理結構</h3>
+<h3 data-lang="en">10.2 Physical structure of an .h5ad file</h3>
+
+<p data-lang="zh"><code class="inline">.h5ad</code> 是 HDF5 容器，內部用<b>樹狀 group</b> 對應 AnnData 成員：</p>
+<p data-lang="en"><code class="inline">.h5ad</code> is an HDF5 container with <b>tree-structured groups</b> mirroring AnnData members:</p>
+
+<pre class="code">pbmc3k.h5ad/
+├── X/                      <span class="c"># sparse matrix group</span>
+│   ├── data    (float32, nnz)
+│   ├── indices (int32, nnz)
+│   └── indptr  (int32, n+1)
+├── obs/                    <span class="c"># cell metadata</span>
+│   ├── n_genes (int32, n)
+│   ├── leiden  (categorical: codes + categories)
+│   └── ...
+├── var/                    <span class="c"># gene metadata</span>
+│   ├── gene_symbol (string array, p)
+│   ├── highly_variable (bool, p)
+│   └── ...
+├── obsm/
+│   ├── X_pca   (float32, n × 50)
+│   ├── X_umap  (float32, n × 2)
+│   └── X_scVI  (float32, n × 30)
+├── obsp/
+│   └── connectivities/     <span class="c"># sparse KNN graph</span>
+│       ├── data
+│       ├── indices
+│       └── indptr
+└── uns/                    <span class="c"># unstructured (dict-like)</span>
+    ├── rank_genes_groups/...
+    └── pca/variance_ratio  (float32, 50)</pre>
+
+<h3 data-lang="zh">10.3 為什麼用 HDF5 不用 Parquet 或 Zarr？</h3>
+<h3 data-lang="en">10.3 Why HDF5 instead of Parquet or Zarr?</h3>
+
+<table class="compare">
+  <tr><th></th><th>HDF5 (.h5ad)</th><th>HDF5 (.h5ad)</th><th>Zarr (.zarr)</th><th>Zarr (.zarr)</th><th>Parquet</th><th>Parquet</th></tr>
+  <tr><td data-lang="zh">支援 sparse</td><td data-lang="en">Sparse support</td>
+      <td>✅ (3-array)</td><td>✅ (3-array)</td>
+      <td>✅</td><td>✅</td>
+      <td>❌ (列導向)</td><td>❌ (columnar)</td></tr>
+  <tr><td data-lang="zh">隨機存取</td><td data-lang="en">Random access</td>
+      <td>✅ (chunked)</td><td>✅ (chunked)</td>
+      <td>✅ (chunked)</td><td>✅ (chunked)</td>
+      <td data-lang="zh">需 row-group</td><td data-lang="en">needs row-group</td></tr>
+  <tr><td data-lang="zh">雲端存取 (S3)</td><td data-lang="en">Cloud access (S3)</td>
+      <td>△ slow</td><td>△ slow</td>
+      <td>✅ best</td><td>✅ best</td>
+      <td>✅</td><td>✅</td></tr>
+  <tr><td data-lang="zh">scanpy 預設</td><td data-lang="en">Scanpy default</td>
+      <td><b>✅</b></td><td><b>✅</b></td>
+      <td data-lang="zh">支援 (anndata 0.8+)</td><td data-lang="en">supported (anndata 0.8+)</td>
+      <td>—</td><td>—</td></tr>
+</table>
+
+<div class="callout idea">
+  <strong data-lang="zh">未來趨勢</strong><strong data-lang="en">Future trend</strong>:
+  <span data-lang="zh">CZ CELLxGENE Census (~50M cells)、Tabula Sapiens 等大規模 atlas 已經採用 <b>Zarr + 雲端 (S3)</b>。AnnData 0.10+ 支援 <code class="inline">read_zarr</code> / <code class="inline">write_zarr</code>，未來幾年 .h5ad → .zarr 會是趨勢。</span>
+  <span data-lang="en">Large-scale atlases like CZ CELLxGENE Census (~50M cells) and Tabula Sapiens have adopted <b>Zarr + cloud (S3)</b>. AnnData 0.10+ supports <code class="inline">read_zarr</code> / <code class="inline">write_zarr</code> — .h5ad → .zarr is the next-few-years trend.</span>
+</div>
+
+<h3 data-lang="zh">10.4 與 R / Bioconductor 互通</h3>
+<h3 data-lang="en">10.4 Interop with R / Bioconductor</h3>
+
+<pre class="code"><span class="c"># Python → R</span>
+<span class="c"># 在 Python:</span>
+adata.write_h5ad(<span class="s">"pbmc.h5ad"</span>)
+
+<span class="c"># 在 R (Seurat ≥ 5):</span>
+<span class="c"># library(SeuratDisk)</span>
+<span class="c"># Convert("pbmc.h5ad", dest="h5seurat")</span>
+<span class="c"># pbmc &lt;- LoadH5Seurat("pbmc.h5seurat")</span>
+
+<span class="c"># 在 R (Bioconductor):</span>
+<span class="c"># library(zellkonverter)</span>
+<span class="c"># sce &lt;- readH5AD("pbmc.h5ad")     # → SingleCellExperiment</span></pre>
+
+<h3 data-lang="zh">10.5 Heumos 2023 建議的存儲最佳實踐</h3>
+<h3 data-lang="en">10.5 Storage best practices from Heumos 2023</h3>
+
+<ol>
+  <li><span data-lang="zh"><b>raw 永遠保留在 .layers["counts"]</b>，<code class="inline">.X</code> 存當前處理後狀態</span>
+      <span data-lang="en"><b>Keep raw counts in .layers["counts"]</b>; <code class="inline">.X</code> holds current processed state</span></li>
+  <li><span data-lang="zh"><b>大資料先 HVG 再 scale</b>，避免 dense 化整個 matrix</span>
+      <span data-lang="en"><b>HVG-filter before scaling</b> on large data to avoid densifying full matrix</span></li>
+  <li><span data-lang="zh">所有嵌入（PCA, UMAP, scVI）放 <code class="inline">.obsm</code>，方便重新計算下游</span>
+      <span data-lang="en">All embeddings in <code class="inline">.obsm</code> — easy downstream re-computation</span></li>
+  <li><span data-lang="zh">KNN graph 在 <code class="inline">.obsp["connectivities"]</code>，<b>同檔可重做 Leiden 與 UMAP</b></span>
+      <span data-lang="en">KNN graph in <code class="inline">.obsp["connectivities"]</code> — <b>same file re-runs Leiden and UMAP</b></span></li>
+  <li><span data-lang="zh">超大資料用 <code class="inline">backed='r'</code> 模式：<code class="inline">sc.read_h5ad("big.h5ad", backed='r')</code>——記憶體不載入全 X、按需切片</span>
+      <span data-lang="en">For very large data use <code class="inline">backed='r'</code> mode: <code class="inline">sc.read_h5ad("big.h5ad", backed='r')</code> — X not loaded into RAM, sliced on demand</span></li>
+</ol>
+
+<p data-lang="zh">📚 <b>引用</b>：Virshup et al. (2024) <i>Nat Biotechnol</i> 42:545 (AnnData & scverse)；Heumos et al. (2023) <i>Nat Rev Genet</i> 24:550 (best practices); CZI CELLxGENE Census (2024) <a href="https://cellxgene.cziscience.com">cellxgene.cziscience.com</a>。</p>
+<p data-lang="en">📚 <b>References</b>: Virshup et al. (2024) <i>Nat Biotechnol</i> 42:545 (AnnData & scverse); Heumos et al. (2023) <i>Nat Rev Genet</i> 24:550 (best practices); CZI CELLxGENE Census (2024) <a href="https://cellxgene.cziscience.com">cellxgene.cziscience.com</a>.</p>
 
 <div class="callout prog">
   <strong data-lang="zh">下一步</strong><strong data-lang="en">Next</strong>:

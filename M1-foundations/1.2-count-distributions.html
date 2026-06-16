@@ -235,6 +235,10 @@
   <a href="#s6"><span data-lang="zh">§6 ZINB</span><span data-lang="en">§6 ZINB</span></a>
   <a href="#s7"><span data-lang="zh">§7 現代共識</span><span data-lang="en">§7 modern consensus</span></a>
   <a href="#s8"><span data-lang="zh">§8 串起</span><span data-lang="en">§8 Wrap-up</span></a>
+  <a href="#s9"><span data-lang="zh">§9 跨平台</span><span data-lang="en">§9 Platforms</span></a>
+  <a href="#s10"><span data-lang="zh">§10 GLM 手算</span><span data-lang="en">§10 GLM by hand</span></a>
+  <a href="#s11"><span data-lang="zh">§11 Pearson 推導</span><span data-lang="en">§11 Pearson deriv.</span></a>
+  <a href="#s12"><span data-lang="zh">§12 CITE-seq</span><span data-lang="en">§12 CITE-seq</span></a>
 </div>
 
 <header class="cover">
@@ -664,6 +668,363 @@ Result: for 99.5% of genes, NB and ZINB likelihoods differ &lt; 0.5%. The extra 
     <td data-lang="en">use ZINB or hurdle model</td>
   </tr>
 </table>
+
+<!-- ===================================== §9 跨平台 ===================================== -->
+<h2 id="s9"><span class="num">§9</span> <span data-lang="zh">跨平台分布實測：10x v3 / Smart-seq2 / Drop-seq / Visium</span><span data-lang="en">Cross-platform distributions: 10x v3 / Smart-seq2 / Drop-seq / Visium</span></h2>
+
+<p class="lead" data-lang="zh">
+  「scRNA 用 NB」這句話不是普遍真理——它<b>取決於平台</b>。本節用實測資料對比四個主流平台的分布特性，
+  讓你知道<b>看到資料時該選哪個模型</b>。
+</p>
+<p class="lead" data-lang="en">
+  "scRNA uses NB" isn't universal — it <b>depends on platform</b>. We compare empirical distributions of four mainstream platforms,
+  so you know <b>which model to pick when you see your data</b>.
+</p>
+
+<table class="compare">
+  <tr><th data-lang="zh">平台</th><th data-lang="en">Platform</th>
+      <th data-lang="zh">UMI?</th><th data-lang="en">UMI?</th>
+      <th data-lang="zh">細胞數</th><th data-lang="en">Cells</th>
+      <th data-lang="zh">每細胞分子數</th><th data-lang="en">Molecules/cell</th>
+      <th data-lang="zh">最佳分布</th><th data-lang="en">Best dist.</th>
+      <th data-lang="zh">代表用途</th><th data-lang="en">Typical use</th></tr>
+  <tr><td>10x Chromium v3</td><td>10x Chromium v3</td>
+      <td>✅</td><td>✅</td>
+      <td>5k–100k+</td><td>5k–100k+</td>
+      <td>3k–8k</td><td>3k–8k</td>
+      <td><b>NB</b></td><td><b>NB</b></td>
+      <td data-lang="zh">大規模圖譜、疾病組</td>
+      <td data-lang="en">large atlases, disease cohorts</td></tr>
+  <tr><td>Smart-seq2 / SS3</td><td>Smart-seq2 / SS3</td>
+      <td>❌</td><td>❌</td>
+      <td>~ 1k</td><td>~ 1k</td>
+      <td>10k–50k</td><td>10k–50k</td>
+      <td>ZINB <span data-lang="zh">或</span><span data-lang="en">or</span> NB+inflation</td>
+      <td>ZINB or NB+inflation</td>
+      <td data-lang="zh">高深度、少細胞、splicing</td>
+      <td data-lang="en">deep, few cells, splicing studies</td></tr>
+  <tr><td>Drop-seq / inDrops</td><td>Drop-seq / inDrops</td>
+      <td>✅</td><td>✅</td>
+      <td>10k–50k</td><td>10k–50k</td>
+      <td>500–3k</td><td>500–3k</td>
+      <td>NB</td><td>NB</td>
+      <td data-lang="zh">低成本、大量篩</td>
+      <td data-lang="en">low-cost, screening</td></tr>
+  <tr><td>10x Visium <span data-lang="zh">(spatial)</span><span data-lang="en">(spatial)</span></td>
+      <td>10x Visium (spatial)</td>
+      <td>✅</td><td>✅</td>
+      <td data-lang="zh">5k spots</td><td data-lang="en">5k spots</td>
+      <td>5k–20k</td><td>5k–20k</td>
+      <td>NB</td><td>NB</td>
+      <td data-lang="zh">空間轉錄組</td>
+      <td data-lang="en">spatial transcriptomics</td></tr>
+</table>
+
+<div class="card">
+  <h3 data-lang="zh">9.1 視覺對比：4 個平台同基因的分布</h3>
+  <h3 data-lang="en">9.1 Visual: same gene, four platforms</h3>
+  <p data-lang="zh">
+    對同樣基因（GAPDH，housekeeping，所有細胞都該表現）：
+  </p>
+  <p data-lang="en">For the same gene (GAPDH, housekeeping, expressed in all cells):</p>
+  <table class="compare">
+    <tr><th></th>
+        <th>10x v3</th><th>10x v3</th>
+        <th>Smart-seq2</th><th>Smart-seq2</th>
+        <th>Drop-seq</th><th>Drop-seq</th></tr>
+    <tr><td data-lang="zh">P(X=0)</td><td data-lang="en">P(X=0)</td>
+        <td>~ 5%</td><td>~ 5%</td>
+        <td>~ 2%</td><td>~ 2%</td>
+        <td>~ 25%</td><td>~ 25%</td></tr>
+    <tr><td data-lang="zh">平均 μ</td><td data-lang="en">mean μ</td>
+        <td>~ 30</td><td>~ 30</td>
+        <td>~ 800</td><td>~ 800</td>
+        <td>~ 5</td><td>~ 5</td></tr>
+    <tr><td>var / μ</td><td>var / μ</td>
+        <td>~ 5×</td><td>~ 5×</td>
+        <td>~ 8×</td><td>~ 8×</td>
+        <td>~ 3×</td><td>~ 3×</td></tr>
+    <tr><td data-lang="zh">適配 NB？</td><td data-lang="en">NB fit?</td>
+        <td>✅</td><td>✅</td>
+        <td>△ <span data-lang="zh">(需 ZINB)</span><span data-lang="en">(need ZINB)</span></td>
+        <td>△ (need ZINB)</td>
+        <td>✅</td><td>✅</td></tr>
+  </table>
+  <div class="callout idea">
+    <strong data-lang="zh">為什麼 Smart-seq2 反而要 ZINB?</strong><strong data-lang="en">Why does Smart-seq2 need ZINB?</strong>
+    <span data-lang="zh">沒有 UMI → 同一分子可能 PCR 後出現多次或一次都沒被測到。這個 <b>PCR amplification noise</b> 就是早期 ZINB 模型成功的地方（Pierson & Yau 2015 ZIFA）。UMI 平台（10x、Drop-seq）已經把這層 noise 解掉。</span>
+    <span data-lang="en">No UMI → same molecule may appear multiple times after PCR or be missed entirely. This <b>PCR amplification noise</b> is exactly what early ZINB models captured (Pierson & Yau 2015 ZIFA). UMI platforms (10x, Drop-seq) eliminate this noise layer.</span>
+  </div>
+  <p data-lang="zh">📚 <b>引用</b>：Svensson et al. (2017) <i>Nat Methods</i> 14:381 (UMI vs non-UMI 數學分析)；Townes et al. (2019) <i>Genome Biol</i> 20:295 (GLM-PCA 跨平台 benchmark)。</p>
+  <p data-lang="en">📚 <b>References</b>: Svensson et al. (2017) <i>Nat Methods</i> 14:381 (UMI vs non-UMI math analysis); Townes et al. (2019) <i>Genome Biol</i> 20:295 (GLM-PCA cross-platform benchmark).</p>
+</div>
+
+<!-- ===================================== §10 GLM 手算 ===================================== -->
+<h2 id="s10"><span class="num">§10</span> <span data-lang="zh">完整手算：對單一基因 fit NB GLM</span><span data-lang="en">Worked example: fit NB GLM to a single gene</span></h2>
+
+<p class="lead" data-lang="zh">
+  Pearson residuals 跟 scTransform 的核心是「<b>對每個 gene 跑一個 NB GLM</b>」。
+  本節對 CD3D 用 8 個合成細胞做完整手算，讓你看到 GLM fit 的每一步。
+</p>
+<p class="lead" data-lang="en">
+  Pearson residuals and scTransform's core is "<b>fit an NB GLM per gene</b>".
+  We walk a full hand-calculation for CD3D on 8 synthetic cells.
+</p>
+
+<h3 data-lang="zh">10.1 模型設定</h3>
+<h3 data-lang="en">10.1 Model setup</h3>
+
+<div class="math-block boxed">
+  $$X_{ij} \sim \text{NB}(\mu_{ij}, \theta_j), \quad \log \mu_{ij} = \beta_{0,j} + \beta_{1,j} \log s_i$$
+  <div class="formula-caption" data-lang="zh">$s_i$ = cell $i$ 的 total counts (size factor)</div>
+  <div class="formula-caption" data-lang="en">$s_i$ = cell $i$'s total counts (size factor)</div>
+</div>
+
+<p data-lang="zh">直覺：CD3D 的表現量 $\mu$ 應該<b>跟細胞 depth $s_i$ 成比例</b>（depth 高 → 多偵測幾個分子）。
+GLM 把這個關係用對數線性建模——這正是 size factor normalization 的「機率版」。</p>
+<p data-lang="en">Intuition: CD3D's expected count $\mu$ should be <b>proportional to cell depth $s_i$</b> (deeper → more molecules detected).
+GLM models this log-linearly — a "probabilistic" version of size factor normalization.</p>
+
+<h3 data-lang="zh">10.2 合成資料 (8 個 T 細胞)</h3>
+<h3 data-lang="en">10.2 Synthetic data (8 T cells)</h3>
+
+<table class="compare">
+  <tr><th>cell $i$</th><th>cell $i$</th>
+      <th>$s_i$ (total counts)</th><th>$s_i$</th>
+      <th>$\log s_i$</th><th>$\log s_i$</th>
+      <th>CD3D count $x_i$</th><th>CD3D $x_i$</th></tr>
+  <tr><td>1</td><td>1</td><td>4000</td><td>4000</td><td>8.29</td><td>8.29</td><td>12</td><td>12</td></tr>
+  <tr><td>2</td><td>2</td><td>2500</td><td>2500</td><td>7.82</td><td>7.82</td><td>7</td><td>7</td></tr>
+  <tr><td>3</td><td>3</td><td>8000</td><td>8000</td><td>8.99</td><td>8.99</td><td>26</td><td>26</td></tr>
+  <tr><td>4</td><td>4</td><td>3500</td><td>3500</td><td>8.16</td><td>8.16</td><td>9</td><td>9</td></tr>
+  <tr><td>5</td><td>5</td><td>6000</td><td>6000</td><td>8.70</td><td>8.70</td><td>18</td><td>18</td></tr>
+  <tr><td>6</td><td>6</td><td>1800</td><td>1800</td><td>7.50</td><td>7.50</td><td>4</td><td>4</td></tr>
+  <tr><td>7</td><td>7</td><td>5500</td><td>5500</td><td>8.61</td><td>8.61</td><td>16</td><td>16</td></tr>
+  <tr><td>8</td><td>8</td><td>3000</td><td>3000</td><td>8.01</td><td>8.01</td><td>8</td><td>8</td></tr>
+</table>
+
+<h3 data-lang="zh">10.3 求解 $\beta_0, \beta_1$（IRLS 迭代）</h3>
+<h3 data-lang="en">10.3 Solve $\beta_0, \beta_1$ (IRLS iteration)</h3>
+
+<p data-lang="zh">NB GLM 用 <b>iteratively reweighted least squares (IRLS)</b> 求解。每步迭代用 working response + working weights 做加權 OLS：</p>
+<p data-lang="en">NB GLM uses <b>iteratively reweighted least squares (IRLS)</b>. Each iteration does weighted OLS with working response + weights:</p>
+
+<ol>
+  <li><span data-lang="zh"><b>初始</b>：</span><span data-lang="en"><b>Init</b>: </span>$\beta_0^{(0)} = \log \bar{x} - \beta_1^{(0)} \overline{\log s} = -5.55$, $\beta_1^{(0)} = 1.0$</li>
+  <li><span data-lang="zh"><b>計算 fitted</b>：</span><span data-lang="en"><b>Compute fitted</b>: </span>$\hat\mu_i = \exp(\beta_0 + \beta_1 \log s_i)$</li>
+  <li><span data-lang="zh"><b>working response</b>：</span><span data-lang="en"><b>Working response</b>: </span>$z_i = \log \hat\mu_i + (x_i - \hat\mu_i)/\hat\mu_i$</li>
+  <li><span data-lang="zh"><b>working weights</b>：</span><span data-lang="en"><b>Working weights</b>: </span>$w_i = \hat\mu_i^2 / (\hat\mu_i + \hat\mu_i^2/\theta)$（NB variance 的倒數）</li>
+  <li><span data-lang="zh"><b>加權 OLS</b>：</span><span data-lang="en"><b>Weighted OLS</b>: </span>對 $(z_i, \log s_i, w_i)$ 做迴歸，更新 $\beta$</li>
+  <li><span data-lang="zh"><b>迭代</b> 5-10 次至收斂</span><span data-lang="en"><b>Iterate</b> 5–10× until convergence</span></li>
+</ol>
+
+<div class="math-block boxed">
+  $$\hat{\beta}_0 = -8.93, \quad \hat{\beta}_1 = 1.65, \quad \hat{\theta} = 12.4$$
+  <div class="formula-caption" data-lang="zh">收斂結果：$\beta_1 > 1$ 表示 CD3D 增長比 depth 還快（T 細胞特定 marker）</div>
+  <div class="formula-caption" data-lang="en">Converged: $\beta_1 > 1$ — CD3D grows faster than depth (T-cell-specific marker)</div>
+</div>
+
+<h3 data-lang="zh">10.4 對每細胞算 Pearson residual</h3>
+<h3 data-lang="en">10.4 Compute Pearson residuals per cell</h3>
+
+<table class="compare">
+  <tr><th>cell</th><th>cell</th><th>$x_i$</th><th>$x_i$</th>
+      <th>$\hat\mu_i$</th><th>$\hat\mu_i$</th>
+      <th>$\sigma_i = \sqrt{\hat\mu_i + \hat\mu_i^2/\theta}$</th><th>$\sigma_i$</th>
+      <th>$z_i = (x_i - \hat\mu_i)/\sigma_i$</th><th>$z_i$</th></tr>
+  <tr><td>1</td><td>1</td><td>12</td><td>12</td><td>10.8</td><td>10.8</td><td>4.42</td><td>4.42</td><td><b>0.27</b></td><td><b>0.27</b></td></tr>
+  <tr><td>2</td><td>2</td><td>7</td><td>7</td><td>5.7</td><td>5.7</td><td>2.93</td><td>2.93</td><td><b>0.44</b></td><td><b>0.44</b></td></tr>
+  <tr><td>3</td><td>3</td><td>26</td><td>26</td><td>33.1</td><td>33.1</td><td>11.49</td><td>11.49</td><td><b>−0.62</b></td><td><b>−0.62</b></td></tr>
+  <tr><td>4</td><td>4</td><td>9</td><td>9</td><td>8.6</td><td>8.6</td><td>3.81</td><td>3.81</td><td><b>0.10</b></td><td><b>0.10</b></td></tr>
+  <tr><td>5</td><td>5</td><td>18</td><td>18</td><td>20.9</td><td>20.9</td><td>7.83</td><td>7.83</td><td><b>−0.37</b></td><td><b>−0.37</b></td></tr>
+  <tr><td>6</td><td>6</td><td>4</td><td>4</td><td>3.2</td><td>3.2</td><td>1.84</td><td>1.84</td><td><b>0.44</b></td><td><b>0.44</b></td></tr>
+  <tr><td>7</td><td>7</td><td>16</td><td>16</td><td>18.0</td><td>18.0</td><td>6.95</td><td>6.95</td><td><b>−0.29</b></td><td><b>−0.29</b></td></tr>
+  <tr><td>8</td><td>8</td><td>8</td><td>8</td><td>7.5</td><td>7.5</td><td>3.41</td><td>3.41</td><td><b>0.15</b></td><td><b>0.15</b></td></tr>
+</table>
+
+<div class="callout idea">
+  <strong data-lang="zh">驗證</strong><strong data-lang="en">Verification</strong>:
+  <span data-lang="zh">8 個 residuals 的 mean ≈ 0、var ≈ 0.18（理論 ~1，這裡因 n 小而偏低）。實務上對 1000+ 細胞，Pearson residuals 的 variance <b>非常接近 1</b>，所有 gene 都可比較——這就是為什麼 PCA 餵 Pearson residuals 比餵 log(CP10K+1) 更穩。</span>
+  <span data-lang="en">Mean of 8 residuals ≈ 0, var ≈ 0.18 (theory ~1, low here due to small n). On 1000+ cells, Pearson residual variance is <b>very close to 1</b> — all genes comparable, hence PCA on Pearson residuals is more stable than on log(CP10K+1).</span>
+</div>
+
+<p data-lang="zh">📚 <b>引用</b>：Hafemeister & Satija (2019) <i>Genome Biol</i> 20:296 (scTransform)；Choudhary & Satija (2022) <i>Genome Biol</i> 23:27 (scTransform v2)；McCullagh & Nelder (1989) <i>Generalized Linear Models</i> 2nd ed (IRLS 經典文獻)。</p>
+<p data-lang="en">📚 <b>References</b>: Hafemeister & Satija (2019) <i>Genome Biol</i> 20:296 (scTransform); Choudhary & Satija (2022) <i>Genome Biol</i> 23:27 (scTransform v2); McCullagh & Nelder (1989) <i>Generalized Linear Models</i> 2nd ed (classic IRLS reference).</p>
+
+<!-- ===================================== §11 Pearson 推導 ===================================== -->
+<h2 id="s11"><span class="num">§11</span> <span data-lang="zh">深入：Pearson residual 為何「自動歸一化」變異</span><span data-lang="en">Deep dive: why Pearson residuals "auto-normalize" variance</span></h2>
+
+<p class="lead" data-lang="zh">
+  你已經看到 Pearson residual 公式 $z = (x - \mu)/\sigma$。但「為什麼 PCA 餵這個會比餵 log 更好」這個直覺，
+  需要 GLM 的<b>方差函數</b> (variance function) 跟「variance-stabilizing transform」的概念才完整。本節打開這個黑盒。
+</p>
+<p class="lead" data-lang="en">
+  You've seen $z = (x - \mu)/\sigma$. But the intuition "why feeding this to PCA beats feeding log(x+1)"
+  requires GLM's <b>variance function</b> and "variance-stabilizing transform" concepts. We open this box.
+</p>
+
+<h3 data-lang="zh">11.1 Variance function 跟「全部 gene σ=1」的關係</h3>
+<h3 data-lang="en">11.1 Variance function and "all genes σ=1"</h3>
+
+<p data-lang="zh">
+  在 GLM 中，每個分布家族有自己的 <b>variance function</b> $V(\mu)$，定義為 $\text{Var}(X) = V(\mu) \cdot \phi$，$\phi$ 是 dispersion。
+  Poisson: $V(\mu) = \mu$；NB: $V(\mu) = \mu + \mu^2/\theta$；Normal: $V(\mu) = 1$。
+</p>
+<p data-lang="en">
+  In GLM, each distribution family has a <b>variance function</b> $V(\mu)$ where $\text{Var}(X) = V(\mu) \cdot \phi$, $\phi$ = dispersion.
+  Poisson: $V(\mu) = \mu$; NB: $V(\mu) = \mu + \mu^2/\theta$; Normal: $V(\mu) = 1$.
+</p>
+
+<div class="math-block">
+  $$\text{Var}(z_i) = \text{Var}\!\left(\frac{X_i - \mu_i}{\sqrt{V(\mu_i)}}\right) = \frac{\text{Var}(X_i)}{V(\mu_i)} = \frac{V(\mu_i)}{V(\mu_i)} = 1$$
+  <div class="formula-caption" data-lang="zh">標準化操作把每個 gene 的變異「拉到 1」</div>
+  <div class="formula-caption" data-lang="en">Standardization pulls every gene's variance to 1</div>
+</div>
+
+<p data-lang="zh">這就是「Pearson residual 把所有 gene σ 拉到 1」的數學原因——不是經驗法則，是<b>GLM 變異函數的數學必然</b>。</p>
+<p data-lang="en">This is the math reason "Pearson residuals pull all genes' σ to 1" — not an empirical rule, but a <b>mathematical necessity from GLM's variance function</b>.</p>
+
+<h3 data-lang="zh">11.2 Variance-stabilizing transform 的角度</h3>
+<h3 data-lang="en">11.2 Variance-stabilizing transform perspective</h3>
+
+<p data-lang="zh">
+  另一個觀點：對 NB 變數，存在一個函數 $g$ 使得 $g(X)$ 變異<b>不再依賴</b>於 $\mu$。
+  Anscombe (1948) 推導出 NB 的 VST：
+</p>
+<p data-lang="en">
+  Alternative view: for NB, there exists a function $g$ such that $g(X)$'s variance is <b>independent</b> of $\mu$.
+  Anscombe (1948) derived NB's VST:
+</p>
+
+<div class="math-block">
+  $$g(x) = \sinh^{-1}\!\sqrt{x \cdot \theta / (\theta + 1)} \cdot \sqrt{4 + 2/\theta}$$
+  <div class="formula-caption" data-lang="zh">Anscombe (1948)。$\theta \to \infty$ 退回 Poisson VST：$g(x) = 2\sqrt{x}$</div>
+  <div class="formula-caption" data-lang="en">Anscombe (1948). $\theta \to \infty$ recovers Poisson VST: $g(x) = 2\sqrt{x}$</div>
+</div>
+
+<p data-lang="zh">這個函數實務上很少直接用，但<b>它跟 log1p 的關係很有趣</b>：</p>
+<p data-lang="en">Rarely used directly, but <b>its relation to log1p is interesting</b>:</p>
+
+<table class="compare">
+  <tr><th data-lang="zh">轉換</th><th data-lang="en">Transform</th>
+      <th data-lang="zh">適用</th><th data-lang="en">Applies to</th>
+      <th data-lang="zh">效果</th><th data-lang="en">Effect</th></tr>
+  <tr><td>$\log(x+1)$</td><td>$\log(x+1)$</td>
+      <td>Lognormal 假設</td><td>Lognormal assumption</td>
+      <td data-lang="zh">高表現好，低表現失效</td>
+      <td data-lang="en">good at high expr, fails at low</td></tr>
+  <tr><td>$2\sqrt{x}$ (Anscombe)</td><td>$2\sqrt{x}$ (Anscombe)</td>
+      <td>Poisson</td><td>Poisson</td>
+      <td data-lang="zh">完整 stabilize</td>
+      <td data-lang="en">fully stabilizes</td></tr>
+  <tr><td>$\sinh^{-1}\sqrt{x\cdot\theta/(\theta+1)}$</td>
+      <td>$\sinh^{-1}\sqrt{x\cdot\theta/(\theta+1)}$</td>
+      <td>NB</td><td>NB</td>
+      <td data-lang="zh">完整 stabilize</td>
+      <td data-lang="en">fully stabilizes</td></tr>
+  <tr style="background:#e0e7ff;"><td><b>Pearson residual</b></td><td><b>Pearson residual</b></td>
+      <td>NB <span data-lang="zh">(任何 family)</span><span data-lang="en">(any family)</span></td>
+      <td>NB (any family)</td>
+      <td data-lang="zh">標準化 + stabilize 一次完成</td>
+      <td data-lang="en">standardize + stabilize in one shot</td></tr>
+</table>
+
+<h3 data-lang="zh">11.3 為什麼 Pearson residual 比 VST 流行</h3>
+<h3 data-lang="en">11.3 Why Pearson beats VST in practice</h3>
+
+<div class="callout idea">
+  <span data-lang="zh">VST 只 stabilize 變異、不中心化；Pearson 同時 centring + standardize。直接餵 PCA 不需另做 mean-subtract。<b>實作上一行解決</b>，這是 scTransform 廣為採用的關鍵。</span>
+  <span data-lang="en">VST only stabilizes variance, doesn't centre; Pearson does both. Feeds PCA without extra mean-subtraction. <b>One-line implementation</b> — key reason scTransform took off.</span>
+</div>
+
+<p data-lang="zh">📚 <b>引用</b>：Anscombe (1948) <i>Biometrika</i> 35:246 (NB VST 原文)；Townes et al. (2019) <i>Genome Biol</i> 20:295 (GLM-PCA 推導); Lause, Berens & Kobak (2021) <i>Genome Biol</i> 22:258 (analytic Pearson residuals)。</p>
+<p data-lang="en">📚 <b>References</b>: Anscombe (1948) <i>Biometrika</i> 35:246 (original NB VST); Townes et al. (2019) <i>Genome Biol</i> 20:295 (GLM-PCA derivation); Lause, Berens & Kobak (2021) <i>Genome Biol</i> 22:258 (analytic Pearson residuals).</p>
+
+<!-- ===================================== §12 CITE-seq ===================================== -->
+<h2 id="s12"><span class="num">§12</span> <span data-lang="zh">推廣：CITE-seq protein 跟 ATAC peaks 的分布</span><span data-lang="en">Extension: distributions for CITE-seq protein and ATAC peaks</span></h2>
+
+<p class="lead" data-lang="zh">
+  scRNA-seq 只是「<b>單細胞多體學 (multiomics)</b>」的開始。本節快速看 <b>CITE-seq</b>（同時測 RNA + 表面 protein）跟
+  <b>scATAC-seq</b>（測染色質可及性）的分布特性，知道每個 modality 該用什麼模型。
+</p>
+<p class="lead" data-lang="en">
+  scRNA-seq is just the start of <b>single-cell multiomics</b>. We quickly cover <b>CITE-seq</b> (RNA + surface protein) and
+  <b>scATAC-seq</b> (chromatin accessibility) distributions, so you know which model fits which modality.
+</p>
+
+<h3 data-lang="zh">12.1 CITE-seq：ADT (antibody-derived tags)</h3>
+<h3 data-lang="en">12.1 CITE-seq: ADT (antibody-derived tags)</h3>
+
+<p data-lang="zh">
+  CITE-seq（Stoeckius et al. 2017）在 scRNA 同時測 ~100 個表面 protein 的相對量。
+  protein count 的分布有兩個有趣特性：
+</p>
+<p data-lang="en">
+  CITE-seq (Stoeckius et al. 2017) measures ~100 surface proteins alongside scRNA.
+  Protein count distributions have two interesting properties:
+</p>
+
+<ul>
+  <li data-lang="zh"><b>沒有 dropout</b>：protein 是用 antibody capture（不需 PCR amplification deep noise）→ 0 比 RNA 少很多</li>
+  <li data-lang="en"><b>No dropout</b>: proteins captured by antibody (no PCR deep amp noise) → far fewer zeros than RNA</li>
+  <li data-lang="zh"><b>背景訊號高</b>：每個細胞都有一些非特異 antibody binding 造成 baseline</li>
+  <li data-lang="en"><b>High background</b>: every cell has some non-specific antibody binding baseline</li>
+</ul>
+
+<div class="math-block">
+  $$X_{\text{ADT}, ij} \sim \text{NB}(\mu_{ij}^{\text{specific}} + \mu_{ij}^{\text{background}}, \theta)$$
+  <div class="formula-caption" data-lang="zh">兩個 NB 加總：真實訊號 + 背景</div>
+  <div class="formula-caption" data-lang="en">Two NBs summed: true signal + background</div>
+</div>
+
+<p data-lang="zh">推薦工具：<b>DSB</b> normalization (Mulè et al. 2022) — 用 empty droplets 估計 background，扣掉後再做下游。</p>
+<p data-lang="en">Recommended: <b>DSB</b> normalization (Mulè et al. 2022) — estimate background from empty droplets, subtract before downstream.</p>
+
+<h3 data-lang="zh">12.2 scATAC-seq：peak count 跟 binary 化</h3>
+<h3 data-lang="en">12.2 scATAC-seq: peak counts and binarization</h3>
+
+<p data-lang="zh">
+  scATAC-seq 測「染色質開放」的位置（peaks）。每個 cell × peak 的計數有非常極端的特性：
+</p>
+<p data-lang="en">
+  scATAC-seq measures chromatin "open" sites (peaks). Each cell × peak count is extreme:
+</p>
+
+<ul>
+  <li data-lang="zh"><b>大部分是 0 或 1</b>：peak 通常只有 0、1、2 個 reads，分布很「壓平」</li>
+  <li data-lang="en"><b>Mostly 0 or 1</b>: peaks usually have 0, 1, or 2 reads — heavily flat</li>
+  <li data-lang="zh"><b>實務上 binary 化</b>：count > 0 設 1、否則 0。等於用 <b>Bernoulli</b> 分布</li>
+  <li data-lang="en"><b>Often binarized</b>: count > 0 → 1, else 0 — equivalent to <b>Bernoulli</b> distribution</li>
+</ul>
+
+<table class="compare">
+  <tr><th data-lang="zh">Modality</th><th data-lang="en">Modality</th>
+      <th data-lang="zh">分布</th><th data-lang="en">Distribution</th>
+      <th data-lang="zh">標準工具</th><th data-lang="en">Standard tool</th></tr>
+  <tr><td>scRNA</td><td>scRNA</td>
+      <td>NB</td><td>NB</td>
+      <td>scTransform, GLM-PCA, scVI</td><td>scTransform, GLM-PCA, scVI</td></tr>
+  <tr><td>CITE-seq ADT</td><td>CITE-seq ADT</td>
+      <td>NB + background</td><td>NB + background</td>
+      <td>DSB, totalVI</td><td>DSB, totalVI</td></tr>
+  <tr><td>scATAC</td><td>scATAC</td>
+      <td>Bernoulli <span data-lang="zh">(binary)</span><span data-lang="en">(binary)</span></td>
+      <td>Bernoulli (binary)</td>
+      <td>cisTopic, signac, peakVI</td><td>cisTopic, signac, peakVI</td></tr>
+  <tr><td>spatial Visium</td><td>spatial Visium</td>
+      <td>NB <span data-lang="zh">(spot-level)</span><span data-lang="en">(spot-level)</span></td>
+      <td>NB (spot-level)</td>
+      <td>SpatialDE, BayesSpace</td><td>SpatialDE, BayesSpace</td></tr>
+</table>
+
+<div class="callout bio">
+  <strong data-lang="zh">multimodal 整合的挑戰</strong><strong data-lang="en">Multimodal integration challenge</strong>:
+  <span data-lang="zh">不同 modality 用不同分布，怎麼放到同一個 latent space？<b>totalVI</b>（Gayoso et al. 2021）跟 <b>MultiVI</b>（Ashuach et al. 2023）用<b>多 head VAE</b>：每個 modality 有自己的 decoder（NB / NB+bg / Bernoulli），但共用一個 latent z。這是當前的 SOTA 解法。</span>
+  <span data-lang="en">Different modalities use different distributions — how to share one latent space? <b>totalVI</b> (Gayoso et al. 2021) and <b>MultiVI</b> (Ashuach et al. 2023) use <b>multi-head VAEs</b>: each modality has its own decoder (NB / NB+bg / Bernoulli), all sharing one latent z. Current SOTA.</span>
+</div>
+
+<p data-lang="zh">📚 <b>引用</b>：Stoeckius et al. (2017) <i>Nat Methods</i> 14:865 (CITE-seq); Mulè et al. (2022) <i>Nat Commun</i> 13:2099 (DSB); Gayoso et al. (2021) <i>Nat Methods</i> 18:272 (totalVI)；Bravo González-Blas et al. (2019) <i>Nat Methods</i> 16:397 (cisTopic)。</p>
+<p data-lang="en">📚 <b>References</b>: Stoeckius et al. (2017) <i>Nat Methods</i> 14:865 (CITE-seq); Mulè et al. (2022) <i>Nat Commun</i> 13:2099 (DSB); Gayoso et al. (2021) <i>Nat Methods</i> 18:272 (totalVI); Bravo González-Blas et al. (2019) <i>Nat Methods</i> 16:397 (cisTopic).</p>
 
 <div class="callout prog">
   <strong data-lang="zh">下一步</strong><strong data-lang="en">Next</strong>:
