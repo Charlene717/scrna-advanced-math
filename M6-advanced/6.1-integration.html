@@ -225,6 +225,10 @@
   <a href="#s6"><span data-lang="zh">§6 三方法對比</span><span data-lang="en">§6 3-method compare</span></a>
   <a href="#s7"><span data-lang="zh">§7 評估指標</span><span data-lang="en">§7 Metrics</span></a>
   <a href="#s8"><span data-lang="zh">§8 限制</span><span data-lang="en">§8 Limits</span></a>
+  <a href="#s9"><span data-lang="zh">§9 Luecken 2022 benchmark</span><span data-lang="en">§9 Luecken 2022 benchmark</span></a>
+  <a href="#s10"><span data-lang="zh">§10 scVI 完整推導</span><span data-lang="en">§10 scVI full derivation</span></a>
+  <a href="#s11"><span data-lang="zh">§11 cross-species</span><span data-lang="en">§11 cross-species</span></a>
+  <a href="#s12"><span data-lang="zh">§12 multimodal</span><span data-lang="en">§12 multimodal</span></a>
 </div>
 
 <header class="cover">
@@ -565,6 +569,155 @@ adata.obsm[<span class="s">"X_scVI"</span>] = model.get_latent_representation()<
     <td data-lang="en">try Harmony first, scVI if needed</td>
   </tr>
 </table>
+
+<!-- ===================================== §9 Luecken benchmark ===================================== -->
+<h2 id="s9"><span class="num">§9</span> <span data-lang="zh">Luecken 2022 benchmark：14 個 integration 方法的系統評比</span><span data-lang="en">Luecken 2022 benchmark: 14 methods systematically evaluated</span></h2>
+
+<p class="lead" data-lang="zh">
+  Luecken et al. (2022) 是 single-cell integration 領域的<b>權威 benchmark</b>。對 14 個方法 × 5 個 task × 多個 metrics 系統測試。本節摘要結論。
+</p>
+<p class="lead" data-lang="en">
+  Luecken et al. (2022) is the <b>authoritative benchmark</b> for single-cell integration. 14 methods × 5 tasks × multiple metrics. We summarize.
+</p>
+
+<h3 data-lang="zh">9.1 整體排名 (top 5)</h3>
+<h3 data-lang="en">9.1 Overall ranking (top 5)</h3>
+
+<table class="compare">
+  <tr><th data-lang="zh">排名</th><th data-lang="en">Rank</th>
+      <th data-lang="zh">方法</th><th data-lang="en">Method</th>
+      <th data-lang="zh">prefer 情境</th><th data-lang="en">Preferred for</th></tr>
+  <tr><td>1</td><td>1</td>
+      <td><b>scANVI</b></td><td><b>scANVI</b></td>
+      <td data-lang="zh">有 label 資訊時最佳</td>
+      <td data-lang="en">best when labels available</td></tr>
+  <tr><td>2</td><td>2</td>
+      <td><b>scVI</b></td><td><b>scVI</b></td>
+      <td data-lang="zh">大資料、無 label</td>
+      <td data-lang="en">large data, no labels</td></tr>
+  <tr><td>3</td><td>3</td>
+      <td>scGen</td><td>scGen</td>
+      <td data-lang="zh">label-aware 但較舊</td>
+      <td data-lang="en">label-aware but older</td></tr>
+  <tr><td>4</td><td>4</td>
+      <td><b>Harmony</b></td><td><b>Harmony</b></td>
+      <td data-lang="zh">快速 baseline</td>
+      <td data-lang="en">fast baseline</td></tr>
+  <tr><td>5</td><td>5</td>
+      <td>fastMNN</td><td>fastMNN</td>
+      <td data-lang="zh">小 batch effect</td>
+      <td data-lang="en">small batch effect</td></tr>
+</table>
+
+<h3 data-lang="zh">9.2 評估指標：14 個 metrics 的整合</h3>
+<h3 data-lang="en">9.2 14 metrics aggregated</h3>
+
+<p data-lang="zh">Luecken 用<b>加權 scoring</b>：60% batch correction metrics (NMI, ARI, F1 of LISI) + 40% biology conservation (ASW per cell type, isolated label F1, etc.)。<b>「好的 integration」= batch 混合 + 生物保留</b>。</p>
+<p data-lang="en">Luecken uses <b>weighted scoring</b>: 60% batch correction (NMI, ARI, F1 of LISI) + 40% biology conservation (ASW per cell type, isolated label F1). <b>"Good integration" = batch mixed + biology preserved</b>.</p>
+
+<p data-lang="zh">📚 <b>引用</b>：<b>Luecken et al. (2022) <i>Nat Methods</i> 19:41</b>（必讀！）; <b>scib-metrics</b> Python package。</p>
+<p data-lang="en">📚 <b>References</b>: <b>Luecken et al. (2022) <i>Nat Methods</i> 19:41</b> (must-read!); <b>scib-metrics</b> Python package.</p>
+
+<!-- ===================================== §10 scVI 推導 ===================================== -->
+<h2 id="s10"><span class="num">§10</span> <span data-lang="zh">深入：scVI ELBO 推導</span><span data-lang="en">Deep dive: scVI ELBO derivation</span></h2>
+
+<p class="lead" data-lang="zh">
+  scVI 是 VAE，用 ELBO（Evidence Lower BOund）當訓練目標。本節給完整公式跟對 scRNA 的解釋。
+</p>
+<p class="lead" data-lang="en">
+  scVI is a VAE trained with ELBO. Full formula and scRNA interpretation.
+</p>
+
+<h3 data-lang="zh">10.1 ELBO 完整公式</h3>
+<h3 data-lang="en">10.1 ELBO formula</h3>
+
+<div class="math-block boxed">
+  $$\mathcal{L}_{\text{scVI}} = \mathbb{E}_{q_\phi(z, l|x)}\!\left[\log p_\theta(x|z, l, s)\right] - \text{KL}\!\left[q_\phi(z|x) \| p(z)\right] - \text{KL}\!\left[q_\phi(l|x) \| p(l|s)\right]$$
+</div>
+
+<p data-lang="zh">三部分解讀：</p>
+<p data-lang="en">Three parts:</p>
+
+<ul>
+  <li data-lang="zh"><b>Reconstruction</b>: $\log p_\theta(x|z, l, s)$ — counts 用 NB likelihood。學「給 z, l, batch s, 怎麼產生原始 counts」</li>
+  <li data-lang="en"><b>Reconstruction</b>: $\log p_\theta(x|z, l, s)$ — counts use NB likelihood. Learn "given z, l, batch s, how to generate raw counts"</li>
+  <li data-lang="zh"><b>z prior KL</b>: 強制 z 接近 N(0, I)，避免 overfitting</li>
+  <li data-lang="en"><b>z prior KL</b>: forces z toward N(0, I), prevents overfitting</li>
+  <li data-lang="zh"><b>l prior KL</b>: library size scaling，跟 batch 條件相關</li>
+  <li data-lang="en"><b>l prior KL</b>: library size scaling, batch-conditioned</li>
+</ul>
+
+<h3 data-lang="zh">10.2 為什麼這設計能消 batch</h3>
+<h3 data-lang="en">10.2 Why this removes batch</h3>
+
+<div class="callout idea">
+  <strong data-lang="zh">關鍵</strong><strong data-lang="en">Key</strong>:
+  <span data-lang="zh">encoder $q_\phi(z|x)$ <b>不</b>條件在 $s$ 上——z 必須能跨 batch 重建 x。decoder $p_\theta(x|z, s)$ <b>條件</b>在 $s$——batch 訊息只能透過 decoder 加回去。所以 <b>z 必然是 batch-free</b>。</span>
+  <span data-lang="en">Encoder $q_\phi(z|x)$ <b>not</b> conditioned on $s$ — z must reconstruct x across batches. Decoder $p_\theta(x|z, s)$ <b>is</b> conditioned on $s$ — batch info enters only via decoder. So <b>z is necessarily batch-free</b>.</span>
+</div>
+
+<p data-lang="zh">📚 <b>引用</b>：Lopez et al. (2018) <i>Nat Methods</i> 15:1053 (scVI 原文); Kingma & Welling (2014) <i>ICLR</i> (VAE 原始); Gayoso et al. (2022) <i>Nat Biotechnol</i> 40:163 (scvi-tools)。</p>
+<p data-lang="en">📚 <b>References</b>: Lopez et al. (2018) <i>Nat Methods</i> 15:1053 (original scVI); Kingma & Welling (2014) <i>ICLR</i> (original VAE); Gayoso et al. (2022) <i>Nat Biotechnol</i> 40:163 (scvi-tools).</p>
+
+<!-- ===================================== §11 cross-species ===================================== -->
+<h2 id="s11"><span class="num">§11</span> <span data-lang="zh">跨物種整合：SAMap、ENHANCE</span><span data-lang="en">Cross-species integration: SAMap, ENHANCE</span></h2>
+
+<p class="lead" data-lang="zh">
+  整合 mouse + human + zebrafish 細胞，建立<b>進化保守的 cell type 對應</b>，是 evolution 跟 disease model research 的核心。
+</p>
+<p class="lead" data-lang="en">
+  Integrating mouse + human + zebrafish cells to build <b>evolutionarily conserved cell type correspondences</b> is core to evolution and disease model research.
+</p>
+
+<h3 data-lang="zh">11.1 SAMap (Tarashansky 2021)</h3>
+<h3 data-lang="en">11.1 SAMap (Tarashansky 2021)</h3>
+
+<p data-lang="zh">SAMap 用<b>iterative BLAST-based</b> ortholog mapping：</p>
+<p data-lang="en">SAMap uses <b>iterative BLAST-based</b> ortholog mapping:</p>
+
+<ol>
+  <li><span data-lang="zh">用 BLAST 找跨物種 gene homology</span>
+      <span data-lang="en">BLAST cross-species gene homology</span></li>
+  <li><span data-lang="zh">建跨物種 mutual KNN graph (per ortholog)</span>
+      <span data-lang="en">Build cross-species mutual KNN (per ortholog)</span></li>
+  <li><span data-lang="zh">用 graph diffusion 找對應 cell types</span>
+      <span data-lang="en">Graph diffusion to find matching cell types</span></li>
+</ol>
+
+<p data-lang="zh">📚 <b>引用</b>：Tarashansky et al. (2021) <i>eLife</i> 10:e66747 (SAMap); Wang et al. (2021) <i>Genome Biol</i> 22:75 (跨物種 single-cell 比較); Tabula Microcebus, Tabula Muris 等 atlases。</p>
+<p data-lang="en">📚 <b>References</b>: Tarashansky et al. (2021) <i>eLife</i> 10:e66747 (SAMap); Wang et al. (2021) <i>Genome Biol</i> 22:75; Tabula Microcebus, Tabula Muris atlases.</p>
+
+<!-- ===================================== §12 multimodal ===================================== -->
+<h2 id="s12"><span class="num">§12</span> <span data-lang="zh">Multimodal integration：totalVI / MultiVI / GLUE</span><span data-lang="en">Multimodal integration: totalVI / MultiVI / GLUE</span></h2>
+
+<p class="lead" data-lang="zh">
+  CITE-seq (RNA + protein)、Multiome (RNA + ATAC)、Spatial 各有自己的分布。整合 multi-modal 需要 <b>multi-head VAE</b>。
+</p>
+<p class="lead" data-lang="en">
+  CITE-seq (RNA + protein), Multiome (RNA + ATAC), Spatial each have own distributions. Multi-modal integration requires <b>multi-head VAE</b>.
+</p>
+
+<table class="compare">
+  <tr><th>Tool</th><th>Tool</th>
+      <th>Modalities</th><th>Modalities</th>
+      <th data-lang="zh">關鍵設計</th><th data-lang="en">Key design</th></tr>
+  <tr><td>totalVI</td><td>totalVI</td>
+      <td>RNA + ADT (CITE)</td><td>RNA + ADT (CITE)</td>
+      <td data-lang="zh">RNA: NB / ADT: NB+background</td>
+      <td data-lang="en">RNA: NB / ADT: NB+background</td></tr>
+  <tr><td>MultiVI</td><td>MultiVI</td>
+      <td>RNA + ATAC</td><td>RNA + ATAC</td>
+      <td data-lang="zh">ATAC head: Bernoulli/Poisson</td>
+      <td data-lang="en">ATAC head: Bernoulli/Poisson</td></tr>
+  <tr><td><b>GLUE</b></td><td><b>GLUE</b></td>
+      <td data-lang="zh">RNA + ATAC + 任意 omics</td>
+      <td data-lang="en">RNA + ATAC + any omics</td>
+      <td data-lang="zh">guidance graph + dual VAE</td>
+      <td data-lang="en">guidance graph + dual VAE</td></tr>
+</table>
+
+<p data-lang="zh">📚 <b>引用</b>：Gayoso et al. (2021) <i>Nat Methods</i> 18:272 (totalVI); Ashuach et al. (2023) <i>Nat Methods</i> 20:1222 (MultiVI); Cao et al. (2022) <i>Nat Biotechnol</i> 40:1458 (GLUE)。</p>
+<p data-lang="en">📚 <b>References</b>: Gayoso et al. (2021) <i>Nat Methods</i> 18:272 (totalVI); Ashuach et al. (2023) <i>Nat Methods</i> 20:1222 (MultiVI); Cao et al. (2022) <i>Nat Biotechnol</i> 40:1458 (GLUE).</p>
 
 <div class="callout prog">
   <strong data-lang="zh">下一步</strong><strong data-lang="en">Next</strong>:

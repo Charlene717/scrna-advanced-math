@@ -224,6 +224,10 @@
   <a href="#s5"><span data-lang="zh">§5 通訊網路</span><span data-lang="en">§5 communication network</span></a>
   <a href="#s6"><span data-lang="zh">§6 三方法對比</span><span data-lang="en">§6 3-method compare</span></a>
   <a href="#s7"><span data-lang="zh">§7 限制</span><span data-lang="en">§7 Limits</span></a>
+  <a href="#s8"><span data-lang="zh">§8 NicheNet</span><span data-lang="en">§8 NicheNet</span></a>
+  <a href="#s9"><span data-lang="zh">§9 LIANA</span><span data-lang="en">§9 LIANA</span></a>
+  <a href="#s10"><span data-lang="zh">§10 spatial CCI</span><span data-lang="en">§10 spatial CCI</span></a>
+  <a href="#s11"><span data-lang="zh">§11 disease 案例</span><span data-lang="en">§11 disease case</span></a>
 </div>
 
 <header class="cover">
@@ -499,6 +503,153 @@ cellphonedb.method.statistical_analysis(
     <td data-lang="en">use NicheNet with downstream DE</td>
   </tr>
 </table>
+
+<!-- ===================================== §8 NicheNet ===================================== -->
+<h2 id="s8"><span class="num">§8</span> <span data-lang="zh">NicheNet：把 ligand 連到下游 target genes</span><span data-lang="en">NicheNet: linking ligand to downstream target genes</span></h2>
+
+<p class="lead" data-lang="zh">
+  CellChat 只告訴你「A 跟 B 通訊」。NicheNet（Browaeys 2020）多一步——「<b>這個 ligand 在 receiver cell 引起哪些 gene 表現變化</b>」。整合 signal transduction → transcription 完整鏈。
+</p>
+<p class="lead" data-lang="en">
+  CellChat tells you "A talks to B". NicheNet (Browaeys 2020) goes further: "<b>which genes does this ligand induce in receiver cells</b>". Integrates signal transduction → transcription full chain.
+</p>
+
+<h3 data-lang="zh">8.1 NicheNet 的 prior model</h3>
+<h3 data-lang="en">8.1 NicheNet's prior model</h3>
+
+<p data-lang="zh">NicheNet 預先從文獻、KEGG、Reactome 整合<b>三層權重 graph</b>：</p>
+<p data-lang="en">NicheNet pre-integrates <b>three-layer weighted graph</b> from literature, KEGG, Reactome:</p>
+
+<ol>
+  <li><span data-lang="zh">Ligand → Receptor</span><span data-lang="en">Ligand → Receptor</span></li>
+  <li><span data-lang="zh">Receptor → signaling pathway components</span>
+      <span data-lang="en">Receptor → signaling pathway components</span></li>
+  <li><span data-lang="zh">Signaling → transcription factors → target genes</span>
+      <span data-lang="en">Signaling → TFs → target genes</span></li>
+</ol>
+
+<h3 data-lang="zh">8.2 工作流程</h3>
+<h3 data-lang="en">8.2 Workflow</h3>
+
+<ol>
+  <li><span data-lang="zh">輸入：sender cells + receiver cells + receiver cells' DE genes</span>
+      <span data-lang="en">Input: sender cells + receiver cells + receiver's DE genes</span></li>
+  <li><span data-lang="zh">輸出：「最可能 driving」這些 DE 的 ligand list（按 score 排序）</span>
+      <span data-lang="en">Output: ligand list ranked by score for "likely driving these DEs"</span></li>
+  <li><span data-lang="zh">+ ligand → target gene network</span>
+      <span data-lang="en">+ ligand → target gene network</span></li>
+</ol>
+
+<p data-lang="zh">📚 <b>引用</b>：Browaeys et al. (2020) <i>Nat Methods</i> 17:159 (NicheNet); Jin et al. (2024) <i>Nat Commun</i> 15:7066 (CellChat v2)。</p>
+<p data-lang="en">📚 <b>References</b>: Browaeys et al. (2020) <i>Nat Methods</i> 17:159 (NicheNet); Jin et al. (2024) <i>Nat Commun</i> 15:7066 (CellChat v2).</p>
+
+<!-- ===================================== §9 LIANA ===================================== -->
+<h2 id="s9"><span class="num">§9</span> <span data-lang="zh">LIANA：把所有 CCI 方法整合在一個 framework</span><span data-lang="en">LIANA: unifying CCI methods in one framework</span></h2>
+
+<p class="lead" data-lang="zh">
+  Dimitrov et al. (2022) 發現：不同 CCI 工具給出<b>不同 L-R ranking</b>！LIANA 整合多個方法 + 取 consensus。
+</p>
+<p class="lead" data-lang="en">
+  Dimitrov et al. (2022) found: different CCI tools give <b>different L-R rankings</b>! LIANA integrates multiple methods + consensus.
+</p>
+
+<table class="compare">
+  <tr><th>Tool</th><th>Tool</th>
+      <th data-lang="zh">scoring</th><th data-lang="en">Scoring</th></tr>
+  <tr><td>CellPhoneDB</td><td>CellPhoneDB</td>
+      <td>geometric mean + permutation</td><td>geometric mean + permutation</td></tr>
+  <tr><td>CellChat</td><td>CellChat</td>
+      <td>Hill function + cofactor</td><td>Hill function + cofactor</td></tr>
+  <tr><td>NATMI</td><td>NATMI</td>
+      <td data-lang="zh">specificity-based</td><td data-lang="en">specificity-based</td></tr>
+  <tr><td>SingleCellSignalR</td><td>SingleCellSignalR</td>
+      <td>LRscore = √(L·R)/Σ</td><td>LRscore = √(L·R)/Σ</td></tr>
+  <tr><td>Connectome</td><td>Connectome</td>
+      <td data-lang="zh">edge weight on L-R network</td><td data-lang="en">edge weight on L-R network</td></tr>
+</table>
+
+<pre class="code"><span class="c"># LIANA (Python) consensus 排序</span>
+<span class="k">import</span> liana <span class="k">as</span> li
+
+li.mt.rank_aggregate(adata, groupby=<span class="s">"leiden"</span>, expr_prop=<span class="n">0.1</span>)
+<span class="c"># 用 RobustRankAggregate 整合各方法 ranking</span></pre>
+
+<p data-lang="zh">📚 <b>引用</b>：Dimitrov et al. (2022) <i>Nat Commun</i> 13:3224 (LIANA); Armingol et al. (2021) <i>Nat Rev Genet</i> 22:71 (CCI methods review)。</p>
+<p data-lang="en">📚 <b>References</b>: Dimitrov et al. (2022) <i>Nat Commun</i> 13:3224 (LIANA); Armingol et al. (2021) <i>Nat Rev Genet</i> 22:71 (CCI methods review).</p>
+
+<!-- ===================================== §10 spatial CCI ===================================== -->
+<h2 id="s10"><span class="num">§10</span> <span data-lang="zh">空間轉錄組的 CCI：考慮物理距離</span><span data-lang="en">Spatial transcriptomics CCI: incorporating physical distance</span></h2>
+
+<p class="lead" data-lang="zh">
+  scRNA-seq CCI 假設「<b>所有 cell types 都可能接觸</b>」。實際上 paracrine signaling 只能在<b>幾百 μm 內</b>。空間轉錄組讓我們真正測試「<b>接觸的細胞</b>」。
+</p>
+<p class="lead" data-lang="en">
+  scRNA CCI assumes "<b>any cell types could contact</b>". But paracrine signaling only works within <b>hundreds of μm</b>. Spatial transcriptomics tests "<b>cells in actual contact</b>".
+</p>
+
+<table class="compare">
+  <tr><th>Tool</th><th>Tool</th>
+      <th data-lang="zh">資料</th><th data-lang="en">Data</th>
+      <th data-lang="zh">核心想法</th><th data-lang="en">Core idea</th></tr>
+  <tr><td>stLearn</td><td>stLearn</td>
+      <td>Visium</td><td>Visium</td>
+      <td data-lang="zh">LR co-expression × spatial proximity</td>
+      <td data-lang="en">LR co-expression × spatial proximity</td></tr>
+  <tr><td>COMMOT</td><td>COMMOT</td>
+      <td>Visium / MERFISH</td><td>Visium / MERFISH</td>
+      <td>optimal transport for signaling flow</td>
+      <td>optimal transport for signaling flow</td></tr>
+  <tr><td>CellChat v2</td><td>CellChat v2</td>
+      <td>Visium</td><td>Visium</td>
+      <td data-lang="zh">+ spatial distance threshold</td>
+      <td data-lang="en">+ spatial distance threshold</td></tr>
+</table>
+
+<p data-lang="zh">📚 <b>引用</b>：Pham et al. (2020) <i>bioRxiv</i> (stLearn); Cang et al. (2023) <i>Nat Methods</i> 20:218 (COMMOT); Jin et al. (2024) <i>Nat Commun</i> 15:7066 (CellChat v2 spatial); Palla et al. (2022) <i>Nat Methods</i> 19:171 (Squidpy 一站式 spatial)。</p>
+<p data-lang="en">📚 <b>References</b>: Pham et al. (2020) <i>bioRxiv</i> (stLearn); Cang et al. (2023) <i>Nat Methods</i> 20:218 (COMMOT); Jin et al. (2024) <i>Nat Commun</i> 15:7066 (CellChat v2 spatial); Palla et al. (2022) <i>Nat Methods</i> 19:171 (Squidpy).</p>
+
+<!-- ===================================== §11 disease 案例 ===================================== -->
+<h2 id="s11"><span class="num">§11</span> <span data-lang="zh">疾病案例：COVID-19 跟 tumor microenvironment 的 CCI 應用</span><span data-lang="en">Disease applications: CCI in COVID-19 and tumor microenvironment</span></h2>
+
+<p class="lead" data-lang="zh">
+  CCI 不只是技術 — 它改變了疾病研究方法。本節介紹兩個經典案例。
+</p>
+<p class="lead" data-lang="en">
+  CCI isn't just technology — it changed disease research. Two classic examples.
+</p>
+
+<h3 data-lang="zh">11.1 COVID-19 (Yoshida 2022, Nature)</h3>
+<h3 data-lang="en">11.1 COVID-19 (Yoshida 2022, Nature)</h3>
+
+<p data-lang="zh">分析 severe COVID 病人 lung 找：</p>
+<p data-lang="en">Analyzing severe COVID patient lung found:</p>
+
+<ul>
+  <li data-lang="zh"><b>IL6 / IL6R</b>: macrophage → T cell，導致 cytokine storm</li>
+  <li data-lang="en"><b>IL6 / IL6R</b>: macrophage → T cell, drives cytokine storm</li>
+  <li data-lang="zh"><b>CCL2 / CCR2</b>: alveolar macrophage 招募 monocyte</li>
+  <li data-lang="en"><b>CCL2 / CCR2</b>: alveolar macrophage recruits monocytes</li>
+  <li data-lang="zh"><b>TNF / TNFR1</b>: pro-inflammatory 主要訊號</li>
+  <li data-lang="en"><b>TNF / TNFR1</b>: major pro-inflammatory signal</li>
+</ul>
+
+<p data-lang="zh">這些<b>計算發現的通訊</b>後來被 in vitro / clinical 驗證，IL6 inhibitor (tocilizumab) 成為標準 severe COVID 治療之一。</p>
+<p data-lang="en">These <b>computationally discovered communications</b> were later validated in vitro / clinically; IL6 inhibitor (tocilizumab) became standard severe COVID treatment.</p>
+
+<h3 data-lang="zh">11.2 Tumor microenvironment (TME)</h3>
+<h3 data-lang="en">11.2 Tumor microenvironment (TME)</h3>
+
+<ul>
+  <li data-lang="zh"><b>PD-L1 / PD-1</b>: tumor → T cell，導致 T cell exhaustion (immunotherapy 標靶)</li>
+  <li data-lang="en"><b>PD-L1 / PD-1</b>: tumor → T cell, causes T cell exhaustion (immunotherapy target)</li>
+  <li data-lang="zh"><b>TGF-β / TGFBR</b>: fibroblast → T cell，suppress immune response</li>
+  <li data-lang="en"><b>TGF-β / TGFBR</b>: fibroblast → T cell, suppresses immunity</li>
+  <li data-lang="zh"><b>VEGFA / VEGFR</b>: tumor → endothelial, 促血管新生</li>
+  <li data-lang="en"><b>VEGFA / VEGFR</b>: tumor → endothelial, promotes angiogenesis</li>
+</ul>
+
+<p data-lang="zh">📚 <b>引用</b>：Yoshida et al. (2022) <i>Nature</i> 602:321 (COVID lung CCI); Jerby-Arnon et al. (2018) <i>Cell</i> 175:984 (melanoma TME); Vento-Tormo et al. (2018) <i>Nature</i> 563:347 (CellPhoneDB + placenta CCI)。</p>
+<p data-lang="en">📚 <b>References</b>: Yoshida et al. (2022) <i>Nature</i> 602:321 (COVID lung CCI); Jerby-Arnon et al. (2018) <i>Cell</i> 175:984 (melanoma TME); Vento-Tormo et al. (2018) <i>Nature</i> 563:347 (CellPhoneDB + placenta CCI).</p>
 
 <div class="callout prog">
   <strong data-lang="zh">完結篇</strong><strong data-lang="en">Wrap-up</strong>:

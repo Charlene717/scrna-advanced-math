@@ -224,6 +224,10 @@
   <a href="#s5"><span data-lang="zh">§5 Monocle3</span><span data-lang="en">§5 Monocle3</span></a>
   <a href="#s6"><span data-lang="zh">§6 RNA velocity</span><span data-lang="en">§6 RNA velocity</span></a>
   <a href="#s7"><span data-lang="zh">§7 限制</span><span data-lang="en">§7 Limits</span></a>
+  <a href="#s8"><span data-lang="zh">§8 dynverse</span><span data-lang="en">§8 dynverse</span></a>
+  <a href="#s9"><span data-lang="zh">§9 scVelo</span><span data-lang="en">§9 scVelo</span></a>
+  <a href="#s10"><span data-lang="zh">§10 CellRank</span><span data-lang="en">§10 CellRank</span></a>
+  <a href="#s11"><span data-lang="zh">§11 lineage tracing</span><span data-lang="en">§11 lineage tracing</span></a>
 </div>
 
 <header class="cover">
@@ -506,6 +510,122 @@ sc.tl.dpt(adata)
     <td data-lang="en">verify data contains differentiation</td>
   </tr>
 </table>
+
+<!-- ===================================== §8 dynverse ===================================== -->
+<h2 id="s8"><span class="num">§8</span> <span data-lang="zh">dynverse benchmark：45 個 trajectory 方法的系統評比</span><span data-lang="en">dynverse benchmark: 45 trajectory methods systematically evaluated</span></h2>
+
+<p class="lead" data-lang="zh">
+  Saelens et al. (2019) 是 trajectory inference 領域的權威 benchmark：<b>45 個方法</b> × 多個 evaluation criteria × 多個 dataset topology。
+</p>
+<p class="lead" data-lang="en">
+  Saelens et al. (2019) is the authoritative trajectory benchmark: <b>45 methods</b> × multiple criteria × multiple topologies.
+</p>
+
+<table class="compare">
+  <tr><th data-lang="zh">推薦方法</th><th data-lang="en">Recommended</th>
+      <th data-lang="zh">軌跡拓樸</th><th data-lang="en">Topology</th></tr>
+  <tr><td><b>Slingshot</b></td><td><b>Slingshot</b></td>
+      <td data-lang="zh">線性 / 簡單分支</td><td data-lang="en">Linear / simple branching</td></tr>
+  <tr><td><b>PAGA + DPT</b></td><td><b>PAGA + DPT</b></td>
+      <td data-lang="zh">複雜分支 / 多斷裂</td><td data-lang="en">Complex branching / disjoint</td></tr>
+  <tr><td>Monocle3</td><td>Monocle3</td>
+      <td data-lang="zh">複雜 + cycle</td><td data-lang="en">Complex + cyclic</td></tr>
+  <tr><td>Palantir</td><td>Palantir</td>
+      <td data-lang="zh">terminal fate probability</td><td data-lang="en">terminal fate probability</td></tr>
+</table>
+
+<p data-lang="zh">📚 <b>引用</b>：<b>Saelens et al. (2019) <i>Nat Biotechnol</i> 37:547</b> (dynverse benchmark, 必讀); dynguidelines: <a href="https://dynverse.org">dynverse.org</a>。</p>
+<p data-lang="en">📚 <b>References</b>: <b>Saelens et al. (2019) <i>Nat Biotechnol</i> 37:547</b> (dynverse benchmark); dynguidelines: <a href="https://dynverse.org">dynverse.org</a>.</p>
+
+<!-- ===================================== §9 scVelo ===================================== -->
+<h2 id="s9"><span class="num">§9</span> <span data-lang="zh">scVelo：RNA velocity 的現代實作</span><span data-lang="en">scVelo: modern RNA velocity implementation</span></h2>
+
+<p class="lead" data-lang="zh">
+  scVelo (Bergen et al. 2020) 改進原始 RNA velocity 的限制（要求 steady state assumption）→ 三種模型同時提供。
+</p>
+<p class="lead" data-lang="en">
+  scVelo (Bergen et al. 2020) improves original RNA velocity's limits (steady-state assumption) → three models offered.
+</p>
+
+<table class="compare">
+  <tr><th data-lang="zh">模型</th><th data-lang="en">Model</th>
+      <th data-lang="zh">假設</th><th data-lang="en">Assumption</th>
+      <th data-lang="zh">適用</th><th data-lang="en">Use</th></tr>
+  <tr><td>steady-state</td><td>steady-state</td>
+      <td>$\beta, \gamma$ const, $du/dt = 0$</td><td>$\beta, \gamma$ const, $du/dt = 0$</td>
+      <td data-lang="zh">穩態組織</td><td data-lang="en">steady-state tissue</td></tr>
+  <tr style="background:#dbeafe"><td><b>stochastic</b></td><td><b>stochastic</b></td>
+      <td data-lang="zh">2 階 moment + Poisson noise</td>
+      <td data-lang="en">2nd-order moment + Poisson noise</td>
+      <td data-lang="zh">scVelo 預設</td><td data-lang="en">scVelo default</td></tr>
+  <tr><td><b>dynamical</b></td><td><b>dynamical</b></td>
+      <td data-lang="zh">full transcription dynamics + EM</td>
+      <td data-lang="en">full transcription dynamics + EM</td>
+      <td data-lang="zh">高品質、慢</td><td data-lang="en">high-quality, slow</td></tr>
+</table>
+
+<pre class="code"><span class="k">import</span> scvelo <span class="k">as</span> scv
+
+scv.pp.filter_and_normalize(adata, min_shared_counts=<span class="n">20</span>, n_top_genes=<span class="n">2000</span>)
+scv.pp.moments(adata, n_pcs=<span class="n">30</span>, n_neighbors=<span class="n">30</span>)
+scv.tl.recover_dynamics(adata)
+scv.tl.velocity(adata, mode=<span class="s">"dynamical"</span>)
+scv.tl.velocity_graph(adata)
+scv.pl.velocity_embedding_stream(adata, basis=<span class="s">"umap"</span>)
+<span class="c"># UMAP 上的箭頭場顯示細胞分化方向</span></pre>
+
+<p data-lang="zh">📚 <b>引用</b>：La Manno et al. (2018) <i>Nature</i> 560:494 (原始 RNA velocity); Bergen et al. (2020) <i>Nat Biotechnol</i> 38:1408 (scVelo); Bergen et al. (2021) <i>Mol Syst Biol</i> 17:e10282 (RNA velocity 限制與最佳實踐)。</p>
+<p data-lang="en">📚 <b>References</b>: La Manno et al. (2018) <i>Nature</i> 560:494 (original RNA velocity); Bergen et al. (2020) <i>Nat Biotechnol</i> 38:1408 (scVelo); Bergen et al. (2021) <i>Mol Syst Biol</i> 17:e10282 (RNA velocity limits and best practices).</p>
+
+<!-- ===================================== §10 CellRank ===================================== -->
+<h2 id="s10"><span class="num">§10</span> <span data-lang="zh">CellRank：用 Markov chain 找 fate probability</span><span data-lang="en">CellRank: Markov chain for fate probability</span></h2>
+
+<p class="lead" data-lang="zh">
+  CellRank（Lange 2022）統一 pseudotime + RNA velocity：把 cells 當 Markov chain states，用 <b>absorbing probability</b> 算每細胞分化到哪個 terminal fate 的機率。
+</p>
+<p class="lead" data-lang="en">
+  CellRank (Lange 2022) unifies pseudotime + RNA velocity: cells as Markov states, <b>absorbing probability</b> gives each cell's probability of differentiating to each terminal fate.
+</p>
+
+<h3 data-lang="zh">10.1 數學</h3>
+<h3 data-lang="en">10.1 Math</h3>
+
+<div class="math-block boxed">
+  $$T_{\text{cell-cell}} = (1-\alpha) \cdot T_{\text{KNN}} + \alpha \cdot T_{\text{velocity}}$$
+  <div class="formula-caption" data-lang="zh">$T_{\text{KNN}}$ = symmetric KNN transition、$T_{\text{velocity}}$ = velocity-biased transition</div>
+  <div class="formula-caption" data-lang="en">$T_{\text{KNN}}$ = symmetric KNN, $T_{\text{velocity}}$ = velocity-biased</div>
+</div>
+
+<p data-lang="zh">對 absorbing Markov chain 算每細胞到每 terminal fate 的吸收機率 → 「<b>分化潛能</b>」量化指標。</p>
+<p data-lang="en">For absorbing Markov chain, compute per-cell absorption probability to each terminal fate → quantitative "<b>differentiation potential</b>".</p>
+
+<p data-lang="zh">📚 <b>引用</b>：Lange et al. (2022) <i>Nat Methods</i> 19:159 (CellRank); Weiler et al. (2024) (CellRank 2 多模態擴展)。</p>
+<p data-lang="en">📚 <b>References</b>: Lange et al. (2022) <i>Nat Methods</i> 19:159 (CellRank); Weiler et al. (2024) (CellRank 2 multimodal extension).</p>
+
+<!-- ===================================== §11 lineage tracing ===================================== -->
+<h2 id="s11"><span class="num">§11</span> <span data-lang="zh">真實 lineage tracing：CRISPR-barcode 跟 LARRY</span><span data-lang="en">True lineage tracing: CRISPR-barcode and LARRY</span></h2>
+
+<p class="lead" data-lang="zh">
+  Pseudotime 是 <b>computational</b> trajectory，<b>非真實 lineage</b>。要驗證真實分化關係，需要 <b>CRISPR-based barcoding</b>。
+</p>
+<p class="lead" data-lang="en">
+  Pseudotime is <b>computational</b>, <b>not true lineage</b>. Real differentiation relationships require <b>CRISPR-based barcoding</b>.
+</p>
+
+<h3 data-lang="zh">11.1 LARRY (Weinreb 2020)</h3>
+<h3 data-lang="en">11.1 LARRY (Weinreb 2020)</h3>
+
+<p data-lang="zh">Lineage And RNA RecoverY: 用 <b>lentivirus barcoded</b> 細胞，分化後可看「<b>哪些 mature cells 來自同個 progenitor</b>」。Weinreb 2020 用 LARRY 驗證 pseudotime fate prediction，發現 <b>~40% computational prediction 跟真實 lineage 不一致</b>！</p>
+<p data-lang="en">Lineage And RNA RecoverY: <b>lentivirus-barcoded</b> cells; post-differentiation see "<b>which mature cells came from same progenitor</b>". Weinreb 2020 validated pseudotime fate predictions, finding <b>~40% disagree with true lineage</b>!</p>
+
+<div class="callout warn">
+  <strong data-lang="zh">深刻啟示</strong><strong data-lang="en">Deep implication</strong>:
+  <span data-lang="zh">計算 pseudotime 只反映 <b>表現量相似度</b>，不一定是真實 differentiation pathway。對<b>關鍵 fate decision</b> 結論要謹慎，最好用 lineage tracing 驗證。</span>
+  <span data-lang="en">Computational pseudotime only reflects <b>expression similarity</b>, not necessarily true differentiation. Be cautious on <b>critical fate decisions</b>, validate with lineage tracing.</span>
+</div>
+
+<p data-lang="zh">📚 <b>引用</b>：Weinreb et al. (2020) <i>Science</i> 367:eaaw3381 (LARRY); Wagner & Klein (2020) <i>Nat Rev Genet</i> 21:410 (lineage tracing 回顧); Rodriguez-Fraticelli et al. (2018) <i>Nature</i> 553:212 (HSC fate by barcoding)。</p>
+<p data-lang="en">📚 <b>References</b>: Weinreb et al. (2020) <i>Science</i> 367:eaaw3381 (LARRY); Wagner & Klein (2020) <i>Nat Rev Genet</i> 21:410 (lineage tracing review); Rodriguez-Fraticelli et al. (2018) <i>Nature</i> 553:212 (HSC fate by barcoding).</p>
 
 <div class="callout prog">
   <strong data-lang="zh">下一步</strong><strong data-lang="en">Next</strong>:
