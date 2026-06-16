@@ -255,9 +255,18 @@
 <!-- ===== 🧬 scRNA-seq 視角 panel ===== -->
 <div class="card" style="border-left: 6px solid var(--green); background: linear-gradient(135deg, #effaf3 0%, #fff 70%);">
   <h3 style="color: var(--green); margin-top: 0">
-    <span data-lang="zh">🧬 scRNA-seq 視角：分類器是 atlas 時代「人工 annotate 已經做不完」的解</span>
-    <span data-lang="en">🧬 scRNA-seq perspective: Classifiers are the answer when manual annotation can't keep up with the atlas era</span>
+    <span data-lang="zh">🧬 scRNA-seq 視角：CellTypist 是細胞型態界的 Shazam</span>
+    <span data-lang="en">🧬 scRNA-seq perspective: CellTypist is the Shazam of cell types</span>
   </h3>
+
+  <p style="font-size: 1.02em; line-height: 1.7">
+    <span data-lang="zh">想像你在咖啡廳聽到一首歌，<b>10 年前</b>你會跑去問 DJ「這是什麼歌？」，或拿筆抄下旋律回家慢慢查（這就是 2017 年的 scRNA：手動查 marker → 細胞型對照表）。<b>2024 年</b>你打開 Shazam，<b>5 秒鐘給你歌名 + 歌手 + 專輯</b>。<b>CellTypist 就是細胞界的 Shazam</b>：它早就「<b>聽過</b>」上百萬個已標註的細胞（HCA、Tabula Sapiens 訓練），你的 query cell 進來，<b>1 秒鐘吐出 cell type + 信心分數</b>。</span>
+    <span data-lang="en">Imagine hearing a song in a café. <b>Ten years ago</b>, you'd ask the DJ "what's this song?" or scribble the melody to look up at home (that's 2017 scRNA: manually look up markers → cell type). <b>In 2024</b>, you open Shazam and get <b>song + artist + album in 5 seconds</b>. <b>CellTypist is Shazam for cells</b>: it has "<b>already heard</b>" millions of pre-annotated cells (trained on HCA, Tabula Sapiens), so your query cell comes in and gets <b>cell type + confidence score in 1 second</b>.</span>
+  </p>
+  <p style="font-size: 1.02em; line-height: 1.7">
+    <span data-lang="zh">為什麼 2024 年的 scRNA <b>非用 classifier 不可</b>？因為手動 annotate 10 個 cluster 還勉強做得來，但 atlas 時代<b>動輒 100+ cluster、50M cells</b>，你光標一個 paper 就要 3-5 天，<b>不同人標出來還不一致</b>（你叫 Tcm，我叫 memory T，到底誰對？）。CellTypist 有 30+ 個訓練好的 model（immune、lung、gut、kidney…），<b>用同一個 reference 標</b>就解決了不一致問題。最棒的是它<b>給 confidence 分數</b>：低 confidence 細胞 = 「reference 沒見過」的 candidate novel state → 你的<b>下一個 paper 賣點</b>。</span>
+    <span data-lang="en">Why is 2024 scRNA <b>impossible without classifiers</b>? Manual annotation works for 10 clusters, but atlas-era studies routinely involve <b>100+ clusters and 50M cells</b>; one paper takes 3-5 days, and <b>different people label inconsistently</b> (you say Tcm, I say memory T — who's right?). CellTypist offers 30+ pretrained models (immune, lung, gut, kidney…), and <b>using a single reference</b> dissolves the inconsistency. Best of all, it <b>outputs confidence scores</b>: low-confidence cells = "reference hasn't seen this" → candidate novel state → <b>your next paper's headline</b>.</span>
+  </p>
 
   <h4>📍 <span data-lang="zh">在 scRNA-seq 流程中的位置</span><span data-lang="en">Position in scRNA-seq pipeline</span></h4>
   <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f7f9fb; padding: 10px; border-radius: 6px; line-height: 1.8">

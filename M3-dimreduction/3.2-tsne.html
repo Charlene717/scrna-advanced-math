@@ -258,56 +258,60 @@
 <!-- ===== 🧬 scRNA-seq 視角 panel ===== -->
 <div class="card" style="border-left: 6px solid var(--green); background: linear-gradient(135deg, #effaf3 0%, #fff 70%);">
   <h3 style="color: var(--green); margin-top: 0">
-    <span data-lang="zh">🧬 scRNA-seq 視角：t-SNE 是「<b>把 cluster 用力分開</b>」給人看的工具</span>
-    <span data-lang="en">🧬 scRNA-seq perspective: t-SNE is "<b>force-separate clusters</b>" visualization for humans</span>
+    <span data-lang="zh">🧬 scRNA-seq 視角：t-SNE 是漫畫家，把 cluster 畫得「<b>誇張地分開</b>」</span>
+    <span data-lang="en">🧬 scRNA-seq perspective: t-SNE is a caricaturist who draws clusters <b>exaggeratedly apart</b></span>
   </h3>
 
-  <h4 data-lang="zh">📍 在 scRNA-seq 流程中的位置</h4>
-  <h4 data-lang="en">📍 Position in scRNA-seq pipeline</h4>
-  <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; padding: 12px; background: #f4f1ea; border-radius: 6px;">
-    PCA 50-D (M3.1) → <b style="color: #9f1239">【t-SNE 2D 視覺化 (本章)】</b> → <span data-lang="zh">人看 plot 確認 cluster 結構</span><span data-lang="en">human inspection of plot</span>
-    <br><br>
-    <span data-lang="zh">⚠️ t-SNE 是<b>視覺化工具不是分析工具</b>——cluster 結構分析還是用 PCA + KNN + Leiden 為主，t-SNE 只是「<b>給人看</b>」。</span>
-    <span data-lang="en">⚠️ t-SNE is a <b>visualization tool, not analysis tool</b> — cluster analysis uses PCA + KNN + Leiden; t-SNE is just "<b>for human eyes</b>".</span>
+  <p style="font-size: 1.02em; line-height: 1.7">
+    <span data-lang="zh">想像兩種畫家。一個是<b>建築師</b>，他畫地圖會精準地表示距離——A 到 B 是 100 公尺，C 到 D 是 1 公里，畫得忠實但 cluster 看起來常常擠在一起。另一個是<b>諷刺漫畫家</b>，他把總統的鼻子畫成 5 倍大，把總理的耳朵畫成扇子——目的是「<b>讓你一眼認出誰是誰</b>」，但鼻子真的有這麼大嗎？絕對沒有。<b>PCA 是建築師，t-SNE 是漫畫家</b>。</span>
+    <span data-lang="en">Picture two artists. One is an <b>architect</b> drawing maps to scale — A to B is 100 m, C to D is 1 km, perfectly accurate but clusters often visually cram together. The other is a <b>caricaturist</b> drawing the president's nose 5× larger and the PM's ears like fans — the goal is "<b>so you instantly recognize who's who</b>", but is the nose really that big? Absolutely not. <b>PCA is the architect, t-SNE is the caricaturist</b>.</span>
+  </p>
+  <p style="font-size: 1.02em; line-height: 1.7">
+    <span data-lang="zh">t-SNE 的「漫畫筆法」叫做 <b>KL divergence + Student-t 重尾</b>：它<b>用力把鄰居拉近、把非鄰居推開</b>，結果 T cell、B cell、monocyte 在 figure 上看起來像三座孤島——超漂亮，paper reviewer 點頭。但有<b>三個致命陷阱</b>不能犯：(1) 不要看「cluster 之間距離」——t-SNE 是隨機亂擺的；(2) 不要看「cluster 大小」——它把所有 cluster 都拉成差不多大；(3) 不能 transform 新資料——加 1 個 cell 都要整個重跑。Wattenberg 2016 那篇 distill.pub 文章「<b>How to Use t-SNE Effectively</b>」就是在罵這三件事被誤讀。</span>
+    <span data-lang="en">t-SNE's "caricature trick" is called <b>KL divergence + Student-t heavy tail</b>: it <b>yanks neighbors closer and shoves non-neighbors apart</b>, so T cells, B cells, monocytes look like three isolated islands — gorgeous, reviewers nod. But <b>three deadly traps</b> await: (1) don't read "inter-cluster distances" — t-SNE places them randomly; (2) don't read "cluster sizes" — t-SNE normalizes them all to similar size; (3) you can't transform new data — adding one cell requires a full rerun. Wattenberg's 2016 distill.pub article "<b>How to Use t-SNE Effectively</b>" is one long complaint about people misreading these three.</span>
+  </p>
+
+  <h4>📍 <span data-lang="zh">在流程中的位置</span><span data-lang="en">Pipeline position</span></h4>
+  <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f7f9fb; padding: 10px; border-radius: 6px; line-height: 1.8">
+    PCA 50-D →
+    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b>t-SNE 2-D（漫畫風 figure）</b></span>
+    → <span data-lang="zh">paper Figure 1 / Reviewer 點頭</span><span data-lang="en">paper Figure 1 / reviewer approval</span>
   </div>
+  <p style="margin-top: 6px; font-size: 0.93em; color: #555">
+    <span data-lang="zh">⚠️ t-SNE 是<b>視覺化工具，不是分析工具</b>。cluster 結構分析還是用 PCA + KNN + Leiden，t-SNE 只負責「<b>把結果畫得好看</b>」。</span>
+    <span data-lang="en">⚠️ t-SNE is a <b>visualization tool, not an analysis tool</b>. Cluster analysis goes through PCA + KNN + Leiden; t-SNE only handles "<b>making the result look pretty</b>".</span>
+  </p>
 
-  <h4 data-lang="zh">🎯 為什麼 scRNA-seq 還需要 t-SNE（除了已有 PCA）</h4>
-  <h4 data-lang="en">🎯 Why scRNA-seq still needs t-SNE (besides PCA)</h4>
+  <h4>💥 <span data-lang="zh">三個 reviewer 一眼看穿的誤讀</span><span data-lang="en">Three misreadings reviewers catch instantly</span></h4>
+  <table class="compare">
+    <thead><tr>
+      <th><span data-lang="zh">看圖時你以為</span><span data-lang="en">What you think</span></th>
+      <th><span data-lang="zh">真相</span><span data-lang="en">Reality</span></th>
+    </tr></thead>
+    <tbody>
+      <tr style="background: #fdecec"><td><span data-lang="zh">「cluster A 跟 B 相距很遠，所以差很大」</span><span data-lang="en">"A and B are far apart, so they differ greatly"</span></td>
+        <td><span data-lang="zh">隨機初始化決定的距離，跟生物無關</span><span data-lang="en">Distance is set by random init, no biological meaning</span></td></tr>
+      <tr style="background: #fdecec"><td><span data-lang="zh">「monocyte cluster 比 T cell 大，所以 monocyte 比較多」</span><span data-lang="en">"Monocyte cluster is bigger, so there are more monocytes"</span></td>
+        <td><span data-lang="zh">t-SNE 自動把所有 cluster 拉成差不多大</span><span data-lang="en">t-SNE auto-normalizes all clusters to similar sizes</span></td></tr>
+      <tr style="background: #fdecec"><td><span data-lang="zh">「把新 sample query 進這張 t-SNE」</span><span data-lang="en">"Project new sample into this t-SNE"</span></td>
+        <td><span data-lang="zh">無法做。沒 transform 函數，要整個重跑</span><span data-lang="en">Not possible. No transform function — re-run from scratch</span></td></tr>
+    </tbody>
+  </table>
+
+  <h4>🔗 <span data-lang="zh">對下游的影響</span><span data-lang="en">Impact downstream</span></h4>
   <ul>
-    <li data-lang="zh"><b>PCA 是線性</b>：cell types 在 high-D 沿非線性 manifold 分開，PC1/PC2 plot 上常重疊</li>
-    <li data-lang="en"><b>PCA is linear</b>: cell types separate along nonlinear manifolds in high-D; PC1/PC2 plots often overlap</li>
-    <li data-lang="zh"><b>t-SNE 強行分開</b>：用 KL divergence + Student-t 重尾，把 cluster 之間用力推開 → 適合「給 reviewer / collaborator 看清楚」</li>
-    <li data-lang="en"><b>t-SNE force-separates</b>: KL divergence + Student-t heavy tail pushes clusters apart → great for "show reviewer/collaborator"</li>
-    <li data-lang="zh"><b>history</b>：t-SNE (van der Maaten 2008) 是 2014-2017 scRNA-seq 主流，後被 UMAP 取代但仍廣泛使用</li>
-    <li data-lang="en"><b>History</b>: t-SNE (van der Maaten 2008) was 2014-2017 mainstream; replaced by UMAP but still widely used</li>
+    <li><b>UMAP：</b><span data-lang="zh">scRNA 2018 之後逐漸<b>從 t-SNE 換到 UMAP</b>（保 local + global、提供 transform、跑得快 10 倍）。</span>
+      <span data-lang="en">Post-2018 scRNA gradually <b>switched t-SNE → UMAP</b> (preserves local + global, provides transform, 10× faster).</span></li>
+    <li><b>Annotation：</b><span data-lang="zh">標好 cell type 後用 t-SNE 著色，看 cluster 是否分得開 → 確認 marker 有效。</span>
+      <span data-lang="en">After annotation, color t-SNE by cell type to confirm clusters separate → validate markers.</span></li>
+    <li><b>Trajectory：</b><span data-lang="zh">t-SNE 把<b>連續變不連續</b> → 軌跡分析不能用 t-SNE 量距離，必須回到 PCA / diffusion。</span>
+      <span data-lang="en">t-SNE <b>discretizes continuous structure</b> → trajectory analysis can't use t-SNE distances; back to PCA / diffusion.</span></li>
   </ul>
 
-  <h4 data-lang="zh">⚠️ scRNA 用 t-SNE 的<b>致命誤讀</b>（每個必須知道）</h4>
-  <h4 data-lang="en">⚠️ <b>Critical misreadings</b> of t-SNE in scRNA (must know)</h4>
-  <ul>
-    <li data-lang="zh"><b>不要看「cluster 之間距離」</b>：t-SNE 隨機 init → cluster 在哪個位置是隨機的</li>
-    <li data-lang="en"><b>Don't read "inter-cluster distance"</b>: t-SNE random init → cluster positions are random</li>
-    <li data-lang="zh"><b>不要看「cluster 大小」</b>：t-SNE 把所有 cluster 「normalize」到差不多大小</li>
-    <li data-lang="en"><b>Don't read "cluster size"</b>: t-SNE normalizes all clusters to similar sizes</li>
-    <li data-lang="zh"><b>不能 transform 新資料</b>：加新 sample 要重跑整個 t-SNE</li>
-    <li data-lang="en"><b>Can't transform new data</b>: adding samples requires full t-SNE rerun</li>
-  </ul>
-
-  <h4 data-lang="zh">🔗 對下游 scRNA 分析的影響</h4>
-  <h4 data-lang="en">🔗 Impact on downstream scRNA analysis</h4>
-  <ul>
-    <li data-lang="zh"><b>UMAP (M3.3)</b>: scRNA 從 2018 後逐漸從 t-SNE 轉到 UMAP（保 local + global 結構）</li>
-    <li data-lang="en"><b>UMAP (M3.3)</b>: scRNA shifted from t-SNE to UMAP post-2018 (preserves local + global)</li>
-    <li data-lang="zh"><b>Annotation</b>: 細胞型 annotate 後用 t-SNE 著色看 cluster 是否分得開 → 確認 marker 有效</li>
-    <li data-lang="en"><b>Annotation</b>: post-annotation, color t-SNE by cell type to confirm cluster separation → validate markers</li>
-    <li data-lang="zh"><b>Trajectory (M6.2)</b>: t-SNE 上看不到「<b>軌跡連續性</b>」（t-SNE 把連續變不連續），所以 trajectory analysis 必須用 PCA / diffusion</li>
-    <li data-lang="en"><b>Trajectory (M6.2)</b>: t-SNE can't show "<b>trajectory continuity</b>" (it discretizes continuum), so trajectory needs PCA / diffusion</li>
-  </ul>
-
-  <div class="callout bio" style="margin-top: 14px;">
-    <strong data-lang="zh">⭐ 一句話總結</strong><strong data-lang="en">⭐ One-line summary</strong>:
-    <span data-lang="zh">t-SNE 是「<b>scRNA paper 的 Figure 1</b>」——絕大多數 scRNA 論文用 t-SNE 或 UMAP 當主視覺化。但分析方法上<b>不要</b>用 t-SNE 距離做任何 quantitative 推論。</span>
-    <span data-lang="en">t-SNE is "<b>scRNA paper's Figure 1</b>" — most scRNA papers use t-SNE or UMAP as main viz. But <b>never</b> use t-SNE distances for quantitative inference.</span>
+  <div class="callout bio">
+    <strong>⭐ <span data-lang="zh">一句話總結</span><span data-lang="en">One-line summary</span></strong>：
+    <span data-lang="zh">t-SNE 是「<b>scRNA paper 的 Figure 1</b>」——絕大多數 scRNA 論文用 t-SNE 或 UMAP 當主視覺化。但<b>千萬不要</b>把 t-SNE 距離當定量結論。它只是讓你的 reviewer 一眼點頭的<b>漫畫</b>，不是你做數學分析的<b>地圖</b>。</span>
+    <span data-lang="en">t-SNE is "<b>scRNA paper's Figure 1</b>" — most scRNA papers use t-SNE or UMAP as main visual. But <b>never</b> treat t-SNE distances as quantitative conclusions. It's the <b>caricature</b> that gets your reviewer to nod, not the <b>map</b> you do math on.</span>
   </div>
 </div>
 

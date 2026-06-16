@@ -259,101 +259,75 @@
 <!-- ===== 🧬 scRNA-seq 視角 panel ===== -->
 <div class="card" style="border-left: 6px solid var(--green); background: linear-gradient(135deg, #effaf3 0%, #fff 70%);">
   <h3 style="color: var(--green); margin-top: 0">
-    <span data-lang="zh">🧬 scRNA-seq 視角：KNN 圖是「細胞群落分群」的隱形骨架</span>
-    <span data-lang="en">🧬 scRNA-seq perspective: KNN graph is the hidden skeleton of cell clustering</span>
+    <span data-lang="zh">🧬 scRNA-seq 視角：KNN 是每個細胞的 Facebook 朋友圈</span>
+    <span data-lang="en">🧬 scRNA-seq perspective: KNN is every cell's Facebook friend list</span>
   </h3>
 
-  <h4>📍 <span data-lang="zh">在 scRNA-seq 流程中的位置</span><span data-lang="en">Position in scRNA-seq pipeline</span></h4>
-  <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f7f9fb; padding: 10px; border-radius: 6px; line-height: 1.8">
-    QC → normalize → HVG → scale → PCA (50-D) →
-    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b>KNN graph (sc.pp.neighbors)</b></span>
-    → Leiden cluster + UMAP + diffusion → all downstream
-  </div>
-  <p style="margin-top: 6px; font-size: 0.9em; color: #555">
-    <span data-lang="zh">KNN graph 是 scRNA 流程的「<b>關鍵中繼站</b>」：UMAP、Leiden、diffusion maps、PAGA、RNA velocity 都建在這個 graph 上。它<b>看不見</b>（沒人會 plot 它），但決定了下游所有「鄰居推斷」的對錯。</span>
-    <span data-lang="en">KNN graph is the <b>critical relay</b> of the scRNA pipeline: UMAP, Leiden, diffusion maps, PAGA, RNA velocity all build on it. It's <b>invisible</b> (nobody plots it), but it decides all downstream "neighbor inference" correctness.</span>
+  <p style="font-size: 1.02em; line-height: 1.7">
+    <span data-lang="zh">想像 10,000 個人開派對，你要為<b>每個人列出他/她最好的 15 個朋友</b>。最笨的做法：問每個人對其他 9999 人的好感度——共 1 億次提問。比較聰明：每個人都只認識周圍 15 個人就好（KNN graph）。然後社交圈分析（誰跟誰常聚？）、八卦傳播（誰先聽到？）、政治派系（哪些人組成一團？）、新朋友推薦——<b>全部建立在這份「每人 15 個好友」清單上</b>。scRNA 的 KNN graph 就是這份<b>每個細胞 15 個鄰居</b>的名冊。</span>
+    <span data-lang="en">Imagine 10,000 people at a party where you must list <b>each person's 15 best friends</b>. Naive method: ask everyone about every other guest — 100 million questions. Smart method: each person only knows their 15 closest neighbors (KNN graph). Then social-circle analysis (who hangs out?), gossip spreading (who hears first?), political factions (who forms a group?), friend recommendations — <b>all of them sit on top of that "15 friends each" list</b>. scRNA's KNN graph is exactly this <b>register of 15 neighbors per cell</b>.</span>
+  </p>
+  <p style="font-size: 1.02em; line-height: 1.7">
+    <span data-lang="zh">為什麼這份名冊這麼關鍵？因為 scRNA 後面<b>每一個方法都查這份名冊</b>：Leiden 看朋友圈密度找 cluster、UMAP 把朋友拉近、PAGA 連接朋友圈跑軌跡、Harmony 檢查批次間是否「<b>跨批次成為朋友</b>」、CellTypist 把新細胞投進來找最近的標籤鄰居。一行 <code>sc.pp.neighbors(adata)</code> 看似平淡，<b>但決定了你後面所有 figure 的長相</b>。挑錯 k？整場派對就糊掉了：k=3 每個人變孤島、k=200 全部變一坨好朋友。</span>
+    <span data-lang="en">Why is this register so critical? Because <b>every method downstream consults it</b>: Leiden looks at friend-circle density to find clusters, UMAP pulls friends closer, PAGA connects circles to draw trajectories, Harmony checks whether batches "<b>befriend each other across labs</b>", CellTypist projects new cells in and labels them by nearest registered neighbor. One innocuous line <code>sc.pp.neighbors(adata)</code> <b>secretly decides what every later figure looks like</b>. Pick the wrong k and the party blurs: k=3 turns everyone into a loner, k=200 makes everyone besties.</span>
   </p>
 
-  <h4>🎯 <span data-lang="zh">為什麼 scRNA-seq 必須建 KNN 圖</span><span data-lang="en">Why scRNA-seq MUST build a KNN graph</span></h4>
-  <ul>
-    <li>
-      <b><span data-lang="zh">distance 計算負擔太大，圖是「稀疏」近似</span><span data-lang="en">distance computation too expensive; graph is a "sparse" approximation</span></b>：
-      <span data-lang="zh">100k cells × 50-D PCA → 完整距離矩陣 100k×100k = 10G entries（80 GB 記憶體）。KNN 圖只存每 cell 的 15 個鄰居 → 1.5M entries（12 MB）<b>記憶體節省 7000 倍</b>。沒這個近似，atlas-scale 分析根本跑不動。</span>
-      <span data-lang="en">100k cells × 50-D PCA → full distance matrix 100k×100k = 10G entries (80 GB RAM). KNN graph stores only 15 neighbors per cell → 1.5M entries (12 MB), <b>7000× memory savings</b>. Without this approximation, atlas-scale analysis is infeasible.</span>
-    </li>
-    <li>
-      <b><span data-lang="zh">所有 graph-based 分群演算法的輸入</span><span data-lang="en">Input to all graph-based clustering algorithms</span></b>：
-      <span data-lang="zh">Leiden / Louvain 把 cluster 定義為「<b>圖上密度高的子圖</b>」。KNN graph 的<b>連通性</b>直接決定 cluster 的形狀；同樣資料、k=5 vs k=50 會出不同 cluster 數。</span>
-      <span data-lang="en">Leiden / Louvain define a cluster as a "<b>densely connected subgraph</b>". KNN graph's <b>connectivity</b> directly determines cluster shape; same data, k=5 vs k=50 gives different cluster counts.</span>
-    </li>
-    <li>
-      <b><span data-lang="zh">UMAP 的高維結構描述</span><span data-lang="en">High-D structure description for UMAP</span></b>：
-      <span data-lang="zh">UMAP 的「fuzzy simplicial set」就是 KNN graph + Jaccard 邊權重。沒先建 KNN，就沒 UMAP，沒 trajectory，沒 reference mapping。</span>
-      <span data-lang="en">UMAP's "fuzzy simplicial set" is exactly KNN graph + Jaccard edge weights. No KNN graph → no UMAP, no trajectory, no reference mapping.</span>
-    </li>
-  </ul>
+  <h4>📍 <span data-lang="zh">在流程中的位置</span><span data-lang="en">Pipeline position</span></h4>
+  <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f7f9fb; padding: 10px; border-radius: 6px; line-height: 1.8">
+    PCA 50-D →
+    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b>KNN graph（每細胞 15 個朋友的名冊）</b></span>
+    → Leiden · UMAP · diffusion · Harmony · CellTypist
+  </div>
 
-  <h4>💥 <span data-lang="zh">KNN 圖做錯會發生什麼</span><span data-lang="en">What happens with a bad KNN graph</span></h4>
+  <h4>💥 <span data-lang="zh">朋友圈調錯，派對就糊了</span><span data-lang="en">Get the friend list wrong, the party blurs</span></h4>
   <table class="compare">
-    <thead>
-      <tr>
-        <th><span data-lang="zh">問題</span><span data-lang="en">Problem</span></th>
-        <th><span data-lang="zh">PBMC 3k 結果</span><span data-lang="en">PBMC 3k result</span></th>
-        <th><span data-lang="zh">下游災難</span><span data-lang="en">Downstream disaster</span></th>
-      </tr>
-    </thead>
+    <thead><tr>
+      <th><span data-lang="zh">設定</span><span data-lang="en">Setting</span></th>
+      <th><span data-lang="zh">名冊長相</span><span data-lang="en">Register shape</span></th>
+      <th><span data-lang="zh">下游悲劇</span><span data-lang="en">Downstream tragedy</span></th>
+    </tr></thead>
     <tbody>
       <tr style="background: #fdecec">
-        <td><span data-lang="zh">不先做 PCA、用原 32k 維建 KNN</span><span data-lang="en">No PCA first, use raw 32k-D for KNN</span></td>
-        <td><span data-lang="zh">curse of dimensionality：所有 distance 趨於相同 ≈ √32k</span><span data-lang="en">Curse of dimensionality: all distances ≈ √32k</span></td>
-        <td><span data-lang="zh">「最近鄰」=「隨機鄰」→ Leiden 出隨機 cluster</span><span data-lang="en">"Nearest" ≈ "random" → Leiden returns random clusters</span></td>
+        <td><span data-lang="zh">不先 PCA、直接用 32k 維</span><span data-lang="en">No PCA, use raw 32k-D</span></td>
+        <td><span data-lang="zh">維度詛咒，所有人距離一樣，「最近鄰」變抽籤</span><span data-lang="en">Curse of dim — all distances equal, "nearest" = random</span></td>
+        <td><span data-lang="zh">Leiden 抽出隨機 cluster</span><span data-lang="en">Leiden produces random clusters</span></td>
       </tr>
       <tr style="background: #fdecec">
-        <td><span data-lang="zh">k=3（過小）</span><span data-lang="en">k=3 (too small)</span></td>
-        <td><span data-lang="zh">圖極稀疏，每個 cell 孤島</span><span data-lang="en">Graph very sparse, each cell isolated</span></td>
-        <td><span data-lang="zh">Leiden 切出 50+ 假 cluster；UMAP 變「破碎雲」</span><span data-lang="en">Leiden produces 50+ fake clusters; UMAP becomes "shattered clouds"</span></td>
+        <td>k=3（過小，只交三個朋友）</td>
+        <td><span data-lang="zh">每人變孤島，名冊不連通</span><span data-lang="en">Everyone an island, graph disconnected</span></td>
+        <td><span data-lang="zh">50+ 假 cluster、UMAP 像碎屑</span><span data-lang="en">50+ fake clusters; UMAP looks shattered</span></td>
       </tr>
       <tr style="background: #fdecec">
-        <td><span data-lang="zh">k=200（過大）</span><span data-lang="en">k=200 (too large)</span></td>
-        <td><span data-lang="zh">B / T / monocyte 都連在一起</span><span data-lang="en">B / T / monocyte all connected</span></td>
-        <td><span data-lang="zh">Leiden 變 2-3 個大 blob，rare population 被合併</span><span data-lang="en">Leiden gives 2-3 big blobs, rare populations merged</span></td>
+        <td>k=200（過大，全班都是好友）</td>
+        <td><span data-lang="zh">B、T、monocyte 全部連在一起</span><span data-lang="en">B, T, monocyte all interconnected</span></td>
+        <td><span data-lang="zh">Leiden 變 2-3 個大 blob，rare 細胞被合併</span><span data-lang="en">Leiden gives 2-3 blobs; rare cells merged</span></td>
       </tr>
       <tr style="background: #effaf3">
-        <td><span data-lang="zh">scanpy 預設 k=15、PCA 50-D、HNSW</span><span data-lang="en">scanpy default k=15, PCA 50-D, HNSW</span></td>
-        <td><span data-lang="zh">8 個明確 cluster，與 Seurat tutorial 對齊</span><span data-lang="en">8 clear clusters, matches Seurat tutorial</span></td>
-        <td><span data-lang="zh">標準 PBMC 3k 可重現結果</span><span data-lang="en">Reproducible standard PBMC 3k result</span></td>
+        <td>scanpy 預設 k=15 + PCA 50-D + HNSW</td>
+        <td><span data-lang="zh">名冊乾淨、社交圈分明</span><span data-lang="en">Clean register, distinct social circles</span></td>
+        <td><span data-lang="zh">8 個 cluster，與 Seurat tutorial 對齊</span><span data-lang="en">8 clusters, matches Seurat tutorial</span></td>
       </tr>
     </tbody>
   </table>
 
-  <h4>🔗 <span data-lang="zh">對下游每個 scRNA 步驟的具體影響</span><span data-lang="en">Concrete downstream impact</span></h4>
+  <h4>🔗 <span data-lang="zh">下游所有人都靠這份名冊吃飯</span><span data-lang="en">Everyone downstream lives off this register</span></h4>
   <ul>
-    <li><b><span data-lang="zh">Leiden / Louvain clustering（§M4.2）</span><span data-lang="en">Leiden / Louvain clustering (§M4.2)</span></b>：
-      <span data-lang="zh">modularity 公式 $Q = \frac{1}{2m}\sum_{ij}[A_{ij}-\frac{k_ik_j}{2m}]\delta(c_i,c_j)$ 的 $A_{ij}$ 就是 KNN graph adjacency；圖錯，cluster 跟著錯。</span>
-      <span data-lang="en">Modularity formula's $A_{ij}$ IS the KNN graph adjacency; wrong graph → wrong clusters.</span>
-    </li>
-    <li><b><span data-lang="zh">UMAP / t-SNE 視覺化</span><span data-lang="en">UMAP / t-SNE visualization</span></b>：
-      <span data-lang="zh">UMAP 的高維結構=KNN graph + fuzzy weight。圖太密 → blob；太稀 → 碎島。</span>
-      <span data-lang="en">UMAP's high-D structure = KNN graph + fuzzy weight. Too dense → blob; too sparse → shattered.</span>
-    </li>
-    <li><b><span data-lang="zh">Diffusion Maps / DPT pseudotime</span><span data-lang="en">Diffusion Maps / DPT pseudotime</span></b>：
-      <span data-lang="zh">transition matrix $T$ 是 KNN 的 row-normalized；圖斷裂 → diffusion 跑不過 cluster 邊界 → pseudotime 錯。</span>
-      <span data-lang="en">Transition matrix $T$ is row-normalized KNN; broken graph → diffusion can't cross cluster boundaries → wrong pseudotime.</span>
-    </li>
-    <li><b><span data-lang="zh">scVI / Harmony integration check</span><span data-lang="en">scVI / Harmony integration check</span></b>：
-      <span data-lang="zh">batch mixing 度量 (kBET、LISI) 都用 KNN graph 跨樣本連通性檢查；圖 build 在 batch-corrected embedding 上才有效。</span>
-      <span data-lang="en">Batch mixing metrics (kBET, LISI) all check KNN cross-sample connectivity; only valid if graph is built on batch-corrected embedding.</span>
-    </li>
-    <li><b><span data-lang="zh">CellTypist / Azimuth reference mapping</span><span data-lang="en">CellTypist / Azimuth reference mapping</span></b>：
-      <span data-lang="zh">query cell 投到 reference embedding，然後在 reference KNN graph 上找最近鄰標 label → reference graph 品質決定 annotation 正確性。</span>
-      <span data-lang="en">Query cell projected to reference embedding, label by nearest neighbor in reference KNN → reference graph quality decides annotation correctness.</span>
-    </li>
+    <li><b>Leiden：</b><span data-lang="zh">modularity 公式裡的 $A_{ij}$ 就是 KNN graph adjacency；名冊錯，cluster 跟著錯。</span>
+      <span data-lang="en">The $A_{ij}$ in modularity IS the KNN adjacency; wrong register → wrong clusters.</span></li>
+    <li><b>UMAP / t-SNE：</b><span data-lang="zh">UMAP 的「fuzzy 結構」=KNN+Jaccard 權重；圖太密變 blob、太稀變碎島。</span>
+      <span data-lang="en">UMAP's fuzzy structure = KNN + Jaccard weights; too dense → blob; too sparse → shatter.</span></li>
+    <li><b>Diffusion / DPT：</b><span data-lang="zh">transition matrix $T$ 是 KNN row-normalized；圖斷裂，diffusion 跨不過邊界。</span>
+      <span data-lang="en">Transition matrix $T$ is row-normalized KNN; broken graph → diffusion can't cross boundaries.</span></li>
+    <li><b>Harmony / scVI integration：</b><span data-lang="zh">kBET、LISI 評估 batch 混合，全靠跨樣本是否「成為朋友」。</span>
+      <span data-lang="en">kBET, LISI evaluate batch mixing entirely via cross-sample "friend connections".</span></li>
+    <li><b>CellTypist / Azimuth：</b><span data-lang="zh">query cell 投到 reference，找<b>最近的朋友</b>標 label → reference 名冊品質 = annotation 品質。</span>
+      <span data-lang="en">Query cell projected onto reference, labeled by <b>nearest friends</b> → reference register quality = annotation quality.</span></li>
   </ul>
 
   <div class="callout bio">
     <strong>⭐ <span data-lang="zh">一句話總結</span><span data-lang="en">One-line summary</span></strong>：
-    <span data-lang="zh">KNN graph 是 scRNA 的「<b>隱形骨架</b>」：細胞之間的所有「誰是誰的鄰居」推論都建在它上面。一行 <code>sc.pp.neighbors(adata)</code>，決定了你後面 Leiden、UMAP、軌跡、整合的所有結果。</span>
-    <span data-lang="en">KNN graph is the <b>hidden skeleton</b> of scRNA: all "who is neighbor of whom" inferences are built on it. One line <code>sc.pp.neighbors(adata)</code> decides all your downstream Leiden, UMAP, trajectory, and integration results.</span>
+    <span data-lang="zh">KNN graph 是 scRNA 的「<b>隱形朋友圈</b>」——你看不到它（沒人會 plot），但下游每個方法都偷偷靠它過活。一行 <code>sc.pp.neighbors</code>，決定後面 Leiden、UMAP、軌跡、整合<b>所有結果</b>。</span>
+    <span data-lang="en">KNN graph is scRNA's <b>invisible friend circle</b> — nobody plots it, but every downstream method secretly lives off it. One line <code>sc.pp.neighbors</code> decides <b>everything</b> downstream: Leiden, UMAP, trajectory, integration.</span>
   </div>
 </div>
 

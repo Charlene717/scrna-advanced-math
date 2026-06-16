@@ -254,9 +254,18 @@
 <!-- ===== 🧬 scRNA-seq 視角 panel ===== -->
 <div class="card" style="border-left: 6px solid var(--green); background: linear-gradient(135deg, #effaf3 0%, #fff 70%);">
   <h3 style="color: var(--green); margin-top: 0">
-    <span data-lang="zh">🧬 scRNA-seq 視角：FDR 是「marker 清單能不能信」的安全閥</span>
-    <span data-lang="en">🧬 scRNA-seq perspective: FDR is the safety valve deciding whether your marker list is trustworthy</span>
+    <span data-lang="zh">🧬 scRNA-seq 視角：FDR 是樂透中獎的「假中獎」過濾器</span>
+    <span data-lang="en">🧬 scRNA-seq perspective: FDR is the "fake winner" filter in the lottery of p-values</span>
   </h3>
+
+  <p style="font-size: 1.02em; line-height: 1.7">
+    <span data-lang="zh">想像 30,000 個人買樂透，<b>中頭獎機率是 1/20</b>（α = 0.05）。即使這次<b>頭獎根本沒開出</b>，純靠運氣也會有<b>1,500 個人「自稱中獎」</b>——他們的彩券號碼剛好對到，但其實獎金根本不存在。<b>scRNA 的 DE 就是這個情境</b>：你一次測 30k 個 gene，<b>1,500 個 gene 會純靠運氣 p &lt; 0.05</b>，跑出來叫做「marker」，其實是 noise。FDR 就是把這 1,500 個假中獎攔下來的<b>查證員</b>。</span>
+    <span data-lang="en">Imagine 30,000 people buying lottery tickets where <b>winning odds are 1/20</b> (α = 0.05). Even if <b>no jackpot was actually drawn</b>, pure luck means <b>1,500 people "claim to have won"</b> — their numbers happen to match, but the prize doesn't exist. <b>scRNA DE is this exact scenario</b>: test 30k genes at once, <b>1,500 genes will hit p &lt; 0.05 by pure chance</b>, label themselves "markers" — but it's noise. FDR is the <b>verification clerk</b> who blocks those 1,500 fake winners.</span>
+  </p>
+  <p style="font-size: 1.02em; line-height: 1.7">
+    <span data-lang="zh">為什麼用 <b>BH（Benjamini-Hochberg）</b>而不是 Bonferroni？Bonferroni 像是「<b>頭獎機率改成 1/600,000</b>」（α/m = 0.05/30k），嚴到連<b>真正中獎的人</b>都被擋下來——真 marker 全砍光。BH 比較聰明：「<b>允許 5% 的中獎是假的</b>，剩下 95% 是真的就好」。在 scRNA 30k gene 的情境下，BH 是<b>唯一能同時保留真 marker、又把噪音砍掉</b>的方法。沒它，你 paper 上的 30 個 top marker，<b>可能有 1500 個影子在你不知不覺中混進去</b>。</span>
+    <span data-lang="en">Why use <b>BH (Benjamini-Hochberg)</b> instead of Bonferroni? Bonferroni is like "<b>change odds to 1/600,000</b>" (α/m = 0.05/30k), so strict that even <b>real winners get blocked</b> — true markers vanish. BH is smarter: "<b>let 5% of winners be fake</b>, as long as 95% are real". At scRNA's 30k-gene scale, BH is the <b>only method that preserves true markers while cutting noise</b>. Without it, your paper's "top 30 markers" might have <b>1,500 shadows sneaking in undetected</b>.</span>
+  </p>
 
   <h4>📍 <span data-lang="zh">在 scRNA-seq 流程中的位置</span><span data-lang="en">Position in scRNA-seq pipeline</span></h4>
   <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f7f9fb; padding: 10px; border-radius: 6px; line-height: 1.8">
