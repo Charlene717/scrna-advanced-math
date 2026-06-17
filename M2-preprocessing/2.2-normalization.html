@@ -167,15 +167,15 @@
     <li class="dropdown"><a href="../index.html#M1">M1</a>
       <ul class="dropdown-menu">
         <li class="sub-label">基礎 / FOUNDATIONS</li>
-        <li><a href="../M1-foundations/1.1-sparse-matrix.html">1.1 稀疏矩陣 / Sparse Matrix</a></li>
-        <li><a href="../M1-foundations/1.2-count-distributions.html">1.2 計數分布 / Count Distributions</a></li>
+        <li><a href="../M1-foundations/1.1-sparse-matrix.html"><span data-lang="zh">1.1 稀疏矩陣</span><span data-lang="en">1.1 Sparse Matrix</span> / Sparse Matrix</a></li>
+        <li><a href="../M1-foundations/1.2-count-distributions.html"><span data-lang="zh">1.2 計數分布</span><span data-lang="en">1.2 Count Distributions</span> / Count Distributions</a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M2" class="active">M2</a>
       <ul class="dropdown-menu">
         <li class="sub-label">前處理 / PREPROCESSING</li>
-        <li><a href="2.1-qc-statistics.html">2.1 QC 統計</a></li>
-        <li><a href="2.2-normalization.html" class="active-sub">2.2 Normalization ⭐ (本頁)</a></li>
-        <li><a href="2.3-hvg-selection.html">2.3 HVG 選擇</a></li>
+        <li><a href="2.1-qc-statistics.html"><span data-lang="zh">2.1 QC 統計</span><span data-lang="en">2.1 QC Statistics</span></a></li>
+        <li><a href="2.2-normalization.html" class="active-sub"><span data-lang="zh">2.2 Normalization ⭐ (本頁)</span><span data-lang="en">2.2 Normalization ⭐ (this page)</span></a></li>
+        <li><a href="2.3-hvg-selection.html"><span data-lang="zh">2.3 HVG 選擇</span><span data-lang="en">2.3 HVG Selection</span></a></li>
         <li><a href="2.4-scaling.html">2.4 Scaling</a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M3">M3</a>
@@ -195,9 +195,9 @@
     <li class="dropdown"><a href="../index.html#M5">M5</a>
       <ul class="dropdown-menu">
         <li class="sub-label">統計推論 / STATS</li>
-        <li><a href="../M5-statistics/5.1-de-tests.html">5.1 DE 檢定</a></li>
-        <li><a href="../M5-statistics/5.2-multiple-testing.html">5.2 多重檢定 / FDR</a></li>
-        <li><a href="../M5-statistics/5.3-classifier.html">5.3 細胞分類器</a></li>
+        <li><a href="../M5-statistics/5.1-de-tests.html"><span data-lang="zh">5.1 DE 檢定</span><span data-lang="en">5.1 DE Tests</span></a></li>
+        <li><a href="../M5-statistics/5.2-multiple-testing.html"><span data-lang="zh">5.2 多重檢定 / FDR</span><span data-lang="en">5.2 Multiple Testing / FDR</span></a></li>
+        <li><a href="../M5-statistics/5.3-classifier.html"><span data-lang="zh">5.3 細胞分類器</span><span data-lang="en">5.3 Cell Classifier</span></a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M6">M6</a>
       <ul class="dropdown-menu">
@@ -289,10 +289,10 @@
     </tr></thead>
     <tbody>
       <tr style="background: #fdecec"><td><span data-lang="zh">raw counts 直接 PCA</span><span data-lang="en">raw counts → PCA</span></td>
-        <td>MALAT1, RPL10, RPS27（housekeeping 軍團）</td>
+        <td>MALAT1, RPL10, RPS27 <span data-lang="zh">（housekeeping 軍團）</span><span data-lang="en">(housekeeping army)</span></td>
         <td>💰 <span data-lang="zh">錢包大小（depth）</span><span data-lang="en">wallet size (depth)</span></td></tr>
       <tr style="background: #effaf3"><td><span data-lang="zh">CP10K + log1p → PCA</span><span data-lang="en">CP10K + log1p → PCA</span></td>
-        <td>CD79A, MS4A1, CD79B（B cell marker）</td>
+        <td>CD79A, MS4A1, CD79B <span data-lang="zh">（B cell marker）</span><span data-lang="en">(B cell markers)</span></td>
         <td>✅ <span data-lang="zh">真實細胞型</span><span data-lang="en">real cell type</span></td></tr>
       <tr style="background: #effaf3"><td><span data-lang="zh">Pearson residual → PCA</span><span data-lang="en">Pearson residual → PCA</span></td>
         <td>CD79A, MS4A1, IGHM, CD37</td>
@@ -742,7 +742,7 @@ sc.tl.pca(adata)</pre>
   <tr><td data-lang="zh">每基因 GLM</td><td data-lang="en">Per-gene GLM</td>
       <td>✅</td><td>✅</td><td>✅ (faster)</td><td>✅ (faster)</td>
       <td>❌</td><td>❌</td></tr>
-  <tr><td>10k cells 時間</td><td>10k cells time</td>
+  <tr><td data-lang="zh">10k cells 時間</td><td data-lang="en">10k cells time</td>
       <td>~ 10 min</td><td>~ 10 min</td><td>~ 3 min</td><td>~ 3 min</td>
       <td>< 10 sec</td><td>< 10 sec</td></tr>
   <tr><td>100k cells</td><td>100k cells</td>
@@ -896,14 +896,15 @@ sc.experimental.pp.normalize_pearson_residuals(adata, theta=<span class="n">100<
       return s;
     }
     let s = '';
+    const lang = document.body.classList.contains('lang-en') ? 'en' : 'zh';
     s += `<text class="lbl" x="200" y="245" text-anchor="middle" font-weight="700">Raw counts</text>`;
     s += bg(20, 'Cell A', cA, mxR, '#2c5aa0');
     s += bg(220, 'Cell B', cA===cB ? cA : cB, mxR, '#2c5aa0');
     s += `<text class="lbl" x="600" y="245" text-anchor="middle" font-weight="700">CP10K (normalized)</text>`;
     s += bg(420, 'Cell A', cpA, mxC, '#27795a');
     s += bg(620, 'Cell B', cpB, mxC, '#27795a');
-    s += `<text class="lbl" x="200" y="270" text-anchor="middle" fill="#c0392b">↑ depth different → counts跑↑↓</text>`;
-    s += `<text class="lbl" x="600" y="270" text-anchor="middle" fill="#27795a">↑ depth different → CP10K 不動</text>`;
+    s += `<text class="lbl" x="200" y="270" text-anchor="middle" fill="#c0392b">${lang==='en'?'↑ depth different → counts shift ↑↓':'↑ depth different → counts跑↑↓'}</text>`;
+    s += `<text class="lbl" x="600" y="270" text-anchor="middle" fill="#27795a">${lang==='en'?'↑ depth different → CP10K stays':'↑ depth different → CP10K 不動'}</text>`;
     document.getElementById('s0svg').innerHTML = s;
   }
   document.getElementById('depthA').addEventListener('input', draw);

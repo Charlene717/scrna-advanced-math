@@ -165,16 +165,16 @@
     <li class="dropdown"><a href="../index.html#M1">M1</a>
       <ul class="dropdown-menu">
         <li class="sub-label">基礎 / FOUNDATIONS</li>
-        <li><a href="../M1-foundations/1.1-sparse-matrix.html">1.1 稀疏矩陣 / Sparse Matrix</a></li>
-        <li><a href="../M1-foundations/1.2-count-distributions.html">1.2 計數分布 / Count Distributions</a></li>
+        <li><a href="../M1-foundations/1.1-sparse-matrix.html"><span data-lang="zh">1.1 稀疏矩陣</span><span data-lang="en">1.1 Sparse Matrix</span> / Sparse Matrix</a></li>
+        <li><a href="../M1-foundations/1.2-count-distributions.html"><span data-lang="zh">1.2 計數分布</span><span data-lang="en">1.2 Count Distributions</span> / Count Distributions</a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M2" class="active">M2</a>
       <ul class="dropdown-menu">
         <li class="sub-label">前處理 / PREPROCESSING</li>
-        <li><a href="2.1-qc-statistics.html">2.1 QC 統計</a></li>
+        <li><a href="2.1-qc-statistics.html"><span data-lang="zh">2.1 QC 統計</span><span data-lang="en">2.1 QC Statistics</span></a></li>
         <li><a href="2.2-normalization.html">2.2 Normalization</a></li>
-        <li><a href="2.3-hvg-selection.html">2.3 HVG 選擇</a></li>
-        <li><a href="2.4-scaling.html" class="active-sub">2.4 Scaling ⭐ (本頁)</a></li>
+        <li><a href="2.3-hvg-selection.html"><span data-lang="zh">2.3 HVG 選擇</span><span data-lang="en">2.3 HVG Selection</span></a></li>
+        <li><a href="2.4-scaling.html" class="active-sub"><span data-lang="zh">2.4 Scaling ⭐ (本頁)</span><span data-lang="en">2.4 Scaling ⭐ (this page)</span></a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M3">M3</a>
       <ul class="dropdown-menu">
@@ -193,9 +193,9 @@
     <li class="dropdown"><a href="../index.html#M5">M5</a>
       <ul class="dropdown-menu">
         <li class="sub-label">統計推論 / STATS</li>
-        <li><a href="../M5-statistics/5.1-de-tests.html">5.1 DE 檢定</a></li>
-        <li><a href="../M5-statistics/5.2-multiple-testing.html">5.2 多重檢定 / FDR</a></li>
-        <li><a href="../M5-statistics/5.3-classifier.html">5.3 細胞分類器</a></li>
+        <li><a href="../M5-statistics/5.1-de-tests.html"><span data-lang="zh">5.1 DE 檢定</span><span data-lang="en">5.1 DE Tests</span></a></li>
+        <li><a href="../M5-statistics/5.2-multiple-testing.html"><span data-lang="zh">5.2 多重檢定 / FDR</span><span data-lang="en">5.2 Multiple Testing / FDR</span></a></li>
+        <li><a href="../M5-statistics/5.3-classifier.html"><span data-lang="zh">5.3 細胞分類器</span><span data-lang="en">5.3 Cell Classifier</span></a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M6">M6</a>
       <ul class="dropdown-menu">
@@ -271,7 +271,7 @@
   <h4>📍 <span data-lang="zh">在流程中的位置</span><span data-lang="en">Pipeline position</span></h4>
   <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f7f9fb; padding: 10px; border-radius: 6px; line-height: 1.8">
     HVG →
-    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b>scale + clip（音量管制）</b></span>
+    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b><span data-lang="zh">scale + clip（音量管制）</span><span data-lang="en">scale + clip (volume control)</span></b></span>
     → PCA → KNN → Leiden → ...
   </div>
 
@@ -284,10 +284,10 @@
     </tr></thead>
     <tbody>
       <tr style="background: #fdecec"><td><span data-lang="zh">不 scale</span><span data-lang="en">No scale</span></td>
-        <td>MALAT1, RPL10, RPS27（家管軍團）</td>
+        <td>MALAT1, RPL10, RPS27 <span data-lang="zh">（家管軍團）</span><span data-lang="en">(housekeeping army)</span></td>
         <td>🎤 <span data-lang="zh">「誰最大聲」（無聊）</span><span data-lang="en">"Who's loudest" (boring)</span></td></tr>
       <tr style="background: #effaf3"><td><span data-lang="zh">scale + clip 10</span><span data-lang="en">scale + clip 10</span></td>
-        <td>CD79A, MS4A1, CD79B（B marker）</td>
+        <td>CD79A, MS4A1, CD79B <span data-lang="zh">（B marker）</span><span data-lang="en">(B markers)</span></td>
         <td>✅ <span data-lang="zh">「誰是什麼細胞」</span><span data-lang="en">"Who is which cell" (signal)</span></td></tr>
     </tbody>
   </table>
@@ -300,7 +300,7 @@
       <span data-lang="en">Distances live in PCA space → wrong PCA, KNN groups "<b>cells with similar expression levels</b>" not "<b>similar cell types</b>".</span></li>
     <li><b>regress-out：</b><span data-lang="zh">scaling 階段是把 total_counts / cell cycle 等已知干擾因子「踢出去」的最後機會。</span>
       <span data-lang="en">Scaling stage is the last chance to "kick out" known confounders like total_counts / cell cycle.</span></li>
-    <li><b>Pearson residual 路線：</b><span data-lang="zh">如果你用 §M2.2 介紹的 Pearson residuals，σ 已經 = 1，這章直接跳過。</span>
+    <li><b>Pearson residual <span data-lang="zh">路線</span><span data-lang="en">route</span>：</b><span data-lang="zh">如果你用 §M2.2 介紹的 Pearson residuals，σ 已經 = 1，這章直接跳過。</span>
       <span data-lang="en">If you took the Pearson residuals route in §M2.2, σ is already 1 — you can skip this chapter entirely.</span></li>
   </ul>
 
@@ -773,8 +773,8 @@ sc.tl.umap(adata)</pre>
       <td>Pearson residual + Lanczos PCA + Harmony</td>
       <td>Pearson residual + Lanczos PCA + Harmony</td></tr>
   <tr><td data-lang="zh">1M+ cells, 跨物種 / 跨平台</td><td data-lang="en">1M+ cells, cross-species / cross-platform</td>
-      <td>scVI (跳過 scale + PCA + Harmony 三步)</td>
-      <td>scVI (skips scale + PCA + Harmony in one model)</td></tr>
+      <td data-lang="zh">scVI (跳過 scale + PCA + Harmony 三步)</td>
+      <td data-lang="en">scVI (skips scale + PCA + Harmony in one model)</td></tr>
 </table>
 
 <div class="callout idea">

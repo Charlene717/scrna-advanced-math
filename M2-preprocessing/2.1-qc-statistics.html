@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>2.1 QC 統計：MAD 離群偵測 — From Intuition to Math (Deep Interactive)</title>
+<title><span data-lang="zh">2.1 QC 統計</span><span data-lang="en">2.1 QC Statistics</span>：MAD 離群偵測 — From Intuition to Math (Deep Interactive)</title>
 <script>
   MathJax = {
     tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] },
@@ -193,17 +193,17 @@
       <a href="../index.html#M1">M1</a>
       <ul class="dropdown-menu">
         <li class="sub-label">基礎 / FOUNDATIONS</li>
-        <li><a href="../M1-foundations/1.1-sparse-matrix.html">1.1 稀疏矩陣 / Sparse Matrix</a></li>
-        <li><a href="../M1-foundations/1.2-count-distributions.html">1.2 計數分布 / Count Distributions</a></li>
+        <li><a href="../M1-foundations/1.1-sparse-matrix.html"><span data-lang="zh">1.1 稀疏矩陣</span><span data-lang="en">1.1 Sparse Matrix</span> / Sparse Matrix</a></li>
+        <li><a href="../M1-foundations/1.2-count-distributions.html"><span data-lang="zh">1.2 計數分布</span><span data-lang="en">1.2 Count Distributions</span> / Count Distributions</a></li>
       </ul>
     </li>
     <li class="dropdown">
       <a href="../index.html#M2" class="active">M2</a>
       <ul class="dropdown-menu">
         <li class="sub-label">前處理 / PREPROCESSING</li>
-        <li><a href="2.1-qc-statistics.html" class="active-sub">2.1 QC 統計 ⭐ (本頁)</a></li>
+        <li><a href="2.1-qc-statistics.html" class="active-sub"><span data-lang="zh">2.1 QC 統計 ⭐ (本頁)</span><span data-lang="en">2.1 QC Statistics ⭐ (this page)</span></a></li>
         <li><a href="2.2-normalization.html">2.2 Normalization</a></li>
-        <li><a href="2.3-hvg-selection.html">2.3 HVG 選擇</a></li>
+        <li><a href="2.3-hvg-selection.html"><span data-lang="zh">2.3 HVG 選擇</span><span data-lang="en">2.3 HVG Selection</span></a></li>
         <li><a href="2.4-scaling.html">2.4 Scaling</a></li>
       </ul>
     </li>
@@ -229,9 +229,9 @@
       <a href="../index.html#M5">M5</a>
       <ul class="dropdown-menu">
         <li class="sub-label">統計推論 / STATS</li>
-        <li><a href="../M5-statistics/5.1-de-tests.html">5.1 DE 檢定</a></li>
-        <li><a href="../M5-statistics/5.2-multiple-testing.html">5.2 多重檢定 / FDR</a></li>
-        <li><a href="../M5-statistics/5.3-classifier.html">5.3 細胞分類器</a></li>
+        <li><a href="../M5-statistics/5.1-de-tests.html"><span data-lang="zh">5.1 DE 檢定</span><span data-lang="en">5.1 DE Tests</span></a></li>
+        <li><a href="../M5-statistics/5.2-multiple-testing.html"><span data-lang="zh">5.2 多重檢定 / FDR</span><span data-lang="en">5.2 Multiple Testing / FDR</span></a></li>
+        <li><a href="../M5-statistics/5.3-classifier.html"><span data-lang="zh">5.3 細胞分類器</span><span data-lang="en">5.3 Cell Classifier</span></a></li>
       </ul>
     </li>
     <li class="dropdown">
@@ -315,7 +315,7 @@
   <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f7f9fb; padding: 10px; border-radius: 6px; line-height: 1.8">
     10x raw matrix →
     <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b>QC (MAD + Scrublet)</b></span>
-    → normalize → HVG → PCA → KNN → Leiden → 你的所有結論
+    → normalize → HVG → PCA → KNN → Leiden → <span data-lang="zh">你的所有結論</span><span data-lang="en">all your conclusions</span>
   </div>
 
   <h4>💥 <span data-lang="zh">不 QC = 你的 paper 多了兩個「鬼魂 cluster」</span><span data-lang="en">No QC = two "ghost clusters" haunt your paper</span></h4>
@@ -328,12 +328,13 @@
     <tbody>
       <tr><td><span data-lang="zh">PBMC 3k 細胞數</span><span data-lang="en">PBMC 3k cells</span></td><td>2,700</td><td>2,638</td></tr>
       <tr><td><span data-lang="zh">Leiden cluster 數</span><span data-lang="en"># Leiden clusters</span></td>
-        <td style="background:#fdecec">12（含 2 個「鬼魂」）</td><td style="background:#effaf3"><b>9 個真細胞型</b></td></tr>
+        <td style="background:#fdecec"><span data-lang="zh">12（含 2 個「鬼魂」）</span><span data-lang="en">12 (incl. 2 "ghosts")</span></td>
+        <td style="background:#effaf3"><b><span data-lang="zh">9 個真細胞型</span><span data-lang="en">9 real cell types</span></b></td></tr>
       <tr><td><span data-lang="zh">cluster 10 的 top marker</span><span data-lang="en">Cluster 10's top marker</span></td>
-        <td style="background:#fdecec">MT-CO1, MT-ND1（💀 死細胞訊號）</td>
+        <td style="background:#fdecec">MT-CO1, MT-ND1 <span data-lang="zh">（💀 死細胞訊號）</span><span data-lang="en">(💀 dying cell signal)</span></td>
         <td style="background:#effaf3"><span data-lang="zh">該 cluster 不存在</span><span data-lang="en">cluster does not exist</span></td></tr>
       <tr><td><span data-lang="zh">假的「T+B 嵌合」 cluster</span><span data-lang="en">Fake "T+B chimeric" cluster</span></td>
-        <td style="background:#fdecec">+1（doublets 偽裝成 plasmacytoid）</td>
+        <td style="background:#fdecec">+1 <span data-lang="zh">（doublets 偽裝成 plasmacytoid）</span><span data-lang="en">(doublets disguised as plasmacytoid)</span></td>
         <td style="background:#effaf3">0</td></tr>
     </tbody>
   </table>
@@ -462,11 +463,17 @@
   </p>
   <details><summary data-lang="zh">▸ 一個 5 點的數字例子</summary>
     <summary data-lang="en">▸ A worked 5-point example</summary>
-    <p>n_genes = {800, 900, 1000, 1100, 100} (一個壞細胞)<br>
+    <p data-lang="zh">n_genes = {800, 900, 1000, 1100, 100} (一個壞細胞)<br>
        mean = 780, σ ≈ 405. <b>mean − 2σ = −30</b>，所以「100」這個壞細胞<b>不會</b>被砍。<br>
        median = 900, MAD = median(|800-900|, |900-900|, |1000-900|, |1100-900|, |100-900|)
        = median(100, 0, 100, 200, 800) = 100.<br>
        <b>median − 3·MAD = 600</b>，「100」被正確標為離群。
+    </p>
+    <p data-lang="en">n_genes = {800, 900, 1000, 1100, 100} (one bad cell)<br>
+       mean = 780, σ ≈ 405. <b>mean − 2σ = −30</b>, so the bad cell "100" <b>won't</b> be filtered.<br>
+       median = 900, MAD = median(|800-900|, |900-900|, |1000-900|, |1100-900|, |100-900|)
+       = median(100, 0, 100, 200, 800) = 100.<br>
+       <b>median − 3·MAD = 600</b>, "100" is correctly flagged as outlier.
     </p>
   </details>
 </div>
@@ -1220,7 +1227,7 @@ print(bad.obs[<span class="s">"pct_counts_mt"</span>].describe())
       <td>5</td><td>5</td>
       <td data-lang="zh">心肌大量粒線體（能量代謝）</td>
       <td data-lang="en">cardiomyocytes mitochondria-rich (energy)</td></tr>
-  <tr><td>Smart-seq2 / 任何</td><td>Smart-seq2 / any</td>
+  <tr><td data-lang="zh">Smart-seq2 / 任何</td><td data-lang="en">Smart-seq2 / any</td>
       <td>~ 5000-10000</td><td>~ 5000-10000</td>
       <td>20%</td><td>20%</td>
       <td>3</td><td>3</td>
@@ -1775,8 +1782,9 @@ document.querySelectorAll('#quiz0 .opt').forEach(btn => {
     knnScore();
     let nflag = 0;
     let s = '';
+    const lang = document.body.classList.contains('lang-en') ? 'en' : 'zh';
     s += `<rect x="0" y="0" width="800" height="360" fill="#fcfcfa"/>`;
-    s += `<text class="lbl" x="400" y="22" text-anchor="middle" font-weight="700">2D 細胞表現 (PC1 vs PC2 示意)</text>`;
+    s += `<text class="lbl" x="400" y="22" text-anchor="middle" font-weight="700">${lang==='en'?'2D cell expression (PC1 vs PC2 sketch)':'2D 細胞表現 (PC1 vs PC2 示意)'}</text>`;
     observed.forEach(o => {
       const fill = o.type==='A' ? '#2c5aa0' : '#27795a';
       const stroke = o.flag ? '#c0392b' : 'none';

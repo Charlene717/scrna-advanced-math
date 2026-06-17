@@ -165,15 +165,15 @@
     <li class="dropdown"><a href="../index.html#M1">M1</a>
       <ul class="dropdown-menu">
         <li class="sub-label">基礎 / FOUNDATIONS</li>
-        <li><a href="../M1-foundations/1.1-sparse-matrix.html">1.1 稀疏矩陣 / Sparse Matrix</a></li>
-        <li><a href="../M1-foundations/1.2-count-distributions.html">1.2 計數分布 / Count Distributions</a></li>
+        <li><a href="../M1-foundations/1.1-sparse-matrix.html"><span data-lang="zh">1.1 稀疏矩陣</span><span data-lang="en">1.1 Sparse Matrix</span> / Sparse Matrix</a></li>
+        <li><a href="../M1-foundations/1.2-count-distributions.html"><span data-lang="zh">1.2 計數分布</span><span data-lang="en">1.2 Count Distributions</span> / Count Distributions</a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M2" class="active">M2</a>
       <ul class="dropdown-menu">
         <li class="sub-label">前處理 / PREPROCESSING</li>
-        <li><a href="2.1-qc-statistics.html">2.1 QC 統計</a></li>
+        <li><a href="2.1-qc-statistics.html"><span data-lang="zh">2.1 QC 統計</span><span data-lang="en">2.1 QC Statistics</span></a></li>
         <li><a href="2.2-normalization.html">2.2 Normalization</a></li>
-        <li><a href="2.3-hvg-selection.html" class="active-sub">2.3 HVG 選擇 ⭐ (本頁)</a></li>
+        <li><a href="2.3-hvg-selection.html" class="active-sub"><span data-lang="zh">2.3 HVG 選擇 ⭐ (本頁)</span><span data-lang="en">2.3 HVG Selection ⭐ (this page)</span></a></li>
         <li><a href="2.4-scaling.html">2.4 Scaling</a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M3">M3</a>
@@ -193,9 +193,9 @@
     <li class="dropdown"><a href="../index.html#M5">M5</a>
       <ul class="dropdown-menu">
         <li class="sub-label">統計推論 / STATS</li>
-        <li><a href="../M5-statistics/5.1-de-tests.html">5.1 DE 檢定</a></li>
-        <li><a href="../M5-statistics/5.2-multiple-testing.html">5.2 多重檢定 / FDR</a></li>
-        <li><a href="../M5-statistics/5.3-classifier.html">5.3 細胞分類器</a></li>
+        <li><a href="../M5-statistics/5.1-de-tests.html"><span data-lang="zh">5.1 DE 檢定</span><span data-lang="en">5.1 DE Tests</span></a></li>
+        <li><a href="../M5-statistics/5.2-multiple-testing.html"><span data-lang="zh">5.2 多重檢定 / FDR</span><span data-lang="en">5.2 Multiple Testing / FDR</span></a></li>
+        <li><a href="../M5-statistics/5.3-classifier.html"><span data-lang="zh">5.3 細胞分類器</span><span data-lang="en">5.3 Cell Classifier</span></a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M6">M6</a>
       <ul class="dropdown-menu">
@@ -270,8 +270,8 @@
   <h4>📍 <span data-lang="zh">在流程中的位置</span><span data-lang="en">Pipeline position</span></h4>
   <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f7f9fb; padding: 10px; border-radius: 6px; line-height: 1.8">
     normalize →
-    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b>HVG selection（挑 2000 個關鍵證人）</b></span>
-    → scale → PCA → KNN → Leiden → 你的「破案結論」
+    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b><span data-lang="zh">HVG selection（挑 2000 個關鍵證人）</span><span data-lang="en">HVG selection (pick 2000 key witnesses)</span></b></span>
+    → scale → PCA → KNN → Leiden → <span data-lang="zh">你的「破案結論」</span><span data-lang="en">your "case verdict"</span>
   </div>
   <p style="margin-top: 6px; font-size: 0.93em; color: #555">
     <span data-lang="zh">⚠️ PCA 之後所有方法<b>只看你挑的那 2000 個 gene</b>——HVG 漏掉某個 marker，整條分析鏈下游<b>絕對看不到</b>那種 cell type。HVG 是<b>單一最重要的「Yes/No 決定」</b>。</span>
@@ -287,12 +287,12 @@
     </tr></thead>
     <tbody>
       <tr style="background: #fdecec"><td><span data-lang="zh">全部 32k gene 都用</span><span data-lang="en">All 32k genes</span></td>
-        <td>~6（housekeeping 霸佔 PC1）</td>
+        <td>~6 <span data-lang="zh">（housekeeping 霸佔 PC1）</span><span data-lang="en">(housekeeping hogs PC1)</span></td>
         <td>❌ <span data-lang="zh">被噪音淹沒</span><span data-lang="en">drowned in noise</span></td></tr>
       <tr style="background: #fdecec"><td><span data-lang="zh">top 500 by variance</span><span data-lang="en">top 500 by variance</span></td>
-        <td>~7（rare marker 漏）</td><td>❌</td></tr>
-      <tr style="background: #fff8e1"><td><b>seurat_v3 top 2000（scanpy 預設）</b></td>
-        <td><b>9 種主要型別</b></td>
+        <td>~7 <span data-lang="zh">（rare marker 漏）</span><span data-lang="en">(rare markers missed)</span></td><td>❌</td></tr>
+      <tr style="background: #fff8e1"><td><b>seurat_v3 top 2000 <span data-lang="zh">（scanpy 預設）</span><span data-lang="en">(scanpy default)</span></b></td>
+        <td><b><span data-lang="zh">9 種主要型別</span><span data-lang="en">9 main types</span></b></td>
         <td>△ <span data-lang="zh">跟 cDC 混在一起</span><span data-lang="en">merged with cDC</span></td></tr>
       <tr style="background: #effaf3"><td><b><span data-lang="zh">Pearson residual top 2000</span><span data-lang="en">Pearson residual top 2000</span></b></td>
         <td>11 <span data-lang="zh">（含 pDC、Treg）</span><span data-lang="en">(incl. pDC, Treg)</span></td>
@@ -760,7 +760,7 @@ sc.tl.pca(adata)</pre>
       <td data-lang="en">Seurat v2 compatibility</td>
       <td><b data-lang="zh">當前預設</b><b data-lang="en">current default</b></td>
       <td><b data-lang="zh">當前預設</b><b data-lang="en">current default</b></td>
-      <td>10x Cell Ranger 結果</td><td>10x Cell Ranger output</td></tr>
+      <td data-lang="zh">10x Cell Ranger 結果</td><td data-lang="en">10x Cell Ranger output</td></tr>
 </table>
 
 <div class="callout idea">
