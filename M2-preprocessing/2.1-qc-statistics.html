@@ -364,14 +364,14 @@
   <h4 data-lang="zh">目錄</h4>
   <h4 data-lang="en">Table of Contents</h4>
   <ol start="0">
-    <li><a href="#s0"><span data-lang="zh">故事開始：你拿到 10x 的輸出</span><span data-lang="en">Story: You receive raw 10x output</span></a><span class="new" data-lang="zh">新增</span><span class="new" data-lang="en">NEW</span></li>
+    <li><a href="#s0"><span data-lang="zh">故事開始：你拿到 10x 的輸出</span><span data-lang="en">Story: You receive raw 10x output</span></a></li>
     <li><a href="#s1"><span data-lang="zh">為什麼平均會被「壞細胞」綁架</span><span data-lang="en">Why mean is hijacked by bad cells</span></a></li>
     <li><a href="#s2"><span data-lang="zh">MAD 的定義：中位數的偏差再取中位數</span><span data-lang="en">MAD definition: median of deviations from median</span></a></li>
     <li><a href="#s3"><span data-lang="zh">1.4826 是哪裡來的？— 從常態分布推導</span><span data-lang="en">Where does 1.4826 come from? Derivation from normal</span></a></li>
     <li><a href="#s4"><span data-lang="zh">互動門檻：滑桿調 k 看哪些細胞被砍</span><span data-lang="en">Interactive cutoff: slider on k, see which cells get cut</span></a></li>
     <li><a href="#s5"><span data-lang="zh">為什麼要 log 轉換才算 MAD</span><span data-lang="en">Why log-transform before computing MAD</span></a></li>
     <li><a href="#s6"><span data-lang="zh">多變數 QC：nFeature × MT% 聯合分布</span><span data-lang="en">Multi-variable QC: nFeature × MT% joint distribution</span></a></li>
-    <li><a href="#s7"><span data-lang="zh">Scrublet：模擬合成 doublet 算機率</span><span data-lang="en">Scrublet: simulate synthetic doublets to score probability</span></a><span class="new" data-lang="zh">核心</span><span class="new" data-lang="en">CORE</span></li>
+    <li><a href="#s7"><span data-lang="zh">Scrublet：模擬合成 doublet 算機率</span><span data-lang="en">Scrublet: simulate synthetic doublets to score probability</span></a></li>
     <li><a href="#s8"><span data-lang="zh">把整套故事串起來 + 限制與下一步</span><span data-lang="en">Tying it together + limits and next steps</span></a></li>
   </ol>
 </div>
@@ -1800,18 +1800,4 @@ document.querySelectorAll('#quiz0 .opt').forEach(btn => {
     s += `<rect x="0" y="0" width="200" height="70" fill="#fff" stroke="#ddd"/>`;
     s += `<circle cx="14" cy="14" r="5" fill="#2c5aa0"/><text class="lbl" x="26" y="18">Type A (observed)</text>`;
     s += `<circle cx="14" cy="32" r="5" fill="#27795a"/><text class="lbl" x="26" y="36">Type B (observed)</text>`;
-    s += `<path d="M8,52 l6,-6 l6,6 l-6,6 z" fill="#c0392b"/><text class="lbl" x="26" y="56">Synthetic doublet</text>`;
-    s += `</g>`;
-    document.getElementById('s7svg').innerHTML = s;
-    document.getElementById('s7nsyn').textContent = synthetic.length;
-    document.getElementById('s7flag').textContent = nflag;
-  }
-  document.getElementById('s7synth').addEventListener('click', synth);
-  document.getElementById('s7reset').addEventListener('click', init);
-  document.getElementById('s7k').addEventListener('input', draw);
-  document.getElementById('s7thr').addEventListener('input', draw);
-  init();
-})();
-</script>
-</body>
-</html>
+    s += `<path d="M8,52 l6,-6 l6,6 l-6,6 z" fill="#c0392b"/><text class="lbl" x="26" y="56">Synthetic doublet</te

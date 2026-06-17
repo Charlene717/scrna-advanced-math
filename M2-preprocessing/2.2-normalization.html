@@ -325,12 +325,12 @@
   <h4 data-lang="zh">目錄</h4>
   <h4 data-lang="en">Table of Contents</h4>
   <ol start="0">
-    <li><a href="#s0"><span data-lang="zh">故事：兩個一樣的細胞，counts 卻不同</span><span data-lang="en">Story: two identical cells, different counts</span></a><span class="new" data-lang="zh">新增</span><span class="new" data-lang="en">NEW</span></li>
+    <li><a href="#s0"><span data-lang="zh">故事：兩個一樣的細胞，counts 卻不同</span><span data-lang="en">Story: two identical cells, different counts</span></a></li>
     <li><a href="#s1"><span data-lang="zh">Size factor 的直覺</span><span data-lang="en">Size factor intuition</span></a></li>
     <li><a href="#s2"><span data-lang="zh">CPM / CP10K：第一個合理公式</span><span data-lang="en">CPM / CP10K: first reasonable formula</span></a></li>
     <li><a href="#s3"><span data-lang="zh">為什麼 log1p？— 變異穩定化 + 處理 0</span><span data-lang="en">Why log1p? variance stabilization + handling 0</span></a></li>
     <li><a href="#s4"><span data-lang="zh">互動：拉細胞 depth 看分布變化</span><span data-lang="en">Interactive: drag depth, watch distribution</span></a></li>
-    <li><a href="#s5"><span data-lang="zh">負二項與 Pearson Residuals（scTransform）</span><span data-lang="en">NB model and Pearson Residuals (scTransform)</span></a><span class="new" data-lang="zh">核心</span><span class="new" data-lang="en">CORE</span></li>
+    <li><a href="#s5"><span data-lang="zh">負二項與 Pearson Residuals（scTransform）</span><span data-lang="en">NB model and Pearson Residuals (scTransform)</span></a></li>
     <li><a href="#s6"><span data-lang="zh">NB 變異函數的互動</span><span data-lang="en">NB variance interactive</span></a></li>
     <li><a href="#s7"><span data-lang="zh">為什麼 normalization 影響 PCA 結果</span><span data-lang="en">Why normalization changes PCA result</span></a></li>
     <li><a href="#s8"><span data-lang="zh">把整套故事串起來 + 限制</span><span data-lang="en">Tying it together + limits</span></a></li>
@@ -991,13 +991,4 @@ sc.experimental.pp.normalize_pearson_residuals(adata, theta=<span class="n">100<
       const v = m + m*m/theta;
       if (v <= varMax) q += `${m===0?'M':'L'} ${X(m)},${Y(v)} `;
     }
-    s += `<path d="${q}" fill="none" stroke="#2c5aa0" stroke-width="2.5"/>`;
-    s += `<text class="lbl" x="${X(70)}" y="${Y(Math.min(varMax-20, 70 + 70*70/theta))-5}" fill="#2c5aa0">NB (θ=${theta.toFixed(1)})</text>`;
-    document.getElementById('s6svg').innerHTML = s;
-  }
-  document.getElementById('theta').addEventListener('input', draw);
-  draw();
-})();
-</script>
-</body>
-</html>
+    s += `<path d="${q}" fill="none" stroke="#2c5aa0" stroke-width="2.5"/
