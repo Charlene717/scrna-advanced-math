@@ -165,15 +165,15 @@
     <li class="dropdown"><a href="../index.html#M1">M1</a>
       <ul class="dropdown-menu">
         <li class="sub-label">基礎 / FOUNDATIONS</li>
-        <li><a href="../M1-foundations/1.1-sparse-matrix.html">1.1 稀疏矩陣</a></li>
-        <li><a href="../M1-foundations/1.2-count-distributions.html">1.2 計數分布</a></li>
+        <li><a href="../M1-foundations/1.1-sparse-matrix.html"><span data-lang="zh">1.1 稀疏矩陣</span><span data-lang="en">1.1 Sparse Matrix</span></a></li>
+        <li><a href="../M1-foundations/1.2-count-distributions.html"><span data-lang="zh">1.2 計數分布</span><span data-lang="en">1.2 Count Distributions</span></a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M2">M2</a>
       <ul class="dropdown-menu">
         <li class="sub-label">前處理 / PREPROCESSING</li>
-        <li><a href="../M2-preprocessing/2.1-qc-statistics.html">2.1 QC 統計</a></li>
+        <li><a href="../M2-preprocessing/2.1-qc-statistics.html"><span data-lang="zh">2.1 QC 統計</span><span data-lang="en">2.1 QC Statistics</span></a></li>
         <li><a href="../M2-preprocessing/2.2-normalization.html">2.2 Normalization</a></li>
-        <li><a href="../M2-preprocessing/2.3-hvg-selection.html">2.3 HVG 選擇</a></li>
+        <li><a href="../M2-preprocessing/2.3-hvg-selection.html"><span data-lang="zh">2.3 HVG 選擇</span><span data-lang="en">2.3 HVG Selection</span></a></li>
         <li><a href="../M2-preprocessing/2.4-scaling.html">2.4 Scaling</a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M3" class="active">M3</a>
@@ -181,7 +181,7 @@
         <li class="sub-label">降維 / DIM. REDUCTION</li>
         <li><a href="3.1-pca.html">3.1 PCA</a></li>
         <li><a href="3.2-tsne.html">3.2 t-SNE</a></li>
-        <li><a href="3.3-umap.html" class="active-sub">3.3 UMAP ⭐ (本頁)</a></li>
+        <li><a href="3.3-umap.html" class="active-sub">3.3 UMAP ⭐ <span data-lang="zh">(本頁)</span><span data-lang="en">(this page)</span></a></li>
         <li><a href="3.4-diffusion-map.html">3.4 Diffusion Maps</a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M4">M4</a>
@@ -193,9 +193,9 @@
     <li class="dropdown"><a href="../index.html#M5">M5</a>
       <ul class="dropdown-menu">
         <li class="sub-label">統計推論 / STATS</li>
-        <li><a href="../M5-statistics/5.1-de-tests.html">5.1 DE 檢定</a></li>
-        <li><a href="../M5-statistics/5.2-multiple-testing.html">5.2 多重檢定 / FDR</a></li>
-        <li><a href="../M5-statistics/5.3-classifier.html">5.3 細胞分類器</a></li>
+        <li><a href="../M5-statistics/5.1-de-tests.html"><span data-lang="zh">5.1 DE 檢定</span><span data-lang="en">5.1 DE Tests</span></a></li>
+        <li><a href="../M5-statistics/5.2-multiple-testing.html"><span data-lang="zh">5.2 多重檢定 / FDR</span><span data-lang="en">5.2 Multiple Testing / FDR</span></a></li>
+        <li><a href="../M5-statistics/5.3-classifier.html"><span data-lang="zh">5.3 細胞分類器</span><span data-lang="en">5.3 Cell Classifier</span></a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M6">M6</a>
       <ul class="dropdown-menu">
@@ -274,7 +274,7 @@
   <h4>📍 <span data-lang="zh">在流程中的位置</span><span data-lang="en">Pipeline position</span></h4>
   <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f7f9fb; padding: 10px; border-radius: 6px; line-height: 1.8">
     QC → norm → HVG → PCA 50-D → KNN → Leiden →
-    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b>UMAP（Google Maps 視角）</b></span>
+    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b><span data-lang="zh">UMAP（Google Maps 視角）</span><span data-lang="en">UMAP (Google Maps view)</span></b></span>
     → annotation · DE · trajectory · cell communication
   </div>
 
@@ -289,10 +289,10 @@
       <tr style="background: #fdecec"><td><span data-lang="zh">只看 PC1-PC2</span><span data-lang="en">Only PC1-PC2</span></td>
         <td><span data-lang="zh">CD4 / CD8 T 完全擠在同一條街</span><span data-lang="en">CD4 / CD8 T mashed onto same street</span></td>
         <td><span data-lang="zh">看不出 T cell 亞型 → 漏免疫關鍵差異</span><span data-lang="en">Can't see T subtypes → miss key immune signals</span></td></tr>
-      <tr style="background: #fdecec"><td>n_neighbors=2（太小）</td>
+      <tr style="background: #fdecec"><td>n_neighbors=2 <span data-lang="zh">（太小）</span><span data-lang="en">(too small)</span></td>
         <td><span data-lang="zh">每個 cell 變成自己的小島，地圖碎成 50 塊</span><span data-lang="en">Every cell its own island; map shatters into 50 pieces</span></td>
         <td><span data-lang="zh">Leiden 切出 50 個假 cluster → 註解全錯</span><span data-lang="en">Leiden produces 50 fake clusters → annotation all wrong</span></td></tr>
-      <tr style="background: #fdecec"><td>n_neighbors=500（太大）</td>
+      <tr style="background: #fdecec"><td>n_neighbors=500 <span data-lang="zh">（太大）</span><span data-lang="en">(too large)</span></td>
         <td><span data-lang="zh">整張地圖糊成一坨水彩畫</span><span data-lang="en">Whole map blurs into one watercolor blob</span></td>
         <td><span data-lang="zh">rare cell 隱形、軌跡畫不出</span><span data-lang="en">Rare cells invisible; trajectories impossible</span></td></tr>
       <tr style="background: #effaf3"><td><span data-lang="zh">預設 n_neighbors=15, min_dist=0.5</span><span data-lang="en">Default n_neighbors=15, min_dist=0.5</span></td>
@@ -850,12 +850,15 @@ umap_sup = UMAP(target_metric=<span class="s">"categorical"</span>).fit_transfor
 <script>
 // ===== §0 t-SNE vs UMAP illustration =====
 (function() {
+  function tr(zh, en) { return document.body.classList.contains('lang-en') ? en : zh; }
   let seed = 31;
   const rnd = () => { seed = (seed*9301+49297)%233280; return seed/233280; };
   function nrnd(m,s){const u1=rnd(),u2=rnd();return m+s*Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);}
+  function render() {
+  seed = 31;
   let s = '';
-  s += `<text class="lbl" x="200" y="25" text-anchor="middle" font-weight="700">t-SNE: clusters 分開但距離隨機</text>`;
-  s += `<text class="lbl" x="600" y="25" text-anchor="middle" font-weight="700">UMAP: clusters 分開 + 距離有意義</text>`;
+  s += `<text class="lbl" x="200" y="25" text-anchor="middle" font-weight="700">${tr('t-SNE: clusters 分開但距離隨機','t-SNE: clusters separate but distances random')}</text>`;
+  s += `<text class="lbl" x="600" y="25" text-anchor="middle" font-weight="700">${tr('UMAP: clusters 分開 + 距離有意義','UMAP: clusters separate + distances meaningful')}</text>`;
   s += `<rect x="20" y="40" width="370" height="280" fill="#fff" stroke="#ddd"/>`;
   s += `<rect x="410" y="40" width="370" height="280" fill="#fff" stroke="#ddd"/>`;
   // t-SNE: 3 clusters scattered randomly
@@ -876,8 +879,11 @@ umap_sup = UMAP(target_metric=<span class="s">"categorical"</span>).fit_transfor
   // UMAP also has a thin link showing related clusters
   s += `<line x1="525" y1="195" x2="600" y2="150" stroke="#999" stroke-width="1" stroke-dasharray="3,3" opacity="0.5"/>`;
   s += `<line x1="645" y1="155" x2="705" y2="230" stroke="#999" stroke-width="1" stroke-dasharray="3,3" opacity="0.5"/>`;
-  s += `<text class="lbl" x="650" y="290" text-anchor="middle" font-size="10" fill="#666">↑ cluster 間排成「真正的」relationship</text>`;
+  s += `<text class="lbl" x="650" y="290" text-anchor="middle" font-size="10" fill="#666">${tr('↑ cluster 間排成「真正的」relationship','↑ inter-cluster layout reflects "real" relationships')}</text>`;
   document.getElementById('s0svg').innerHTML = s;
+  }
+  render();
+  document.addEventListener('langchange', render);
 })();
 
 // ===== §3 fuzzy graph =====

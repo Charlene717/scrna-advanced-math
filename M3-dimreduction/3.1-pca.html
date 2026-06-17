@@ -474,7 +474,7 @@
   <div class="top-nav-inner">
     <a href="../index.html" class="top-nav-brand">
       <span>🧬</span>
-      <span>scRNA-seq 進階數學</span>
+      <span data-lang="zh">scRNA-seq 進階數學</span><span data-lang="en">scRNA-seq Advanced Math</span>
       <span class="badge-math">MATH</span>
     </a>
     <ul class="top-nav-links">
@@ -482,17 +482,17 @@
         <a href="../index.html#M1">M1</a>
         <ul class="dropdown-menu">
           <li class="sub-label">基礎 / FOUNDATIONS</li>
-          <li><a href="../M1-foundations/1.1-sparse-matrix.html">1.1 稀疏矩陣 / Sparse Matrix</a></li>
-          <li><a href="../M1-foundations/1.2-count-distributions.html">1.2 計數分布 / Count Distributions</a></li>
+          <li><a href="../M1-foundations/1.1-sparse-matrix.html"><span data-lang="zh">1.1 稀疏矩陣</span><span data-lang="en">1.1 Sparse Matrix</span> / Sparse Matrix</a></li>
+          <li><a href="../M1-foundations/1.2-count-distributions.html"><span data-lang="zh">1.2 計數分布</span><span data-lang="en">1.2 Count Distributions</span> / Count Distributions</a></li>
         </ul>
       </li>
       <li class="dropdown">
         <a href="../index.html#M2">M2</a>
         <ul class="dropdown-menu">
           <li class="sub-label">前處理 / PREPROCESSING</li>
-          <li><a href="../M2-preprocessing/2.1-qc-statistics.html">2.1 QC 統計</a></li>
+          <li><a href="../M2-preprocessing/2.1-qc-statistics.html"><span data-lang="zh">2.1 QC 統計</span><span data-lang="en">2.1 QC Statistics</span></a></li>
           <li><a href="../M2-preprocessing/2.2-normalization.html">2.2 Normalization</a></li>
-          <li><a href="../M2-preprocessing/2.3-hvg-selection.html">2.3 HVG 選擇</a></li>
+          <li><a href="../M2-preprocessing/2.3-hvg-selection.html"><span data-lang="zh">2.3 HVG 選擇</span><span data-lang="en">2.3 HVG Selection</span></a></li>
           <li><a href="../M2-preprocessing/2.4-scaling.html">2.4 Scaling</a></li>
         </ul>
       </li>
@@ -500,7 +500,7 @@
         <a href="../index.html#M3" class="active">M3</a>
         <ul class="dropdown-menu">
           <li class="sub-label">降維 / DIM. REDUCTION</li>
-          <li><a href="3.1-pca.html" class="active-sub">3.1 PCA ⭐ (本頁)</a></li>
+          <li><a href="3.1-pca.html" class="active-sub">3.1 PCA ⭐ <span data-lang="zh">(本頁)</span><span data-lang="en">(this page)</span></a></li>
           <li><a href="3.2-tsne.html">3.2 t-SNE</a></li>
           <li><a href="3.3-umap.html">3.3 UMAP</a></li>
           <li><a href="3.4-diffusion-map.html">3.4 Diffusion Maps</a></li>
@@ -518,9 +518,9 @@
         <a href="../index.html#M5">M5</a>
         <ul class="dropdown-menu">
           <li class="sub-label">統計推論 / STATS</li>
-          <li><a href="../M5-statistics/5.1-de-tests.html">5.1 DE 檢定</a></li>
-          <li><a href="../M5-statistics/5.2-multiple-testing.html">5.2 多重檢定 / FDR</a></li>
-          <li><a href="../M5-statistics/5.3-classifier.html">5.3 細胞分類器</a></li>
+          <li><a href="../M5-statistics/5.1-de-tests.html"><span data-lang="zh">5.1 DE 檢定</span><span data-lang="en">5.1 DE Tests</span></a></li>
+          <li><a href="../M5-statistics/5.2-multiple-testing.html"><span data-lang="zh">5.2 多重檢定 / FDR</span><span data-lang="en">5.2 Multiple Testing / FDR</span></a></li>
+          <li><a href="../M5-statistics/5.3-classifier.html"><span data-lang="zh">5.3 細胞分類器</span><span data-lang="en">5.3 Cell Classifier</span></a></li>
         </ul>
       </li>
       <li class="dropdown">
@@ -599,8 +599,8 @@
   </h3>
 
   <p style="font-size: 1.02em; line-height: 1.7">
-    <span data-lang="zh">想像你拿到「<b>每個細胞的 20,000 維描述</b>」——這個維度比銀河系裡的恆星還多，人類大腦完全處理不來。更慘的是<b>維度詛咒</b>：在 20k 維裡，<b>任意兩個細胞距離都差不多</b>（全部變等距），KNN 連誰是誰的鄰居都搞不清楚。PCA 像個天才城市規劃師，<b>把 20k 維高樓壓平成 50 維街景圖</b>——保留所有「人們真正會走的路」，丟掉沒人走的空地。</span>
-    <span data-lang="en">Imagine you receive "<b>a 20,000-dimensional description of every cell</b>" — more dimensions than stars in the galaxy, way beyond human grasp. Worse, the <b>curse of dimensionality</b> kicks in: in 20k-D, <b>every pair of cells is roughly the same distance apart</b> (everything becomes equidistant), and KNN can't tell who's a neighbor of whom. PCA is the genius city-planner that <b>flattens those 20k-D skyscrapers into a 50-D street map</b> — keeping every "road people actually walk" and tossing the empty plots.</span>
+    <span data-lang="zh">想像你拿到「<b>每個細胞的 20,000 維描述</b>」——這個維度<b>比一個成年人一生會記住的人臉還多</b>，人類大腦完全處理不來。更慘的是<b>維度詛咒</b>：在 20k 維裡，<b>任意兩個細胞距離都差不多</b>（全部變等距），KNN 連誰是誰的鄰居都搞不清楚。PCA 像個天才城市規劃師，<b>把 20k 維高樓壓平成 50 維街景圖</b>——保留所有「人們真正會走的路」，丟掉沒人走的空地。</span>
+    <span data-lang="en">Imagine you receive "<b>a 20,000-dimensional description of every cell</b>" — that's <b>far more dimensions than the number of distinct faces an adult can reliably recognize</b>, beyond human grasp. Worse, the <b>curse of dimensionality</b> kicks in: in 20k-D, <b>every pair of cells is roughly the same distance apart</b> (everything becomes equidistant), and KNN can't tell who's a neighbor of whom. PCA is the genius city-planner that <b>flattens those 20k-D skyscrapers into a 50-D street map</b> — keeping every "road people actually walk" and tossing the empty plots.</span>
   </p>
   <p style="font-size: 1.02em; line-height: 1.7">
     <span data-lang="zh">這 50 維街景圖<b>變成 scRNA 工具圈的「通用地圖」</b>：UMAP、Leiden、DPT、Harmony、scVI 都讀同一張地圖。所以 PCA 是<b>整條 pipeline 的單一最重要轉換</b>——它做得對，後面 6 個模塊全部得救；它做錯（沒先 scale、n_pcs 選錯、沒先 batch correct），<b>整個下游從第一站就走偏了</b>。Wolf 2018（scanpy 原始 paper）就明白寫：「<b>PCA 是 scRNA pipeline 的決定性步驟</b>。」</span>
@@ -610,8 +610,8 @@
   <h4>📍 <span data-lang="zh">在流程中的位置</span><span data-lang="en">Pipeline position</span></h4>
   <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f7f9fb; padding: 10px; border-radius: 6px; line-height: 1.8">
     scale →
-    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b>PCA（20k → 50 維街景圖）</b></span>
-    → KNN · UMAP · Leiden · DPT · Harmony · scVI（全部讀這張地圖）
+    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b><span data-lang="zh">PCA（20k → 50 維街景圖）</span><span data-lang="en">PCA (20k → 50-D street map)</span></b></span>
+    → KNN · UMAP · Leiden · DPT · Harmony · scVI <span data-lang="zh">（全部讀這張地圖）</span><span data-lang="en">(all read this map)</span>
   </div>
 
   <h4>💥 <span data-lang="zh">PCA 配錯，整個城市規劃崩盤</span><span data-lang="en">PCA misconfigured, the city plan collapses</span></h4>
@@ -623,9 +623,9 @@
     <tbody>
       <tr style="background: #fdecec"><td><span data-lang="zh">沒先 scale</span><span data-lang="en">Skip scaling</span></td>
         <td><span data-lang="zh">PC1 = MALAT1，Leiden 切出「家管 cluster」</span><span data-lang="en">PC1 = MALAT1, Leiden produces a "housekeeping cluster"</span></td></tr>
-      <tr style="background: #fdecec"><td>n_pcs=5（太少）</td>
+      <tr style="background: #fdecec"><td>n_pcs=5 <span data-lang="zh">（太少）</span><span data-lang="en">(too few)</span></td>
         <td><span data-lang="zh">細微 subtype 訊號被丟掉 → rare cell 消失</span><span data-lang="en">Subtle subtype signal tossed → rare cells vanish</span></td></tr>
-      <tr style="background: #fdecec"><td>n_pcs=200（太多）</td>
+      <tr style="background: #fdecec"><td>n_pcs=200 <span data-lang="zh">（太多）</span><span data-lang="en">(too many)</span></td>
         <td><span data-lang="zh">把噪音也撿回來 → UMAP/Leiden 結果不穩</span><span data-lang="en">Noise re-included → UMAP/Leiden unstable</span></td></tr>
       <tr style="background: #fdecec"><td><span data-lang="zh">多 sample 沒先 batch correct</span><span data-lang="en">Multi-sample, no batch correction</span></td>
         <td><span data-lang="zh">PC1 變 batch 軸，「<b>發現新細胞型</b>」其實只是 lab A vs B</span><span data-lang="en">PC1 becomes batch axis; "<b>new cell type</b>" is actually lab A vs B</span></td></tr>
@@ -2334,7 +2334,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
   // 用固定種子的偽資料來確保表格穩定
   function srand(seed) { let s = seed; return ()=>{ s = (s*9301+49297)%233280; return s/233280; }; }
   const rng = srand(42);
-  const cellNames = ['A 型', 'B 型', 'C 型'];
+  const cellNames = [tr('A 型','Type A'), tr('B 型','Type B'), tr('C 型','Type C')];
   const cellCols = ['#c0392b', '#27795a', '#2c5aa0'];
   // 生 60 樣本，3 群
   const centers = [[2.5,0.5,0.5],[0.5,2.5,0.5],[0.5,0.5,2.5]];
@@ -3019,8 +3019,8 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     eigShow.innerHTML = `
       <div class="item"><span class="lbl">λ₁（PC1）</span><span class="val" style="color:#c0392b">${r.l1.toFixed(2)}</span></div>
       <div class="item"><span class="lbl">λ₂（PC2）</span><span class="val" style="color:#2c5aa0">${r.l2.toFixed(2)}</span></div>
-      <div class="item"><span class="lbl">PC1 解釋比例</span><span class="val">${total>0?(r.l1/total*100).toFixed(1):'—'}%</span></div>
-      <div class="item"><span class="lbl">PC2 解釋比例</span><span class="val">${total>0?(r.l2/total*100).toFixed(1):'—'}%</span></div>`;
+      <div class="item"><span class="lbl">${tr('PC1 解釋比例','PC1 variance %')}</span><span class="val">${total>0?(r.l1/total*100).toFixed(1):'—'}%</span></div>
+      <div class="item"><span class="lbl">${tr('PC2 解釋比例','PC2 variance %')}</span><span class="val">${total>0?(r.l2/total*100).toFixed(1):'—'}%</span></div>`;
     const w1 = total>0 ? r.l1/total*200 : 0;
     const w2 = total>0 ? r.l2/total*200 : 0;
     screeMini.innerHTML = `
@@ -3034,10 +3034,9 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
   function renderDetail(r) {
     const panel = document.getElementById('detailS1');
     if (selectedIdx === null) {
-      panel.innerHTML = `<h4>點擊任一樣本看細節 ↑</h4>
+      panel.innerHTML = `<h4>${tr('點擊任一樣本看細節 ↑','Click any sample for details ↑')}</h4>
         <p style="margin:0; font-size:13px; color:var(--muted)">
-          點選某個藍點後，這裡會顯示它的原始基因表現量、
-          以及在 PC1 / PC2 軸上的「新座標」。
+          ${tr('點選某個藍點後，這裡會顯示它的原始基因表現量、以及在 PC1 / PC2 軸上的「新座標」。','After clicking a blue point, this panel shows its original gene expression values and its "new coordinates" on the PC1 / PC2 axes.')}
         </p>`;
       return;
     }
@@ -3045,16 +3044,16 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     const rel = [p[0]-r.mx, p[1]-r.my];
     const pc1score = rel[0]*r.v1[0] + rel[1]*r.v1[1];
     const pc2score = rel[0]*r.v2[0] + rel[1]*r.v2[1];
-    panel.innerHTML = `<h4>樣本 #${selectedIdx+1} 的細節</h4>
-      <div class="kv"><span class="k">原始 Gene1：</span><span class="v">${p[0].toFixed(3)}</span></div>
-      <div class="kv"><span class="k">原始 Gene2：</span><span class="v">${p[1].toFixed(3)}</span></div>
-      <div class="kv"><span class="k">中心化 Gene1：</span><span class="v">${rel[0].toFixed(3)}</span></div>
-      <div class="kv"><span class="k">中心化 Gene2：</span><span class="v">${rel[1].toFixed(3)}</span></div>
+    panel.innerHTML = `<h4>${tr(`樣本 #${selectedIdx+1} 的細節`,`Sample #${selectedIdx+1} details`)}</h4>
+      <div class="kv"><span class="k">${tr('原始 Gene1：','Raw Gene1:')}</span><span class="v">${p[0].toFixed(3)}</span></div>
+      <div class="kv"><span class="k">${tr('原始 Gene2：','Raw Gene2:')}</span><span class="v">${p[1].toFixed(3)}</span></div>
+      <div class="kv"><span class="k">${tr('中心化 Gene1：','Centered Gene1:')}</span><span class="v">${rel[0].toFixed(3)}</span></div>
+      <div class="kv"><span class="k">${tr('中心化 Gene2：','Centered Gene2:')}</span><span class="v">${rel[1].toFixed(3)}</span></div>
       <hr style="border:none;border-top:1px dashed #d6c8a0;margin:8px 0">
-      <div class="kv"><span class="k" style="color:#c0392b">PC1 得分：</span><span class="v" style="color:#c0392b">${pc1score.toFixed(3)}</span></div>
-      <div class="kv"><span class="k" style="color:#2c5aa0">PC2 得分：</span><span class="v" style="color:#2c5aa0">${pc2score.toFixed(3)}</span></div>
+      <div class="kv"><span class="k" style="color:#c0392b">${tr('PC1 得分：','PC1 score:')}</span><span class="v" style="color:#c0392b">${pc1score.toFixed(3)}</span></div>
+      <div class="kv"><span class="k" style="color:#2c5aa0">${tr('PC2 得分：','PC2 score:')}</span><span class="v" style="color:#2c5aa0">${pc2score.toFixed(3)}</span></div>
       <p style="margin:8px 0 0; font-size:12px; color:var(--muted)">
-        PC1 得分 = (中心化 Gene1)×v₁ₓ + (中心化 Gene2)×v₁ᵧ<br>
+        ${tr('PC1 得分','PC1 score')} = ${tr('(中心化 Gene1)','(centered Gene1)')}×v₁ₓ + ${tr('(中心化 Gene2)','(centered Gene2)')}×v₁ᵧ<br>
         = ${rel[0].toFixed(2)}×${r.v1[0].toFixed(2)} + ${rel[1].toFixed(2)}×${r.v1[1].toFixed(2)} = <b>${pc1score.toFixed(3)}</b>
       </p>`;
   }
@@ -3135,6 +3134,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
   document.getElementById('btnLine').onclick = () => { pts = makeLine(); selectedIdx = null; render(); };
   document.getElementById('btnCircle').onclick = () => { pts = makeCircle(); selectedIdx = null; render(); };
   document.getElementById('showShadows').onchange = (e) => { showShadows = e.target.checked; render(); };
+  document.addEventListener('langchange', render);
   render();
 })();
 
@@ -3142,6 +3142,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
    §2 共變異數視覺化
    =================================================== */
 (function section2() {
+  function tr(zh, en) { return document.body.classList.contains('lang-en') ? en : zh; }
   const svg = document.getElementById('svgCov');
   const W=440, H=440, cx=220, cy=220, scale=30;
   let pts = makePos();
@@ -3220,7 +3221,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
         h += `<line x1="${cmx}" y1="${sy}" x2="${sx}" y2="${sy}" stroke="#8e44ad" stroke-width="1.5"/>`;
       }
     });
-    h += `<text x="10" y="16" font-size="11" fill="#666">綠區=正貢獻；紅區=負貢獻；hover 表格列看單一樣本展開</text>`;
+    h += `<text x="10" y="16" font-size="11" fill="#666">${tr('綠區=正貢獻；紅區=負貢獻；hover 表格列看單一樣本展開','Green=positive contrib; red=negative contrib; hover table rows to highlight individual samples')}</text>`;
     svg.innerHTML = h;
 
     // 渲染表格
@@ -3243,7 +3244,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
         <td class="${dg2>=0?'pos':'neg'}">${dg2>=0?'+':''}${dg2.toFixed(2)}</td>
         <td class="${cls}"><b>${sign}${c.toFixed(2)}</b></td></tr>`;
     });
-    tableHtml += `<tr class="sum-row"><td colspan="5" style="text-align:right">總和 Σ</td><td><b>${sumContrib.toFixed(2)}</b></td></tr>`;
+    tableHtml += `<tr class="sum-row"><td colspan="5" style="text-align:right">${tr('總和 Σ','Sum Σ')}</td><td><b>${sumContrib.toFixed(2)}</b></td></tr>`;
     tableHtml += `<tr class="sum-row"><td colspan="5" style="text-align:right">÷ (n−1) = ${sumContrib.toFixed(2)} / ${n-1} =</td><td style="color:${cov>=0?'#27795a':'#c0392b'}"><b>${cov.toFixed(3)}</b></td></tr>`;
     tableHtml += '</tbody>';
     covTable.innerHTML = tableHtml;
@@ -3263,11 +3264,11 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
       return sumContrib / Math.sqrt(sxx*syy + 1e-12);
     })();
     covSummary.innerHTML = `
-      <h4>結果</h4>
-      <div class="kv"><span class="k">正貢獻樣本：</span><span class="v" style="color:#27795a">${posCount}</span></div>
-      <div class="kv"><span class="k">負貢獻樣本：</span><span class="v" style="color:#c0392b">${negCount}</span></div>
+      <h4>${tr('結果','Result')}</h4>
+      <div class="kv"><span class="k">${tr('正貢獻樣本：','Positive-contribution samples:')}</span><span class="v" style="color:#27795a">${posCount}</span></div>
+      <div class="kv"><span class="k">${tr('負貢獻樣本：','Negative-contribution samples:')}</span><span class="v" style="color:#c0392b">${negCount}</span></div>
       <div class="kv"><span class="k">Cov(Gene1, Gene2)：</span><span class="v" style="color:${cov>=0?'#27795a':'#c0392b'}">${cov.toFixed(3)}</span></div>
-      <div class="kv"><span class="k">相關係數 r：</span><span class="v">${cor.toFixed(3)}</span></div>`;
+      <div class="kv"><span class="k">${tr('相關係數 r：','Correlation r:')}</span><span class="v">${cor.toFixed(3)}</span></div>`;
   }
 
   let dragIdx = null;
@@ -3302,6 +3303,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
   document.getElementById('btnCovNeg').onclick = () => { pts = makeNeg(); lockedIdx=null; render(); };
   document.getElementById('btnCovZero').onclick = () => { pts = makeZero(); lockedIdx=null; render(); };
   document.getElementById('showContrib').onchange = (e) => { showContrib = e.target.checked; render(); };
+  document.addEventListener('langchange', render);
   render();
 })();
 
@@ -3309,6 +3311,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
    §3 旋轉投影方向
    =================================================== */
 (function section3() {
+  function tr(zh, en) { return document.body.classList.contains('lang-en') ? en : zh; }
   const svg = document.getElementById('svgRot');
   const W=420, H=420, cx=W/2, cy=H/2, scale=30;
   let pts = [];
@@ -3362,7 +3365,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
       h += `<circle cx="${px}" cy="${py}" r="4" fill="#27795a"/>`;
     }
     const v = varAt(theta);
-    h += `<text x="14" y="22" font-size="13" fill="#27795a" font-weight="600">變異數 = ${v.toFixed(2)}</text>`;
+    h += `<text x="14" y="22" font-size="13" fill="#27795a" font-weight="600">${tr('變異數','Variance')} = ${v.toFixed(2)}</text>`;
     svg.innerHTML = h;
     thetaV.textContent = thetaR.value + '°';
     drawCurve(theta);
@@ -3374,8 +3377,8 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     const cw=400, ch=220, pad=30;
     h += `<line x1="${pad}" y1="${ch-pad}" x2="${cw-10}" y2="${ch-pad}" stroke="#aaa"/>`;
     h += `<line x1="${pad}" y1="10" x2="${pad}" y2="${ch-pad}" stroke="#aaa"/>`;
-    h += `<text x="${cw/2}" y="${ch-6}" font-size="11" text-anchor="middle" fill="#666">θ (度)</text>`;
-    h += `<text x="6" y="14" font-size="11" fill="#666">變異數</text>`;
+    h += `<text x="${cw/2}" y="${ch-6}" font-size="11" text-anchor="middle" fill="#666">${tr('θ (度)','θ (deg)')}</text>`;
+    h += `<text x="6" y="14" font-size="11" fill="#666">${tr('變異數','Variance')}</text>`;
     const ys = [];
     for (let d=0; d<=180; d+=2) ys.push(varAt(d*Math.PI/180));
     const mx = Math.max(...ys), mn = Math.min(...ys);
@@ -3389,7 +3392,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     }
     let maxIdx = 0; for (let i=1;i<ys.length;i++) if (ys[i]>ys[maxIdx]) maxIdx=i;
     h += `<line x1="${xs[maxIdx]}" y1="10" x2="${xs[maxIdx]}" y2="${ch-pad}" stroke="#27795a" stroke-dasharray="3 3"/>`;
-    h += `<text x="${xs[maxIdx]+4}" y="20" font-size="11" fill="#27795a">最大 ${(maxIdx*2)}°</text>`;
+    h += `<text x="${xs[maxIdx]+4}" y="20" font-size="11" fill="#27795a">${tr('最大','max')} ${(maxIdx*2)}°</text>`;
     for (let d=0; d<=180; d+=30) {
       const x = pad + (d/180)*(cw-pad-10);
       h += `<line x1="${x}" y1="${ch-pad}" x2="${x}" y2="${ch-pad+4}" stroke="#aaa"/>`;
@@ -3415,6 +3418,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     };
     tick();
   };
+  document.addEventListener('langchange', render);
   render();
 })();
 
@@ -3422,6 +3426,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
    §5 共變異數矩陣逐元素建構
    =================================================== */
 (function section5() {
+  function tr(zh, en) { return document.body.classList.contains('lang-en') ? en : zh; }
   const dataTable = document.getElementById('s5Data');
   const matrixSvg = document.getElementById('s5Matrix');
   const mathLive = document.getElementById('s5Math');
@@ -3462,24 +3467,24 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
   function render() {
     // 資料表（高亮當前正在被乘的兩欄）
     let hi = step >= 1 ? stepToIJ(step) : null;
-    let html = '<thead><tr><th>樣本</th>';
+    let html = `<thead><tr><th>${tr('樣本','Sample')}</th>`;
     for (let j=0;j<p;j++) {
       const isHi = hi && (j===hi[0] || j===hi[1]);
       html += `<th style="background:${isHi?'#f0c419':'#2c5aa0'};color:${isHi?'#222':'#fff'}">${geneNames[j]}</th>`;
     }
-    html += `<th style="background:#666">中心化</th></tr></thead><tbody>`;
+    html += `<th style="background:#666">${tr('中心化','Centered')}</th></tr></thead><tbody>`;
     for (let k=0;k<n;k++) {
       html += `<tr><td>#${k+1}</td>`;
       for (let j=0;j<p;j++) {
         const isHi = hi && (j===hi[0] || j===hi[1]);
         html += `<td style="${isHi?'background:#fff8e6;font-weight:700':''}">${X[k][j].toFixed(2)}</td>`;
       }
-      // 中心化欄位（顯示當前計算的兩個值）
+      // 中心化欄位
       if (hi) {
         const dgi = Xc[k][hi[0]], dgj = Xc[k][hi[1]];
         html += `<td style="font-family:monospace;font-size:11px">
           Δ${hi[0]+1}=${dgi.toFixed(2)}, Δ${hi[1]+1}=${dgj.toFixed(2)}<br>
-          積=<b style="color:${dgi*dgj>=0?'#27795a':'#c0392b'}">${(dgi*dgj).toFixed(3)}</b></td>`;
+          ${tr('積','prod')}=<b style="color:${dgi*dgj>=0?'#27795a':'#c0392b'}">${(dgi*dgj).toFixed(3)}</b></td>`;
       } else {
         html += `<td style="color:#888">—</td>`;
       }
@@ -3487,7 +3492,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     }
     if (hi) {
       const sum = Xc.reduce((s,row)=>s+row[hi[0]]*row[hi[1]], 0);
-      html += `<tr class="sum-row"><td colspan="${p+1}" style="text-align:right">Σ 乘積</td><td><b>${sum.toFixed(3)}</b></td></tr>`;
+      html += `<tr class="sum-row"><td colspan="${p+1}" style="text-align:right">${tr('Σ 乘積','Σ products')}</td><td><b>${sum.toFixed(3)}</b></td></tr>`;
       html += `<tr class="sum-row"><td colspan="${p+1}" style="text-align:right">÷ (n−1) = ${sum.toFixed(3)} / ${n-1}</td><td><b style="color:#c0392b">= ${covIJ(hi[0],hi[1]).toFixed(3)}</b></td></tr>`;
     }
     html += '</tbody>';
@@ -3514,33 +3519,33 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
 
     // 動態公式說明
     if (step === 0) {
-      mathLive.innerHTML = `<span class="lbl"># 點「下一格」開始算 C[1,1]，也就是 Gene1 的變異數</span>\n<span class="lbl">n = ${n}, p = ${p} (3 個基因)</span>\n<span class="lbl">均值 μ = (${mean.map(m=>m.toFixed(2)).join(', ')})</span>`;
-      note.innerHTML = `<h4>共變異數矩陣是什麼形狀？</h4>
-        <p style="margin:6px 0; font-size:13px">這是一個 <b>3×3</b> 矩陣，因為有 3 個基因。
-        <br>對角線是「該基因自己的變異數」，
-        非對角線是「兩兩基因之間的共變異數」。
-        <br>因為 Cov(A,B) = Cov(B,A)，矩陣<b>對稱</b>。</p>`;
+      mathLive.innerHTML = `<span class="lbl"># ${tr('點「下一格」開始算 C[1,1]，也就是 Gene1 的變異數','Click "Next cell" to start computing C[1,1], the variance of Gene1')}</span>\n<span class="lbl">n = ${n}, p = ${p} ${tr('(3 個基因)','(3 genes)')}</span>\n<span class="lbl">${tr('均值','Mean')} μ = (${mean.map(m=>m.toFixed(2)).join(', ')})</span>`;
+      note.innerHTML = `<h4>${tr('共變異數矩陣是什麼形狀？','What shape is the covariance matrix?')}</h4>
+        <p style="margin:6px 0; font-size:13px">${tr('這是一個 <b>3×3</b> 矩陣，因為有 3 個基因。<br>對角線是「該基因自己的變異數」，非對角線是「兩兩基因之間的共變異數」。<br>因為 Cov(A,B) = Cov(B,A)，矩陣<b>對稱</b>。','This is a <b>3×3</b> matrix because there are 3 genes.<br>Diagonal entries are "each gene\'s own variance"; off-diagonal entries are "the covariance between two genes".<br>Since Cov(A,B) = Cov(B,A), the matrix is <b>symmetric</b>.')}</p>`;
     } else {
       const [i, j] = stepToIJ(step);
       const cval = Cfull[i][j];
       const terms = Xc.map(row => row[i]*row[j]);
       const sum = terms.reduce((a,b)=>a+b, 0);
       mathLive.innerHTML = `<span class="hl"># C[${i+1},${j+1}] = ${i===j?'Var':'Cov'}(${geneNames[i]}${i===j?'':', '+geneNames[j]})</span>\n` +
-        `<span class="lbl">公式：(1/(n-1)) × Σ (Δ${geneNames[i]})·(Δ${geneNames[j]})</span>\n` +
-        `<span class="lbl">逐筆乘積：</span>\n` +
-        terms.map((t,k)=>` 樣本${k+1}: (${Xc[k][i].toFixed(2)})·(${Xc[k][j].toFixed(2)}) = <span class="num">${t.toFixed(3)}</span>`).join('\n') + '\n' +
-        `<span class="lbl">總和 = </span><span class="num">${sum.toFixed(3)}</span>\n` +
+        `<span class="lbl">${tr('公式','Formula')}：(1/(n-1)) × Σ (Δ${geneNames[i]})·(Δ${geneNames[j]})</span>\n` +
+        `<span class="lbl">${tr('逐筆乘積','Per-sample products')}：</span>\n` +
+        terms.map((t,k)=>` ${tr('樣本','Sample')}${k+1}: (${Xc[k][i].toFixed(2)})·(${Xc[k][j].toFixed(2)}) = <span class="num">${t.toFixed(3)}</span>`).join('\n') + '\n' +
+        `<span class="lbl">${tr('總和','Sum')} = </span><span class="num">${sum.toFixed(3)}</span>\n` +
         `<span class="hl">÷ ${n-1} = ${cval.toFixed(3)}</span>`;
       const desc = i===j ?
-        `<b>對角線元素</b> C[${i+1},${i+1}] = <b>${geneNames[i]} 的變異數</b>。它衡量 ${geneNames[i]} 在所有樣本之間「自己」變化的劇烈程度。值越大，這個基因在樣本間的差異越明顯。` :
-        `<b>非對角線元素</b> C[${i+1},${j+1}] = <b>Cov(${geneNames[i]}, ${geneNames[j]})</b>。它告訴我們這兩個基因「是否傾向一起變動」：正值表示同向變化，負值表示反向變化，接近 0 表示獨立。`;
-      note.innerHTML = `<h4>${i===j?'對角線':'非對角線'} · C[${i+1},${j+1}] = ${cval.toFixed(3)}</h4><p style="margin:6px 0; font-size:13px">${desc}</p>`;
+        tr(`<b>對角線元素</b> C[${i+1},${i+1}] = <b>${geneNames[i]} 的變異數</b>。它衡量 ${geneNames[i]} 在所有樣本之間「自己」變化的劇烈程度。值越大，這個基因在樣本間的差異越明顯。`,
+           `<b>Diagonal element</b> C[${i+1},${i+1}] = <b>variance of ${geneNames[i]}</b>. It measures how strongly ${geneNames[i]} varies "by itself" across samples. Larger value → this gene differs more across samples.`) :
+        tr(`<b>非對角線元素</b> C[${i+1},${j+1}] = <b>Cov(${geneNames[i]}, ${geneNames[j]})</b>。它告訴我們這兩個基因「是否傾向一起變動」：正值表示同向變化，負值表示反向變化，接近 0 表示獨立。`,
+           `<b>Off-diagonal element</b> C[${i+1},${j+1}] = <b>Cov(${geneNames[i]}, ${geneNames[j]})</b>. It tells us whether these two genes "tend to move together": positive = same direction, negative = opposite, near 0 = independent.`);
+      note.innerHTML = `<h4>${i===j?tr('對角線','Diagonal'):tr('非對角線','Off-diagonal')} · C[${i+1},${j+1}] = ${cval.toFixed(3)}</h4><p style="margin:6px 0; font-size:13px">${desc}</p>`;
     }
   }
 
   document.getElementById('s5Next').onclick = () => { if (step < totalSteps) { step++; render(); } };
   document.getElementById('s5Prev').onclick = () => { if (step > 0) { step--; render(); } };
   document.getElementById('s5Reset').onclick = () => { step = 0; render(); };
+  document.addEventListener('langchange', render);
   render();
 })();
 
@@ -3548,6 +3553,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
    §6 矩陣作為變換、特徵向量
    =================================================== */
 (function section6() {
+  function tr(zh, en) { return document.body.classList.contains('lang-en') ? en : zh; }
   const svg = document.getElementById('svgEig');
   const W=420, H=420, cx=W/2, cy=H/2, scale=80;
   const matShow = document.getElementById('eigMatShow');
@@ -3632,15 +3638,15 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
       h += `<line x1="${cx}" y1="${cy}" x2="${e2x}" y2="${e2y}" stroke="#2c5aa0" stroke-width="4" opacity="0.5" marker-end="url(#arrowB)"/>`;
     }
 
-    h += `<text x="10" y="18" font-size="12" fill="#666">${phase==='before'?'單位圓上的向量（套用 C 前）':'套用 C 後 (淡色橢圓為形狀)'}</text>`;
+    h += `<text x="10" y="18" font-size="12" fill="#666">${phase==='before'?tr('單位圓上的向量（套用 C 前）','Vectors on the unit circle (before applying C)'):tr('套用 C 後 (淡色橢圓為形狀)','After applying C (faint ellipse shows shape)')}</text>`;
     svg.innerHTML = h;
 
     matShow.innerHTML = `<table>
       <tr><td>${C[0][0].toFixed(2)}</td><td>${C[0][1].toFixed(2)}</td></tr>
       <tr><td>${C[1][0].toFixed(2)}</td><td>${C[1][1].toFixed(2)}</td></tr></table>`;
     matStats.innerHTML = `
-      <div class="item"><span class="lbl">λ₁ (紅)</span><span class="val" style="color:#c0392b">${l1.toFixed(3)}</span></div>
-      <div class="item"><span class="lbl">λ₂ (藍)</span><span class="val" style="color:#2c5aa0">${l2.toFixed(3)}</span></div>
+      <div class="item"><span class="lbl">λ₁ ${tr('(紅)','(red)')}</span><span class="val" style="color:#c0392b">${l1.toFixed(3)}</span></div>
+      <div class="item"><span class="lbl">λ₂ ${tr('(藍)','(blue)')}</span><span class="val" style="color:#2c5aa0">${l2.toFixed(3)}</span></div>
       <div class="item"><span class="lbl">v₁</span><span class="val" style="font-size:14px">(${v1[0].toFixed(2)}, ${v1[1].toFixed(2)})</span></div>
       <div class="item"><span class="lbl">v₂</span><span class="val" style="font-size:14px">(${v2[0].toFixed(2)}, ${v2[1].toFixed(2)})</span></div>`;
   }
@@ -3655,6 +3661,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     phase = 'before';
     render();
   };
+  document.addEventListener('langchange', render);
   render();
 })();
 
@@ -3662,6 +3669,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
    §9 投影與重建
    =================================================== */
 (function section9() {
+  function tr(zh, en) { return document.body.classList.contains('lang-en') ? en : zh; }
   const svg = document.getElementById('svgRecon');
   const screePlot = document.getElementById('screePlot');
   const reconStats = document.getElementById('reconStats');
@@ -3705,7 +3713,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
 
     const W=420, H=320, padL=36, padR=16, padT=24, padB=30;
     let html = '';
-    html += `<text x="${W/2}" y="16" text-anchor="middle" font-size="13" fill="#333">原始 8 個基因表現（細）vs 用前 ${k} 個 PC 重建（粗）</text>`;
+    html += `<text x="${W/2}" y="16" text-anchor="middle" font-size="13" fill="#333">${tr(`原始 8 個基因表現（細）vs 用前 ${k} 個 PC 重建（粗）`,`Original 8-gene expression (thin) vs reconstruction from first ${k} PCs (bold)`)}</text>`;
     const xPos = j => padL + j*((W-padL-padR)/(p-1));
     let mn=Infinity, mx=-Infinity;
     for (const row of pca.Xc) for (const v of row) { if (v<mn) mn=v; if (v>mx) mx=v; }
@@ -3731,7 +3739,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     let sh_html = '';
     sh_html += `<line x1="${sp}" y1="${sh-30}" x2="${sw-10}" y2="${sh-30}" stroke="#aaa"/>`;
     sh_html += `<line x1="${sp}" y1="10" x2="${sp}" y2="${sh-30}" stroke="#aaa"/>`;
-    sh_html += `<text x="6" y="14" font-size="11" fill="#666">比例</text>`;
+    sh_html += `<text x="6" y="14" font-size="11" fill="#666">${tr('比例','Ratio')}</text>`;
     const bw = (sw-sp-10)/p;
     let cum = 0;
     const cumX = [], cumY = [];
@@ -3753,7 +3761,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     cumX.forEach((x,i)=>{
       sh_html += `<circle cx="${x}" cy="${cumY[i]}" r="3" fill="#2c5aa0"/>`;
     });
-    sh_html += `<text x="${sw-90}" y="22" font-size="11" fill="#2c5aa0">━ 累積比例</text>`;
+    sh_html += `<text x="${sw-90}" y="22" font-size="11" fill="#2c5aa0">${tr('━ 累積比例','━ Cumulative')}</text>`;
     screePlot.innerHTML = sh_html;
 
     const kept = pca.eigenvalues.slice(0,k).reduce((a,b)=>a+b,0);
@@ -3761,12 +3769,13 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     const lost = total - kept;
     const fnorm = Math.sqrt(lost * (pca.Xc.length-1));
     reconStats.innerHTML = `
-      <div class="item"><span class="lbl">保留變異比例</span><span class="val" style="color:#c0392b">${(ratio*100).toFixed(1)}%</span></div>
-      <div class="item"><span class="lbl">重建誤差 (Frobenius)</span><span class="val">${fnorm.toFixed(2)}</span></div>`;
+      <div class="item"><span class="lbl">${tr('保留變異比例','Variance kept')}</span><span class="val" style="color:#c0392b">${(ratio*100).toFixed(1)}%</span></div>
+      <div class="item"><span class="lbl">${tr('重建誤差 (Frobenius)','Reconstruction error (Frobenius)')}</span><span class="val">${fnorm.toFixed(2)}</span></div>`;
   }
 
   document.getElementById('btnReconGen').onclick = () => { generate(); render(); };
   kSlider.oninput = render;
+  document.addEventListener('langchange', render);
   generate(); render();
 })();
 
@@ -3774,6 +3783,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
    §10 3D 三基因範例
    =================================================== */
 (function section10() {
+  function tr(zh, en) { return document.body.classList.contains('lang-en') ? en : zh; }
   const svg3D = document.getElementById('svg3D');
   const svg2D = document.getElementById('svg2DProj');
   const svgStep = document.getElementById('svgStep');
@@ -3800,7 +3810,13 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
   let stepIdx = 0;
   let stepYaw = 0.6, stepPitch = 0.4;
 
-  const cellNames = ['細胞型態 A（Gene1 高）', '細胞型態 B（Gene2 高）', '細胞型態 C（Gene3 高）'];
+  function getCellNames() {
+    return [
+      tr('細胞型態 A（Gene1 高）','Cell type A (Gene1 high)'),
+      tr('細胞型態 B（Gene2 高）','Cell type B (Gene2 high)'),
+      tr('細胞型態 C（Gene3 高）','Cell type C (Gene3 high)')
+    ];
+  }
   const cellColors = ['#c0392b', '#27795a', '#2c5aa0'];
   const geneNames = ['Gene1', 'Gene2', 'Gene3'];
 
@@ -3922,7 +3938,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
       h += `<circle cx="${mxS}" cy="${myS}" r="9" fill="none" stroke="#8e44ad" stroke-width="2.5"/>`;
       h += `<line x1="${mxS-12}" y1="${myS}" x2="${mxS+12}" y2="${myS}" stroke="#8e44ad" stroke-width="2.5"/>`;
       h += `<line x1="${mxS}" y1="${myS-12}" x2="${mxS}" y2="${myS+12}" stroke="#8e44ad" stroke-width="2.5"/>`;
-      h += `<text x="${mxS+14}" y="${myS-10}" font-size="13" fill="#8e44ad" font-weight="700">均值 μ = (${m[0].toFixed(2)}, ${m[1].toFixed(2)}, ${m[2].toFixed(2)})</text>`;
+      h += `<text x="${mxS+14}" y="${myS-10}" font-size="13" fill="#8e44ad" font-weight="700">${tr('均值','Mean')} μ = (${m[0].toFixed(2)}, ${m[1].toFixed(2)}, ${m[2].toFixed(2)})</text>`;
     }
 
     if (showPlane && (phase === null || phase >= 5)) {
@@ -4002,7 +4018,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     }
 
     if (!options.hideLabels) {
-      h += `<text x="10" y="18" font-size="12" fill="#666">${phase===null?'拖曳旋轉 ✋ ｜ 點擊樣本選取':'步驟 '+phase+' / 7'} | yaw=${(yaw_*180/Math.PI).toFixed(0)}°, pitch=${(pitch_*180/Math.PI).toFixed(0)}°</text>`;
+      h += `<text x="10" y="18" font-size="12" fill="#666">${phase===null?tr('拖曳旋轉 ✋ ｜ 點擊樣本選取','Drag to rotate ✋ | Click sample to select'):tr('步驟 '+phase+' / 7','Step '+phase+' / 7')} | yaw=${(yaw_*180/Math.PI).toFixed(0)}°, pitch=${(pitch_*180/Math.PI).toFixed(0)}°</text>`;
     }
 
     targetSvg.innerHTML = h;
@@ -4017,7 +4033,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     buildSvg3D(svg3D, { yaw, pitch, showPC, showPlane, showProj, phase: null, selIdx: selectedIdx });
 
     // legend
-    document.getElementById('legend3D').innerHTML = cellNames.map((n,i)=>
+    document.getElementById('legend3D').innerHTML = getCellNames().map((n,i)=>
       `<span><span class="dot" style="background:${cellColors[i]};width:12px;height:12px;border-radius:50%"></span>${n}</span>`
     ).join('');
 
@@ -4071,9 +4087,9 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
   function renderSampleDetail() {
     const panel = document.getElementById('sample3DDetail');
     if (selectedIdx === null) {
-      panel.innerHTML = `<h4>點擊 3D 或 2D 任一樣本看完整數學細節 ↑</h4>
+      panel.innerHTML = `<h4>${tr('點擊 3D 或 2D 任一樣本看完整數學細節 ↑','Click any sample in the 3D or 2D plot to see full math details ↑')}</h4>
         <p style="margin:0; font-size:13px; color:var(--muted)">
-          選取後會顯示：原始 (Gene1, Gene2, Gene3) → 中心化 → PC1/PC2/PC3 得分的完整算式。
+          ${tr('選取後會顯示：原始 (Gene1, Gene2, Gene3) → 中心化 → PC1/PC2/PC3 得分的完整算式。','After selecting, this shows: raw (Gene1, Gene2, Gene3) → centered → full PC1/PC2/PC3 score formulas.')}
         </p>`;
       return;
     }
@@ -4085,31 +4101,32 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     const s1 = rel[0]*v1[0]+rel[1]*v1[1]+rel[2]*v1[2];
     const s2 = rel[0]*v2[0]+rel[1]*v2[1]+rel[2]*v2[2];
     const s3 = rel[0]*v3[0]+rel[1]*v3[1]+rel[2]*v3[2];
-    panel.innerHTML = `<h4>樣本 #${i+1}（${cellNames[labels[i]]}）的完整 PCA 計算</h4>
+    const cNames = getCellNames();
+    panel.innerHTML = `<h4>${tr(`樣本 #${i+1}（${cNames[labels[i]]}）的完整 PCA 計算`,`Sample #${i+1} (${cNames[labels[i]]}) — full PCA computation`)}</h4>
       <div class="grid-2" style="gap:14px">
         <div>
-          <div class="kv"><span class="k">原始 (G1, G2, G3)：</span></div>
-          <div class="kv"><span class="k" style="padding-left:12px">Gene1：</span><span class="v">${p[0].toFixed(3)}</span></div>
-          <div class="kv"><span class="k" style="padding-left:12px">Gene2：</span><span class="v">${p[1].toFixed(3)}</span></div>
-          <div class="kv"><span class="k" style="padding-left:12px">Gene3：</span><span class="v">${p[2].toFixed(3)}</span></div>
+          <div class="kv"><span class="k">${tr('原始 (G1, G2, G3)：','Raw (G1, G2, G3):')}</span></div>
+          <div class="kv"><span class="k" style="padding-left:12px">Gene1${tr('：',':')}</span><span class="v">${p[0].toFixed(3)}</span></div>
+          <div class="kv"><span class="k" style="padding-left:12px">Gene2${tr('：',':')}</span><span class="v">${p[1].toFixed(3)}</span></div>
+          <div class="kv"><span class="k" style="padding-left:12px">Gene3${tr('：',':')}</span><span class="v">${p[2].toFixed(3)}</span></div>
           <hr style="border:none;border-top:1px dashed #d6c8a0;margin:8px 0">
-          <div class="kv"><span class="k">減均值 (μ=${m.map(v=>v.toFixed(2)).join(', ')})：</span></div>
-          <div class="kv"><span class="k" style="padding-left:12px">Δg1：</span><span class="v">${rel[0].toFixed(3)}</span></div>
-          <div class="kv"><span class="k" style="padding-left:12px">Δg2：</span><span class="v">${rel[1].toFixed(3)}</span></div>
-          <div class="kv"><span class="k" style="padding-left:12px">Δg3：</span><span class="v">${rel[2].toFixed(3)}</span></div>
+          <div class="kv"><span class="k">${tr(`減均值 (μ=${m.map(v=>v.toFixed(2)).join(', ')})：`,`Minus mean (μ=${m.map(v=>v.toFixed(2)).join(', ')}):`)}</span></div>
+          <div class="kv"><span class="k" style="padding-left:12px">Δg1${tr('：',':')}</span><span class="v">${rel[0].toFixed(3)}</span></div>
+          <div class="kv"><span class="k" style="padding-left:12px">Δg2${tr('：',':')}</span><span class="v">${rel[1].toFixed(3)}</span></div>
+          <div class="kv"><span class="k" style="padding-left:12px">Δg3${tr('：',':')}</span><span class="v">${rel[2].toFixed(3)}</span></div>
         </div>
         <div>
-          <div class="kv"><span class="k" style="color:#c0392b">PC1 得分：</span><span class="v" style="color:#c0392b">${s1.toFixed(3)}</span></div>
+          <div class="kv"><span class="k" style="color:#c0392b">${tr('PC1 得分：','PC1 score:')}</span><span class="v" style="color:#c0392b">${s1.toFixed(3)}</span></div>
           <p style="margin:2px 0 12px; font-size:11px; color:var(--muted); font-family:monospace">
             = ${rel[0].toFixed(2)}×${v1[0].toFixed(2)} + ${rel[1].toFixed(2)}×${v1[1].toFixed(2)} + ${rel[2].toFixed(2)}×${v1[2].toFixed(2)}
           </p>
-          <div class="kv"><span class="k" style="color:#2c5aa0">PC2 得分：</span><span class="v" style="color:#2c5aa0">${s2.toFixed(3)}</span></div>
+          <div class="kv"><span class="k" style="color:#2c5aa0">${tr('PC2 得分：','PC2 score:')}</span><span class="v" style="color:#2c5aa0">${s2.toFixed(3)}</span></div>
           <p style="margin:2px 0 12px; font-size:11px; color:var(--muted); font-family:monospace">
             = ${rel[0].toFixed(2)}×${v2[0].toFixed(2)} + ${rel[1].toFixed(2)}×${v2[1].toFixed(2)} + ${rel[2].toFixed(2)}×${v2[2].toFixed(2)}
           </p>
-          <div class="kv"><span class="k" style="color:#27795a">PC3 得分：</span><span class="v" style="color:#27795a">${s3.toFixed(3)}</span></div>
+          <div class="kv"><span class="k" style="color:#27795a">${tr('PC3 得分：','PC3 score:')}</span><span class="v" style="color:#27795a">${s3.toFixed(3)}</span></div>
           <p style="margin:2px 0; font-size:11px; color:var(--muted)">
-            （PC3 得分通常很小 → 表示這個點幾乎落在 PC1-PC2 平面上）
+            ${tr('（PC3 得分通常很小 → 表示這個點幾乎落在 PC1-PC2 平面上）','(PC3 score is usually small → this point lies almost on the PC1-PC2 plane)')}
           </p>
         </div>
       </div>`;
@@ -4135,7 +4152,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
   function renderLoadings() {
     const cont = document.getElementById('loadings3D');
     const labels_ = geneNames;
-    let html = '<table class="compare" style="margin-top:8px"><tr><th>基因</th><th>PC1 loading</th><th>PC2 loading</th><th>PC3 loading</th></tr>';
+    let html = `<table class="compare" style="margin-top:8px"><tr><th>${tr('基因','Gene')}</th><th>PC1 loading</th><th>PC2 loading</th><th>PC3 loading</th></tr>`;
     for (let g=0; g<3; g++) {
       html += '<tr>';
       html += `<td><b>${labels_[g]}</b></td>`;
@@ -4242,18 +4259,21 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
   noise3D.oninput = () => { generate(); selectedIdx = null; render(); renderSampleDetail(); if (currentMode === 'step') renderStep(); };
 
   // ============= 步驟導覽模式 =============
-  const steps = [
-    { title: '原始 3D 資料', desc: '60 個樣本，每個有 (Gene1, Gene2, Gene3) 三個表現量' },
-    { title: '步驟 1：計算均值', desc: '對每個基因算所有樣本的平均值，得到中心 μ' },
-    { title: '步驟 2：中心化', desc: '每個樣本減掉 μ，整團點被搬到原點附近' },
-    { title: '步驟 3：第一主成分 PC1', desc: '解 C·w=λw，最大 λ₁ 的特徵向量就是 PC1' },
-    { title: '步驟 4：第二主成分 PC2', desc: '第二大 λ₂ 對應的特徵向量，與 PC1 正交' },
-    { title: '步驟 5：第三主成分 PC3', desc: '第三大 λ₃ 對應的特徵向量；變異最小、可丟棄' },
-    { title: '步驟 6：投影到 PC1-PC2 平面', desc: '每個 3D 點垂直投影到「最有資訊的 2D 平面」' },
-    { title: '步驟 7：壓平成 2D', desc: '把 PC3 維度丟掉，得到降維後的 2D 結果' }
-  ];
+  function getSteps() {
+    return [
+      { title: tr('原始 3D 資料','Raw 3D data'), desc: tr('60 個樣本，每個有 (Gene1, Gene2, Gene3) 三個表現量','60 samples, each with (Gene1, Gene2, Gene3) expression values') },
+      { title: tr('步驟 1：計算均值','Step 1: Compute mean'), desc: tr('對每個基因算所有樣本的平均值，得到中心 μ','Average each gene across all samples to get the center μ') },
+      { title: tr('步驟 2：中心化','Step 2: Center'), desc: tr('每個樣本減掉 μ，整團點被搬到原點附近','Subtract μ from each sample; the cloud moves near the origin') },
+      { title: tr('步驟 3：第一主成分 PC1','Step 3: First principal component PC1'), desc: tr('解 C·w=λw，最大 λ₁ 的特徵向量就是 PC1','Solve C·w=λw; the eigenvector of the largest λ₁ is PC1') },
+      { title: tr('步驟 4：第二主成分 PC2','Step 4: Second principal component PC2'), desc: tr('第二大 λ₂ 對應的特徵向量，與 PC1 正交','Eigenvector of the second-largest λ₂, orthogonal to PC1') },
+      { title: tr('步驟 5：第三主成分 PC3','Step 5: Third principal component PC3'), desc: tr('第三大 λ₃ 對應的特徵向量；變異最小、可丟棄','Eigenvector of the third-largest λ₃; minimal variance, droppable') },
+      { title: tr('步驟 6：投影到 PC1-PC2 平面','Step 6: Project onto PC1-PC2 plane'), desc: tr('每個 3D 點垂直投影到「最有資訊的 2D 平面」','Each 3D point is projected perpendicularly onto the "most informative 2D plane"') },
+      { title: tr('步驟 7：壓平成 2D','Step 7: Flatten to 2D'), desc: tr('把 PC3 維度丟掉，得到降維後的 2D 結果','Drop the PC3 dimension to get the 2D result') }
+    ];
+  }
 
   function renderStep() {
+    const steps = getSteps();
     const step = steps[stepIdx];
     document.getElementById('stepNum').textContent = stepIdx;
     document.getElementById('stepTitle').textContent = step.title;
@@ -4277,7 +4297,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
       phase: stepIdx, selIdx: null
     });
 
-    document.getElementById('legendStep').innerHTML = cellNames.map((n,i)=>
+    document.getElementById('legendStep').innerHTML = getCellNames().map((n,i)=>
       `<span><span class="dot" style="background:${cellColors[i]};width:12px;height:12px;border-radius:50%"></span>${n}</span>`
     ).join('');
 
@@ -4288,102 +4308,83 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     const total = eigvals.reduce((a,b)=>a+b, 0);
     let math = '', note = '';
     if (stepIdx === 0) {
-      math = `<span class="lbl"># 原始資料矩陣 X 的前 6 列</span>\n`;
+      math = `<span class="lbl"># ${tr('原始資料矩陣 X 的前 6 列','First 6 rows of the raw data matrix X')}</span>\n`;
       for (let i=0;i<6;i++) math += `  X[${i+1}] = (${data[i].map(v=>v.toFixed(2)).join(', ')})\n`;
-      math += `<span class="lbl">  ... 共 ${data.length} 筆樣本</span>\n<span class="lbl">  維度: ${data.length} × 3</span>`;
-      note = `<h4>什麼是 PCA 的輸入？</h4>
-        <p style="margin:6px 0; font-size:13px">輸入是一個 $n \\times p$ 矩陣：$n$ 個樣本，每個樣本有 $p$ 個量測值（這裡 $p=3$）。
-        我們的目標是找一組「新座標軸」(PC1, PC2, PC3)，
-        讓資料的主要變化被前幾個軸捕捉。</p>`;
+      math += `<span class="lbl">  ${tr(`... 共 ${data.length} 筆樣本`,`... ${data.length} samples total`)}</span>\n<span class="lbl">  ${tr('維度','Shape')}: ${data.length} × 3</span>`;
+      note = `<h4>${tr('什麼是 PCA 的輸入？','What is the input to PCA?')}</h4>
+        <p style="margin:6px 0; font-size:13px">${tr('輸入是一個 $n \\\\times p$ 矩陣：$n$ 個樣本，每個樣本有 $p$ 個量測值（這裡 $p=3$）。我們的目標是找一組「新座標軸」(PC1, PC2, PC3)，讓資料的主要變化被前幾個軸捕捉。','The input is an $n \\\\times p$ matrix: $n$ samples, each with $p$ measurements (here $p=3$). Goal: find new axes (PC1, PC2, PC3) so the first few capture the main variation.')}</p>`;
     } else if (stepIdx === 1) {
-      math = `<span class="hl"># 步驟 1：計算每個基因的平均</span>\n` +
+      math = `<span class="hl"># ${tr('步驟 1：計算每個基因的平均','Step 1: Compute mean of each gene')}</span>\n` +
         `μ_Gene1 = (1/n) Σ X[i,1] = <span class="num">${m[0].toFixed(3)}</span>\n` +
         `μ_Gene2 = (1/n) Σ X[i,2] = <span class="num">${m[1].toFixed(3)}</span>\n` +
         `μ_Gene3 = (1/n) Σ X[i,3] = <span class="num">${m[2].toFixed(3)}</span>\n` +
-        `\n<span class="lbl">μ 是資料的「中心」，是個 3 維向量</span>`;
-      note = `<h4>為什麼要算均值？</h4>
-        <p style="margin:6px 0; font-size:13px">PCA 要找「資料分散的方向」，方向是相對於中心而言的。
-        如果不先扣掉均值，第一主成分會被「資料離原點多遠」這件事拉走，
-        而不是反映資料內部的變化。</p>`;
+        `\n<span class="lbl">${tr('μ 是資料的「中心」，是個 3 維向量','μ is the data "center", a 3-D vector')}</span>`;
+      note = `<h4>${tr('為什麼要算均值？','Why compute the mean?')}</h4>
+        <p style="margin:6px 0; font-size:13px">${tr('PCA 要找「資料分散的方向」，方向是相對於中心而言的。如果不先扣掉均值，第一主成分會被「資料離原點多遠」這件事拉走，而不是反映資料內部的變化。','PCA finds "directions of data spread", and directions are defined relative to the center. Without subtracting the mean, PC1 gets pulled by "how far data is from the origin", not by the data\'s internal variation.')}</p>`;
     } else if (stepIdx === 2) {
-      math = `<span class="hl"># 步驟 2：每個樣本減掉均值</span>\n` +
+      math = `<span class="hl"># ${tr('步驟 2：每個樣本減掉均值','Step 2: Subtract the mean from each sample')}</span>\n` +
         `<span class="lbl">X̃[i] = X[i] - μ</span>\n\n` +
-        `例：第 1 個樣本 X[1] = (${data[0].map(v=>v.toFixed(2)).join(', ')})\n` +
+        `${tr('例：第 1 個樣本','Example: sample 1')} X[1] = (${data[0].map(v=>v.toFixed(2)).join(', ')})\n` +
         `     X̃[1] = (${pca.Xc[0].map(v=>v.toFixed(2)).join(', ')})\n\n` +
-        `<span class="lbl">中心化後，整團點以原點為中心</span>\n` +
-        `<span class="lbl">所有後續推導都假設資料已中心化</span>`;
-      note = `<h4>視覺上發生了什麼？</h4>
-        <p style="margin:6px 0; font-size:13px">原本「漂浮在 3D 某處」的資料雲，
-        被平移到坐標原點。
-        資料的「形狀」完全沒變——只是位置變了。</p>`;
+        `<span class="lbl">${tr('中心化後，整團點以原點為中心','After centering, the whole cloud is centered at the origin')}</span>\n` +
+        `<span class="lbl">${tr('所有後續推導都假設資料已中心化','All subsequent derivations assume centered data')}</span>`;
+      note = `<h4>${tr('視覺上發生了什麼？','What happens visually?')}</h4>
+        <p style="margin:6px 0; font-size:13px">${tr('原本「漂浮在 3D 某處」的資料雲，被平移到坐標原點。資料的「形狀」完全沒變——只是位置變了。','The data cloud, originally "floating somewhere in 3D", is translated to the origin. The "shape" of the data is unchanged — only its position.')}</p>`;
     } else if (stepIdx === 3) {
-      math = `<span class="hl"># 步驟 3：解最佳化問題 max w⊤Cw，‖w‖=1</span>\n` +
-        `\n<span class="lbl"># 共變異數矩陣 C = (1/(n-1)) X̃⊤ X̃</span>\n` +
+      math = `<span class="hl"># ${tr('步驟 3：解最佳化問題 max w⊤Cw，‖w‖=1','Step 3: Solve max wᵀCw, ‖w‖=1')}</span>\n` +
+        `\n<span class="lbl"># ${tr('共變異數矩陣','Covariance matrix')} C = (1/(n-1)) X̃⊤ X̃</span>\n` +
         `C = [[<span class="num">${C[0][0].toFixed(3)}</span>, <span class="num">${C[0][1].toFixed(3)}</span>, <span class="num">${C[0][2].toFixed(3)}</span>],\n` +
         `     [<span class="num">${C[1][0].toFixed(3)}</span>, <span class="num">${C[1][1].toFixed(3)}</span>, <span class="num">${C[1][2].toFixed(3)}</span>],\n` +
         `     [<span class="num">${C[2][0].toFixed(3)}</span>, <span class="num">${C[2][1].toFixed(3)}</span>, <span class="num">${C[2][2].toFixed(3)}</span>]]\n\n` +
-        `<span class="lbl"># Lagrange 推導 → C·w = λw（特徵值問題）</span>\n` +
-        `<span class="pc1"># PC1 = 最大 λ₁ = ${eigvals[0].toFixed(3)} 對應的特徵向量</span>\n` +
+        `<span class="lbl"># ${tr('Lagrange 推導 → C·w = λw（特徵值問題）','Lagrange derivation → C·w = λw (eigenvalue problem)')}</span>\n` +
+        `<span class="pc1"># ${tr(`PC1 = 最大 λ₁ = ${eigvals[0].toFixed(3)} 對應的特徵向量`,`PC1 = eigenvector of the largest λ₁ = ${eigvals[0].toFixed(3)}`)}</span>\n` +
         `<span class="pc1">v₁ = (${eigvecs[0].map(v=>v.toFixed(3)).join(', ')})</span>\n` +
-        `<span class="pc1">解釋變異 = λ₁/Σλ = ${(eigvals[0]/total*100).toFixed(1)}%</span>`;
-      note = `<h4>PC1 = 資料變化最大的方向</h4>
-        <p style="margin:6px 0; font-size:13px">紅色箭頭就是 PC1。
-        它的方向是「<b>把所有資料投影到這條軸上後，得到的變異數最大</b>」的那個方向。
-        在 3D 圖中，你可以看見它穿過資料雲最「拉長」的方向。</p>`;
+        `<span class="pc1">${tr('解釋變異','Variance explained')} = λ₁/Σλ = ${(eigvals[0]/total*100).toFixed(1)}%</span>`;
+      note = `<h4>${tr('PC1 = 資料變化最大的方向','PC1 = direction of maximum data variance')}</h4>
+        <p style="margin:6px 0; font-size:13px">${tr('紅色箭頭就是 PC1。它的方向是「<b>把所有資料投影到這條軸上後，得到的變異數最大</b>」的那個方向。在 3D 圖中，你可以看見它穿過資料雲最「拉長」的方向。','The red arrow is PC1. Its direction is the one that "<b>maximizes the variance after projecting all data onto it</b>". In the 3D plot, it goes through the most "elongated" direction of the cloud.')}</p>`;
     } else if (stepIdx === 4) {
-      math = `<span class="hl"># 步驟 4：第二大特徵值對應的特徵向量</span>\n` +
-        `<span class="lbl"># 加正交約束 w ⊥ v₁，再次最大化變異</span>\n\n` +
-        `<span class="pc2">PC2 = λ₂ = ${eigvals[1].toFixed(3)} 對應的特徵向量</span>\n` +
+      math = `<span class="hl"># ${tr('步驟 4：第二大特徵值對應的特徵向量','Step 4: Eigenvector of the second-largest eigenvalue')}</span>\n` +
+        `<span class="lbl"># ${tr('加正交約束 w ⊥ v₁，再次最大化變異','Add orthogonality constraint w ⊥ v₁, maximize variance again')}</span>\n\n` +
+        `<span class="pc2">${tr(`PC2 = λ₂ = ${eigvals[1].toFixed(3)} 對應的特徵向量`,`PC2 = eigenvector of λ₂ = ${eigvals[1].toFixed(3)}`)}</span>\n` +
         `<span class="pc2">v₂ = (${eigvecs[1].map(v=>v.toFixed(3)).join(', ')})</span>\n` +
-        `<span class="pc2">解釋變異 = ${(eigvals[1]/total*100).toFixed(1)}%</span>\n\n` +
-        `<span class="lbl">驗證 v₁ ⊥ v₂：</span>\n` +
+        `<span class="pc2">${tr('解釋變異','Variance explained')} = ${(eigvals[1]/total*100).toFixed(1)}%</span>\n\n` +
+        `<span class="lbl">${tr('驗證 v₁ ⊥ v₂：','Verify v₁ ⊥ v₂:')}</span>\n` +
         `  v₁·v₂ = ${(eigvecs[0][0]*eigvecs[1][0]+eigvecs[0][1]*eigvecs[1][1]+eigvecs[0][2]*eigvecs[1][2]).toFixed(6)} ≈ 0 ✓`;
-      note = `<h4>為什麼 PC2 一定垂直於 PC1？</h4>
-        <p style="margin:6px 0; font-size:13px">因為 C 是對稱矩陣，<b>譜定理</b>保證它的特徵向量可以選成兩兩正交。
-        加上我們在解 PC2 時明確要求「與 PC1 正交」，
-        所以 PC1、PC2 一定構成一個 2D 平面的正交基底。</p>`;
+      note = `<h4>${tr('為什麼 PC2 一定垂直於 PC1？','Why is PC2 always orthogonal to PC1?')}</h4>
+        <p style="margin:6px 0; font-size:13px">${tr('因為 C 是對稱矩陣，<b>譜定理</b>保證它的特徵向量可以選成兩兩正交。加上我們在解 PC2 時明確要求「與 PC1 正交」，所以 PC1、PC2 一定構成一個 2D 平面的正交基底。','Since C is symmetric, the <b>spectral theorem</b> guarantees its eigenvectors can be chosen pairwise orthogonal. Combined with the explicit "orthogonal to PC1" constraint when solving PC2, PC1 and PC2 must form an orthonormal basis of a 2D plane.')}</p>`;
     } else if (stepIdx === 5) {
-      math = `<span class="hl"># 步驟 5：第三主成分</span>\n` +
-        `<span class="pc3">PC3 = λ₃ = ${eigvals[2].toFixed(3)} 對應的特徵向量</span>\n` +
+      math = `<span class="hl"># ${tr('步驟 5：第三主成分','Step 5: Third principal component')}</span>\n` +
+        `<span class="pc3">${tr(`PC3 = λ₃ = ${eigvals[2].toFixed(3)} 對應的特徵向量`,`PC3 = eigenvector of λ₃ = ${eigvals[2].toFixed(3)}`)}</span>\n` +
         `<span class="pc3">v₃ = (${eigvecs[2].map(v=>v.toFixed(3)).join(', ')})</span>\n` +
-        `<span class="pc3">解釋變異 = ${(eigvals[2]/total*100).toFixed(1)}%</span>\n\n` +
-        `<span class="lbl">三個 PC 構成 3D 空間的正交基底</span>\n` +
-        `<span class="lbl">λ₃ 極小 → PC3 方向幾乎沒資訊</span>\n` +
-        `<span class="lbl">→ 黃色平面（PC1-PC2）就出現了！</span>`;
-      note = `<h4>為什麼可以「丟掉」PC3？</h4>
-        <p style="margin:6px 0; font-size:13px">因為 PC3 上的變異數 λ₃ 很小——
-        意思是「資料在 PC3 方向幾乎沒展開」。
-        三個細胞群的質心張開一個 2D 平面（PC1-PC2 平面），
-        垂直於那個平面的方向就是 PC3，自然變異最小。</p>`;
+        `<span class="pc3">${tr('解釋變異','Variance explained')} = ${(eigvals[2]/total*100).toFixed(1)}%</span>\n\n` +
+        `<span class="lbl">${tr('三個 PC 構成 3D 空間的正交基底','The three PCs form an orthonormal basis of 3D space')}</span>\n` +
+        `<span class="lbl">${tr('λ₃ 極小 → PC3 方向幾乎沒資訊','λ₃ tiny → almost no information along PC3')}</span>\n` +
+        `<span class="lbl">${tr('→ 黃色平面（PC1-PC2）就出現了！','→ The yellow plane (PC1-PC2) appears!')}</span>`;
+      note = `<h4>${tr('為什麼可以「丟掉」PC3？','Why can we "discard" PC3?')}</h4>
+        <p style="margin:6px 0; font-size:13px">${tr('因為 PC3 上的變異數 λ₃ 很小——意思是「資料在 PC3 方向幾乎沒展開」。三個細胞群的質心張開一個 2D 平面（PC1-PC2 平面），垂直於那個平面的方向就是 PC3，自然變異最小。','Because variance λ₃ along PC3 is tiny — meaning "data hardly spreads along PC3". The three cluster centroids span a 2D plane (the PC1-PC2 plane); PC3 is perpendicular to it, so variance there is minimal.')}</p>`;
     } else if (stepIdx === 6) {
-      math = `<span class="hl"># 步驟 6：投影到 PC1-PC2 平面</span>\n` +
-        `<span class="lbl"># 對每個中心化的樣本 X̃[i]：</span>\n` +
-        `<span class="lbl">  s1[i] = X̃[i] · v₁  （PC1 得分）</span>\n` +
-        `<span class="lbl">  s2[i] = X̃[i] · v₂  （PC2 得分）</span>\n` +
-        `<span class="lbl">  s3[i] = X̃[i] · v₃  （PC3 得分，丟掉）</span>\n\n` +
-        `<span class="lbl">投影到平面 = 把 s3 設為 0</span>\n` +
-        `<span class="lbl">紅色虛線 = 樣本與其投影之間的距離</span>\n` +
-        `<span class="lbl">= |s3[i]| = 被丟掉的資訊量</span>`;
-      note = `<h4>Eckart-Young 定理</h4>
-        <p style="margin:6px 0; font-size:13px">在所有秩為 2 的近似中，
-        前 2 個主成分給出的<b>重建誤差最小</b>。
-        所以 PCA 不僅「方便」，而是<b>數學上最佳</b>的線性降維。
-        重建誤差 = $\\sqrt{(n-1) \\cdot \\lambda_3} = ${Math.sqrt((data.length-1)*eigvals[2]).toFixed(3)}$。</p>`;
+      math = `<span class="hl"># ${tr('步驟 6：投影到 PC1-PC2 平面','Step 6: Project onto the PC1-PC2 plane')}</span>\n` +
+        `<span class="lbl"># ${tr('對每個中心化的樣本 X̃[i]：','For each centered sample X̃[i]:')}</span>\n` +
+        `<span class="lbl">  s1[i] = X̃[i] · v₁  ${tr('（PC1 得分）','(PC1 score)')}</span>\n` +
+        `<span class="lbl">  s2[i] = X̃[i] · v₂  ${tr('（PC2 得分）','(PC2 score)')}</span>\n` +
+        `<span class="lbl">  s3[i] = X̃[i] · v₃  ${tr('（PC3 得分，丟掉）','(PC3 score, discarded)')}</span>\n\n` +
+        `<span class="lbl">${tr('投影到平面 = 把 s3 設為 0','Projecting to plane = setting s3 to 0')}</span>\n` +
+        `<span class="lbl">${tr('紅色虛線 = 樣本與其投影之間的距離','Red dashed = distance from sample to its projection')}</span>\n` +
+        `<span class="lbl">= |s3[i]| = ${tr('被丟掉的資訊量','information discarded')}</span>`;
+      note = `<h4>${tr('Eckart-Young 定理','Eckart-Young theorem')}</h4>
+        <p style="margin:6px 0; font-size:13px">${tr('在所有秩為 2 的近似中，前 2 個主成分給出的<b>重建誤差最小</b>。所以 PCA 不僅「方便」，而是<b>數學上最佳</b>的線性降維。','Among all rank-2 approximations, the first 2 PCs yield <b>minimum reconstruction error</b>. So PCA isn\'t just "convenient" — it is <b>mathematically optimal</b> linear dim reduction.')}
+        ${tr('重建誤差','Reconstruction error')} = $\\sqrt{(n-1) \\cdot \\lambda_3} = ${Math.sqrt((data.length-1)*eigvals[2]).toFixed(3)}$。</p>`;
     } else if (stepIdx === 7) {
-      math = `<span class="hl"># 步驟 7：得到 2D 結果</span>\n` +
-        `<span class="lbl"># 視角已自動旋轉到 PC3 方向</span>\n` +
-        `<span class="lbl"># 你看到的 2D 就是 PC1×PC2 平面</span>\n\n` +
+      math = `<span class="hl"># ${tr('步驟 7：得到 2D 結果','Step 7: Get the 2D result')}</span>\n` +
+        `<span class="lbl"># ${tr('視角已自動旋轉到 PC3 方向','View has auto-rotated along PC3')}</span>\n` +
+        `<span class="lbl"># ${tr('你看到的 2D 就是 PC1×PC2 平面','The 2D you see is the PC1×PC2 plane')}</span>\n\n` +
         `Y = X̃ · V_{2}  (shape: ${data.length}×2)\n\n` +
-        `<span class="lbl">前 2 PC 累積解釋變異：</span>\n` +
+        `<span class="lbl">${tr('前 2 PC 累積解釋變異：','Cumulative variance from first 2 PCs:')}</span>\n` +
         `  <span class="hl">${((eigvals[0]+eigvals[1])/total*100).toFixed(2)}%</span>\n\n` +
-        `<span class="lbl">三群細胞自然分開——</span>\n` +
-        `<span class="lbl">PCA 從未拿到標籤，卻找到了結構！</span>`;
-      note = `<h4>PCA 完成</h4>
-        <p style="margin:6px 0; font-size:13px">我們從 3D 降到 2D，
-        丟掉了 ${(eigvals[2]/total*100).toFixed(2)}% 的變異，
-        但 <b>3 種細胞型態仍然能在 2D 上區分</b>。
-        這就是 PCA 在實務上最有價值的能力：
-        <b>把高維資料壓到 2-3 維讓人類能看見其中的結構</b>。</p>`;
+        `<span class="lbl">${tr('三群細胞自然分開——','The three cell groups separate naturally —')}</span>\n` +
+        `<span class="lbl">${tr('PCA 從未拿到標籤，卻找到了結構！','PCA never saw the labels, yet found the structure!')}</span>`;
+      note = `<h4>${tr('PCA 完成','PCA complete')}</h4>
+        <p style="margin:6px 0; font-size:13px">${tr(`我們從 3D 降到 2D，丟掉了 ${(eigvals[2]/total*100).toFixed(2)}% 的變異，但 <b>3 種細胞型態仍然能在 2D 上區分</b>。這就是 PCA 在實務上最有價值的能力：<b>把高維資料壓到 2-3 維讓人類能看見其中的結構</b>。`,`We went from 3D to 2D, discarding ${(eigvals[2]/total*100).toFixed(2)}% of the variance, yet <b>the 3 cell types are still distinguishable in 2D</b>. This is PCA's most valuable practical ability: <b>compress high-D data to 2–3 dims so humans can see the structure</b>.`)}</p>`;
     }
     document.getElementById('stepMath').innerHTML = math;
     document.getElementById('stepNote').innerHTML = note;
@@ -4392,7 +4393,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     }
   }
 
-  document.getElementById('stepNext').onclick = () => { if (stepIdx < steps.length-1) { stepIdx++; renderStep(); } };
+  document.getElementById('stepNext').onclick = () => { if (stepIdx < getSteps().length-1) { stepIdx++; renderStep(); } };
   document.getElementById('stepPrev').onclick = () => { if (stepIdx > 0) { stepIdx--; renderStep(); } };
   document.getElementById('stepReset').onclick = () => { stepIdx = 0; renderStep(); };
 
@@ -4413,6 +4414,11 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     renderStep();
   };
 
+  document.addEventListener('langchange', () => {
+    render();
+    renderSampleDetail();
+    if (currentMode === 'step') renderStep();
+  });
   generate(); render(); renderSampleDetail();
 })();
 
@@ -4420,6 +4426,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
    §11 高維基因表現
    =================================================== */
 (function section11() {
+  function tr(zh, en) { return document.body.classList.contains('lang-en') ? en : zh; }
   const heatmap = document.getElementById('heatmap');
   const scatter = document.getElementById('pcaScatter');
   const screeG = document.getElementById('geneScree');
@@ -4429,7 +4436,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
   let X = [], labels = [];
   const N_PER_GROUP = 20, N_GENES = 20, N_GROUPS = 3;
   const colors = ['#c0392b','#27795a','#2c5aa0'];
-  const cellNames = ['細胞型態 A','細胞型態 B','細胞型態 C'];
+  function getCellNames() { return [tr('細胞型態 A','Cell type A'), tr('細胞型態 B','Cell type B'), tr('細胞型態 C','Cell type C')]; }
 
   function generate() {
     const sep = (+sepSlider.value)/100 * 3.5;
@@ -4475,6 +4482,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     drawScatter(Xc, eigenvectors, eigenvalues);
     drawScree(eigenvalues);
 
+    const cellNames = getCellNames();
     legend.innerHTML = colors.map((c,i)=>
       '<span><span class="dot" style="background:'+c+';width:12px;height:12px;border-radius:50%"></span>'+cellNames[i]+'</span>').join('');
   }
@@ -4494,7 +4502,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
       hh += '<rect x="'+(padL-10)+'" y="'+(padT+i*cellH)+'" width="6" height="'+cellH+'" fill="'+colors[labels[i]]+'"/>';
     }
     hh += '<text x="'+padL+'" y="'+(H-6)+'" font-size="11" fill="#666">Gene1 → Gene'+N_GENES+' →</text>';
-    hh += '<text x="6" y="'+(padT+10)+'" font-size="11" fill="#666">樣本 ↓</text>';
+    hh += '<text x="6" y="'+(padT+10)+'" font-size="11" fill="#666">'+tr('樣本','Samples')+' ↓</text>';
     heatmap.innerHTML = hh;
   }
 
@@ -4545,13 +4553,14 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     }
     const cumPath = cumX.map((x,i)=>(i?'L':'M')+x+','+cumY[i]).join(' ');
     g += '<path d="'+cumPath+'" stroke="#2c5aa0" stroke-width="2" fill="none" stroke-dasharray="4 3"/>';
-    g += '<text x="'+(gw-130)+'" y="22" font-size="11" fill="#2c5aa0">━ 累積解釋變異</text>';
-    g += '<text x="'+(gw/2)+'" y="'+(gh-2)+'" text-anchor="middle" font-size="11" fill="#666">主成分編號</text>';
+    g += '<text x="'+(gw-130)+'" y="22" font-size="11" fill="#2c5aa0">'+tr('━ 累積解釋變異','━ Cumulative variance')+'</text>';
+    g += '<text x="'+(gw/2)+'" y="'+(gh-2)+'" text-anchor="middle" font-size="11" fill="#666">'+tr('主成分編號','Principal component')+'</text>';
     screeG.innerHTML = g;
   }
 
   document.getElementById('btnGeneNew').onclick = () => { generate(); render(); };
   sepSlider.oninput = () => { generate(); render(); };
+  document.addEventListener('langchange', render);
   generate(); render();
 })();
 </script>

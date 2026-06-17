@@ -165,15 +165,15 @@
     <li class="dropdown"><a href="../index.html#M1">M1</a>
       <ul class="dropdown-menu">
         <li class="sub-label">基礎 / FOUNDATIONS</li>
-        <li><a href="../M1-foundations/1.1-sparse-matrix.html">1.1 稀疏矩陣</a></li>
-        <li><a href="../M1-foundations/1.2-count-distributions.html">1.2 計數分布</a></li>
+        <li><a href="../M1-foundations/1.1-sparse-matrix.html"><span data-lang="zh">1.1 稀疏矩陣</span><span data-lang="en">1.1 Sparse Matrix</span></a></li>
+        <li><a href="../M1-foundations/1.2-count-distributions.html"><span data-lang="zh">1.2 計數分布</span><span data-lang="en">1.2 Count Distributions</span></a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M2">M2</a>
       <ul class="dropdown-menu">
         <li class="sub-label">前處理 / PREPROCESSING</li>
-        <li><a href="../M2-preprocessing/2.1-qc-statistics.html">2.1 QC 統計</a></li>
+        <li><a href="../M2-preprocessing/2.1-qc-statistics.html"><span data-lang="zh">2.1 QC 統計</span><span data-lang="en">2.1 QC Statistics</span></a></li>
         <li><a href="../M2-preprocessing/2.2-normalization.html">2.2 Normalization</a></li>
-        <li><a href="../M2-preprocessing/2.3-hvg-selection.html">2.3 HVG 選擇</a></li>
+        <li><a href="../M2-preprocessing/2.3-hvg-selection.html"><span data-lang="zh">2.3 HVG 選擇</span><span data-lang="en">2.3 HVG Selection</span></a></li>
         <li><a href="../M2-preprocessing/2.4-scaling.html">2.4 Scaling</a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M3" class="active">M3</a>
@@ -182,7 +182,7 @@
         <li><a href="3.1-pca.html">3.1 PCA</a></li>
         <li><a href="3.2-tsne.html">3.2 t-SNE</a></li>
         <li><a href="3.3-umap.html">3.3 UMAP</a></li>
-        <li><a href="3.4-diffusion-map.html" class="active-sub">3.4 Diffusion Maps ⭐ (本頁)</a></li>
+        <li><a href="3.4-diffusion-map.html" class="active-sub">3.4 Diffusion Maps ⭐ <span data-lang="zh">(本頁)</span><span data-lang="en">(this page)</span></a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M4">M4</a>
       <ul class="dropdown-menu">
@@ -193,9 +193,9 @@
     <li class="dropdown"><a href="../index.html#M5">M5</a>
       <ul class="dropdown-menu">
         <li class="sub-label">統計推論 / STATS</li>
-        <li><a href="../M5-statistics/5.1-de-tests.html">5.1 DE 檢定</a></li>
-        <li><a href="../M5-statistics/5.2-multiple-testing.html">5.2 多重檢定 / FDR</a></li>
-        <li><a href="../M5-statistics/5.3-classifier.html">5.3 細胞分類器</a></li>
+        <li><a href="../M5-statistics/5.1-de-tests.html"><span data-lang="zh">5.1 DE 檢定</span><span data-lang="en">5.1 DE Tests</span></a></li>
+        <li><a href="../M5-statistics/5.2-multiple-testing.html"><span data-lang="zh">5.2 多重檢定 / FDR</span><span data-lang="en">5.2 Multiple Testing / FDR</span></a></li>
+        <li><a href="../M5-statistics/5.3-classifier.html"><span data-lang="zh">5.3 細胞分類器</span><span data-lang="en">5.3 Cell Classifier</span></a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M6">M6</a>
       <ul class="dropdown-menu">
@@ -258,8 +258,8 @@
   </h3>
 
   <p style="font-size: 1.02em; line-height: 1.7">
-    <span data-lang="zh">想像台北 101 跟陽明山頂直線距離 6 公里。如果你問 Google Maps「<b>直線</b>距離」，它會說 6 km；但實際從 101 走到陽明山頂，你<b>不能穿牆、不能飛、不能跳過山谷</b>，你得<b>沿著道路</b>走 20+ 公里。<b>歐式距離騙你、走路距離才真實</b>——這就是 scRNA 細胞分化的場景：HSC（造血幹細胞）跟成熟紅血球在 PCA 空間「直線距離」很近，但生物上你<b>必須經過 MEP → proerythroblast</b>這條山路，不能瞬移。</span>
-    <span data-lang="en">Imagine Taipei 101 and Yangmingshan summit, straight-line 6 km apart. Google Maps' "<b>straight line</b>" says 6 km, but to actually walk from 101 to the summit you <b>can't pass through walls, can't fly, can't jump over valleys</b> — you follow roads for 20+ km. <b>Euclidean distance lies, walking distance is true</b> — that's exactly scRNA cell differentiation: HSC (stem cell) and mature erythrocyte are "straight-line close" in PCA space, but biologically you <b>must pass through MEP → proerythroblast</b> — no teleporting allowed.</span>
+    <span data-lang="zh">想像你家跟對街朋友家直線距離只有 20 公尺，但中間隔著一棟大樓——你<b>不能穿牆、不能飛簷走壁</b>，得繞過大樓走 200 公尺才到。<b>「直線距離」騙你、「實際走路距離」才真實</b>——這就是 scRNA 細胞分化的場景：HSC（造血幹細胞）跟成熟紅血球在 PCA 空間「直線距離」看起來很近，但生物上你<b>必須經過 MEP → proerythroblast</b> 這條<b>沿著資料密集的「路」</b>，不能瞬移過空蕩蕩的「資料空洞」。</span>
+    <span data-lang="en">Imagine your house and a friend's house are only 20 m apart straight-line, but a building stands between them — you <b>can't pass through walls or fly</b>, so you walk 200 m around the building. <b>"Straight-line distance" lies, "actual walking distance" tells the truth</b> — exactly the scRNA differentiation scenario: HSC (stem cell) and mature erythrocyte look "straight-line close" in PCA space, but biologically you <b>must pass through MEP → proerythroblast</b> along the <b>data-dense "road"</b> — no teleporting across empty "data voids".</span>
   </p>
   <p style="font-size: 1.02em; line-height: 1.7">
     <span data-lang="zh">Diffusion Maps 就是「<b>沿著資料密集的路</b>」算距離。它<b>派出一個隨機漫步者</b>，每步只能跳到鄰居（有東西的地方），算「從 A 到 B 平均要走幾步」——這就是 diffusion distance。Coifman & Lafon 2006 提出，Haghverdi 2016 把它帶進 scRNA。<b>它對 dropout 和 noise 特別魯棒</b>，因為「多步漫步」是機率平均，單一 outlier cell 影響不了大局。所有你聽過的 trajectory 工具——DPT、Palantir、PAGA、Monocle 3、CellRank——<b>底盤全是 diffusion</b>。沒它，scRNA 永遠只能說「有什麼細胞」，說不出「細胞怎麼變」。</span>
@@ -269,8 +269,8 @@
   <h4>📍 <span data-lang="zh">在流程中的位置</span><span data-lang="en">Pipeline position</span></h4>
   <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f7f9fb; padding: 10px; border-radius: 6px; line-height: 1.8">
     PCA → KNN →
-    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b>Diffusion Maps（走路距離）</b></span>
-    → DPT pseudotime → branching · fate · velocity（Palantir / PAGA / CellRank）
+    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b><span data-lang="zh">Diffusion Maps（走路距離）</span><span data-lang="en">Diffusion Maps (walking distance)</span></b></span>
+    → DPT pseudotime → branching · fate · velocity (Palantir / PAGA / CellRank)
   </div>
 
   <h4>💥 <span data-lang="zh">用「直線距離」估走路時間，你會迷路</span><span data-lang="en">Use "straight line" for walking time, you get lost</span></h4>
@@ -299,11 +299,11 @@
       <span data-lang="en">Directly defines pseudotime = $\|\psi_i - \psi_{\text{root}}\|$. Wrong root → wrong pseudotime.</span></li>
     <li><b>PAGA：</b><span data-lang="zh">把 cluster 當村莊、diffusion 機率當道路 → 自動畫出「哪些村莊互通」的地圖。</span>
       <span data-lang="en">Treats clusters as villages, diffusion probabilities as roads → auto-draws the "which villages connect" map.</span></li>
-    <li><b>Palantir 命運機率：</b><span data-lang="zh">從中間 progenitor 算「跑到紅血球 / 巨核 / 淋巴」三個目的地的機率——完全依賴 diffusion 框架。</span>
+    <li><b>Palantir <span data-lang="zh">命運機率</span><span data-lang="en">fate probability</span>：</b><span data-lang="zh">從中間 progenitor 算「跑到紅血球 / 巨核 / 淋巴」三個目的地的機率——完全依賴 diffusion 框架。</span>
       <span data-lang="en">From an intermediate progenitor, compute "probability of reaching erythrocyte / megakaryocyte / lymphoid" — entirely on diffusion.</span></li>
-    <li><b>分支 gene dynamics：</b><span data-lang="zh">畫 GATA1 沿紅血球分支上升、PU.1 沿髓系分支上升 → pseudotime 是 diffusion-based 才靠譜。</span>
+    <li><b><span data-lang="zh">分支</span><span data-lang="en">Branch</span> gene dynamics：</b><span data-lang="zh">畫 GATA1 沿紅血球分支上升、PU.1 沿髓系分支上升 → pseudotime 是 diffusion-based 才靠譜。</span>
       <span data-lang="en">Plot GATA1 rising along erythroid branch, PU.1 along myeloid — only reliable if pseudotime is diffusion-based.</span></li>
-    <li><b>RNA velocity（CellRank）：</b><span data-lang="zh">scVelo 的 velocity vector 投到 diffusion components 上才有正確距離度量，否則 vector 飄向「資料空洞」。</span>
+    <li><b>RNA velocity (CellRank)：</b><span data-lang="zh">scVelo 的 velocity vector 投到 diffusion components 上才有正確距離度量，否則 vector 飄向「資料空洞」。</span>
       <span data-lang="en">scVelo's velocity vectors only have correct distance metric when projected onto diffusion components; otherwise they drift into "data voids".</span></li>
   </ul>
 
@@ -379,7 +379,7 @@
 
 <ol>
   <li><span data-lang="zh"><b>相似度矩陣</b>：</span><span data-lang="en"><b>Similarity matrix</b>: </span>$K_{ij} = \exp(-\|x_i - x_j\|^2 / \sigma^2)$（Gaussian kernel）</li>
-  <li><span data-lang="zh"><b>(可選) 密度校正</b>：</span><span data-lang="en"><b>(Optional) density correction</b>: </span>$\tilde{K}_{ij} = K_{ij} / (q_i q_j)^\alpha$，其中 $q_i = \sum_j K_{ij}$</li>
+  <li><span data-lang="zh"><b>(可選) 密度校正</b>：$\tilde{K}_{ij} = K_{ij} / (q_i q_j)^\alpha$，其中 $q_i = \sum_j K_{ij}$</span><span data-lang="en"><b>(Optional) density correction</b>: $\tilde{K}_{ij} = K_{ij} / (q_i q_j)^\alpha$, where $q_i = \sum_j K_{ij}$</span></li>
   <li><span data-lang="zh"><b>列正規化</b>：</span><span data-lang="en"><b>Row-normalize</b>: </span>$T_{ij} = \tilde{K}_{ij} / d_i$，$d_i = \sum_j \tilde{K}_{ij}$</li>
 </ol>
 
@@ -568,7 +568,7 @@ sc.tl.dpt(adata)
     <tr><th data-lang="zh">細胞</th><th data-lang="en">Cell</th>
         <th data-lang="zh">DC1 範圍</th><th data-lang="en">DC1 range</th>
         <th>key markers</th><th>key markers</th></tr>
-    <tr><td>HSC (幹細胞)</td><td>HSC (stem)</td>
+    <tr><td data-lang="zh">HSC (幹細胞)</td><td data-lang="en">HSC (stem)</td>
         <td>0.0 - 0.1</td><td>0.0 - 0.1</td>
         <td>CD34, KIT, FLT3</td><td>CD34, KIT, FLT3</td></tr>
     <tr><td>MPP (multipotent)</td><td>MPP (multipotent)</td>
@@ -800,6 +800,7 @@ sc.tl.dpt(adata)             <span class="c"># pseudotime</span></pre>
 <script>
 // ===== §0 illustration: S manifold =====
 (function() {
+  function tr(zh, en) { return document.body.classList.contains('lang-en') ? en : zh; }
   let seed = 11;
   const rnd = () => { seed = (seed*9301+49297)%233280; return seed/233280; };
   const cells = [];
@@ -809,6 +810,7 @@ sc.tl.dpt(adata)             <span class="c"># pseudotime</span></pre>
     const y = 160 + 60 * Math.sin(t*0.8) + (rnd()-0.5)*10;
     cells.push({x, y});
   }
+  function render() {
   let s = '';
   s += `<rect x="0" y="0" width="800" height="320" fill="#fcfcfa"/>`;
   cells.forEach(c => {
@@ -822,19 +824,23 @@ sc.tl.dpt(adata)             <span class="c"># pseudotime</span></pre>
   s += `<text class="lbl" x="${B.x+15}" y="${B.y+5}" font-weight="700" fill="#27795a">B</text>`;
   // Euclidean line
   s += `<line x1="${A.x}" y1="${A.y}" x2="${B.x}" y2="${B.y}" stroke="#c0392b" stroke-width="2" stroke-dasharray="5,3"/>`;
-  s += `<text class="lbl" x="${(A.x+B.x)/2}" y="${(A.y+B.y)/2-12}" text-anchor="middle" fill="#c0392b">Euclidean (短)</text>`;
+  s += `<text class="lbl" x="${(A.x+B.x)/2}" y="${(A.y+B.y)/2-12}" text-anchor="middle" fill="#c0392b">${tr('Euclidean (短)','Euclidean (short)')}</text>`;
   // manifold path
   let p = '';
   for (let i = 10; i <= 70; i++) {
     p += (i===10?'M':'L') + ' ' + cells[i].x + ',' + cells[i].y + ' ';
   }
   s += `<path d="${p}" stroke="#27795a" stroke-width="3" fill="none" opacity="0.7"/>`;
-  s += `<text class="lbl" x="400" y="295" text-anchor="middle" fill="#27795a" font-weight="700">Diffusion / manifold distance (沿曲線，長)</text>`;
+  s += `<text class="lbl" x="400" y="295" text-anchor="middle" fill="#27795a" font-weight="700">${tr('Diffusion / manifold distance (沿曲線，長)','Diffusion / manifold distance (along curve, long)')}</text>`;
   document.getElementById('s0svg').innerHTML = s;
+  }
+  render();
+  document.addEventListener('langchange', render);
 })();
 
 // ===== §3 t-step walk =====
 (function() {
+  function tr(zh, en) { return document.body.classList.contains('lang-en') ? en : zh; }
   let seed = 7;
   const rnd = () => { seed = (seed*9301+49297)%233280; return seed/233280; };
   const cells = [];
@@ -892,13 +898,14 @@ sc.tl.dpt(adata)             <span class="c"># pseudotime</span></pre>
       s += `<circle cx="${c.x}" cy="${c.y}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" style="cursor:pointer" data-i="${i}"/>`;
     });
     s += `<text class="lbl" x="20" y="295" font-size="11" font-weight="700" fill="#f0c419">⬤ start (click any cell to change)</text>`;
-    s += `<text class="lbl" x="400" y="295" text-anchor="middle" font-size="11" font-weight="700" fill="#3730a3">深紫 = 高機率、灰 = 低</text>`;
+    s += `<text class="lbl" x="400" y="295" text-anchor="middle" font-size="11" font-weight="700" fill="#3730a3">${tr('深紫 = 高機率、灰 = 低','dark purple = high prob, gray = low')}</text>`;
     document.getElementById('s3svg').innerHTML = s;
     document.getElementById('s3svg').querySelectorAll('circle').forEach(c => {
       c.addEventListener('click', () => { start = +c.dataset.i; draw(); });
     });
   }
   draw();
+  document.addEventListener('langchange', draw);
 })();
 
 // ===== §5 diffusion components =====

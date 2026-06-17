@@ -165,22 +165,22 @@
     <li class="dropdown"><a href="../index.html#M1">M1</a>
       <ul class="dropdown-menu">
         <li class="sub-label">基礎 / FOUNDATIONS</li>
-        <li><a href="../M1-foundations/1.1-sparse-matrix.html">1.1 稀疏矩陣</a></li>
-        <li><a href="../M1-foundations/1.2-count-distributions.html">1.2 計數分布</a></li>
+        <li><a href="../M1-foundations/1.1-sparse-matrix.html"><span data-lang="zh">1.1 稀疏矩陣</span><span data-lang="en">1.1 Sparse Matrix</span></a></li>
+        <li><a href="../M1-foundations/1.2-count-distributions.html"><span data-lang="zh">1.2 計數分布</span><span data-lang="en">1.2 Count Distributions</span></a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M2">M2</a>
       <ul class="dropdown-menu">
         <li class="sub-label">前處理 / PREPROCESSING</li>
-        <li><a href="../M2-preprocessing/2.1-qc-statistics.html">2.1 QC 統計</a></li>
+        <li><a href="../M2-preprocessing/2.1-qc-statistics.html"><span data-lang="zh">2.1 QC 統計</span><span data-lang="en">2.1 QC Statistics</span></a></li>
         <li><a href="../M2-preprocessing/2.2-normalization.html">2.2 Normalization</a></li>
-        <li><a href="../M2-preprocessing/2.3-hvg-selection.html">2.3 HVG 選擇</a></li>
+        <li><a href="../M2-preprocessing/2.3-hvg-selection.html"><span data-lang="zh">2.3 HVG 選擇</span><span data-lang="en">2.3 HVG Selection</span></a></li>
         <li><a href="../M2-preprocessing/2.4-scaling.html">2.4 Scaling</a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M3" class="active">M3</a>
       <ul class="dropdown-menu">
         <li class="sub-label">降維 / DIM. REDUCTION</li>
         <li><a href="3.1-pca.html">3.1 PCA</a></li>
-        <li><a href="3.2-tsne.html" class="active-sub">3.2 t-SNE ⭐ (本頁)</a></li>
+        <li><a href="3.2-tsne.html" class="active-sub">3.2 t-SNE ⭐ <span data-lang="zh">(本頁)</span><span data-lang="en">(this page)</span></a></li>
         <li><a href="3.3-umap.html">3.3 UMAP</a></li>
         <li><a href="3.4-diffusion-map.html">3.4 Diffusion Maps</a></li>
       </ul></li>
@@ -193,9 +193,9 @@
     <li class="dropdown"><a href="../index.html#M5">M5</a>
       <ul class="dropdown-menu">
         <li class="sub-label">統計推論 / STATS</li>
-        <li><a href="../M5-statistics/5.1-de-tests.html">5.1 DE 檢定</a></li>
-        <li><a href="../M5-statistics/5.2-multiple-testing.html">5.2 多重檢定 / FDR</a></li>
-        <li><a href="../M5-statistics/5.3-classifier.html">5.3 細胞分類器</a></li>
+        <li><a href="../M5-statistics/5.1-de-tests.html"><span data-lang="zh">5.1 DE 檢定</span><span data-lang="en">5.1 DE Tests</span></a></li>
+        <li><a href="../M5-statistics/5.2-multiple-testing.html"><span data-lang="zh">5.2 多重檢定 / FDR</span><span data-lang="en">5.2 Multiple Testing / FDR</span></a></li>
+        <li><a href="../M5-statistics/5.3-classifier.html"><span data-lang="zh">5.3 細胞分類器</span><span data-lang="en">5.3 Cell Classifier</span></a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M6">M6</a>
       <ul class="dropdown-menu">
@@ -274,7 +274,7 @@
   <h4>📍 <span data-lang="zh">在流程中的位置</span><span data-lang="en">Pipeline position</span></h4>
   <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f7f9fb; padding: 10px; border-radius: 6px; line-height: 1.8">
     PCA 50-D →
-    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b>t-SNE 2-D（漫畫風 figure）</b></span>
+    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b><span data-lang="zh">t-SNE 2-D（漫畫風 figure）</span><span data-lang="en">t-SNE 2-D (caricature-style figure)</span></b></span>
     → <span data-lang="zh">paper Figure 1 / Reviewer 點頭</span><span data-lang="en">paper Figure 1 / reviewer approval</span>
   </div>
   <p style="margin-top: 6px; font-size: 0.93em; color: #555">
@@ -517,7 +517,7 @@ This is the mathematical root of "global distance unreliable".</p>
   <tr><td>perplexity</td><td>perplexity</td>
       <td data-lang="zh">小 → 細微局部結構；大 → 大尺度結構</td>
       <td data-lang="en">small → fine local; large → coarse global</td>
-      <td>5-50（典型 30）</td><td>5-50 (typically 30)</td></tr>
+      <td data-lang="zh">5-50（典型 30）</td><td data-lang="en">5-50 (typically 30)</td></tr>
   <tr><td>learning rate (η)</td><td>learning rate</td>
       <td data-lang="zh">太低 → 卡在 local min；太高 → 跳開</td>
       <td data-lang="en">too low → local min; too high → diverge</td>
@@ -525,11 +525,11 @@ This is the mathematical root of "global distance unreliable".</p>
   <tr><td>early exaggeration</td><td>early exaggeration</td>
       <td data-lang="zh">前 250 iter 把 P 放大（拉開 cluster）</td>
       <td data-lang="en">first 250 iter, scale P up (push clusters apart)</td>
-      <td>12 (預設)</td><td>12 (default)</td></tr>
+      <td data-lang="zh">12 (預設)</td><td data-lang="en">12 (default)</td></tr>
   <tr><td>iterations</td><td>iterations</td>
       <td data-lang="zh">少 → 沒收斂；多 → 浪費計算</td>
       <td data-lang="en">few → unconverged; many → wasted</td>
-      <td>1000 (預設)</td><td>1000 (default)</td></tr>
+      <td data-lang="zh">1000 (預設)</td><td data-lang="en">1000 (default)</td></tr>
 </table>
 
 <h2 id="s8"><span class="num">§8</span> <span data-lang="zh">限制：t-SNE 不該看「群距」</span><span data-lang="en">Limits: don't read inter-cluster distance</span></h2>
@@ -611,8 +611,8 @@ This is the mathematical root of "global distance unreliable".</p>
         <td><b>CD4 T / CD8 T / Mono CD14 / Mono CD16 / B / NK / DC / Megakaryocyte / Plasma</b></td>
         <td><b>CD4 T / CD8 T / Mono CD14 / Mono CD16 / B / NK / DC / Megakaryocyte / Plasma</b></td></tr>
     <tr><td>100</td><td>100</td>
-        <td>T 細胞群（all subtypes）/ Mono / B / NK / DC / Megakaryocyte</td>
-        <td>T cells (all subtypes) / Mono / B / NK / DC / Megakaryocyte</td></tr>
+        <td data-lang="zh">T 細胞群（all subtypes）/ Mono / B / NK / DC / Megakaryocyte</td>
+        <td data-lang="en">T cells (all subtypes) / Mono / B / NK / DC / Megakaryocyte</td></tr>
   </table>
 
   <div class="callout bio">
@@ -675,7 +675,7 @@ This is the mathematical root of "global distance unreliable".</p>
       <td>$O(n^2)$</td><td>$O(n^2)$</td>
       <td>$O(n \log n)$</td><td>$O(n \log n)$</td>
       <td>$O(n)$</td><td>$O(n)$</td></tr>
-  <tr><td>10k cells 時間</td><td>10k cells time</td>
+  <tr><td data-lang="zh">10k cells 時間</td><td data-lang="en">10k cells time</td>
       <td>~ 10 min</td><td>~ 10 min</td>
       <td>~ 30 sec</td><td>~ 30 sec</td>
       <td>~ 10 sec</td><td>~ 10 sec</td></tr>
