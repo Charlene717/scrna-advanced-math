@@ -326,11 +326,11 @@
   <h4 data-lang="zh">目錄</h4>
   <h4 data-lang="en">Table of Contents</h4>
   <ol start="0">
-    <li><a href="#s0"><span data-lang="zh">故事：t-SNE 解決一半問題</span><span data-lang="en">Story: t-SNE only solves half</span></a><span class="new" data-lang="zh">新增</span><span class="new" data-lang="en">NEW</span></li>
+    <li><a href="#s0"><span data-lang="zh">故事：t-SNE 解決一半問題</span><span data-lang="en">Story: t-SNE only solves half</span></a></li>
     <li><a href="#s1"><span data-lang="zh">fuzzy simplicial set 的直覺</span><span data-lang="en">fuzzy simplicial set intuition</span></a></li>
     <li><a href="#s2"><span data-lang="zh">高維 graph 構造</span><span data-lang="en">High-D graph construction</span></a></li>
     <li><a href="#s3"><span data-lang="zh">互動：n_neighbors 影響</span><span data-lang="en">Interactive: n_neighbors</span></a></li>
-    <li><a href="#s4"><span data-lang="zh">低維 force-directed embedding</span><span data-lang="en">Low-D force-directed embedding</span></a><span class="new" data-lang="zh">核心</span><span class="new" data-lang="en">CORE</span></li>
+    <li><a href="#s4"><span data-lang="zh">低維 force-directed embedding</span><span data-lang="en">Low-D force-directed embedding</span></a></li>
     <li><a href="#s5"><span data-lang="zh">Cross entropy loss + negative sampling</span><span data-lang="en">Cross entropy + neg sampling</span></a></li>
     <li><a href="#s6"><span data-lang="zh">互動：UMAP 收斂動畫</span><span data-lang="en">Interactive UMAP animation</span></a></li>
     <li><a href="#s7"><span data-lang="zh">UMAP vs t-SNE 對比</span><span data-lang="en">UMAP vs t-SNE</span></a></li>
@@ -1021,18 +1021,4 @@ umap_sup = UMAP(target_metric=<span class="s">"categorical"</span>).fit_transfor
     document.getElementById('s6svg').innerHTML = s;
     document.getElementById('s6iter').textContent = iter;
   }
-  document.getElementById('s6next').addEventListener('click', () => { step(20); draw(); });
-  document.getElementById('s6reset').addEventListener('click', () => { gen(); draw(); });
-  document.getElementById('s6auto').addEventListener('click', () => {
-    let n = 0;
-    function tick() {
-      step(20); draw();
-      if (++n < 10) setTimeout(tick, 150);
-    }
-    tick();
-  });
-  gen(); draw();
-})();
-</script>
-</body>
-</html>
+  document.getElementById('s6next').addEventListener('clic

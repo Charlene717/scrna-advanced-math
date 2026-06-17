@@ -319,11 +319,11 @@
   <h4 data-lang="zh">目錄</h4>
   <h4 data-lang="en">Table of Contents</h4>
   <ol start="0">
-    <li><a href="#s0"><span data-lang="zh">故事：PCA 把細胞型態揉成一團</span><span data-lang="en">Story: PCA mashes cell types together</span></a><span class="new" data-lang="zh">新增</span><span class="new" data-lang="en">NEW</span></li>
+    <li><a href="#s0"><span data-lang="zh">故事：PCA 把細胞型態揉成一團</span><span data-lang="en">Story: PCA mashes cell types together</span></a></li>
     <li><a href="#s1"><span data-lang="zh">「鄰居機率」的直覺</span><span data-lang="en">"Neighbor probability" intuition</span></a></li>
     <li><a href="#s2"><span data-lang="zh">高維 $P_{ij}$：Gaussian + perplexity</span><span data-lang="en">High-D $P_{ij}$: Gaussian + perplexity</span></a></li>
     <li><a href="#s3"><span data-lang="zh">互動：perplexity 怎麼影響鄰居</span><span data-lang="en">Interactive: perplexity vs neighbors</span></a></li>
-    <li><a href="#s4"><span data-lang="zh">低維 $Q_{ij}$：Student-t 重尾</span><span data-lang="en">Low-D $Q_{ij}$: Student-t heavy tail</span></a><span class="new" data-lang="zh">核心</span><span class="new" data-lang="en">CORE</span></li>
+    <li><a href="#s4"><span data-lang="zh">低維 $Q_{ij}$：Student-t 重尾</span><span data-lang="en">Low-D $Q_{ij}$: Student-t heavy tail</span></a></li>
     <li><a href="#s5"><span data-lang="zh">KL 散度與梯度下降</span><span data-lang="en">KL divergence & gradient descent</span></a></li>
     <li><a href="#s6"><span data-lang="zh">互動：t-SNE 收斂動畫</span><span data-lang="en">Interactive t-SNE animation</span></a></li>
     <li><a href="#s7"><span data-lang="zh">Perplexity / learning rate 影響</span><span data-lang="en">Perplexity / LR effects</span></a></li>
@@ -1058,15 +1058,4 @@ query_emb = ref_tsne.transform(query_data)
   document.getElementById('s6reset').addEventListener('click', () => { gen(); draw(); document.getElementById('s6iter').textContent = 0; document.getElementById('s6loss').textContent = '—'; });
   document.getElementById('s6auto').addEventListener('click', () => {
     let n = 0;
-    function tick() {
-      step(10);
-      if (++n < 12) setTimeout(tick, 150);
-    }
-    tick();
-  });
-  gen();
-  draw();
-})();
-</script>
-</body>
-</html>
+    fu

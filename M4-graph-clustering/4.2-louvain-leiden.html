@@ -344,11 +344,11 @@
   <h4 data-lang="zh">目錄</h4>
   <h4 data-lang="en">Table of Contents</h4>
   <ol start="0">
-    <li><a href="#s0"><span data-lang="zh">故事：什麼叫「好的分群」？</span><span data-lang="en">Story: what is "good" clustering?</span></a><span class="new" data-lang="zh">新增</span><span class="new" data-lang="en">NEW</span></li>
+    <li><a href="#s0"><span data-lang="zh">故事：什麼叫「好的分群」？</span><span data-lang="en">Story: what is "good" clustering?</span></a></li>
     <li><a href="#s1"><span data-lang="zh">Modularity Q 的數學</span><span data-lang="en">Modularity Q math</span></a></li>
     <li><a href="#s2"><span data-lang="zh">互動：手動分群看 Q 變化</span><span data-lang="en">Interactive: manually cluster, watch Q</span></a></li>
     <li><a href="#s3"><span data-lang="zh">Louvain 兩階段演算法</span><span data-lang="en">Louvain two-phase algorithm</span></a></li>
-    <li><a href="#s4"><span data-lang="zh">互動：Louvain 步驟導覽</span><span data-lang="en">Interactive: Louvain step-by-step</span></a><span class="new" data-lang="zh">核心</span><span class="new" data-lang="en">CORE</span></li>
+    <li><a href="#s4"><span data-lang="zh">互動：Louvain 步驟導覽</span><span data-lang="en">Interactive: Louvain step-by-step</span></a></li>
     <li><a href="#s5"><span data-lang="zh">Louvain 的斷裂群 bug</span><span data-lang="en">Louvain's disconnected community bug</span></a></li>
     <li><a href="#s6"><span data-lang="zh">Leiden 三階段修正</span><span data-lang="en">Leiden's 3-phase fix</span></a></li>
     <li><a href="#s7"><span data-lang="zh">Resolution γ 與群數量</span><span data-lang="en">Resolution γ vs # clusters</span></a></li>
@@ -1175,17 +1175,4 @@ function modularity(nodes, edges) {
     edges.forEach(e => {
       const a = nodes[e.s], b = nodes[e.t];
       const sameC = a.c === b.c;
-      s += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${sameC?'#888':'#ddd'}" stroke-width="${sameC?1.5:0.5}" opacity="${sameC?0.6:0.3}"/>`;
-    });
-    nodes.forEach(n => {
-      s += `<circle cx="${n.x}" cy="${n.y}" r="7" fill="${colorMap[n.c]}" stroke="#fff" stroke-width="1.5"/>`;
-    });
-    document.getElementById('s7svg').innerHTML = s;
-  }
-  document.getElementById('s7gamma').addEventListener('input', draw);
-  document.getElementById('s7run').addEventListener('click', draw);
-  draw();
-})();
-</script>
-</body>
-</html>
+      s += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${sameC?'#888':'#ddd'}" str

@@ -102,6 +102,9 @@
   button:hover { background: #1d4380; }
   button.ghost { background: #fff; color: var(--accent2); border: 1px solid var(--accent2); }
   button.ghost:hover { background: #eaf4ff; }
+  /* 視角按鈕「選中」狀態（暗色） */
+  button.ghost.s0-selected { background: #2c5aa0; color: #fff; border-color: #1a3a6a; }
+  button.ghost.s0-selected:hover { background: #1a3a6a; }
   button.green { background: var(--green); }
   button.green:hover { background: #1f5c45; }
   input[type="range"] { width: 180px; vertical-align: middle; }
@@ -668,17 +671,17 @@
     Every technical term appears only after you understand what it does.
   </p>
   <ol start="0">
-    <li><a href="#s0"><span data-lang="zh">故事開始：假設你是新進的生物資訊研究員</span><span data-lang="en">Story: You're a new bioinformatics researcher</span></a><span class="new" data-lang="zh">新增</span><span class="new" data-lang="en">NEW</span></li>
+    <li><a href="#s0"><span data-lang="zh">故事開始：假設你是新進的生物資訊研究員</span><span data-lang="en">Story: You're a new bioinformatics researcher</span></a></li>
     <li><a href="#s1"><span data-lang="zh">你看到的是什麼？— 點擊任何樣本看細節</span><span data-lang="en">What you see — click any sample for details</span></a></li>
     <li><a href="#s2"><span data-lang="zh">共變異數本身在量什麼：互動式逐項計算</span><span data-lang="en">What covariance actually measures: interactive term-by-term</span></a></li>
     <li><a href="#s3"><span data-lang="zh">為什麼要「最大化變異數」？</span><span data-lang="en">Why "maximize variance"?</span></a></li>
     <li><a href="#s4"><span data-lang="zh">中心化：把資料拉到原點</span><span data-lang="en">Centering: pull data to origin</span></a></li>
-    <li><a href="#s5"><span data-lang="zh">共變異數矩陣 C：逐元素建構動畫</span><span data-lang="en">Covariance matrix C: element-by-element animation</span></a><span class="new" data-lang="zh">新增</span><span class="new" data-lang="en">NEW</span></li>
+    <li><a href="#s5"><span data-lang="zh">共變異數矩陣 C：逐元素建構動畫</span><span data-lang="en">Covariance matrix C: element-by-element animation</span></a></li>
     <li><a href="#s6"><span data-lang="zh">矩陣的幾何意義：誰是「不被旋轉」的方向？</span><span data-lang="en">Matrix geometry: which directions aren't rotated?</span></a></li>
     <li><a href="#s7"><span data-lang="zh">用 Lagrange 乘子法解出最佳方向</span><span data-lang="en">Solve optimal direction via Lagrange multipliers</span></a></li>
     <li><a href="#s8"><span data-lang="zh">特徵值分解、SVD、它們其實是同一件事</span><span data-lang="en">Eigendecomposition, SVD — they're the same thing</span></a></li>
     <li><a href="#s9"><span data-lang="zh">投影、降維、與重建誤差</span><span data-lang="en">Projection, dim reduction, reconstruction error</span></a></li>
-    <li><a href="#s10"><span data-lang="zh">3D 三基因：自由探索 + 演算法步驟導覽</span><span data-lang="en">3D 3-Gene: free exploration + 7-step walkthrough</span></a><span class="new" data-lang="zh">大改</span><span class="new" data-lang="en">REWORKED</span></li>
+    <li><a href="#s10"><span data-lang="zh">3D 三基因：自由探索 + 演算法步驟導覽</span><span data-lang="en">3D 3-Gene: free exploration + 7-step walkthrough</span></a></li>
     <li><a href="#s11"><span data-lang="zh">推到高維：Gene1 到 Gene20</span><span data-lang="en">Scale to high-D: Gene1 to Gene20</span></a></li>
     <li><a href="#s12"><span data-lang="zh">把整套故事串起來 + 限制與下一步</span><span data-lang="en">Tying it all together + limits and next steps</span></a></li>
   </ol>
@@ -710,13 +713,13 @@
 <h3 data-lang="en">0-1 Scenario: You have a 60-sample × 3-gene table</h3>
 
 <p data-lang="zh">研究員給你一份資料：60 個樣本（例如 60 個病人的細胞切片）
-  測到的 3 個基因表現量。她沒告訴你細胞型態（「細胞型態」這欄是 ?），
-  只說：「<b>幫我看看裡面有沒有隱藏的結構</b>。」<br>
+  測到的 <b>3 個基因</b>表現量，<b>沒附上細胞型態標記</b>。研究員只說：
+  「<b>幫我看看裡面有沒有隱藏的結構</b>。」<br>
   下面隨機顯示其中 10 列（樣本順序<b>沒有特別排過</b>，是按實驗 ID 來的）：</p>
-<p data-lang="en">A researcher hands you data: 60 samples (e.g., cell sections from 60 patients)
-  with expression measured for 3 genes. She didn't tell you the cell types (the "Cell Type" column is "?"),
-  only said: "<b>see if there's any hidden structure in here</b>."<br>
-  Below shows a random 10 rows (sample order is <b>not specially arranged</b>, by experiment ID):</p>
+<p data-lang="en">A researcher hands you a dataset: 60 samples (e.g. cell sections from 60 patients)
+  with expression measured for <b>3 genes</b>, <b>with no cell-type labels attached</b>. The researcher only says:
+  "<b>see if there's any hidden structure in there</b>."<br>
+  Below shows 10 random rows (sample order is <b>not specially arranged</b>, just by experiment ID):</p>
 
 <div class="card" style="padding:18px">
   <div class="grid-2">
@@ -727,25 +730,58 @@
         <table class="calc-table" id="s0RawTable"></table>
       </div>
       <p style="margin-top:10px; font-size:13px; color:var(--muted)" data-lang="zh">
-        每一列都長得不太一樣：有時 Gene1 高、有時 Gene2 高、有時 Gene3 高，
-        看起來像「亂數」。<b>真的看不出 60 個樣本是不是該分群、該分幾群</b>。
+        每一列都長得不太一樣：3 個基因<b>各自都在變</b>，沒有哪個是常數。
+        光看表格<b>真的看不出 60 個樣本是不是該分群、該分幾群</b>，
+        也看不出基因之間有沒有「<b>暗藏的關係</b>」。<br>
+        （👀 細看會發現某些樣本「Gene1 高的時候 Gene2、Gene3 比較低」這種傾向。但裸眼很難確定。）
       </p>
       <p style="margin-top:10px; font-size:13px; color:var(--muted)" data-lang="en">
-        Each row looks different: sometimes Gene1 is high, sometimes Gene2, sometimes Gene3 —
-        looks like "random numbers". <b>You really can't tell if these 60 samples should be grouped, or into how many groups</b>.
+        Each row looks different: all three genes <b>vary on their own</b>; none is a constant.
+        Just staring at the table, <b>you really can't tell if these 60 samples should be grouped, or into how many groups</b>,
+        nor can you spot any "<b>hidden relationship</b>" between the genes.<br>
+        (👀 If you look closely you might see a pattern: when Gene1 is high, Gene2 and Gene3 tend to be lower. But it's hard to be sure by eye.)
       </p>
-      <button id="s0VizBtn" style="margin-top:8px"><span data-lang="zh">試試把它「畫」出來 →</span><span data-lang="en">Try plotting it →</span></button>
+      <button id="s0VizBtn" style="margin-top:8px"><span data-lang="zh">試試把它「畫」成 3D →</span><span data-lang="en">Try plotting it in 3D →</span></button>
       <button id="s0ResetBtn" class="ghost" style="margin-top:8px"><span data-lang="zh">換一批 10 列看看</span><span data-lang="en">Try another 10 rows</span></button>
     </div>
     <div>
-      <h4 style="margin-top:0" data-lang="zh">視覺化結果</h4>
-      <h4 style="margin-top:0" data-lang="en">Visualization result</h4>
-      <svg id="s0Scatter" class="canvas" width="100%" viewBox="0 0 380 380"></svg>
+      <h4 style="margin-top:0" data-lang="zh">3D 視覺化（Gene1, Gene2, Gene3）</h4>
+      <h4 style="margin-top:0" data-lang="en">3D visualization (Gene1, Gene2, Gene3)</h4>
+      <svg id="s0Scatter" class="canvas" width="100%" viewBox="0 0 480 480">
+        <defs>
+          <marker id="s0ArrowR" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#c0392b"/>
+          </marker>
+          <marker id="s0ArrowB" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#2c5aa0"/>
+          </marker>
+          <marker id="s0ArrowG" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#27795a"/>
+          </marker>
+        </defs>
+      </svg>
+      <div class="controls" style="margin-top:6px; font-size:12px">
+        <label style="display:flex;align-items:center;gap:6px">
+          <span data-lang="zh">水平旋轉 (yaw)</span><span data-lang="en">Yaw</span>
+          <input type="range" id="s0Yaw" min="0" max="360" value="34" step="1" style="width:120px">
+          <span id="s0YawVal" style="font-family:monospace">34°</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:6px">
+          <span data-lang="zh">傾斜 (pitch)</span><span data-lang="en">Pitch</span>
+          <input type="range" id="s0Pitch" min="-90" max="90" value="23" step="1" style="width:120px">
+          <span id="s0PitchVal" style="font-family:monospace">23°</span>
+        </label>
+      </div>
+      <div class="controls" style="margin-top:4px; flex-wrap:wrap">
+        <button id="s0ViewG12" class="ghost"><span data-lang="zh">鳥瞰（正視平面）</span><span data-lang="en">Top-down (face the plane)</span></button>
+        <button id="s0ViewG3" class="ghost"><span data-lang="zh">側視（PC1）</span><span data-lang="en">Side view (along PC1)</span></button>
+        <button id="s0ViewDef" class="ghost"><span data-lang="zh">預設視角</span><span data-lang="en">Default view</span></button>
+      </div>
       <p style="font-size:13px; color:var(--muted); margin-top:8px" id="s0VizNote" data-lang="zh">
-        🔘 按下左邊的「畫出來」按鈕，散佈圖才會出現。
+        🔘 按下左邊的「畫成 3D」按鈕，3D 散佈圖才會出現。畫出來後就能用上面的旋鈕轉著看。
       </p>
       <p style="font-size:13px; color:var(--muted); margin-top:8px" data-lang="en">
-        🔘 Press the "plot it" button on the left to reveal the scatter plot.
+        🔘 Press the "plot in 3D" button on the left to reveal the 3D scatter. Then use the sliders above to rotate it.
       </p>
     </div>
   </div>
@@ -753,23 +789,49 @@
 
 <div class="callout" data-lang="zh">
   <strong>第一個 aha：</strong> 同一份資料、剛才在表格裡看不出規律，
-  畫成散佈圖後<b>結構馬上跳出來</b>。視覺化的力量就在這。<br><br>
-  但是有個問題——剛才我們只看了 (Gene1, Gene2) 兩個基因。
-  如果有 <b>3 個基因</b>，要用 3D 圖（還勉強）；
-  <b>20 個基因</b>呢？<b>20,000 個基因</b>（真實 RNA-seq）呢？
-  人眼最多看 3D，幾千維資料根本無法「直接畫出來」。<br><br>
-  <b>PCA 的答案：找一條「最能代表資料變化的方向」，把高維資料投影上去。</b>
-  那條方向上的 1D / 2D 投影，就能濃縮原本高維結構的精華。
+  畫成 3D 散佈圖後<b>結構馬上跳出來</b>——而且你會發現一件耐人尋味的事：<br><br>
+  Gene1、Gene2、Gene3 都<b>有在變</b>，但不管你怎麼旋轉，<b>這 60 個點都黏在一個傾斜的平面上</b>。
+  <br>👉 試試「<b>側視</b>」按鈕——所有點被擠成幾乎一條細線，
+  就像把一張紙從正面轉到側面看，紙就變成一條線。
+  <br>👉 再按「<b>鳥瞰</b>」——三群細胞立刻分得清清楚楚，這就是把平面攤平給你看。<br><br>
+  這代表什麼？我們有<b>3 個基因軸</b>，可是<b>真正有用的維度只有 2 個</b>——
+  那個傾斜的平面。換句話說，Gene1、Gene2、Gene3<b>不是獨立的</b>，
+  它們之間有<b>線性關係</b>（這份資料是 Gene3 ≈ 0.5·Gene1 + 0.4·Gene2 + 一點噪音）。
+  <br><br>
+  <b>這就是 PCA 想找的東西</b>：它去抓出資料「真正有變化的方向」——
+  <b>PC1 + PC2 ≈ 那個平面</b>、<b>PC3 ≈ 垂直平面的噪音方向，變異幾乎是 0</b>。
+  之後就可以放心丟掉 PC3，<b>把 3 維壓回 2 維但幾乎不損失資訊</b>。
+  <br><br>
+  對 scRNA-seq 來說：你<b>不是只有 3 個基因，你有 20,000 個基因軸</b>。
+  但「真正有用的方向」往往只有<b>30-50 個 PC</b>——其他基因之間有大量線性相關
+  （例如某 50 個基因都隨「細胞週期」一起變、另 30 個都跟「免疫激活」一起變）。
+  PCA 就是把這 20,000 維壓成 30-50 維、再交給下游 UMAP、Leiden 等工具處理。<br><br>
+  ⚠️ <b>注意</b>：PCA 不是「丟掉沒在變的基因」——那是 <b>HVG 篩選</b>（M2.3）做的事。
+  PCA 是<b>找出基因之間的隱藏線性組合</b>，把「軸」換成「主成分」。
+  它做的是<b>方向重組</b>，不是<b>剔除維度</b>。
 </div>
 <div class="callout" data-lang="en">
-  <strong>First aha:</strong> Same data — in the table you couldn't see patterns,
-  but plotted as a scatter <b>structure pops out instantly</b>. That's the power of visualization.<br><br>
-  But there's a problem — we only looked at (Gene1, Gene2), two genes.
-  What about <b>3 genes</b>? Need 3D (still manageable);
-  <b>20 genes</b>? <b>20,000 genes</b> (real RNA-seq)?
-  Human eyes max out at 3D; thousand-dimensional data simply cannot be "plotted directly".<br><br>
-  <b>PCA's answer: find a direction that "best captures the data's variation" and project the high-D data onto it.</b>
-  That 1D / 2D projection condenses the essence of the original high-D structure.
+  <strong>First aha:</strong> Same data — couldn't see patterns in the table,
+  but plotted in 3D <b>the structure pops out instantly</b> — and you'll notice something curious:<br><br>
+  Gene1, Gene2, Gene3 are <b>all varying</b>, yet no matter how you rotate, <b>all 60 points sit on a tilted plane</b>.
+  <br>👉 Try the "<b>Side</b>" button — every point collapses into nearly a thin line,
+  as if you took a sheet of paper and turned it edge-on, so it looks like a single line.
+  <br>👉 Now try "<b>Top-down</b>" — the three clusters separate crisply, as the plane lays flat on screen.<br><br>
+  What does this mean? We have <b>3 gene axes</b>, but <b>only 2 useful dimensions</b> —
+  the tilted plane. Gene1, Gene2, Gene3 are <b>not independent</b>; they share a
+  <b>linear relationship</b> (here Gene3 ≈ 0.5·Gene1 + 0.4·Gene2 + a bit of noise).
+  <br><br>
+  <b>This is exactly what PCA hunts for</b>: it finds the directions where data truly varies —
+  <b>PC1 + PC2 ≈ that plane</b>, and <b>PC3 ≈ the perpendicular noise direction, with almost zero variance</b>.
+  You can then safely drop PC3, <b>compressing 3-D back to 2-D with almost no information loss</b>.
+  <br><br>
+  For scRNA-seq: you don't have 3 genes — you have <b>20,000 gene axes</b>.
+  But the "truly useful directions" are typically only <b>30-50 PCs</b>; most genes are linearly
+  correlated (e.g. 50 genes co-vary with the cell cycle, another 30 with immune activation).
+  PCA squeezes 20,000-D down to 30-50-D, which downstream UMAP / Leiden then consumes.<br><br>
+  ⚠️ <b>Note</b>: PCA is <b>not</b> "throw away genes that don't vary" — that's <b>HVG selection</b> (M2.3).
+  PCA <b>finds hidden linear combinations</b> of genes and replaces the original "axes" with "principal components".
+  It does <b>direction recombination</b>, not <b>axis pruning</b>.
 </div>
 
 <h3 data-lang="zh">0-2 但「最能代表變化的方向」是什麼意思？</h3>
@@ -2336,16 +2398,60 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
   const rng = srand(42);
   const cellNames = [tr('A 型','Type A'), tr('B 型','Type B'), tr('C 型','Type C')];
   const cellCols = ['#c0392b', '#27795a', '#2c5aa0'];
-  // 生 60 樣本，3 群
-  const centers = [[2.5,0.5,0.5],[0.5,2.5,0.5],[0.5,0.5,2.5]];
+  // 生 60 樣本，3 群——關鍵設計：3 個 gene 都「有在變」，
+  //   但 Gene3 ≈ 0.5*Gene1 + 0.4*Gene2 + 一點點 ε 垂直雜訊
+  //   → 資料雖然分散在 3D 空間裡，其實全部黏在一個傾斜的 2D 平面上
+  //   → PC1+PC2 抓到那個平面，PC3 變異 ≈ 0
+  // 跟 §10 同款的 3D 質心：每群在「自己的 Gene 高、其他低」位置
+  //   → 3 個質心在 3D 空間天然形成等邊三角形（plane 方向 ≈ (1,1,1)/√3）
+  //   → PC1 ≈ PC2 變異、平面方向跟 §10 一樣 → 預設視角看起來會跟 §10 free-mode 一樣
+  const _lo = 0.3, _hi = 1.5;
+  const centers = [
+    [_hi, _lo, _lo],   // A: Gene1 高
+    [_lo, _hi, _lo],   // B: Gene2 高
+    [_lo, _lo, _hi]    // C: Gene3 高
+  ];
   const labels = [], rawData = [];
+  const _noise = 0.15;  // 3 維噪音，模擬「資料近乎平面」但有薄薄一層厚度
   for (let g=0; g<3; g++) for (let i=0; i<20; i++) {
     rawData.push([
-      centers[g][0] + (rng()-0.5)*0.6,
-      centers[g][1] + (rng()-0.5)*0.6,
-      centers[g][2] + (rng()-0.5)*0.6
+      centers[g][0] + (rng()-0.5)*_noise*2,
+      centers[g][1] + (rng()-0.5)*_noise*2,
+      centers[g][2] + (rng()-0.5)*_noise*2
     ]);
     labels.push(g);
+  }
+
+  // ----- 由資料直接算 PC1 / PC2 / PC3 -----
+  // PC1 = 變異最大方向；PC2 = 次大；PC3 ≈ 垂直平面，變異 ≈ 0
+  const _Xc = centerCols(rawData);
+  const _C  = covariance(_Xc);
+  const _eig = jacobiEig(_C);
+  // 確保符號穩定：讓每個 PC 的「最大絕對分量」為正
+  function _fixSign(v) {
+    let mi = 0, mv = Math.abs(v[0]);
+    for (let i=1; i<v.length; i++) if (Math.abs(v[i]) > mv) { mv = Math.abs(v[i]); mi = i; }
+    if (v[mi] < 0) return v.map(x => -x);
+    return v;
+  }
+  const PC1 = _fixSign(_eig.eigenvectors[0]);
+  const PC2 = _fixSign(_eig.eigenvectors[1]);
+  const PC3 = _fixSign(_eig.eigenvectors[2]);
+  const PC_EIGVALS = _eig.eigenvalues; // sorted descending
+  // 把目標方向 d 轉成 (yaw, pitch)。配合 s0RotMat 的 Y-up 慣例：
+  //   depth gradient (在資料空間) = (-cos(p)·sin(y), sin(p), cos(p)·cos(y))
+  // 我們希望相機<b>在 d 軸的「上方」那一側</b>看向資料 → 用「Y 分量為正」那個方向當 depth 軸
+  function dirToYawPitch(d) {
+    // 強制讓相機在 Y >= 0 那一側（保證 pitch >= 0，視角是俯瞰而非仰望）
+    const d_ = d[1] < 0 ? d.map(x => -x) : d.slice();
+    const pitch = Math.asin(Math.max(-1, Math.min(1, d_[1])));
+    const cp = Math.cos(pitch);
+    let yaw;
+    if (Math.abs(cp) < 1e-6) yaw = 0;
+    else yaw = Math.atan2(-d_[0], d_[2]);
+    let yDeg = yaw*180/Math.PI;
+    if (yDeg < 0) yDeg += 360;
+    return [yDeg, pitch*180/Math.PI];
   }
 
   const rawTable = document.getElementById('s0RawTable');
@@ -2374,57 +2480,247 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
   pickShownIndices();
   renderTable();
 
-  // ----- 0-1 散佈圖（按按鈕後顯示）-----
+  // ----- 0-1 3D 散佈圖（按按鈕後顯示，可用 yaw/pitch 旋轉）-----
   const scatterSvg = document.getElementById('s0Scatter');
   const vizNote = document.getElementById('s0VizNote');
+  const yawR = document.getElementById('s0Yaw');
+  const pitchR = document.getElementById('s0Pitch');
+  const yawVal = document.getElementById('s0YawVal');
+  const pitchVal = document.getElementById('s0PitchVal');
   let vizDone = false;
+
+  // 3D → 2D 投影：跟 §10 同款 yaw-then-pitch 旋轉（Y 軸朝上）
+  // R 是 3D 旋轉矩陣，作用在「中心化後」的點 (dx, dy, dz)
+  function s0RotMat(yaw, pitch) {
+    const cy_ = Math.cos(yaw), sy = Math.sin(yaw);
+    const cp = Math.cos(pitch), sp = Math.sin(pitch);
+    return [
+      [cy_,        0,    sy],
+      [sp*sy,      cp,  -sp*cy_],
+      [-cp*sy,     sp,   cp*cy_]
+    ];
+  }
+  function s0Rot(R, p) {
+    return [
+      R[0][0]*p[0] + R[0][1]*p[1] + R[0][2]*p[2],
+      R[1][0]*p[0] + R[1][1]*p[1] + R[1][2]*p[2],
+      R[2][0]*p[0] + R[2][1]*p[1] + R[2][2]*p[2]
+    ];
+  }
+
   function drawPlaceholder() {
-    const W=380, H=380, pad=44;
+    const W=480, H=480;
     let h = '';
-    h += `<line x1="${pad}" y1="${H-pad}" x2="${W-10}" y2="${H-pad}" stroke="#ccc"/>`;
-    h += `<line x1="${pad}" y1="20" x2="${pad}" y2="${H-pad}" stroke="#ccc"/>`;
-    h += `<text x="${W/2}" y="${H-12}" text-anchor="middle" font-size="13" fill="#aaa">${tr('Gene1 表現量','Gene1 expression')}</text>`;
-    h += `<text x="14" y="${H/2}" font-size="13" fill="#aaa" transform="rotate(-90 14 ${H/2})" text-anchor="middle">${tr('Gene2 表現量','Gene2 expression')}</text>`;
-    h += `<text x="${W/2}" y="${H/2 - 8}" text-anchor="middle" font-size="14" fill="#bbb">${tr('⌛ 散佈圖會在按按鈕後出現','⌛ Scatter plot appears after you click the button')}</text>`;
-    h += `<text x="${W/2}" y="${H/2 + 14}" text-anchor="middle" font-size="12" fill="#bbb">${tr('先試著從左邊的表格找規律看看…','First try to spot a pattern in the table on the left…')}</text>`;
+    h += `<rect x="0" y="0" width="${W}" height="${H}" fill="#fafafa"/>`;
+    h += `<text x="${W/2}" y="${H/2 - 16}" text-anchor="middle" font-size="14" fill="#bbb">${tr('⌛ 3D 散佈圖會在按按鈕後出現','⌛ The 3D scatter appears after you click the button')}</text>`;
+    h += `<text x="${W/2}" y="${H/2 + 8}" text-anchor="middle" font-size="12" fill="#bbb">${tr('先試著從左邊的表格找規律看看…','First try to spot a pattern in the table on the left…')}</text>`;
+    h += `<text x="${W/2}" y="${H/2 + 30}" text-anchor="middle" font-size="11" fill="#ccc">${tr('（提示：3 個基因看起來都在變，但...）','(Hint: all 3 genes look like they vary, but…)')}</text>`;
     scatterSvg.innerHTML = h;
   }
-  function draw2DScatter() {
-    const W=380, H=380, pad=44;
-    const xs = rawData.map(r=>r[0]), ys = rawData.map(r=>r[1]);
-    const xmin = Math.min(...xs)-0.3, xmax = Math.max(...xs)+0.3;
-    const ymin = Math.min(...ys)-0.3, ymax = Math.max(...ys)+0.3;
-    function sx(v) { return pad + (v-xmin)/(xmax-xmin)*(W-pad-15); }
-    function sy(v) { return H-pad - (v-ymin)/(ymax-ymin)*(H-pad-25); }
-    let h = '';
-    h += `<line x1="${pad}" y1="${H-pad}" x2="${W-10}" y2="${H-pad}" stroke="#999"/>`;
-    h += `<line x1="${pad}" y1="20" x2="${pad}" y2="${H-pad}" stroke="#999"/>`;
-    h += `<text x="${W/2}" y="${H-12}" text-anchor="middle" font-size="13" fill="#666">${tr('Gene1 表現量','Gene1 expression')}</text>`;
-    h += `<text x="14" y="${H/2}" font-size="13" fill="#666" transform="rotate(-90 14 ${H/2})" text-anchor="middle">${tr('Gene2 表現量','Gene2 expression')}</text>`;
-    for (let i=0; i<rawData.length; i++) {
-      const isShown = shownIndices.includes(i);
-      h += `<circle cx="${sx(rawData[i][0])}" cy="${sy(rawData[i][1])}" r="${isShown?7:5}" fill="${isShown?cellCols[labels[i]]:'#bbb'}" stroke="${isShown?'#222':'#fff'}" stroke-width="${isShown?2:1}" opacity="${isShown?1:0.55}"/>`;
+
+  // 以資料均值為中心算 mean（PC 計算時也用同樣的）
+  const _meanRaw = colMean(rawData);
+
+  // 視角模式：
+  //   'gene' = 用 Gene1/Gene2/Gene3 軸當資料空間（預設視角用）
+  //   'pc'   = 先把點轉到 PC 座標 (PC1, PC2, PC3) 空間，再套 yaw/pitch
+  //            這樣可以精準把 PC1-PC2 平面攤平到螢幕上
+  let s0ViewMode = 'gene';
+
+  // 把 gene 空間的點 p 轉到 PC 空間：(PC1·p, PC2·p, PC3·p)
+  function toPCSpace(p) {
+    return [
+      PC1[0]*p[0] + PC1[1]*p[1] + PC1[2]*p[2],
+      PC2[0]*p[0] + PC2[1]*p[1] + PC2[2]*p[2],
+      PC3[0]*p[0] + PC3[1]*p[1] + PC3[2]*p[2]
+    ];
+  }
+
+  function draw3DScatter() {
+    const W=480, H=480, cx=W/2, cy=H/2, scale=60;
+    const yaw   = (+yawR.value) * Math.PI/180;
+    const pitch = (+pitchR.value) * Math.PI/180;
+    const R = s0RotMat(yaw, pitch);
+
+    // projPt 接收的是「gene-space（未中心化）」座標。
+    // 內部自動把點減去資料均值 _meanRaw，所以資料雲、平面、PC 軸都會以資料中心顯示，
+    // 而 Gene1/2/3 軸從 gene-space 原點 (0,0,0) 出發 → 軸的起點會自然偏到資料雲外面，
+    // 平面不再穿過 Gene 軸交點 → 視覺像 §10。
+    function projPt(p) {
+      const rel = [p[0]-_meanRaw[0], p[1]-_meanRaw[1], p[2]-_meanRaw[2]];
+      const q = (s0ViewMode === 'pc') ? toPCSpace(rel) : rel;
+      const r = s0Rot(R, q);
+      return [cx + r[0]*scale, cy - r[1]*scale, r[2]];
     }
+
+    let h = '';
+    // 箭頭 markers（每次重畫都要包進來，因為 innerHTML 會清空 defs）
+    h += `<defs>
+      <marker id="s0ArrowR" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#c0392b"/></marker>
+      <marker id="s0ArrowB" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#2c5aa0"/></marker>
+      <marker id="s0ArrowG" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#27795a"/></marker>
+    </defs>`;
+    h += `<rect x="0" y="0" width="${W}" height="${H}" fill="#fcfcfa"/>`;
+
+    // ① Gene1/2/3 軸（灰色背景參考線）—— 從 gene-space 原點 (0,0,0) 出發
+    //    projPt 自動會減 mean，所以軸的起點會偏在資料雲一側（跟 §10 一樣）
+    const geneAxLen = 3.5;
+    const [gOxS, gOyS] = projPt([0,0,0]);
+    const [g1xS, g1yS] = projPt([geneAxLen, 0, 0]);
+    const [g2xS, g2yS] = projPt([0, geneAxLen, 0]);
+    const [g3xS, g3yS] = projPt([0, 0, geneAxLen]);
+    h += `<line x1="${gOxS}" y1="${gOyS}" x2="${g1xS}" y2="${g1yS}" stroke="#999" stroke-width="1.5"/>`;
+    h += `<line x1="${gOxS}" y1="${gOyS}" x2="${g2xS}" y2="${g2yS}" stroke="#999" stroke-width="1.5"/>`;
+    h += `<line x1="${gOxS}" y1="${gOyS}" x2="${g3xS}" y2="${g3yS}" stroke="#999" stroke-width="1.5"/>`;
+    h += `<text x="${g1xS+5}" y="${g1yS+4}" font-size="13" fill="#333" font-weight="600">Gene1</text>`;
+    h += `<text x="${g2xS+5}" y="${g2yS+4}" font-size="13" fill="#333" font-weight="600">Gene2</text>`;
+    h += `<text x="${g3xS+5}" y="${g3yS+4}" font-size="13" fill="#333" font-weight="600">Gene3</text>`;
+
+    // PC 軸 / 平面 / 資料點 都以資料 mean 為錨點（passed-in 是 mean + offset）
+    // projPt 會自動減 mean → 內部是中心化空間
+    const [oxS, oyS] = projPt(_meanRaw);   // 螢幕上的資料中心點
+
+    // ② PC1-PC2 平面（米色虛線四邊形）—— 以資料 mean 為中心
+    const s1 = Math.sqrt(Math.max(PC_EIGVALS[0],1e-9)) * 2.4;
+    const s2 = Math.sqrt(Math.max(PC_EIGVALS[1],1e-9)) * 2.4;
+    function _addM(v) { return [v[0]+_meanRaw[0], v[1]+_meanRaw[1], v[2]+_meanRaw[2]]; }
+    const planeCorners3D = [
+      _addM([ s1*PC1[0]+ s2*PC2[0],  s1*PC1[1]+ s2*PC2[1],  s1*PC1[2]+ s2*PC2[2]]),
+      _addM([ s1*PC1[0]- s2*PC2[0],  s1*PC1[1]- s2*PC2[1],  s1*PC1[2]- s2*PC2[2]]),
+      _addM([-s1*PC1[0]- s2*PC2[0], -s1*PC1[1]- s2*PC2[1], -s1*PC1[2]- s2*PC2[2]]),
+      _addM([-s1*PC1[0]+ s2*PC2[0], -s1*PC1[1]+ s2*PC2[1], -s1*PC1[2]+ s2*PC2[2]])
+    ].map(c => projPt(c));
+    // 計算面積：判斷平面是否已經 edge-on（退化成一條線）
+    function _polyArea(pts) {
+      let A = 0;
+      for (let i=0; i<pts.length; i++) {
+        const [x1,y1] = pts[i], [x2,y2] = pts[(i+1)%pts.length];
+        A += x1*y2 - x2*y1;
+      }
+      return Math.abs(A) / 2;
+    }
+    const planeArea = _polyArea(planeCorners3D);
+    if (planeArea > 30) {
+      // 平面正常可見：畫米黃色虛線四邊形
+      const planePath = planeCorners3D.map((p,i)=>(i?'L':'M')+p[0]+','+p[1]).join(' ') + ' Z';
+      h += `<path d="${planePath}" fill="#f0c419" fill-opacity="0.18" stroke="#c19510" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+    } else {
+      // 平面退化（側視時 edge-on）：只畫一條輪廓線，去掉 fill
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      for (const [x,y] of planeCorners3D) {
+        if (x<minX) minX=x; if (x>maxX) maxX=x;
+        if (y<minY) minY=y; if (y>maxY) maxY=y;
+      }
+      h += `<line x1="${minX}" y1="${minY}" x2="${maxX}" y2="${maxY}" stroke="#c19510" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.7"/>`;
+    }
+
+    // ③ 投影虛線：原始資料點到 PC1-PC2 平面的垂線
+    for (let i=0; i<rawData.length; i++) {
+      const rel = [rawData[i][0]-_meanRaw[0], rawData[i][1]-_meanRaw[1], rawData[i][2]-_meanRaw[2]];
+      const c1 = rel[0]*PC1[0] + rel[1]*PC1[1] + rel[2]*PC1[2];
+      const c2 = rel[0]*PC2[0] + rel[1]*PC2[1] + rel[2]*PC2[2];
+      const planePt = _addM([c1*PC1[0]+c2*PC2[0], c1*PC1[1]+c2*PC2[1], c1*PC1[2]+c2*PC2[2]]);
+      const [px, py] = projPt(rawData[i]);
+      const [qx, qy] = projPt(planePt);
+      h += `<line x1="${px}" y1="${py}" x2="${qx}" y2="${qy}" stroke="#999" stroke-width="0.8" stroke-dasharray="2 2" opacity="0.6"/>`;
+    }
+
+    // ④ PC1 / PC2 / PC3 主成分軸（從資料 mean 出發，粗線 + 真箭頭 marker + λ 標籤）
+    const arrowLen = 1.8;
+    const pcs = [
+      { v: PC1, col: '#c0392b', lbl: 'PC1', lam: PC_EIGVALS[0], thick: 3.5, dash: '', marker: 's0ArrowR' },
+      { v: PC2, col: '#2c5aa0', lbl: 'PC2', lam: PC_EIGVALS[1], thick: 3.5, dash: '', marker: 's0ArrowB' },
+      { v: PC3, col: '#27795a', lbl: 'PC3', lam: PC_EIGVALS[2], thick: 3.0, dash: '4 3', marker: 's0ArrowG' }
+    ];
+    for (const pc of pcs) {
+      const [pxS, pyS] = projPt(_addM([pc.v[0]*arrowLen, pc.v[1]*arrowLen, pc.v[2]*arrowLen]));
+      // 如果箭頭在螢幕上長度太短（< 8 px），不畫，避免「擠成一團」的視覺
+      const len = Math.hypot(pxS - oxS, pyS - oyS);
+      if (len < 8) continue;
+      h += `<line x1="${oxS}" y1="${oyS}" x2="${pxS}" y2="${pyS}" stroke="${pc.col}" stroke-width="${pc.thick}" ${pc.dash?`stroke-dasharray="${pc.dash}"`:''} marker-end="url(#${pc.marker})"/>`;
+      const lamStr = pc.lam < 0.05 ? pc.lam.toFixed(3) : pc.lam.toFixed(2);
+      h += `<text x="${pxS+5}" y="${pyS-4}" font-size="13" fill="${pc.col}" font-weight="700">${pc.lbl} (λ=${lamStr})</text>`;
+    }
+
+    // ⑤ 60 個資料點（depth 排序、遠的先畫）—— 用原始 rawData 餵 projPt，內部自動減 mean
+    const projected = rawData.map((p, i) => {
+      const r = projPt(p);
+      return { i, sx: r[0], sy: r[1], depth: r[2] };
+    });
+    projected.sort((a,b)=>a.depth - b.depth);
+    for (const o of projected) {
+      const isShown = shownIndices.includes(o.i);
+      const col = cellCols[labels[o.i]];
+      const radius = 5 + o.depth*0.5;
+      const finalR = isShown ? Math.max(7.5, radius+2.5) : Math.max(4, radius);
+      h += `<circle cx="${o.sx}" cy="${o.sy}" r="${finalR}" fill="${col}" stroke="${isShown?'#222':'#fff'}" stroke-width="${isShown?2:1.2}" opacity="0.95"/>`;
+    }
+
+    // 角落小說明
+    h += `<text x="10" y="16" font-size="11" fill="#666">yaw=${(+yawR.value)}° pitch=${(+pitchR.value)}°</text>`;
+    h += `<text x="10" y="32" font-size="11" fill="#888">${tr('拖滑桿旋轉，或按下方快捷鍵','Drag sliders or use the buttons below')}</text>`;
+
     scatterSvg.innerHTML = h;
+    yawVal.textContent = (+yawR.value) + '°';
+    pitchVal.textContent = (+pitchR.value) + '°';
   }
+
+  function updateSliderLabels() {
+    yawVal.textContent = yawR.value + '°';
+    pitchVal.textContent = pitchR.value + '°';
+  }
+
   document.getElementById('s0VizBtn').onclick = () => {
     if (vizDone) return;
-    draw2DScatter();
+    draw3DScatter();
     vizDone = true;
+    setSelectedBtn('s0ViewDef');   // 初始就是「預設視角」狀態
     vizNote.innerHTML = tr(
-      '🎯 <b>看見了嗎？</b>同一份 60 筆資料，畫成 (Gene1, Gene2) 散佈圖後，<b>三群點馬上跳出來</b>。'
-      + '<br>表格中你看的那 10 列（外圍黑邊的點）<b>剛好散在三群裡</b>——你之前看不出規律，是因為眼睛不擅長看純數字表格。'
-      + '<br>剩下 50 個點顯示為灰色，因為圖只用了 Gene1, Gene2 兩個維度，還沒做任何 PCA。',
-      '🎯 <b>See it?</b> The same 60 samples, plotted as (Gene1, Gene2), instantly reveal <b>three clusters</b>.'
-      + '<br>The 10 rows from the table (black-outlined points) <b>land naturally in all three clusters</b> — you couldn\'t see the pattern before because eyes aren\'t built for reading number tables.'
-      + '<br>The remaining 50 points are gray because the plot only uses Gene1 and Gene2 — no PCA yet.'
+      '🎯 <b>看見了嗎？</b>3 個基因都有在變，但 60 個點全黏在那塊<b>米黃色虛線平面</b>上——那就是 <b>PC1-PC2 平面</b>。'
+      + '<br>紅色箭頭 = <b>PC1</b>（變異最大方向）、藍色 = <b>PC2</b>、綠色虛線 = <b>PC3</b>（變異 ≈ 0，垂直平面、很短）。'
+      + '<br>👉 按「<b>正視 PC1-PC2 平面</b>」——相機從 PC3 方向看下去，整個平面攤平，三群分得清清楚楚（就是 PCA 投影後的 2D 結果）。'
+      + '<br>👉 按「<b>側視（PC1）</b>」——從 PC1 方向看入，資料退化成沿 PC2 的<b>細線</b>，因為 PC3 方向幾乎沒厚度。'
+      + '<br>👉 按「<b>預設視角</b>」——回到斜切視角（yaw=34°, pitch=23°），同時看到平面、PC 軸、資料的立體關係。'
+      + '<br><b>結論</b>：3 個基因軸看似獨立，PCA 算完發現 <b>PC1+PC2 ≈ 全部變異</b>、<b>PC3 變異 ≈ 0 可丟</b>——3D 安全壓回 2D。',
+      '🎯 <b>See it?</b> All three genes vary, yet the 60 points stick to the <b>beige dashed plane</b> — that\'s the <b>PC1-PC2 plane</b>.'
+      + '<br>Red arrow = <b>PC1</b> (max-variance direction), blue = <b>PC2</b>, green dashed = <b>PC3</b> (variance ≈ 0, perpendicular to plane, very short).'
+      + '<br>👉 Click "<b>Face the PC1-PC2 plane</b>" — camera looks down along PC3, plane lies flat, three clusters separate crisply (the 2-D PCA projection).'
+      + '<br>👉 Click "<b>Side view (along PC1)</b>" — looking into PC1, data collapses into a <b>line along PC2</b>, because PC3 has almost zero thickness.'
+      + '<br>👉 Click "<b>Default view</b>" — back to the tilted view (yaw=34°, pitch=23°), seeing the plane, PC axes and 3-D relationship at once.'
+      + '<br><b>Conclusion</b>: three gene axes look independent, but PCA finds <b>PC1+PC2 ≈ all variance</b> and <b>PC3 variance ≈ 0, drop it</b> — 3-D compresses to 2-D safely.'
     );
   };
   document.getElementById('s0ResetBtn').onclick = () => {
     pickShownIndices();
     renderTable();
-    if (vizDone) draw2DScatter();
+    if (vizDone) draw3DScatter();
   };
+  // 滑桿
+  yawR.addEventListener('input', () => { updateSliderLabels(); if (vizDone) draw3DScatter(); });
+  pitchR.addEventListener('input', () => { updateSliderLabels(); if (vizDone) draw3DScatter(); });
+  // 快捷視角按鈕：用 PC basis 直接定向（鳥瞰/側視）或 Gene basis（預設）
+  function setSelectedBtn(btnId) {
+    ['s0ViewG12','s0ViewG3','s0ViewDef'].forEach(id => {
+      const b = document.getElementById(id);
+      if (b) b.classList.toggle('s0-selected', id === btnId);
+    });
+  }
+  function applyView(mode, yawDeg, pitchDeg, btnId) {
+    s0ViewMode = mode;
+    yawR.value = yawDeg; pitchR.value = pitchDeg;
+    updateSliderLabels();
+    setSelectedBtn(btnId);
+    if (!vizDone) { draw3DScatter(); vizDone = true; }
+    else draw3DScatter();
+  }
+  // 鳥瞰: PC basis + yaw=0/pitch=0 → 螢幕 X=PC1（橫向）, Y=PC2（縱向上）, depth=PC3
+  //        → PC1-PC2 平面完全攤平、PC3 (≈0) 進入深度，三群清楚分布
+  document.getElementById('s0ViewG12').onclick = () => applyView('pc', 0, 0, 's0ViewG12');
+  // 側視（看 PC1 一直線）: PC basis + yaw=0/pitch=90° → depth=PC2、X=PC1、Y=-PC3
+  //        → 資料沿 PC1 方向展成一條水平直線、PC3 上下幾乎沒厚度 → 看到「PC1 那條線」
+  document.getElementById('s0ViewG3').onclick = () => applyView('pc', 0, 90, 's0ViewG3');
+  // 預設: Gene basis + (34, 23) (§10 同款)
+  document.getElementById('s0ViewDef').onclick = () => applyView('gene', 34, 23, 's0ViewDef');
   drawPlaceholder();
 
   // ----- 0-2 1D 分散感受 -----
@@ -2818,16 +3114,18 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
   // ----- Re-render all §0 dynamic content on language change -----
   document.addEventListener('langchange', function () {
     renderTable();
-    if (vizDone) draw2DScatter(); else drawPlaceholder();
+    if (vizDone) draw3DScatter(); else drawPlaceholder();
     if (vizDone) {
       // re-issue the viz note if user has already clicked
       vizNote.innerHTML = tr(
-        '🎯 <b>看見了嗎？</b>同一份 60 筆資料，畫成 (Gene1, Gene2) 散佈圖後，<b>三群點馬上跳出來</b>。'
-        + '<br>表格中你看的那 10 列（外圍黑邊的點）<b>剛好散在三群裡</b>——你之前看不出規律，是因為眼睛不擅長看純數字表格。'
-        + '<br>剩下 50 個點顯示為灰色，因為圖只用了 Gene1, Gene2 兩個維度，還沒做任何 PCA。',
-        '🎯 <b>See it?</b> The same 60 samples, plotted as (Gene1, Gene2), instantly reveal <b>three clusters</b>.'
-        + '<br>The 10 rows from the table (black-outlined points) <b>land naturally in all three clusters</b> — you couldn\'t see the pattern before because eyes aren\'t built for reading number tables.'
-        + '<br>The remaining 50 points are gray because the plot only uses Gene1 and Gene2 — no PCA yet.'
+        '🎯 <b>看見了嗎？</b>同一份 60 筆資料，畫成 3D 散佈圖後，<b>三群點馬上跳出來</b>。'
+        + '<br>👉 試試按「沿 Gene3 方向看」——你會發現 <b>60 個點被壓扁成幾乎一片</b>，因為 Gene3 根本沒在變。'
+        + '<br>👉 再按「沿 (Gene1, Gene2) 看」，三群立刻分得清清楚楚。'
+        + '<br>表格中那 10 列（外圍黑邊的點）<b>剛好散在三群裡</b>。整個圖還沒做任何 PCA。',
+        '🎯 <b>See it?</b> The same 60 samples, plotted in 3D, instantly reveal <b>three clusters</b>.'
+        + '<br>👉 Click "Look down Gene3" — you\'ll see <b>all 60 points collapse into a flat pancake</b>, because Gene3 doesn\'t vary.'
+        + '<br>👉 Click "Look at (Gene1, Gene2)" — the three clusters separate cleanly.'
+        + '<br>The 10 rows from the table (black-outlined dots) <b>land naturally in all three clusters</b>. No PCA applied yet.'
       );
     }
     drawSpread();
@@ -4564,7 +4862,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
   generate(); render();
 })();
 </script>
-<!-- V7 新增：i18n.js 啟用語言切換按鈕 -->
+<!-- i18n.js 啟用語言切換按鈕 -->
 <script src="../i18n.js"></script>
 </body>
 </html>
