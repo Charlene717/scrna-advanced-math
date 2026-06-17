@@ -3494,7 +3494,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     h += `<line x1="${cmx}" y1="${cmy-7}" x2="${cmx}" y2="${cmy+7}" stroke="#8e44ad" stroke-width="2.5"/>`;
     h += `<text x="${cmx+10}" y="${cmy-8}" font-size="11" fill="#8e44ad">(${mx.toFixed(2)}, ${my.toFixed(2)})</text>`;
     h += `<text x="420" y="236" font-size="12" fill="#444" font-weight="600">Gene1 →</text>`;
-    h += `<text x="225" y="14" font-size="12" fill="#444" font-weight="600">↑ Gene2</text>`;
+    h += `<text x="${cmx+8}" y="14" font-size="12" fill="#444" font-weight="600">↑ Gene2</text>`;
     // 點與選中的「展開圖」
     let contribs = [];
     let sumContrib = 0;
@@ -3519,7 +3519,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
         h += `<line x1="${cmx}" y1="${sy}" x2="${sx}" y2="${sy}" stroke="#8e44ad" stroke-width="1.5"/>`;
       }
     });
-    h += `<text x="10" y="16" font-size="11" fill="#666">${tr('綠區=正貢獻；紅區=負貢獻；hover 表格列看單一樣本展開','Green=positive contrib; red=negative contrib; hover table rows to highlight individual samples')}</text>`;
+    h += `<text x="${W/2}" y="${H-8}" font-size="11" fill="#666" text-anchor="middle">${tr('綠區=正貢獻；紅區=負貢獻；hover 表格列看單一樣本展開','Green=positive contrib; red=negative contrib; hover rows to highlight individual samples')}</text>`;
     svg.innerHTML = h;
 
     // 渲染表格
@@ -3649,15 +3649,21 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     h += `<text x="${cx+5}" y="14" font-size="12" fill="#444" font-weight="600">↑ Gene2</text>`;
     const theta = (+thetaR.value) * Math.PI/180;
     const cs = Math.cos(theta), sn = Math.sin(theta);
-    h += `<line x1="${cx - cs*250}" y1="${cy + sn*250}" x2="${cx + cs*250}" y2="${cy - sn*250}" stroke="#27795a" stroke-width="3"/>`;
     let mx=0,my=0;
     for (const p of pts) { mx+=p[0]; my+=p[1]; }
     mx/=pts.length; my/=pts.length;
+    // 綠線穿過資料平均 (mx, my)；如此投影點才會 exactly 在線上
+    const lcx = cx + mx*scale, lcy = cy - my*scale;
+    h += `<line x1="${lcx - cs*250}" y1="${lcy + sn*250}" x2="${lcx + cs*250}" y2="${lcy - sn*250}" stroke="#27795a" stroke-width="3"/>`;
+    // 資料中心十字（紫色 +）
+    h += `<line x1="${lcx-6}" y1="${lcy}" x2="${lcx+6}" y2="${lcy}" stroke="#8e44ad" stroke-width="2"/>`;
+    h += `<line x1="${lcx}" y1="${lcy-6}" x2="${lcx}" y2="${lcy+6}" stroke="#8e44ad" stroke-width="2"/>`;
     for (const p of pts) {
       const sx = cx + p[0]*scale, sy = cy - p[1]*scale;
       const proj = (p[0]-mx)*cs + (p[1]-my)*sn;
-      const px = cx + (mx + proj*cs)*scale;
-      const py = cy - (my + proj*sn)*scale;
+      // 注意：投影點要相對於資料中心 (lcx, lcy)，不是相對於 SVG 原點 (cx, cy)
+      const px = lcx + proj*cs*scale;
+      const py = lcy - proj*sn*scale;
       h += `<line x1="${sx}" y1="${sy}" x2="${px}" y2="${py}" stroke="#aaa" stroke-dasharray="2 2" stroke-width="1"/>`;
       h += `<circle cx="${sx}" cy="${sy}" r="4" fill="#2c5aa0"/>`;
       h += `<circle cx="${px}" cy="${py}" r="4" fill="#27795a"/>`;
