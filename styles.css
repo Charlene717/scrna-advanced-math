@@ -730,6 +730,10 @@ body.lang-en [data-lang="en"].block { display: block; }
 body.lang-en [data-lang="zh"].block { display: none; }
 [data-zh]::after { content: attr(data-zh); }
 body.lang-en [data-zh]::after { content: attr(data-en); }
+/* SVG tspan switching */
+tspan[data-lang="en"] { display: none; }
+body.lang-en tspan[data-lang="zh"] { display: none; }
+body.lang-en tspan[data-lang="en"] { display: inline; }
 
 /* === Responsive === */
 @media (max-width: 768px) {
