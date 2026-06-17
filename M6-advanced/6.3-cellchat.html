@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>6.3 CellChat：細胞間通訊 — Deep Interactive</title>
+<title>6.3 CellChat · 細胞間通訊 · Cell-Cell Communication — Deep Interactive</title>
 <script>
   MathJax = {
     tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] },
@@ -165,15 +165,15 @@
     <li class="dropdown"><a href="../index.html#M1">M1</a>
       <ul class="dropdown-menu">
         <li class="sub-label">基礎 / FOUNDATIONS</li>
-        <li><a href="../M1-foundations/1.1-sparse-matrix.html">1.1 稀疏矩陣</a></li>
-        <li><a href="../M1-foundations/1.2-count-distributions.html">1.2 計數分布</a></li>
+        <li><a href="../M1-foundations/1.1-sparse-matrix.html"><span data-lang="zh">1.1 稀疏矩陣</span><span data-lang="en">1.1 Sparse Matrix</span></a></li>
+        <li><a href="../M1-foundations/1.2-count-distributions.html"><span data-lang="zh">1.2 計數分布</span><span data-lang="en">1.2 Count Distributions</span></a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M2">M2</a>
       <ul class="dropdown-menu">
         <li class="sub-label">前處理 / PREPROCESSING</li>
-        <li><a href="../M2-preprocessing/2.1-qc-statistics.html">2.1 QC 統計</a></li>
+        <li><a href="../M2-preprocessing/2.1-qc-statistics.html"><span data-lang="zh">2.1 QC 統計</span><span data-lang="en">2.1 QC Statistics</span></a></li>
         <li><a href="../M2-preprocessing/2.2-normalization.html">2.2 Normalization</a></li>
-        <li><a href="../M2-preprocessing/2.3-hvg-selection.html">2.3 HVG 選擇</a></li>
+        <li><a href="../M2-preprocessing/2.3-hvg-selection.html"><span data-lang="zh">2.3 HVG 選擇</span><span data-lang="en">2.3 HVG Selection</span></a></li>
         <li><a href="../M2-preprocessing/2.4-scaling.html">2.4 Scaling</a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M3">M3</a>
@@ -193,16 +193,16 @@
     <li class="dropdown"><a href="../index.html#M5">M5</a>
       <ul class="dropdown-menu">
         <li class="sub-label">統計推論 / STATS</li>
-        <li><a href="../M5-statistics/5.1-de-tests.html">5.1 DE 檢定</a></li>
-        <li><a href="../M5-statistics/5.2-multiple-testing.html">5.2 多重檢定 / FDR</a></li>
-        <li><a href="../M5-statistics/5.3-classifier.html">5.3 細胞分類器</a></li>
+        <li><a href="../M5-statistics/5.1-de-tests.html"><span data-lang="zh">5.1 DE 檢定</span><span data-lang="en">5.1 DE Tests</span></a></li>
+        <li><a href="../M5-statistics/5.2-multiple-testing.html"><span data-lang="zh">5.2 多重檢定 / FDR</span><span data-lang="en">5.2 Multiple Testing / FDR</span></a></li>
+        <li><a href="../M5-statistics/5.3-classifier.html"><span data-lang="zh">5.3 細胞分類器</span><span data-lang="en">5.3 Cell Classifier</span></a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M6" class="active">M6</a>
       <ul class="dropdown-menu">
         <li class="sub-label">進階 / ADVANCED</li>
         <li><a href="6.1-integration.html">6.1 Integration</a></li>
         <li><a href="6.2-pseudotime.html">6.2 Pseudotime</a></li>
-        <li><a href="6.3-cellchat.html" class="active-sub">6.3 CellChat ⭐ (本頁)</a></li>
+        <li><a href="6.3-cellchat.html" class="active-sub">6.3 CellChat ⭐ <span data-lang="zh">(本頁)</span><span data-lang="en">(this page)</span></a></li>
       </ul></li>
     <li><a href="../index.html"><span data-lang="zh">🏠 回首頁</span><span data-lang="en">🏠 Home</span></a></li>
   </ul>
@@ -268,7 +268,7 @@
 
   <h4>📍 <span data-lang="zh">在 scRNA-seq 流程中的位置</span><span data-lang="en">Position in scRNA-seq pipeline</span></h4>
   <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f7f9fb; padding: 10px; border-radius: 6px; line-height: 1.8">
-    所有上游（QC → cluster → annotation） →
+    <span data-lang="zh">所有上游（QC → cluster → annotation）</span><span data-lang="en">all upstream (QC → cluster → annotation)</span> →
     <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b>CellChat / CellPhoneDB / NicheNet (L-R signaling)</b></span>
     → signaling network → pathway enrichment → spatial validation → drug target
   </div>

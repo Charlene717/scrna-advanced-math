@@ -165,15 +165,15 @@
     <li class="dropdown"><a href="../index.html#M1">M1</a>
       <ul class="dropdown-menu">
         <li class="sub-label">基礎 / FOUNDATIONS</li>
-        <li><a href="../M1-foundations/1.1-sparse-matrix.html">1.1 稀疏矩陣</a></li>
-        <li><a href="../M1-foundations/1.2-count-distributions.html">1.2 計數分布</a></li>
+        <li><a href="../M1-foundations/1.1-sparse-matrix.html"><span data-lang="zh">1.1 稀疏矩陣</span><span data-lang="en">1.1 Sparse Matrix</span></a></li>
+        <li><a href="../M1-foundations/1.2-count-distributions.html"><span data-lang="zh">1.2 計數分布</span><span data-lang="en">1.2 Count Distributions</span></a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M2">M2</a>
       <ul class="dropdown-menu">
         <li class="sub-label">前處理 / PREPROCESSING</li>
-        <li><a href="../M2-preprocessing/2.1-qc-statistics.html">2.1 QC 統計</a></li>
+        <li><a href="../M2-preprocessing/2.1-qc-statistics.html"><span data-lang="zh">2.1 QC 統計</span><span data-lang="en">2.1 QC Statistics</span></a></li>
         <li><a href="../M2-preprocessing/2.2-normalization.html">2.2 Normalization</a></li>
-        <li><a href="../M2-preprocessing/2.3-hvg-selection.html">2.3 HVG 選擇</a></li>
+        <li><a href="../M2-preprocessing/2.3-hvg-selection.html"><span data-lang="zh">2.3 HVG 選擇</span><span data-lang="en">2.3 HVG Selection</span></a></li>
         <li><a href="../M2-preprocessing/2.4-scaling.html">2.4 Scaling</a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M3">M3</a>
@@ -193,14 +193,14 @@
     <li class="dropdown"><a href="../index.html#M5">M5</a>
       <ul class="dropdown-menu">
         <li class="sub-label">統計推論 / STATS</li>
-        <li><a href="../M5-statistics/5.1-de-tests.html">5.1 DE 檢定</a></li>
-        <li><a href="../M5-statistics/5.2-multiple-testing.html">5.2 多重檢定 / FDR</a></li>
-        <li><a href="../M5-statistics/5.3-classifier.html">5.3 細胞分類器</a></li>
+        <li><a href="../M5-statistics/5.1-de-tests.html"><span data-lang="zh">5.1 DE 檢定</span><span data-lang="en">5.1 DE Tests</span></a></li>
+        <li><a href="../M5-statistics/5.2-multiple-testing.html"><span data-lang="zh">5.2 多重檢定 / FDR</span><span data-lang="en">5.2 Multiple Testing / FDR</span></a></li>
+        <li><a href="../M5-statistics/5.3-classifier.html"><span data-lang="zh">5.3 細胞分類器</span><span data-lang="en">5.3 Cell Classifier</span></a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M6" class="active">M6</a>
       <ul class="dropdown-menu">
         <li class="sub-label">進階 / ADVANCED</li>
-        <li><a href="6.1-integration.html" class="active-sub">6.1 Integration ⭐ (本頁)</a></li>
+        <li><a href="6.1-integration.html" class="active-sub">6.1 Integration ⭐ <span data-lang="zh">(本頁)</span><span data-lang="en">(this page)</span></a></li>
         <li><a href="6.2-pseudotime.html">6.2 Pseudotime</a></li>
         <li><a href="6.3-cellchat.html">6.3 CellChat</a></li>
       </ul></li>
@@ -265,12 +265,12 @@
   </h3>
 
   <p style="font-size: 1.02em; line-height: 1.7">
-    <span data-lang="zh">想像紐約愛樂、東京交響、柏林愛樂三個樂團要<b>合奏同一首貝多芬第九</b>。問題：紐約樂團校準到 A=440Hz、東京到 442Hz、柏林到 443Hz——<b>同一個音 La 三個樂團聽起來都不一樣</b>。如果你不先調音就讓他們一起拉，<b>聽眾會以為「紐約小提琴跟柏林小提琴是不同樂器」</b>。<b>scRNA 多 sample 的 batch effect 就是這件事</b>：lab A 用 10x v2、lab B 用 v3、lab C 換了 reagent 批號——三邊的 PBMC<b>本來是同樣的細胞</b>，但 PCA 跑出來會按 lab 分群，不是按 cell type。</span>
-    <span data-lang="en">Imagine the NY Philharmonic, Tokyo Symphony, and Berlin Philharmonic <b>jointly performing Beethoven's 9th</b>. Problem: NY tunes to A=440Hz, Tokyo to 442Hz, Berlin to 443Hz — <b>the same note A sounds different in each orchestra</b>. Without tuning first, <b>the audience thinks "NY violins and Berlin violins are different instruments"</b>. <b>scRNA's multi-sample batch effect is exactly this</b>: lab A uses 10x v2, lab B uses v3, lab C changed reagent batches — the PBMCs are biologically <b>the same cells</b>, but PCA groups them by lab, not cell type.</span>
+    <span data-lang="zh">想像三個來自不同國家的樂團要<b>合奏同一首貝多芬第九</b>。問題：美國樂團大多校準到 A=440 Hz，歐洲樂團習慣 A=442-443 Hz，再加上有些古樂團甚至到 A=415 Hz——<b>同一個音 La，每個樂團聽起來都不一樣</b>。如果不先統一調音就讓他們一起拉，<b>聽眾會以為「這些小提琴是不同樂器」</b>。<b>scRNA 多 sample 的 batch effect 就是這件事</b>：lab A 用 10x v2、lab B 用 v3、lab C 換了 reagent 批號——三邊的 PBMC <b>本來是同樣的細胞</b>，但 PCA 跑出來會按 lab 分群，不是按 cell type。</span>
+    <span data-lang="en">Imagine three orchestras from different countries <b>jointly performing Beethoven's 9th</b>. Problem: American orchestras commonly tune to A=440 Hz, European ones to A=442-443 Hz, and historical-instrument ensembles go as low as A=415 Hz — <b>the same note A sounds different in every orchestra</b>. Without unified tuning, <b>the audience thinks "these violins are different instruments"</b>. <b>scRNA's multi-sample batch effect is exactly this</b>: lab A uses 10x v2, lab B uses v3, lab C changed reagent batches — the PBMCs are biologically <b>the same cells</b>, but PCA groups them by lab, not by cell type.</span>
   </p>
   <p style="font-size: 1.02em; line-height: 1.7">
-    <span data-lang="zh">Integration 就是「<b>統一調音</b>」。Harmony 一邊一邊地把每個 batch 的細胞拉到「<b>跨 batch 的中心</b>」，scVI 用 deep learning 把 batch 當「干擾因子」減掉。<b>但小心過度校正</b>：你不能把「<b>不同樂團演奏速度</b>」（真實的疾病差異）也校掉，否則「<b>紐約是 disease group、柏林是 healthy</b>」這個你要找的差異也<b>被一起抹平了</b>。所以 integration 是場走鋼索的遊戲——kBET 量「<b>batch 是否混好</b>」、cell-type ARI 量「<b>細胞型是否保持原樣</b>」，兩個分數要同時高才算成功。</span>
-    <span data-lang="en">Integration is "<b>unified tuning</b>". Harmony iteratively pulls each batch's cells toward the "<b>cross-batch center</b>"; scVI uses deep learning to subtract batch as a confounder. <b>But beware over-correction</b>: you can't tune away "<b>different tempo between orchestras</b>" (real disease differences), or else the "<b>NY is disease, Berlin is healthy</b>" signal you want to find <b>also gets erased</b>. So integration is a tightrope walk — kBET measures "<b>are batches mixed</b>", cell-type ARI measures "<b>are cell types preserved</b>"; both must score high for success.</span>
+    <span data-lang="zh">Integration 就是「<b>統一調音</b>」。Harmony 一邊一邊地把每個 batch 的細胞拉到「<b>跨 batch 的中心</b>」，scVI 用 deep learning 把 batch 當「干擾因子」減掉。<b>但小心過度校正</b>：你不能把「<b>不同樂團的詮釋風格</b>」（真實的疾病差異）也校掉，否則「<b>疾病組 vs 健康組</b>」這個你真正要找的差異也<b>被一起抹平</b>了。所以 integration 是場走鋼索的遊戲——kBET 量「<b>batch 是否混好</b>」、cell-type ARI 量「<b>細胞型是否保持原樣</b>」，兩個分數要同時高才算成功。</span>
+    <span data-lang="en">Integration is "<b>unified tuning</b>". Harmony iteratively pulls each batch's cells toward the "<b>cross-batch center</b>"; scVI uses deep learning to subtract batch as a confounder. <b>But beware over-correction</b>: you can't tune away "<b>different interpretive styles between orchestras</b>" (real disease differences), or else the "<b>disease vs healthy</b>" signal you actually want to find <b>also gets erased</b>. So integration is a tightrope walk — kBET measures "<b>are batches mixed</b>", cell-type ARI measures "<b>are cell types preserved</b>"; both must score high for success.</span>
   </p>
 
   <h4>📍 <span data-lang="zh">在 scRNA-seq 流程中的位置</span><span data-lang="en">Position in scRNA-seq pipeline</span></h4>
