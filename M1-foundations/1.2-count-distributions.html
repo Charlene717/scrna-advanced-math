@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>1.2 計數分布：Poisson / NB / ZINB — Deep Interactive</title>
+<title><span data-lang="zh">1.2 計數分布</span><span data-lang="en">1.2 Count Distributions</span>：Poisson / NB / ZINB — Deep Interactive</title>
 <script>
   MathJax = {
     tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] },
@@ -175,15 +175,15 @@
     <li class="dropdown"><a href="../index.html#M1" class="active">M1</a>
       <ul class="dropdown-menu">
         <li class="sub-label">基礎 / FOUNDATIONS</li>
-        <li><a href="1.1-sparse-matrix.html">1.1 稀疏矩陣</a></li>
-        <li><a href="1.2-count-distributions.html" class="active-sub">1.2 計數分布 ⭐ (本頁)</a></li>
+        <li><a href="1.1-sparse-matrix.html"><span data-lang="zh">1.1 稀疏矩陣</span><span data-lang="en">1.1 Sparse Matrix</span></a></li>
+        <li><a href="1.2-count-distributions.html" class="active-sub"><span data-lang="zh">1.2 計數分布 ⭐ (本頁)</span><span data-lang="en">1.2 Count Distributions ⭐ (this page)</span></a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M2">M2</a>
       <ul class="dropdown-menu">
         <li class="sub-label">前處理 / PREPROCESSING</li>
-        <li><a href="../M2-preprocessing/2.1-qc-statistics.html">2.1 QC 統計</a></li>
+        <li><a href="../M2-preprocessing/2.1-qc-statistics.html"><span data-lang="zh">2.1 QC 統計</span><span data-lang="en">2.1 QC Statistics</span></a></li>
         <li><a href="../M2-preprocessing/2.2-normalization.html">2.2 Normalization</a></li>
-        <li><a href="../M2-preprocessing/2.3-hvg-selection.html">2.3 HVG 選擇</a></li>
+        <li><a href="../M2-preprocessing/2.3-hvg-selection.html"><span data-lang="zh">2.3 HVG 選擇</span><span data-lang="en">2.3 HVG Selection</span></a></li>
         <li><a href="../M2-preprocessing/2.4-scaling.html">2.4 Scaling</a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M3">M3</a>
@@ -203,9 +203,9 @@
     <li class="dropdown"><a href="../index.html#M5">M5</a>
       <ul class="dropdown-menu">
         <li class="sub-label">統計推論 / STATS</li>
-        <li><a href="../M5-statistics/5.1-de-tests.html">5.1 DE 檢定</a></li>
-        <li><a href="../M5-statistics/5.2-multiple-testing.html">5.2 多重檢定 / FDR</a></li>
-        <li><a href="../M5-statistics/5.3-classifier.html">5.3 細胞分類器</a></li>
+        <li><a href="../M5-statistics/5.1-de-tests.html"><span data-lang="zh">5.1 DE 檢定</span><span data-lang="en">5.1 DE Tests</span></a></li>
+        <li><a href="../M5-statistics/5.2-multiple-testing.html"><span data-lang="zh">5.2 多重檢定 / FDR</span><span data-lang="en">5.2 Multiple Testing / FDR</span></a></li>
+        <li><a href="../M5-statistics/5.3-classifier.html"><span data-lang="zh">5.3 細胞分類器</span><span data-lang="en">5.3 Cell Classifier</span></a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M6">M6</a>
       <ul class="dropdown-menu">
@@ -280,7 +280,7 @@
   <h4>📍 <span data-lang="zh">它決定整套工具的「語言」</span><span data-lang="en">It defines the language of the whole toolkit</span></h4>
   <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f7f9fb; padding: 10px; border-radius: 6px; line-height: 1.8">
     sparse matrix →
-    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b>「我假設 mRNA 服從 NB 分布」</b></span>
+    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b><span data-lang="zh">「我假設 mRNA 服從 NB 分布」</span><span data-lang="en">"I assume mRNA follows NB"</span></b></span>
     → Pearson residuals · MAST · scVI · DESeq2 · scTransform · GLM-PCA
   </div>
   <p style="margin-top: 6px; font-size: 0.93em; color: #555">
@@ -320,7 +320,7 @@
       <span data-lang="en">The "expected" curve on the mean-variance plot IS the NB curve; genes that deviate become HVGs.</span></li>
     <li><b>DE：</b><span data-lang="zh">MAST、DESeq2 全建在 NB 上；Wilcoxon 不假設分布但<b>付出 power 的代價</b>（漏報微弱真信號）。</span>
       <span data-lang="en">MAST and DESeq2 both build on NB; Wilcoxon is assumption-free but <b>pays in lost power</b> (misses subtle signals).</span></li>
-    <li><b>scVI / 整合：</b><span data-lang="zh">scVI 的 decoder 直接吐 NB likelihood；換假設等於整個 deep model 重訓練。</span>
+    <li><b>scVI / <span data-lang="zh">整合</span><span data-lang="en">Integration</span>：</b><span data-lang="zh">scVI 的 decoder 直接吐 NB likelihood；換假設等於整個 deep model 重訓練。</span>
       <span data-lang="en">scVI's decoder spits NB likelihood directly; swap distribution = retrain the whole deep model.</span></li>
   </ul>
 
@@ -980,7 +980,7 @@ GLM models this log-linearly — a "probabilistic" version of size factor normal
       <th data-lang="zh">適用</th><th data-lang="en">Applies to</th>
       <th data-lang="zh">效果</th><th data-lang="en">Effect</th></tr>
   <tr><td>$\log(x+1)$</td><td>$\log(x+1)$</td>
-      <td>Lognormal 假設</td><td>Lognormal assumption</td>
+      <td data-lang="zh">Lognormal 假設</td><td data-lang="en">Lognormal assumption</td>
       <td data-lang="zh">高表現好，低表現失效</td>
       <td data-lang="en">good at high expr, fails at low</td></tr>
   <tr><td>$2\sqrt{x}$ (Anscombe)</td><td>$2\sqrt{x}$ (Anscombe)</td>
