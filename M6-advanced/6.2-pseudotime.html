@@ -368,9 +368,9 @@
   <h4 data-lang="zh">目錄</h4>
   <h4 data-lang="en">Table of Contents</h4>
   <ol start="0">
-    <li><a href="#s0"><span data-lang="zh">故事：分化是連續的</span><span data-lang="en">Story: differentiation is continuous</span></a><span class="new" data-lang="zh">新增</span><span class="new" data-lang="en">NEW</span></li>
+    <li><a href="#s0"><span data-lang="zh">故事：分化是連續的</span><span data-lang="en">Story: differentiation is continuous</span></a></li>
     <li><a href="#s1"><span data-lang="zh">軌跡 vs 群的直覺差異</span><span data-lang="en">Trajectory vs cluster</span></a></li>
-    <li><a href="#s2"><span data-lang="zh">DPT (Diffusion Pseudotime) 數學</span><span data-lang="en">DPT math</span></a><span class="new" data-lang="zh">核心</span><span class="new" data-lang="en">CORE</span></li>
+    <li><a href="#s2"><span data-lang="zh">DPT (Diffusion Pseudotime) 數學</span><span data-lang="en">DPT math</span></a></li>
     <li><a href="#s3"><span data-lang="zh">互動 DPT：從 root 開始</span><span data-lang="en">Interactive DPT from root</span></a></li>
     <li><a href="#s4"><span data-lang="zh">Slingshot：主曲線擬合</span><span data-lang="en">Slingshot principal curves</span></a></li>
     <li><a href="#s5"><span data-lang="zh">Monocle3：partition graph</span><span data-lang="en">Monocle3 partition graph</span></a></li>
@@ -885,11 +885,4 @@ scv.pl.velocity_embedding_stream(adata, basis=<span class="s">"umap"</span>)
     s += `</g>`;
     document.getElementById('s3svg').innerHTML = s;
     document.getElementById('s3svg').querySelectorAll('circle').forEach(c => {
-      c.addEventListener('click', () => { root = +c.dataset.i; draw(); });
-    });
-  }
-  draw();
-})();
-</script>
-</body>
-</html>
+      c.addEventListener('click', () =>
