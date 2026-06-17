@@ -165,15 +165,15 @@
     <li class="dropdown"><a href="../index.html#M1">M1</a>
       <ul class="dropdown-menu">
         <li class="sub-label">基礎 / FOUNDATIONS</li>
-        <li><a href="../M1-foundations/1.1-sparse-matrix.html">1.1 稀疏矩陣</a></li>
-        <li><a href="../M1-foundations/1.2-count-distributions.html">1.2 計數分布</a></li>
+        <li><a href="../M1-foundations/1.1-sparse-matrix.html"><span data-lang="zh">1.1 稀疏矩陣</span><span data-lang="en">1.1 Sparse Matrix</span></a></li>
+        <li><a href="../M1-foundations/1.2-count-distributions.html"><span data-lang="zh">1.2 計數分布</span><span data-lang="en">1.2 Count Distributions</span></a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M2">M2</a>
       <ul class="dropdown-menu">
         <li class="sub-label">前處理 / PREPROCESSING</li>
-        <li><a href="../M2-preprocessing/2.1-qc-statistics.html">2.1 QC 統計</a></li>
+        <li><a href="../M2-preprocessing/2.1-qc-statistics.html"><span data-lang="zh">2.1 QC 統計</span><span data-lang="en">2.1 QC Statistics</span></a></li>
         <li><a href="../M2-preprocessing/2.2-normalization.html">2.2 Normalization</a></li>
-        <li><a href="../M2-preprocessing/2.3-hvg-selection.html">2.3 HVG 選擇</a></li>
+        <li><a href="../M2-preprocessing/2.3-hvg-selection.html"><span data-lang="zh">2.3 HVG 選擇</span><span data-lang="en">2.3 HVG Selection</span></a></li>
         <li><a href="../M2-preprocessing/2.4-scaling.html">2.4 Scaling</a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M3">M3</a>
@@ -193,9 +193,9 @@
     <li class="dropdown"><a href="../index.html#M5" class="active">M5</a>
       <ul class="dropdown-menu">
         <li class="sub-label">統計推論 / STATS</li>
-        <li><a href="5.1-de-tests.html" class="active-sub">5.1 DE 檢定 ⭐ (本頁)</a></li>
-        <li><a href="5.2-multiple-testing.html">5.2 多重檢定 / FDR</a></li>
-        <li><a href="5.3-classifier.html">5.3 細胞分類器</a></li>
+        <li><a href="5.1-de-tests.html" class="active-sub"><span data-lang="zh"><span data-lang="zh">5.1 DE 檢定</span><span data-lang="en">5.1 DE Tests</span> ⭐ (本頁)</span><span data-lang="en">5.1 DE Tests ⭐ (this page)</span></a></li>
+        <li><a href="5.2-multiple-testing.html"><span data-lang="zh">5.2 多重檢定 / FDR</span><span data-lang="en">5.2 Multiple Testing / FDR</span></a></li>
+        <li><a href="5.3-classifier.html"><span data-lang="zh">5.3 細胞分類器</span><span data-lang="en">5.3 Cell Classifier</span></a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M6">M6</a>
       <ul class="dropdown-menu">
@@ -272,7 +272,7 @@
   <h4>📍 <span data-lang="zh">在流程中的位置</span><span data-lang="en">Pipeline position</span></h4>
   <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f7f9fb; padding: 10px; border-radius: 6px; line-height: 1.8">
     QC → norm → HVG → PCA → KNN → Leiden →
-    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b>DE tests（取名儀式）</b></span>
+    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b><span data-lang="zh">DE tests（取名儀式）</span><span data-lang="en">DE tests (naming ceremony)</span></b></span>
     → FDR → marker → annotation → biology
   </div>
 
@@ -783,8 +783,8 @@ pb = dc.get_pseudobulk(
   <tr><td>MAST (cell-level)</td><td>MAST (cell-level)</td>
       <td><span style="color:#c0392b">35%</span></td><td><span style="color:#c0392b">35%</span></td></tr>
   <tr style="background:#effaf3"><td><b>Pseudobulk + DESeq2</b></td><td><b>Pseudobulk + DESeq2</b></td>
-      <td><span style="color:#27795a"><b>~ 5% (符合預期)</b></span></td>
-      <td><span style="color:#27795a"><b>~ 5% (as expected)</b></span></td></tr>
+      <td data-lang="zh"><span style="color:#27795a"><b>~ 5% (符合預期)</b></span></td>
+      <td data-lang="en"><span style="color:#27795a"><b>~ 5% (as expected)</b></span></td></tr>
   <tr><td>Pseudobulk + edgeR</td><td>Pseudobulk + edgeR</td>
       <td><span style="color:#27795a">~ 5%</span></td><td><span style="color:#27795a">~ 5%</span></td></tr>
 </table>
@@ -846,7 +846,7 @@ pb = dc.get_pseudobulk(
 
 <div class="callout prog">
   <strong data-lang="zh">下一步</strong><strong data-lang="en">Next</strong>:
-  <span data-lang="zh">→ <a href="5.2-multiple-testing.html"><b>5.2 多重檢定 / FDR</b></a> 控制假陽性 → <a href="5.3-classifier.html"><b>5.3 細胞分類器</b></a> 從 marker 自動 annotate。</span>
+  <span data-lang="zh">→ <a href="5.2-multiple-testing.html"><b><span data-lang="zh">5.2 多重檢定 / FDR</span><span data-lang="en">5.2 Multiple Testing / FDR</span></b></a> 控制假陽性 → <a href="5.3-classifier.html"><b><span data-lang="zh">5.3 細胞分類器</span><span data-lang="en">5.3 Cell Classifier</span></b></a> 從 marker 自動 annotate。</span>
   <span data-lang="en">→ <a href="5.2-multiple-testing.html"><b>5.2 Multiple testing / FDR</b></a> → <a href="5.3-classifier.html"><b>5.3 Classifier</b></a>.</span>
 </div>
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>5.2 多重檢定 / FDR：Bonferroni / BH / q-value — Deep Interactive</title>
+<title>5.2 Multiple Testing / FDR · 多重檢定 — Bonferroni / BH / q-value — Deep Interactive</title>
 <script>
   MathJax = {
     tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] },
@@ -165,15 +165,15 @@
     <li class="dropdown"><a href="../index.html#M1">M1</a>
       <ul class="dropdown-menu">
         <li class="sub-label">基礎 / FOUNDATIONS</li>
-        <li><a href="../M1-foundations/1.1-sparse-matrix.html">1.1 稀疏矩陣</a></li>
-        <li><a href="../M1-foundations/1.2-count-distributions.html">1.2 計數分布</a></li>
+        <li><a href="../M1-foundations/1.1-sparse-matrix.html"><span data-lang="zh">1.1 稀疏矩陣</span><span data-lang="en">1.1 Sparse Matrix</span></a></li>
+        <li><a href="../M1-foundations/1.2-count-distributions.html"><span data-lang="zh">1.2 計數分布</span><span data-lang="en">1.2 Count Distributions</span></a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M2">M2</a>
       <ul class="dropdown-menu">
         <li class="sub-label">前處理 / PREPROCESSING</li>
-        <li><a href="../M2-preprocessing/2.1-qc-statistics.html">2.1 QC 統計</a></li>
+        <li><a href="../M2-preprocessing/2.1-qc-statistics.html"><span data-lang="zh">2.1 QC 統計</span><span data-lang="en">2.1 QC Statistics</span></a></li>
         <li><a href="../M2-preprocessing/2.2-normalization.html">2.2 Normalization</a></li>
-        <li><a href="../M2-preprocessing/2.3-hvg-selection.html">2.3 HVG 選擇</a></li>
+        <li><a href="../M2-preprocessing/2.3-hvg-selection.html"><span data-lang="zh">2.3 HVG 選擇</span><span data-lang="en">2.3 HVG Selection</span></a></li>
         <li><a href="../M2-preprocessing/2.4-scaling.html">2.4 Scaling</a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M3">M3</a>
@@ -193,9 +193,9 @@
     <li class="dropdown"><a href="../index.html#M5" class="active">M5</a>
       <ul class="dropdown-menu">
         <li class="sub-label">統計推論 / STATS</li>
-        <li><a href="5.1-de-tests.html">5.1 DE 檢定</a></li>
-        <li><a href="5.2-multiple-testing.html" class="active-sub">5.2 多重檢定 / FDR ⭐ (本頁)</a></li>
-        <li><a href="5.3-classifier.html">5.3 細胞分類器</a></li>
+        <li><a href="5.1-de-tests.html"><span data-lang="zh">5.1 DE 檢定</span><span data-lang="en">5.1 DE Tests</span></a></li>
+        <li><a href="5.2-multiple-testing.html" class="active-sub"><span data-lang="zh"><span data-lang="zh">5.2 多重檢定 / FDR</span><span data-lang="en">5.2 Multiple Testing / FDR</span> ⭐ (本頁)</span><span data-lang="en">5.2 Multiple Testing / FDR ⭐ (this page)</span></a></li>
+        <li><a href="5.3-classifier.html"><span data-lang="zh">5.3 細胞分類器</span><span data-lang="en">5.3 Cell Classifier</span></a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M6">M6</a>
       <ul class="dropdown-menu">
@@ -431,7 +431,7 @@
       <td>Family-Wise Error Rate</td><td>Family-Wise Error Rate</td>
       <td>False Discovery Rate</td><td>False Discovery Rate</td></tr>
   <tr><td data-lang="zh">定義</td><td data-lang="en">Definition</td>
-      <td>P(至少一個假陽性)</td><td>P(at least one FP)</td>
+      <td data-lang="zh">P(至少一個假陽性)</td><td data-lang="en">P(at least one FP)</td>
       <td>E[FP / total positives]</td><td>E[FP / total positives]</td></tr>
   <tr><td data-lang="zh">嚴格度</td><td data-lang="en">Stringency</td>
       <td data-lang="zh">非常嚴格</td><td data-lang="en">very strict</td>
@@ -825,7 +825,7 @@ BH finds largest $k^* = \max\{i : p_{(i)} \le i\alpha/m\}$, rejects rank 1 to $k
 
 <div class="callout prog">
   <strong data-lang="zh">下一步</strong><strong data-lang="en">Next</strong>:
-  <span data-lang="zh">有了 FDR 校正後的 marker list → <a href="5.3-classifier.html"><b>5.3 細胞分類器</b></a> 把這些 marker 變成自動 annotation。</span>
+  <span data-lang="zh">有了 FDR 校正後的 marker list → <a href="5.3-classifier.html"><b><span data-lang="zh">5.3 細胞分類器</span><span data-lang="en">5.3 Cell Classifier</span></b></a> 把這些 marker 變成自動 annotation。</span>
   <span data-lang="en">FDR-corrected marker list → <a href="5.3-classifier.html"><b>5.3 Cell classifier</b></a> turns markers into automated annotation.</span>
 </div>
 

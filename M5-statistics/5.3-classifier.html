@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>5.3 細胞分類器：CellTypist / scNym / 邏輯回歸 — Deep Interactive</title>
+<title>5.3 Cell Classifier · 細胞分類器 — CellTypist / scNym / Logistic Regression — Deep Interactive</title>
 <script>
   MathJax = {
     tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] },
@@ -165,15 +165,15 @@
     <li class="dropdown"><a href="../index.html#M1">M1</a>
       <ul class="dropdown-menu">
         <li class="sub-label">基礎 / FOUNDATIONS</li>
-        <li><a href="../M1-foundations/1.1-sparse-matrix.html">1.1 稀疏矩陣</a></li>
-        <li><a href="../M1-foundations/1.2-count-distributions.html">1.2 計數分布</a></li>
+        <li><a href="../M1-foundations/1.1-sparse-matrix.html"><span data-lang="zh">1.1 稀疏矩陣</span><span data-lang="en">1.1 Sparse Matrix</span></a></li>
+        <li><a href="../M1-foundations/1.2-count-distributions.html"><span data-lang="zh">1.2 計數分布</span><span data-lang="en">1.2 Count Distributions</span></a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M2">M2</a>
       <ul class="dropdown-menu">
         <li class="sub-label">前處理 / PREPROCESSING</li>
-        <li><a href="../M2-preprocessing/2.1-qc-statistics.html">2.1 QC 統計</a></li>
+        <li><a href="../M2-preprocessing/2.1-qc-statistics.html"><span data-lang="zh">2.1 QC 統計</span><span data-lang="en">2.1 QC Statistics</span></a></li>
         <li><a href="../M2-preprocessing/2.2-normalization.html">2.2 Normalization</a></li>
-        <li><a href="../M2-preprocessing/2.3-hvg-selection.html">2.3 HVG 選擇</a></li>
+        <li><a href="../M2-preprocessing/2.3-hvg-selection.html"><span data-lang="zh">2.3 HVG 選擇</span><span data-lang="en">2.3 HVG Selection</span></a></li>
         <li><a href="../M2-preprocessing/2.4-scaling.html">2.4 Scaling</a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M3">M3</a>
@@ -193,9 +193,9 @@
     <li class="dropdown"><a href="../index.html#M5" class="active">M5</a>
       <ul class="dropdown-menu">
         <li class="sub-label">統計推論 / STATS</li>
-        <li><a href="5.1-de-tests.html">5.1 DE 檢定</a></li>
-        <li><a href="5.2-multiple-testing.html">5.2 多重檢定 / FDR</a></li>
-        <li><a href="5.3-classifier.html" class="active-sub">5.3 細胞分類器 ⭐ (本頁)</a></li>
+        <li><a href="5.1-de-tests.html"><span data-lang="zh">5.1 DE 檢定</span><span data-lang="en">5.1 DE Tests</span></a></li>
+        <li><a href="5.2-multiple-testing.html"><span data-lang="zh">5.2 多重檢定 / FDR</span><span data-lang="en">5.2 Multiple Testing / FDR</span></a></li>
+        <li><a href="5.3-classifier.html" class="active-sub"><span data-lang="zh"><span data-lang="zh">5.3 細胞分類器</span><span data-lang="en">5.3 Cell Classifier</span> ⭐ (本頁)</span><span data-lang="en">5.3 Cell Classifier ⭐ (this page)</span></a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M6">M6</a>
       <ul class="dropdown-menu">
@@ -264,8 +264,8 @@
     <span data-lang="en">Imagine hearing a song in a café. <b>Ten years ago</b>, you'd ask the DJ "what's this song?" or scribble the melody to look up at home (that's 2017 scRNA: manually look up markers → cell type). <b>In 2024</b>, you open Shazam and get <b>song + artist + album in 5 seconds</b>. <b>CellTypist is Shazam for cells</b>: it has "<b>already heard</b>" millions of pre-annotated cells (trained on HCA, Tabula Sapiens), so your query cell comes in and gets <b>cell type + confidence score in 1 second</b>.</span>
   </p>
   <p style="font-size: 1.02em; line-height: 1.7">
-    <span data-lang="zh">為什麼 2024 年的 scRNA <b>非用 classifier 不可</b>？因為手動 annotate 10 個 cluster 還勉強做得來，但 atlas 時代<b>動輒 100+ cluster、50M cells</b>，你光標一個 paper 就要 3-5 天，<b>不同人標出來還不一致</b>（你叫 Tcm，我叫 memory T，到底誰對？）。CellTypist 有 30+ 個訓練好的 model（immune、lung、gut、kidney…），<b>用同一個 reference 標</b>就解決了不一致問題。最棒的是它<b>給 confidence 分數</b>：低 confidence 細胞 = 「reference 沒見過」的 candidate novel state → 你的<b>下一個 paper 賣點</b>。</span>
-    <span data-lang="en">Why is 2024 scRNA <b>impossible without classifiers</b>? Manual annotation works for 10 clusters, but atlas-era studies routinely involve <b>100+ clusters and 50M cells</b>; one paper takes 3-5 days, and <b>different people label inconsistently</b> (you say Tcm, I say memory T — who's right?). CellTypist offers 30+ pretrained models (immune, lung, gut, kidney…), and <b>using a single reference</b> dissolves the inconsistency. Best of all, it <b>outputs confidence scores</b>: low-confidence cells = "reference hasn't seen this" → candidate novel state → <b>your next paper's headline</b>.</span>
+    <span data-lang="zh">為什麼 2024 年的 scRNA <b>非用 classifier 不可</b>？因為手動 annotate 10 個 cluster 還勉強做得來，但 atlas 時代<b>動輒 100+ cluster、50M cells</b>，你光標一個 paper 就要 3-5 天，<b>不同人標出來還不一致</b>（你叫 Tcm，我叫 memory T，到底誰對？）。CellTypist 有 30+ 個訓練好的 model（immune、lung、gut、kidney…），其中免疫專用就分兩個解析度：<code>Immune_All_High</code>（粗：~32 個主要免疫亞型）跟 <code>Immune_All_Low</code>（細：~98 個免疫亞型）；<b>用同一個 reference 標</b>就解決了不一致問題。最棒的是它<b>給 confidence 分數</b>：低 confidence 細胞 = 「reference 沒見過」的 candidate novel state → 你的<b>下一個 paper 賣點</b>。</span>
+    <span data-lang="en">Why is 2024 scRNA <b>impossible without classifiers</b>? Manual annotation works for 10 clusters, but atlas-era studies routinely involve <b>100+ clusters and 50M cells</b>; one paper takes 3-5 days, and <b>different people label inconsistently</b> (you say Tcm, I say memory T — who's right?). CellTypist offers 30+ pretrained models (immune, lung, gut, kidney…), including two immune resolutions: <code>Immune_All_High</code> (coarse: ~32 major immune subtypes) and <code>Immune_All_Low</code> (fine: ~98 immune subtypes); <b>using a single reference</b> dissolves the inconsistency. Best of all, it <b>outputs confidence scores</b>: low-confidence cells = "reference hasn't seen this" → candidate novel state → <b>your next paper's headline</b>.</span>
   </p>
 
   <h4>📍 <span data-lang="zh">在 scRNA-seq 流程中的位置</span><span data-lang="en">Position in scRNA-seq pipeline</span></h4>
