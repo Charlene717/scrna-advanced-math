@@ -165,15 +165,15 @@
     <li class="dropdown"><a href="../index.html#M1">M1</a>
       <ul class="dropdown-menu">
         <li class="sub-label">基礎 / FOUNDATIONS</li>
-        <li><a href="../M1-foundations/1.1-sparse-matrix.html">1.1 稀疏矩陣</a></li>
-        <li><a href="../M1-foundations/1.2-count-distributions.html">1.2 計數分布</a></li>
+        <li><a href="../M1-foundations/1.1-sparse-matrix.html"><span data-lang="zh">1.1 稀疏矩陣</span><span data-lang="en">1.1 Sparse Matrix</span></a></li>
+        <li><a href="../M1-foundations/1.2-count-distributions.html"><span data-lang="zh">1.2 計數分布</span><span data-lang="en">1.2 Count Distributions</span></a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M2">M2</a>
       <ul class="dropdown-menu">
         <li class="sub-label">前處理 / PREPROCESSING</li>
-        <li><a href="../M2-preprocessing/2.1-qc-statistics.html">2.1 QC 統計</a></li>
+        <li><a href="../M2-preprocessing/2.1-qc-statistics.html"><span data-lang="zh">2.1 QC 統計</span><span data-lang="en">2.1 QC Statistics</span></a></li>
         <li><a href="../M2-preprocessing/2.2-normalization.html">2.2 Normalization</a></li>
-        <li><a href="../M2-preprocessing/2.3-hvg-selection.html">2.3 HVG 選擇</a></li>
+        <li><a href="../M2-preprocessing/2.3-hvg-selection.html"><span data-lang="zh">2.3 HVG 選擇</span><span data-lang="en">2.3 HVG Selection</span></a></li>
         <li><a href="../M2-preprocessing/2.4-scaling.html">2.4 Scaling</a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M3">M3</a>
@@ -187,15 +187,15 @@
     <li class="dropdown"><a href="../index.html#M4" class="active">M4</a>
       <ul class="dropdown-menu">
         <li class="sub-label">圖與聚類 / GRAPH &amp; CLUSTERING</li>
-        <li><a href="4.1-knn-graph.html" class="active-sub">4.1 KNN Graph + HNSW ⭐ (本頁)</a></li>
+        <li><a href="4.1-knn-graph.html" class="active-sub">4.1 KNN Graph + HNSW ⭐ <span data-lang="zh">(本頁)</span><span data-lang="en">(this page)</span></a></li>
         <li><a href="4.2-louvain-leiden.html">4.2 Louvain &amp; Leiden</a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M5">M5</a>
       <ul class="dropdown-menu">
         <li class="sub-label">統計推論 / STATS</li>
-        <li><a href="../M5-statistics/5.1-de-tests.html">5.1 DE 檢定</a></li>
-        <li><a href="../M5-statistics/5.2-multiple-testing.html">5.2 多重檢定 / FDR</a></li>
-        <li><a href="../M5-statistics/5.3-classifier.html">5.3 細胞分類器</a></li>
+        <li><a href="../M5-statistics/5.1-de-tests.html"><span data-lang="zh">5.1 DE 檢定</span><span data-lang="en">5.1 DE Tests</span></a></li>
+        <li><a href="../M5-statistics/5.2-multiple-testing.html"><span data-lang="zh">5.2 多重檢定 / FDR</span><span data-lang="en">5.2 Multiple Testing / FDR</span></a></li>
+        <li><a href="../M5-statistics/5.3-classifier.html"><span data-lang="zh">5.3 細胞分類器</span><span data-lang="en">5.3 Cell Classifier</span></a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M6">M6</a>
       <ul class="dropdown-menu">
@@ -275,7 +275,7 @@
   <h4>📍 <span data-lang="zh">在流程中的位置</span><span data-lang="en">Pipeline position</span></h4>
   <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: #f7f9fb; padding: 10px; border-radius: 6px; line-height: 1.8">
     PCA 50-D →
-    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b>KNN graph（每細胞 15 個朋友的名冊）</b></span>
+    <span style="background: var(--green); color: #fff; padding: 2px 6px; border-radius: 4px"><b><span data-lang="zh">KNN graph（每細胞 15 個朋友的名冊）</span><span data-lang="en">KNN graph (15-friends-per-cell register)</span></b></span>
     → Leiden · UMAP · diffusion · Harmony · CellTypist
   </div>
 
@@ -293,17 +293,17 @@
         <td><span data-lang="zh">Leiden 抽出隨機 cluster</span><span data-lang="en">Leiden produces random clusters</span></td>
       </tr>
       <tr style="background: #fdecec">
-        <td>k=3（過小，只交三個朋友）</td>
+        <td>k=3 <span data-lang="zh">（過小，只交三個朋友）</span><span data-lang="en">(too small, only 3 friends)</span></td>
         <td><span data-lang="zh">每人變孤島，名冊不連通</span><span data-lang="en">Everyone an island, graph disconnected</span></td>
         <td><span data-lang="zh">50+ 假 cluster、UMAP 像碎屑</span><span data-lang="en">50+ fake clusters; UMAP looks shattered</span></td>
       </tr>
       <tr style="background: #fdecec">
-        <td>k=200（過大，全班都是好友）</td>
+        <td>k=200 <span data-lang="zh">（過大，全班都是好友）</span><span data-lang="en">(too large, everyone besties)</span></td>
         <td><span data-lang="zh">B、T、monocyte 全部連在一起</span><span data-lang="en">B, T, monocyte all interconnected</span></td>
         <td><span data-lang="zh">Leiden 變 2-3 個大 blob，rare 細胞被合併</span><span data-lang="en">Leiden gives 2-3 blobs; rare cells merged</span></td>
       </tr>
       <tr style="background: #effaf3">
-        <td>scanpy 預設 k=15 + PCA 50-D + HNSW</td>
+        <td><span data-lang="zh">scanpy 預設 k=15 + PCA 50-D + HNSW</span><span data-lang="en">scanpy default k=15 + PCA 50-D + HNSW</span></td>
         <td><span data-lang="zh">名冊乾淨、社交圈分明</span><span data-lang="en">Clean register, distinct social circles</span></td>
         <td><span data-lang="zh">8 個 cluster，與 Seurat tutorial 對齊</span><span data-lang="en">8 clusters, matches Seurat tutorial</span></td>
       </tr>
@@ -458,7 +458,7 @@ giving downstream graph-based methods a more stable intermediate representation.
       <td data-lang="zh">$O(d \log n)$（低維 OK，d&gt;20 退化）</td>
       <td data-lang="en">$O(d \log n)$ (OK for low-d, degrades when d&gt;20)</td>
       <td>$O(nd)$</td><td>$O(nd)$</td></tr>
-  <tr><td>Annoy (隨機投影)</td><td>Annoy (random projection)</td>
+  <tr><td data-lang="zh">Annoy (隨機投影)</td><td data-lang="en">Annoy (random projection)</td>
       <td>$O(n \log n)$</td><td>$O(n \log n)$</td>
       <td>$O(\log n)$</td><td>$O(\log n)$</td>
       <td>$O(nT \log n)$</td><td>$O(nT \log n)$</td></tr>
@@ -563,13 +563,13 @@ giving downstream graph-based methods a more stable intermediate representation.
       <td data-lang="zh">隨機投影森林</td><td data-lang="en">random projection forest</td>
       <td data-lang="zh">迭代改進每點的 KNN 估計</td><td data-lang="en">iteratively improve KNN estimate</td></tr>
   <tr><td data-lang="zh">搜尋速度</td><td data-lang="en">Search</td>
-      <td><b>最快</b></td><td><b>fastest</b></td>
+      <td data-lang="zh"><b>最快</b></td><td data-lang="en"><b>fastest</b></td>
       <td data-lang="zh">快</td><td data-lang="en">fast</td>
       <td data-lang="zh">中等</td><td data-lang="en">medium</td></tr>
   <tr><td data-lang="zh">記憶體</td><td data-lang="en">Memory</td>
       <td>$O(nM)$ ~ 64 bytes/cell</td><td>$O(nM)$ ~ 64 bytes/cell</td>
       <td data-lang="zh">較大（多顆樹）</td><td data-lang="en">larger (many trees)</td>
-      <td>$O(nk)$ 小</td><td>$O(nk)$ small</td></tr>
+      <td data-lang="zh">$O(nk)$ 小</td><td data-lang="en">$O(nk)$ small</td></tr>
   <tr><td data-lang="zh">支援增量加</td><td data-lang="en">Incremental add</td>
       <td>✅</td><td>✅</td>
       <td>❌ <span data-lang="zh">要重建</span><span data-lang="en">requires rebuild</span></td>
@@ -705,7 +705,7 @@ adata.obsp[<span class="s">"connectivities"</span>]   <span class="c"># sparse: 
   <tr style="background:#dbeafe"><td><b>15</b></td><td><b>15</b></td>
       <td>~ 40,000</td><td>~ 40,000</td>
       <td>9</td><td>9</td>
-      <td>△ (與 cDC 混)</td><td>△ (merged with cDC)</td></tr>
+      <td data-lang="zh">△ (與 cDC 混)</td><td data-lang="en">△ (merged with cDC)</td></tr>
   <tr><td>50</td><td>50</td>
       <td>~ 130,000</td><td>~ 130,000</td>
       <td>6</td><td>6</td>
@@ -778,7 +778,7 @@ adata.obsp[<span class="s">"connectivities"</span>]   <span class="c"># sparse: 
       <td>(0, 1] continuous</td><td>(0, 1] continuous</td></tr>
   <tr><td data-lang="zh">局部尺度</td><td data-lang="en">Local scale</td>
       <td data-lang="zh">無</td><td data-lang="en">none</td>
-      <td>$\rho_i, \sigma_i$ 各自</td><td>$\rho_i, \sigma_i$ per cell</td></tr>
+      <td data-lang="zh">$\rho_i, \sigma_i$ 各自</td><td data-lang="en">$\rho_i, \sigma_i$ per cell</td></tr>
   <tr><td data-lang="zh">對稱化</td><td data-lang="en">Symmetrize</td>
       <td>OR / AND</td><td>OR / AND</td>
       <td>probabilistic t-conorm</td><td>probabilistic t-conorm</td></tr>

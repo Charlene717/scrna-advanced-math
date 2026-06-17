@@ -165,15 +165,15 @@
     <li class="dropdown"><a href="../index.html#M1">M1</a>
       <ul class="dropdown-menu">
         <li class="sub-label">基礎 / FOUNDATIONS</li>
-        <li><a href="../M1-foundations/1.1-sparse-matrix.html">1.1 稀疏矩陣</a></li>
-        <li><a href="../M1-foundations/1.2-count-distributions.html">1.2 計數分布</a></li>
+        <li><a href="../M1-foundations/1.1-sparse-matrix.html"><span data-lang="zh">1.1 稀疏矩陣</span><span data-lang="en">1.1 Sparse Matrix</span></a></li>
+        <li><a href="../M1-foundations/1.2-count-distributions.html"><span data-lang="zh">1.2 計數分布</span><span data-lang="en">1.2 Count Distributions</span></a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M2">M2</a>
       <ul class="dropdown-menu">
         <li class="sub-label">前處理 / PREPROCESSING</li>
-        <li><a href="../M2-preprocessing/2.1-qc-statistics.html">2.1 QC 統計</a></li>
+        <li><a href="../M2-preprocessing/2.1-qc-statistics.html"><span data-lang="zh">2.1 QC 統計</span><span data-lang="en">2.1 QC Statistics</span></a></li>
         <li><a href="../M2-preprocessing/2.2-normalization.html">2.2 Normalization</a></li>
-        <li><a href="../M2-preprocessing/2.3-hvg-selection.html">2.3 HVG 選擇</a></li>
+        <li><a href="../M2-preprocessing/2.3-hvg-selection.html"><span data-lang="zh">2.3 HVG 選擇</span><span data-lang="en">2.3 HVG Selection</span></a></li>
         <li><a href="../M2-preprocessing/2.4-scaling.html">2.4 Scaling</a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M3">M3</a>
@@ -188,14 +188,14 @@
       <ul class="dropdown-menu">
         <li class="sub-label">圖與聚類 / GRAPH &amp; CLUSTERING</li>
         <li><a href="4.1-knn-graph.html">4.1 KNN Graph + HNSW</a></li>
-        <li><a href="4.2-louvain-leiden.html" class="active-sub">4.2 Louvain &amp; Leiden ⭐ (本頁)</a></li>
+        <li><a href="4.2-louvain-leiden.html" class="active-sub">4.2 Louvain &amp; Leiden ⭐ <span data-lang="zh">(本頁)</span><span data-lang="en">(this page)</span></a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M5">M5</a>
       <ul class="dropdown-menu">
         <li class="sub-label">統計推論 / STATS</li>
-        <li><a href="../M5-statistics/5.1-de-tests.html">5.1 DE 檢定</a></li>
-        <li><a href="../M5-statistics/5.2-multiple-testing.html">5.2 多重檢定 / FDR</a></li>
-        <li><a href="../M5-statistics/5.3-classifier.html">5.3 細胞分類器</a></li>
+        <li><a href="../M5-statistics/5.1-de-tests.html"><span data-lang="zh">5.1 DE 檢定</span><span data-lang="en">5.1 DE Tests</span></a></li>
+        <li><a href="../M5-statistics/5.2-multiple-testing.html"><span data-lang="zh">5.2 多重檢定 / FDR</span><span data-lang="en">5.2 Multiple Testing / FDR</span></a></li>
+        <li><a href="../M5-statistics/5.3-classifier.html"><span data-lang="zh">5.3 細胞分類器</span><span data-lang="en">5.3 Cell Classifier</span></a></li>
       </ul></li>
     <li class="dropdown"><a href="../index.html#M6">M6</a>
       <ul class="dropdown-menu">
@@ -267,8 +267,8 @@
     <span data-lang="en">Imagine you're a <b>wedding planner</b> seating 200 guests. You have a "<b>15 best friends per guest</b>" register (KNN graph). The smart move isn't to declare "10 tables" upfront (that's k-means) — it's to ask "<b>which guests know each other well, put them at one table</b>" (that's Leiden). Leiden scores seating arrangements with <b>modularity</b>: "<b>guests at the same table are friendlier than expected</b>" → high score. It <b>decides table count itself</b>, no need to pre-specify.</span>
   </p>
   <p style="font-size: 1.02em; line-height: 1.7">
-    <span data-lang="zh">為什麼 scRNA 一定要用 Leiden 而不是<b>老派的 k-means</b>？因為 (1) 你<b>一開始不知道</b>有幾種細胞型（pDC 可能 0.5%、monocyte 可能 30%，差 60 倍）；(2) cell type 在 PCA 空間是<b>奇形怪狀的曲面</b>，k-means 的「球形假設」整個崩盤；(3) Leiden 還修了它<b>哥哥 Louvain 的一個重大 bug</b>——Louvain 會把「<b>兩桌不認識的人</b>」標成同一桌（圖上不連通的 cluster），Leiden 用三階段流程保證<b>每桌的人都互相認識</b>（Traag 2019）。所以 scanpy 1.5+ 預設用 Leiden，告別 Louvain。</span>
-    <span data-lang="en">Why must scRNA use Leiden instead of <b>old-school k-means</b>? Because (1) you <b>don't know</b> the cell-type count upfront (pDC might be 0.5%, monocyte 30% — 60× imbalance); (2) cell types form <b>weirdly curved surfaces</b> in PCA space, totally breaking k-means' spherical assumption; (3) Leiden patches a <b>major bug in its older brother Louvain</b> — Louvain sometimes labels "<b>two tables of strangers</b>" as one table (graph-disconnected cluster); Leiden's 3-phase pipeline guarantees <b>everyone at the same table actually knows each other</b> (Traag 2019). That's why scanpy 1.5+ defaults to Leiden, retiring Louvain.</span>
+    <span data-lang="zh">為什麼 scRNA 一定要用 Leiden 而不是<b>老派的 k-means</b>？因為 (1) 你<b>一開始不知道</b>有幾種細胞型（pDC 可能 0.5%、monocyte 可能 30%，差 60 倍）；(2) cell type 在 PCA 空間是<b>奇形怪狀的曲面</b>，k-means 的「球形假設」整個崩盤；(3) Leiden 還修了它<b>哥哥 Louvain 的一個重大 bug</b>——Louvain 會把「<b>兩桌不認識的人</b>」標成同一桌（圖上不連通的 cluster），Leiden 用三階段流程保證<b>每桌的人都互相認識</b>（Traag 2019）。所以 scanpy 自 1.4.4 起內建 <code>sc.tl.leiden</code>，Heumos 2023 best practices 也明白推薦改用 Leiden 取代 Louvain。</span>
+    <span data-lang="en">Why must scRNA use Leiden instead of <b>old-school k-means</b>? Because (1) you <b>don't know</b> the cell-type count upfront (pDC might be 0.5%, monocyte 30% — 60× imbalance); (2) cell types form <b>weirdly curved surfaces</b> in PCA space, totally breaking k-means' spherical assumption; (3) Leiden patches a <b>major bug in its older brother Louvain</b> — Louvain sometimes labels "<b>two tables of strangers</b>" as one table (graph-disconnected cluster); Leiden's 3-phase pipeline guarantees <b>everyone at the same table actually knows each other</b> (Traag 2019). Scanpy ships <code>sc.tl.leiden</code> since v1.4.4, and Heumos 2023's best-practices review explicitly recommends Leiden over Louvain.</span>
   </p>
 
   <h4>💥 <span data-lang="zh">不做 Leiden、或 resolution 錯會發生什麼</span><span data-lang="en">What happens without Leiden, or with wrong resolution</span></h4>
@@ -952,6 +952,7 @@ function modularity(nodes, edges) {
 
 // ====== §4 Louvain step demo ======
 (function(){
+  function tr(zh, en) { return document.body.classList.contains('lang-en') ? en : zh; }
   let seed = 17; const rnd = () => { seed = (seed*9301+49297)%233280; return seed/233280; };
   const nodes = [];
   for (let g = 0; g < 3; g++) {
@@ -1021,7 +1022,7 @@ function modularity(nodes, edges) {
         break; // one move per step
       }
     }
-    if (!moved) lastMerge = (document.body.classList.contains('lang-en') ? 'no more moves possible' : '無更多可改善的移動');
+    if (!moved) lastMerge = tr('無更多可改善的移動', 'no more moves possible');
     step++;
     draw();
   }
@@ -1045,6 +1046,7 @@ function modularity(nodes, edges) {
     document.getElementById('s4svg').innerHTML = s;
   }
   function reset() { nodes.forEach((n, i) => n.c = i); step = 0; lastMerge = '—'; draw(); }
+  document.addEventListener('langchange', draw);
   document.getElementById('s4next').addEventListener('click', nextStep);
   document.getElementById('s4reset').addEventListener('click', reset);
   document.getElementById('s4auto').addEventListener('click', () => {
@@ -1062,11 +1064,13 @@ function modularity(nodes, edges) {
 
 // ====== §5 disconnected illustration ======
 (function(){
+  function tr(zh, en) { return document.body.classList.contains('lang-en') ? en : zh; }
   const W = 800, H = 320;
+  function render() {
   // Before and after panels
   let s = '';
-  s += `<text class="lbl" x="200" y="25" text-anchor="middle" font-weight="700">Before Louvain Phase 1 (correct)</text>`;
-  s += `<text class="lbl" x="600" y="25" text-anchor="middle" font-weight="700">After Louvain (3 移走) — A 斷裂！</text>`;
+  s += `<text class="lbl" x="200" y="25" text-anchor="middle" font-weight="700">${tr('Before Louvain Phase 1 (正確)','Before Louvain Phase 1 (correct)')}</text>`;
+  s += `<text class="lbl" x="600" y="25" text-anchor="middle" font-weight="700">${tr('After Louvain (3 移走) — A 斷裂！','After Louvain (3 moved) — A disconnects!')}</text>`;
   // A: nodes 1, 2, 3, 4, 5 connected via 3
   const A1 = {x: 80, y: 120, id: 1}, A2 = {x: 120, y: 150, id: 2};
   const A3 = {x: 180, y: 130, id: 3};
@@ -1097,9 +1101,12 @@ function modularity(nodes, edges) {
   s += drawNodes(0, 'A');
   s += drawNodes(400, 'B'); // 3 moved to B
   // labels
-  s += `<text class="lbl" x="200" y="305" text-anchor="middle" fill="#2c5aa0">A = {1,2,3,4,5} 連通</text>`;
-  s += `<text class="lbl" x="600" y="305" text-anchor="middle" fill="#c0392b">A = {1,2} ⊔ {4,5} 斷裂！</text>`;
+  s += `<text class="lbl" x="200" y="305" text-anchor="middle" fill="#2c5aa0">${tr('A = {1,2,3,4,5} 連通','A = {1,2,3,4,5} connected')}</text>`;
+  s += `<text class="lbl" x="600" y="305" text-anchor="middle" fill="#c0392b">${tr('A = {1,2} ⊔ {4,5} 斷裂！','A = {1,2} ⊔ {4,5} disconnected!')}</text>`;
   document.getElementById('s5svg').innerHTML = s;
+  }
+  render();
+  document.addEventListener('langchange', render);
 })();
 
 // ====== §7 resolution ======
