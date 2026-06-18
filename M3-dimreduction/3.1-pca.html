@@ -5,7 +5,12 @@
 <title>PCA — 從直覺到數學 / From Intuition to Math (Deep Interactive)</title>
 <script>
   MathJax = {
-    tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] },
+    loader: { load: ['[tex]/boldsymbol'] },
+    tex: {
+      inlineMath: [['$','$'], ['\\(','\\)']],
+      displayMath: [['$$','$$'], ['\\[','\\]']],
+      packages: { '[+]': ['boldsymbol'] }
+    },
     svg: { fontCache: 'global' }
   };
 </script>
@@ -569,7 +574,7 @@
   <h1 data-lang="zh">主成分分析 PCA — 從直覺到數學的完整旅程</h1>
   <h1 data-lang="en">Principal Component Analysis — From Intuition to Math</h1>
   <div class="sub" data-lang="zh">
-    全書以<b>基因表現量資料</b>為主軸（Gene1、Gene2、Gene3...），
+    本頁以<b>基因表現量資料</b>為主軸（Gene1、Gene2、Gene3...），
     把抽象的線性代數推導，
     具象化成「拿尺去量好幾個樣本的好幾個基因」這件事。<br><br>
     每個公式都會被代入<b>真實的數字</b>讓你看到它怎麼算出來。
@@ -714,12 +719,14 @@
 
 <p data-lang="zh">研究員給你一份資料：60 個樣本（例如 60 個病人的細胞切片）
   測到的 <b>3 個基因</b>表現量，<b>沒附上細胞型態標記</b>。研究員只說：
-  「<b>幫我看看裡面有沒有隱藏的結構</b>。」<br>
-  下面隨機顯示其中 10 列（樣本順序<b>沒有特別排過</b>，是按實驗 ID 來的）：</p>
+  「<b>幫我看看裡面有沒有隱藏的結構</b>。」</p>
+<p data-lang="zh" style="color:#888; font-style:italic; font-size:0.92em; margin-top:-4px">
+  下面隨機顯示其中 10 列（樣本順序沒有特別排過，是按實驗 ID 來的）：</p>
 <p data-lang="en">A researcher hands you a dataset: 60 samples (e.g. cell sections from 60 patients)
   with expression measured for <b>3 genes</b>, <b>with no cell-type labels attached</b>. The researcher only says:
-  "<b>see if there's any hidden structure in there</b>."<br>
-  Below shows 10 random rows (sample order is <b>not specially arranged</b>, just by experiment ID):</p>
+  "<b>see if there's any hidden structure in there</b>."</p>
+<p data-lang="en" style="color:#888; font-style:italic; font-size:0.92em; margin-top:-4px">
+  Below shows 10 random rows (sample order is not specially arranged, just by experiment ID):</p>
 
 <div class="card" style="padding:18px">
   <div class="grid-2">
