@@ -991,4 +991,13 @@ sc.experimental.pp.normalize_pearson_residuals(adata, theta=<span class="n">100<
       const v = m + m*m/theta;
       if (v <= varMax) q += `${m===0?'M':'L'} ${X(m)},${Y(v)} `;
     }
-    s += `<path d="${q}" fill="none" stroke="#2c5aa0" stroke-width="2.5"/
+    s += `<path d="${q}" fill="none" stroke="#2c5aa0" stroke-width="2.5"/>`;
+    s += `<text class="lbl" x="${X(70)}" y="${Y(Math.min(varMax-20, 70 + 70*70/theta))-5}" fill="#2c5aa0">NB (θ=${theta.toFixed(1)})</text>`;
+    document.getElementById('s6svg').innerHTML = s;
+  }
+  document.getElementById('theta').addEventListener('input', draw);
+  draw();
+})();
+</script>
+</body>
+</html>

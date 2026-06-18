@@ -1058,4 +1058,15 @@ query_emb = ref_tsne.transform(query_data)
   document.getElementById('s6reset').addEventListener('click', () => { gen(); draw(); document.getElementById('s6iter').textContent = 0; document.getElementById('s6loss').textContent = '—'; });
   document.getElementById('s6auto').addEventListener('click', () => {
     let n = 0;
-    fu
+    function tick() {
+      step(10);
+      if (++n < 12) setTimeout(tick, 150);
+    }
+    tick();
+  });
+  gen();
+  draw();
+})();
+</script>
+</body>
+</html>

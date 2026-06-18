@@ -1021,4 +1021,18 @@ umap_sup = UMAP(target_metric=<span class="s">"categorical"</span>).fit_transfor
     document.getElementById('s6svg').innerHTML = s;
     document.getElementById('s6iter').textContent = iter;
   }
-  document.getElementById('s6next').addEventListener('clic
+  document.getElementById('s6next').addEventListener('click', () => { step(20); draw(); });
+  document.getElementById('s6reset').addEventListener('click', () => { gen(); draw(); });
+  document.getElementById('s6auto').addEventListener('click', () => {
+    let n = 0;
+    function tick() {
+      step(20); draw();
+      if (++n < 10) setTimeout(tick, 150);
+    }
+    tick();
+  });
+  gen(); draw();
+})();
+</script>
+</body>
+</html>

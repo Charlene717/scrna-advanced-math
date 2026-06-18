@@ -4664,38 +4664,47 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
       note = `<h4>${tr('為什麼 PC2 一定垂直於 PC1？','Why is PC2 always orthogonal to PC1?')}</h4>
         <p style="margin:6px 0; font-size:13px">${tr('因為 C 是對稱矩陣，<b>譜定理</b>保證它的特徵向量可以選成兩兩正交。加上我們在解 PC2 時明確要求「與 PC1 正交」，所以 PC1、PC2 一定構成一個 2D 平面的正交基底。','Since C is symmetric, the <b>spectral theorem</b> guarantees its eigenvectors can be chosen pairwise orthogonal. Combined with the explicit "orthogonal to PC1" constraint when solving PC2, PC1 and PC2 must form an orthonormal basis of a 2D plane.')}</p>`;
     } else if (stepIdx === 5) {
-      math = `<span class="hl"># ${tr('步驟 5：第三主成分','Step 5: Third principal component')}</span>\n` +
-        `<span class="pc3">${tr(`PC3 = λ₃ = ${eigvals[2].toFixed(3)} 對應的特徵向量`,`PC3 = eigenvector of λ₃ = ${eigvals[2].toFixed(3)}`)}</span>\n` +
+      math = `<span class="hl"># 步驟 5：第三主成分</span>\n` +
+        `<span class="pc3">PC3 = λ₃ = ${eigvals[2].toFixed(3)} 對應的特徵向量</span>\n` +
         `<span class="pc3">v₃ = (${eigvecs[2].map(v=>v.toFixed(3)).join(', ')})</span>\n` +
-        `<span class="pc3">${tr('解釋變異','Variance explained')} = ${(eigvals[2]/total*100).toFixed(1)}%</span>\n\n` +
-        `<span class="lbl">${tr('三個 PC 構成 3D 空間的正交基底','The three PCs form an orthonormal basis of 3D space')}</span>\n` +
-        `<span class="lbl">${tr('λ₃ 極小 → PC3 方向幾乎沒資訊','λ₃ tiny → almost no information along PC3')}</span>\n` +
-        `<span class="lbl">${tr('→ 黃色平面（PC1-PC2）就出現了！','→ The yellow plane (PC1-PC2) appears!')}</span>`;
-      note = `<h4>${tr('為什麼可以「丟掉」PC3？','Why can we "discard" PC3?')}</h4>
-        <p style="margin:6px 0; font-size:13px">${tr('因為 PC3 上的變異數 λ₃ 很小——意思是「資料在 PC3 方向幾乎沒展開」。三個細胞群的質心張開一個 2D 平面（PC1-PC2 平面），垂直於那個平面的方向就是 PC3，自然變異最小。','Because variance λ₃ along PC3 is tiny — meaning "data hardly spreads along PC3". The three cluster centroids span a 2D plane (the PC1-PC2 plane); PC3 is perpendicular to it, so variance there is minimal.')}</p>`;
+        `<span class="pc3">解釋變異 = ${(eigvals[2]/total*100).toFixed(1)}%</span>\n\n` +
+        `<span class="lbl">三個 PC 構成 3D 空間的正交基底</span>\n` +
+        `<span class="lbl">λ₃ 極小 → PC3 方向幾乎沒資訊</span>\n` +
+        `<span class="lbl">→ 黃色平面（PC1-PC2）就出現了！</span>`;
+      note = `<h4>為什麼可以「丟掉」PC3？</h4>
+        <p style="margin:6px 0; font-size:13px">因為 PC3 上的變異數 λ₃ 很小——
+        意思是「資料在 PC3 方向幾乎沒展開」。
+        三個細胞群的質心張開一個 2D 平面（PC1-PC2 平面），
+        垂直於那個平面的方向就是 PC3，自然變異最小。</p>`;
     } else if (stepIdx === 6) {
-      math = `<span class="hl"># ${tr('步驟 6：投影到 PC1-PC2 平面','Step 6: Project onto the PC1-PC2 plane')}</span>\n` +
-        `<span class="lbl"># ${tr('對每個中心化的樣本 X̃[i]：','For each centered sample X̃[i]:')}</span>\n` +
-        `<span class="lbl">  s1[i] = X̃[i] · v₁  ${tr('（PC1 得分）','(PC1 score)')}</span>\n` +
-        `<span class="lbl">  s2[i] = X̃[i] · v₂  ${tr('（PC2 得分）','(PC2 score)')}</span>\n` +
-        `<span class="lbl">  s3[i] = X̃[i] · v₃  ${tr('（PC3 得分，丟掉）','(PC3 score, discarded)')}</span>\n\n` +
-        `<span class="lbl">${tr('投影到平面 = 把 s3 設為 0','Projecting to plane = setting s3 to 0')}</span>\n` +
-        `<span class="lbl">${tr('紅色虛線 = 樣本與其投影之間的距離','Red dashed = distance from sample to its projection')}</span>\n` +
-        `<span class="lbl">= |s3[i]| = ${tr('被丟掉的資訊量','information discarded')}</span>`;
-      note = `<h4>${tr('Eckart-Young 定理','Eckart-Young theorem')}</h4>
-        <p style="margin:6px 0; font-size:13px">${tr('在所有秩為 2 的近似中，前 2 個主成分給出的<b>重建誤差最小</b>。所以 PCA 不僅「方便」，而是<b>數學上最佳</b>的線性降維。','Among all rank-2 approximations, the first 2 PCs yield <b>minimum reconstruction error</b>. So PCA isn\'t just "convenient" — it is <b>mathematically optimal</b> linear dim reduction.')}
-        ${tr('重建誤差','Reconstruction error')} = $\\sqrt{(n-1) \\cdot \\lambda_3} = ${Math.sqrt((data.length-1)*eigvals[2]).toFixed(3)}$。</p>`;
+      math = `<span class="hl"># 步驟 6：投影到 PC1-PC2 平面</span>\n` +
+        `<span class="lbl"># 對每個中心化的樣本 X̃[i]：</span>\n` +
+        `<span class="lbl">  s1[i] = X̃[i] · v₁  （PC1 得分）</span>\n` +
+        `<span class="lbl">  s2[i] = X̃[i] · v₂  （PC2 得分）</span>\n` +
+        `<span class="lbl">  s3[i] = X̃[i] · v₃  （PC3 得分，丟掉）</span>\n\n` +
+        `<span class="lbl">投影到平面 = 把 s3 設為 0</span>\n` +
+        `<span class="lbl">紅色虛線 = 樣本與其投影之間的距離</span>\n` +
+        `<span class="lbl">= |s3[i]| = 被丟掉的資訊量</span>`;
+      note = `<h4>Eckart-Young 定理</h4>
+        <p style="margin:6px 0; font-size:13px">在所有秩為 2 的近似中，
+        前 2 個主成分給出的<b>重建誤差最小</b>。
+        所以 PCA 不僅「方便」，而是<b>數學上最佳</b>的線性降維。
+        重建誤差 = $\\sqrt{(n-1) \\cdot \\lambda_3} = ${Math.sqrt((data.length-1)*eigvals[2]).toFixed(3)}$。</p>`;
     } else if (stepIdx === 7) {
-      math = `<span class="hl"># ${tr('步驟 7：得到 2D 結果','Step 7: Get the 2D result')}</span>\n` +
-        `<span class="lbl"># ${tr('視角已自動旋轉到 PC3 方向','View has auto-rotated along PC3')}</span>\n` +
-        `<span class="lbl"># ${tr('你看到的 2D 就是 PC1×PC2 平面','The 2D you see is the PC1×PC2 plane')}</span>\n\n` +
+      math = `<span class="hl"># 步驟 7：得到 2D 結果</span>\n` +
+        `<span class="lbl"># 視角已自動旋轉到 PC3 方向</span>\n` +
+        `<span class="lbl"># 你看到的 2D 就是 PC1×PC2 平面</span>\n\n` +
         `Y = X̃ · V_{2}  (shape: ${data.length}×2)\n\n` +
-        `<span class="lbl">${tr('前 2 PC 累積解釋變異：','Cumulative variance from first 2 PCs:')}</span>\n` +
+        `<span class="lbl">前 2 PC 累積解釋變異：</span>\n` +
         `  <span class="hl">${((eigvals[0]+eigvals[1])/total*100).toFixed(2)}%</span>\n\n` +
-        `<span class="lbl">${tr('三群細胞自然分開——','The three cell groups separate naturally —')}</span>\n` +
-        `<span class="lbl">${tr('PCA 從未拿到標籤，卻找到了結構！','PCA never saw the labels, yet found the structure!')}</span>`;
-      note = `<h4>${tr('PCA 完成','PCA complete')}</h4>
-        <p style="margin:6px 0; font-size:13px">${tr(`我們從 3D 降到 2D，丟掉了 ${(eigvals[2]/total*100).toFixed(2)}% 的變異，但 <b>3 種細胞型態仍然能在 2D 上區分</b>。這就是 PCA 在實務上最有價值的能力：<b>把高維資料壓到 2-3 維讓人類能看見其中的結構</b>。`,`We went from 3D to 2D, discarding ${(eigvals[2]/total*100).toFixed(2)}% of the variance, yet <b>the 3 cell types are still distinguishable in 2D</b>. This is PCA's most valuable practical ability: <b>compress high-D data to 2–3 dims so humans can see the structure</b>.`)}</p>`;
+        `<span class="lbl">三群細胞自然分開——</span>\n` +
+        `<span class="lbl">PCA 從未拿到標籤，卻找到了結構！</span>`;
+      note = `<h4>PCA 完成</h4>
+        <p style="margin:6px 0; font-size:13px">我們從 3D 降到 2D，
+        丟掉了 ${(eigvals[2]/total*100).toFixed(2)}% 的變異，
+        但 <b>3 種細胞型態仍然能在 2D 上區分</b>。
+        這就是 PCA 在實務上最有價值的能力：
+        <b>把高維資料壓到 2-3 維讓人類能看見其中的結構</b>。</p>`;
     }
     document.getElementById('stepMath').innerHTML = math;
     document.getElementById('stepNote').innerHTML = note;
@@ -4704,7 +4713,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     }
   }
 
-  document.getElementById('stepNext').onclick = () => { if (stepIdx < getSteps().length-1) { stepIdx++; renderStep(); } };
+  document.getElementById('stepNext').onclick = () => { if (stepIdx < steps.length-1) { stepIdx++; renderStep(); } };
   document.getElementById('stepPrev').onclick = () => { if (stepIdx > 0) { stepIdx--; renderStep(); } };
   document.getElementById('stepReset').onclick = () => { stepIdx = 0; renderStep(); };
 
@@ -4725,11 +4734,6 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     renderStep();
   };
 
-  document.addEventListener('langchange', () => {
-    render();
-    renderSampleDetail();
-    if (currentMode === 'step') renderStep();
-  });
   generate(); render(); renderSampleDetail();
 })();
 
@@ -4737,7 +4741,6 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
    §11 高維基因表現
    =================================================== */
 (function section11() {
-  function tr(zh, en) { return document.body.classList.contains('lang-en') ? en : zh; }
   const heatmap = document.getElementById('heatmap');
   const scatter = document.getElementById('pcaScatter');
   const screeG = document.getElementById('geneScree');
@@ -4747,7 +4750,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
   let X = [], labels = [];
   const N_PER_GROUP = 20, N_GENES = 20, N_GROUPS = 3;
   const colors = ['#c0392b','#27795a','#2c5aa0'];
-  function getCellNames() { return [tr('細胞型態 A','Cell type A'), tr('細胞型態 B','Cell type B'), tr('細胞型態 C','Cell type C')]; }
+  const cellNames = ['細胞型態 A','細胞型態 B','細胞型態 C'];
 
   function generate() {
     const sep = (+sepSlider.value)/100 * 3.5;
@@ -4793,7 +4796,6 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     drawScatter(Xc, eigenvectors, eigenvalues);
     drawScree(eigenvalues);
 
-    const cellNames = getCellNames();
     legend.innerHTML = colors.map((c,i)=>
       '<span><span class="dot" style="background:'+c+';width:12px;height:12px;border-radius:50%"></span>'+cellNames[i]+'</span>').join('');
   }
@@ -4813,7 +4815,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
       hh += '<rect x="'+(padL-10)+'" y="'+(padT+i*cellH)+'" width="6" height="'+cellH+'" fill="'+colors[labels[i]]+'"/>';
     }
     hh += '<text x="'+padL+'" y="'+(H-6)+'" font-size="11" fill="#666">Gene1 → Gene'+N_GENES+' →</text>';
-    hh += '<text x="6" y="'+(padT+10)+'" font-size="11" fill="#666">'+tr('樣本','Samples')+' ↓</text>';
+    hh += '<text x="6" y="'+(padT+10)+'" font-size="11" fill="#666">樣本 ↓</text>';
     heatmap.innerHTML = hh;
   }
 
@@ -4864,18 +4866,16 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     }
     const cumPath = cumX.map((x,i)=>(i?'L':'M')+x+','+cumY[i]).join(' ');
     g += '<path d="'+cumPath+'" stroke="#2c5aa0" stroke-width="2" fill="none" stroke-dasharray="4 3"/>';
-    g += '<text x="'+(gw-130)+'" y="22" font-size="11" fill="#2c5aa0">'+tr('━ 累積解釋變異','━ Cumulative variance')+'</text>';
-    g += '<text x="'+(gw/2)+'" y="'+(gh-2)+'" text-anchor="middle" font-size="11" fill="#666">'+tr('主成分編號','Principal component')+'</text>';
+    g += '<text x="'+(gw-130)+'" y="22" font-size="11" fill="#2c5aa0">━ 累積解釋變異</text>';
+    g += '<text x="'+(gw/2)+'" y="'+(gh-2)+'" text-anchor="middle" font-size="11" fill="#666">主成分編號</text>';
     screeG.innerHTML = g;
   }
 
   document.getElementById('btnGeneNew').onclick = () => { generate(); render(); };
-  sepSlider.oninput = () => { generate(); render(); };
-  document.addEventListener('langchange', render);
-  generate(); render();
+  sepSlider.addEventListener('input', render);
+  generate();
+  render();
 })();
 </script>
-<!-- i18n.js 啟用語言切換按鈕 -->
-<script src="../i18n.js"></script>
 </body>
 </html>

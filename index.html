@@ -67,8 +67,8 @@
         <div class="label" data-lang="zh">已完整化</div><div class="label" data-lang="en">In Depth</div>
       </div>
       <div class="hero-stat">
-        <div class="num">∞</div>
-        <div class="label" data-lang="zh">互動公式</div><div class="label" data-lang="en">Live Formulas</div>
+        <div class="num">60+</div>
+        <div class="label" data-lang="zh">互動範例</div><div class="label" data-lang="en">Interactive Demos</div>
       </div>
     </div>
   </div>
@@ -193,15 +193,16 @@
              graph-level：BBKNN（修改 KNN 邊權）
            Rail 把這個「跨多階段」的事實畫出來：rail box 在左側、3 條虛線接線指向 HVG / PCA / KNN -->
       <g class="integration-rail">
-        <!-- Rail box -->
-        <rect x="-110" y="185" width="95" height="375" rx="8" fill="#fce7f3" stroke="#be185d" stroke-width="1.4" stroke-dasharray="5 4"/>
-
-        <!-- Header（rail 頂部） -->
-        <text x="-62.5" y="205" font-size="9" font-weight="700" letter-spacing="0.5px" fill="#be185d" text-anchor="middle">M6.1 · OPTIONAL</text>
-        <text x="-62.5" y="218" font-size="9" font-weight="700" letter-spacing="0.5px" fill="#be185d" text-anchor="middle">BATCH CORRECTION</text>
-
-        <!-- 主標題（rail 垂直中段） -->
+        <!-- 整塊 rail 都包進 <a> 內，整個粉色 box + 所有文字都可點 -->
         <a href="M6-advanced/6.1-integration.html">
+          <!-- Rail box -->
+          <rect x="-110" y="185" width="95" height="375" rx="8" fill="#fce7f3" stroke="#be185d" stroke-width="1.4" stroke-dasharray="5 4" style="cursor:pointer"/>
+
+          <!-- Header（rail 頂部） -->
+          <text x="-62.5" y="205" font-size="9" font-weight="700" letter-spacing="0.5px" fill="#be185d" text-anchor="middle" style="cursor:pointer">M6.1 · OPTIONAL</text>
+          <text x="-62.5" y="218" font-size="9" font-weight="700" letter-spacing="0.5px" fill="#be185d" text-anchor="middle" style="cursor:pointer">BATCH CORRECTION</text>
+
+          <!-- 主標題（rail 垂直中段） -->
           <text x="-62.5" y="365" font-size="16" font-weight="700" fill="#1a1a1a" text-anchor="middle" style="cursor:pointer">Integration</text>
           <text x="-62.5" y="384" font-size="10" font-style="italic" fill="#666" text-anchor="middle" style="cursor:pointer"><tspan data-lang="zh">可在多個</tspan><tspan data-lang="en">applied at</tspan></text>
           <text x="-62.5" y="398" font-size="10" font-style="italic" fill="#666" text-anchor="middle" style="cursor:pointer"><tspan data-lang="zh">階段介入</tspan><tspan data-lang="en">multiple stages</tspan></text>
@@ -336,7 +337,7 @@
       <div class="card-en">LogNorm vs SCTransform (regularized NB GLM)</div>
       <p class="card-desc" data-lang="zh">log(x+1) 是怎麼想到的？SCTransform 為什麼要用 Pearson residuals？正則化負二項回歸的完整推導。</p>
       <p class="card-desc" data-lang="en">Where log(x+1) comes from. Why SCTransform uses Pearson residuals. Full regularized NB GLM derivation.</p>
-      <div class="card-formula">z_{ij} = (x_{ij} − μ̂_{ij}) / √(μ̂_{ij}(1+μ̂_{ij}/θ̂))</div>
+      <div class="card-formula">zᵢⱼ = (xᵢⱼ − μ̂ᵢⱼ) / √(μ̂ᵢⱼ(1+μ̂ᵢⱼ/θ̂))</div>
     </a>
     <a href="M2-preprocessing/2.3-hvg-selection.html" class="topic-card">
       <div class="card-meta"><span class="card-id">2.3</span><span class="card-status status-done"><span data-lang="zh">深入互動 ⭐</span><span data-lang="en">Deep Interactive ⭐</span></span></div>
@@ -387,7 +388,7 @@
       <div class="card-en">SNE → t-SNE, perplexity, Barnes-Hut</div>
       <p class="card-desc" data-lang="zh">為什麼用 t 分布而不是高斯？perplexity 到底在量什麼？KL 散度為什麼讓 t-SNE 「擠群」?</p>
       <p class="card-desc" data-lang="en">Why t-distribution not Gaussian. What perplexity measures. Why KL makes t-SNE crowd clusters.</p>
-      <div class="card-formula">C = KL(P‖Q) = Σ p_ij log(p_ij/q_ij)</div>
+      <div class="card-formula">C = KL(P‖Q) = Σ pᵢⱼ log(pᵢⱼ/qᵢⱼ)</div>
     </a>
     <a href="M3-dimreduction/3.3-umap.html" class="topic-card">
       <div class="card-meta"><span class="card-id">3.3</span><span class="card-status status-done"><span data-lang="zh">深入互動 ⭐</span><span data-lang="en">Deep Interactive ⭐</span></span></div>
@@ -405,7 +406,7 @@
       <div class="card-en">Graph Laplacian · Markov diffusion · spectral embedding</div>
       <p class="card-desc" data-lang="zh">隨機行走的特徵向量為什麼能當降維座標？Diffusion Pseudotime（DPT）就是用這個。</p>
       <p class="card-desc" data-lang="en">Why random walk eigenvectors serve as dimension-reduced coordinates. Foundation of DPT.</p>
-      <div class="card-formula">L_sym = I − D^{-1/2} W D^{-1/2}</div>
+      <div class="card-formula">Lₛᵧₘ = I − D⁻¹ᐟ² W D⁻¹ᐟ²</div>
     </a>
   </div>
 </section>
@@ -438,7 +439,7 @@
       <div class="card-en">Modularity, refinement, resolution parameter</div>
       <p class="card-desc" data-lang="zh">什麼是「modularity」？Louvain 為什麼會產生「斷裂群」而 Leiden 怎麼修？resolution 參數背後的數學意義？</p>
       <p class="card-desc" data-lang="en">What modularity actually optimizes. Why Louvain produces disconnected communities and how Leiden fixes it.</p>
-      <div class="card-formula">Q = (1/2m) Σ [A_ij − γ k_i k_j/(2m)] δ(c_i, c_j)</div>
+      <div class="card-formula">Q = (1/2m) Σ [Aᵢⱼ − γ kᵢkⱼ/(2m)] δ(cᵢ, cⱼ)</div>
     </a>
   </div>
 </section>
@@ -462,7 +463,7 @@
       <div class="card-en">Wilcoxon rank-sum, MAST hurdle model, DESeq2 GLM</div>
       <p class="card-desc" data-lang="zh">Wilcoxon 為什麼是 Seurat 預設？MAST 的「hurdle 模型」如何處理「表達/不表達」二元 + 連續量？DESeq2 的負二項 GLM 全推導。</p>
       <p class="card-desc" data-lang="en">Why Wilcoxon is Seurat's default. MAST's two-part hurdle model. Full DESeq2 NB GLM derivation.</p>
-      <div class="card-formula">log(μ_ij) = β_0 + β_g · group_i</div>
+      <div class="card-formula">log(μᵢⱼ) = β₀ + β_g · groupᵢ</div>
     </a>
     <a href="M5-statistics/5.2-multiple-testing.html" class="topic-card">
       <div class="card-meta"><span class="card-id">5.2</span><span class="card-status status-done"><span data-lang="zh">深入互動 ⭐</span><span data-lang="en">Deep Interactive ⭐</span></span></div>
@@ -471,7 +472,7 @@
       <div class="card-en">Bonferroni, Benjamini-Hochberg, q-value</div>
       <p class="card-desc" data-lang="zh">2 萬個基因做 t 檢定為什麼會「滿地都是顯著」？FWER vs FDR 在問什麼不同的問題？BH 程序的證明。</p>
       <p class="card-desc" data-lang="en">Why 20,000 simultaneous tests yield bogus significance. FWER vs FDR. Proof sketch of BH procedure.</p>
-      <div class="card-formula">p_(k) ≤ k · α / m</div>
+      <div class="card-formula">p₍ₖ₎ ≤ k · α / m</div>
     </a>
     <a href="M5-statistics/5.3-classifier.html" class="topic-card">
       <div class="card-meta"><span class="card-id">5.3</span><span class="card-status status-done"><span data-lang="zh">深入互動 ⭐</span><span data-lang="en">Deep Interactive ⭐</span></span></div>
@@ -480,7 +481,7 @@
       <div class="card-en">Logistic, SVM, scANVI, CellTypist</div>
       <p class="card-desc" data-lang="zh">如何把「reference 資料集」轉成可用的分類器？scANVI 的半監督變分推論。SingleR 的相關性分數。</p>
       <p class="card-desc" data-lang="en">Turning reference datasets into classifiers. scANVI's semi-supervised VI. SingleR correlation scores.</p>
-      <div class="card-formula">P(c|x) = softmax(W^⊤ φ(x) + b)</div>
+      <div class="card-formula">P(c|x) = softmax(W⊤ φ(x) + b)</div>
     </a>
   </div>
 </section>
@@ -504,7 +505,7 @@
       <div class="card-en">CCA, MNN, soft clustering iteration</div>
       <p class="card-desc" data-lang="zh">CCA、MNN、Harmony 的迭代算法。為什麼 batch effect 可以在 PCA 空間用「軟分群 + 偏移修正」消除？</p>
       <p class="card-desc" data-lang="en">CCA, MNN, Harmony's iterative algorithm. Why batch effects can be removed in PCA space via soft clustering + shift correction.</p>
-      <div class="card-formula">Z_corrected = Z − Σ_k R_k · β_k</div>
+      <div class="card-formula">Z_corrected = Z − Σₖ Rₖ · βₖ</div>
     </a>
     <a href="M6-advanced/6.2-pseudotime.html" class="topic-card">
       <div class="card-meta"><span class="card-id">6.2</span><span class="card-status status-done"><span data-lang="zh">深入互動 ⭐</span><span data-lang="en">Deep Interactive ⭐</span></span></div>
@@ -521,82 +522,13 @@
       <h3 data-lang="en">CellChat: Cell-Cell Communication</h3>
       <div class="card-en">Ligand-receptor, Hill function, permutation test</div>
       <p class="card-desc" data-lang="zh">CellChat 怎麼把基因表現量轉成「通訊機率」？Hill function 的數學形式為什麼適合？置換檢定的細節。</p>
-      <p class="card-desc" data-lang="en">Turning expression into "communication probability." Why Hill functions fit. Permutation test details.</p>
-      <div class="card-formula">P_comm = L^n / (K^n + L^n) · R^n / (K^n + R^n)</div>
+      <p class="card-desc" data-lang="en">Turning expression into "communication probability". Why Hill functions fit ligand-receptor binding. Permutation test details.</p>
+      <div class="card-formula">Pᵢⱼ = Lⁿ / (Kⁿ + Lⁿ)</div>
     </a>
   </div>
 </section>
-</div>
 
-<!-- ============ 學習路徑 ============ -->
-<section class="paths-section">
-  <div class="paths-inner">
-    <h2 data-lang="zh">🛣️ 建議學習路徑</h2>
-    <h2 data-lang="en">🛣️ Recommended Learning Paths</h2>
-    <p class="desc" data-lang="zh">依照你的程度選一條路走。每個路徑都已排好順序，遇到不熟的可以隨時跳到對應主題。</p>
-    <p class="desc" data-lang="en">Pick a path matching your background. Each is pre-ordered; jump to specific topics as needed.</p>
-
-    <div class="paths-grid">
-      <div class="path-card">
-        <h3 data-lang="zh">🌱 從零開始</h3>
-        <h3 data-lang="en">🌱 Starting from Zero</h3>
-        <div class="path-for" data-lang="zh">已有 Python/R 但對 scRNA-seq 數學陌生</div>
-        <div class="path-for" data-lang="en">Familiar with Python/R but new to scRNA-seq math</div>
-        <ol class="path-steps">
-          <li><span data-lang="zh">M1.1 → M1.2（資料 + 分布）</span><span data-lang="en">M1.1 → M1.2 (data + distributions)</span></li>
-          <li><span data-lang="zh">M2.1 → M2.4（前處理全套）</span><span data-lang="en">M2.1 → M2.4 (full preprocessing)</span></li>
-          <li><span data-lang="zh">M3.1 PCA ⭐（已有完整教材）</span><span data-lang="en">M3.1 PCA ⭐ (full tutorial available)</span></li>
-          <li><span data-lang="zh">M4.1 → M4.2（圖 + Leiden）</span><span data-lang="en">M4.1 → M4.2 (graph + Leiden)</span></li>
-          <li><span data-lang="zh">M3.3 UMAP（視覺化）</span><span data-lang="en">M3.3 UMAP (visualization)</span></li>
-          <li>M5.1 → M5.2（DE + FDR）</li>
-        </ol>
-      </div>
-      <div class="path-card">
-        <h3 data-lang="zh">🎯 已會 PCA、補降維</h3>
-        <h3 data-lang="en">🎯 Know PCA, Need Other Reductions</h3>
-        <div class="path-for" data-lang="zh">PCA 熟、想了解 t-SNE 與 UMAP 的真正差異</div>
-        <div class="path-for" data-lang="en">Comfortable with PCA, want to compare t-SNE vs UMAP rigorously</div>
-        <ol class="path-steps">
-          <li><span data-lang="zh">M3.2 t-SNE（先 SNE 直覺）</span><span data-lang="en">M3.2 t-SNE (SNE intuition first)</span></li>
-          <li><span data-lang="zh">M3.3 UMAP（流形觀點）</span><span data-lang="en">M3.3 UMAP (manifold view)</span></li>
-          <li>M3.4 Diffusion Maps</li>
-          <li><span data-lang="zh">對照 M3.1 PCA 重新讀</span><span data-lang="en">Re-read M3.1 PCA in comparison</span></li>
-        </ol>
-      </div>
-      <div class="path-card">
-        <h3 data-lang="zh">🧪 想了解統計推論</h3>
-        <h3 data-lang="en">🧪 Statistical Inference Focus</h3>
-        <div class="path-for" data-lang="zh">關心 DE 結果可信度、p-value、FDR</div>
-        <div class="path-for" data-lang="en">Focus on DE result validity, p-values, FDR</div>
-        <ol class="path-steps">
-          <li><span data-lang="zh">M1.2 計數分布</span><span data-lang="en">M1.2 Count distributions</span></li>
-          <li><span data-lang="zh">M2.2 Normalization（影響統計力）</span><span data-lang="en">M2.2 Normalization (affects statistical power)</span></li>
-          <li><span data-lang="zh">M5.1 DE 三大方法</span><span data-lang="en">M5.1 DE methods (3 major)</span></li>
-          <li><span data-lang="zh">M5.2 FDR 的數學保證</span><span data-lang="en">M5.2 FDR math guarantees</span></li>
-          <li><span data-lang="zh">M5.3 分類器</span><span data-lang="en">M5.3 Classifier</span></li>
-        </ol>
-      </div>
-      <div class="path-card">
-        <h3 data-lang="zh">🚀 進階：多樣本整合 + 軌跡</h3>
-        <h3 data-lang="en">🚀 Advanced: Integration + Trajectory</h3>
-        <div class="path-for" data-lang="zh">想做大型 atlas 或發育研究</div>
-        <div class="path-for" data-lang="en">Building atlases or studying developmental trajectories</div>
-        <ol class="path-steps">
-          <li><span data-lang="zh">M3.4 Diffusion Maps（DPT 基礎）</span><span data-lang="en">M3.4 Diffusion Maps (DPT foundation)</span></li>
-          <li><span data-lang="zh">M4.1 KNN graph（MNN 的數學）</span><span data-lang="en">M4.1 KNN graph (MNN math)</span></li>
-          <li>M6.1 Integration / Harmony</li>
-          <li>M6.2 Pseudotime / Slingshot</li>
-          <li>M6.3 CellChat</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</section>
-
-<footer class="site-footer">
-  <p>© Charlene · <span data-lang="zh">scRNA-seq 進階數學教程</span><span data-lang="en">scRNA-seq Advanced Math Tutorial</span></p>
-  <p style="margin-top:8px"><span data-lang="zh">想看實務應用？前往 </span><span data-lang="en">Looking for practical applications? Visit </span><a href="../scrna-interactive-tutorial/index.html">scRNA-seq Interactive Tutorial →</a></p>
-</footer>
+</div> <!-- /modules-wrap -->
 
 <script src="i18n.js"></script>
 </body>

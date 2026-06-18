@@ -885,4 +885,11 @@ scv.pl.velocity_embedding_stream(adata, basis=<span class="s">"umap"</span>)
     s += `</g>`;
     document.getElementById('s3svg').innerHTML = s;
     document.getElementById('s3svg').querySelectorAll('circle').forEach(c => {
-      c.addEventListener('click', () =>
+      c.addEventListener('click', () => { root = +c.dataset.i; draw(); });
+    });
+  }
+  draw();
+})();
+</script>
+</body>
+</html>

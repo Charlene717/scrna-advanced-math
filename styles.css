@@ -307,6 +307,16 @@ body {
   stroke-dasharray: 5 4;
   opacity: 0.85;
 }
+/* Integration rail：跟其他 workflow box 一樣有 hover 變色效果 */
+.integration-rail a rect {
+  transition: var(--transition);
+}
+.integration-rail a:hover rect {
+  fill: #fbcfe8;
+  stroke: #9d174d;
+  filter: drop-shadow(0 2px 4px rgba(190, 24, 93, 0.15));
+}
+.integration-rail a { cursor: pointer; }
 .workflow-cat {
   font-size: 11px;
   font-weight: 800;

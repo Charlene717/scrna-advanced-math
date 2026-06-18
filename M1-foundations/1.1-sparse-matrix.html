@@ -1315,4 +1315,10 @@ adata.write_h5ad(<span class="s">"pbmc.h5ad"</span>)
     document.getElementById('s4detail').innerHTML = html;
     draw(i, k);
   }
-  document.getElementById('s4regen').a
+  document.getElementById('s4regen').addEventListener('click', regen);
+  document.getElementById('s4sp').addEventListener('input', regen);
+  regen();
+})();
+</script>
+</body>
+</html>

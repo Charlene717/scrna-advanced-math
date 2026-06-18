@@ -941,4 +941,15 @@ sc.tl.dpt(adata)             <span class="c"># pseudotime</span></pre>
   cells.forEach((c, i) => {
     const t = c.pos / (n-1) - 0.5;
     const dc1 = 450 + t * 280;
-    const dc2 = 170 + (-Math.cos(t * 2 * Math.PI) - 0.5) * 80 +
+    const dc2 = 170 + (-Math.cos(t * 2 * Math.PI) - 0.5) * 80 + (rnd()-0.5)*10;
+    const r = Math.round((t+0.5) * 200 + 30);
+    const b = Math.round((0.5-t) * 200 + 30);
+    s += `<circle cx="${dc1}" cy="${dc2}" r="4.5" fill="rgb(${r}, 50, ${b})" opacity="0.85"/>`;
+  });
+  s += `<text class="lbl" x="200" y="315" text-anchor="middle" font-size="11" fill="#666">colored by true trajectory position</text>`;
+  s += `<text class="lbl" x="600" y="315" text-anchor="middle" font-size="11" fill="#3730a3">DC1 axis = pseudotime !</text>`;
+  document.getElementById('s5svg').innerHTML = s;
+})();
+</script>
+</body>
+</html>

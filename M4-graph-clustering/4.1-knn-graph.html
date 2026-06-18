@@ -1072,4 +1072,9 @@ adata.obsp[<span class="s">"connectivities"</span>]   <span class="c"># sparse: 
     document.getElementById('s4svg').innerHTML = s;
   }
   document.getElementById('s4search').addEventListener('click', search);
-  document.getElementById('s
+  document.getElementById('s4regen').addEventListener('click', () => { seed = Math.floor(Math.random()*9999); gen(); draw(); });
+  gen(); draw();
+})();
+</script>
+</body>
+</html>

@@ -1175,4 +1175,17 @@ function modularity(nodes, edges) {
     edges.forEach(e => {
       const a = nodes[e.s], b = nodes[e.t];
       const sameC = a.c === b.c;
-      s += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${sameC?'#888':'#ddd'}" str
+      s += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${sameC?'#888':'#ddd'}" stroke-width="${sameC?1.5:0.5}" opacity="${sameC?0.6:0.3}"/>`;
+    });
+    nodes.forEach(n => {
+      s += `<circle cx="${n.x}" cy="${n.y}" r="7" fill="${colorMap[n.c]}" stroke="#fff" stroke-width="1.5"/>`;
+    });
+    document.getElementById('s7svg').innerHTML = s;
+  }
+  document.getElementById('s7gamma').addEventListener('input', draw);
+  document.getElementById('s7run').addEventListener('click', draw);
+  draw();
+})();
+</script>
+</body>
+</html>

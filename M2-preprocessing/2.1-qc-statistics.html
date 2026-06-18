@@ -1800,4 +1800,18 @@ document.querySelectorAll('#quiz0 .opt').forEach(btn => {
     s += `<rect x="0" y="0" width="200" height="70" fill="#fff" stroke="#ddd"/>`;
     s += `<circle cx="14" cy="14" r="5" fill="#2c5aa0"/><text class="lbl" x="26" y="18">Type A (observed)</text>`;
     s += `<circle cx="14" cy="32" r="5" fill="#27795a"/><text class="lbl" x="26" y="36">Type B (observed)</text>`;
-    s += `<path d="M8,52 l6,-6 l6,6 l-6,6 z" fill="#c0392b"/><text class="lbl" x="26" y="56">Synthetic doublet</te
+    s += `<path d="M8,52 l6,-6 l6,6 l-6,6 z" fill="#c0392b"/><text class="lbl" x="26" y="56">Synthetic doublet</text>`;
+    s += `</g>`;
+    document.getElementById('s7svg').innerHTML = s;
+    document.getElementById('s7nsyn').textContent = synthetic.length;
+    document.getElementById('s7flag').textContent = nflag;
+  }
+  document.getElementById('s7synth').addEventListener('click', synth);
+  document.getElementById('s7reset').addEventListener('click', init);
+  document.getElementById('s7k').addEventListener('input', draw);
+  document.getElementById('s7thr').addEventListener('input', draw);
+  init();
+})();
+</script>
+</body>
+</html>
