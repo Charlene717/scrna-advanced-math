@@ -6,7 +6,12 @@
 <title>2.4 Scaling：z-score 與 regress-out — Deep Interactive</title>
 <script>
   MathJax = {
-    tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']] },
+    loader: { load: ['[tex]/boldsymbol'] },
+    tex: {
+      inlineMath: [['$','$'], ['\\(','\\)']],
+      displayMath: [['$$','$$'], ['\\[','\\]']],
+      packages: { '[+]': ['boldsymbol'] }
+    },
     svg: { fontCache: 'global' }
   };
 </script>
