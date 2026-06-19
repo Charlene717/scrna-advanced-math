@@ -768,15 +768,15 @@
         </defs>
       </svg>
       <div class="controls" style="margin-top:6px; font-size:12px">
-        <label style="display:flex;align-items:center;gap:6px">
+        <label style="display:flex;align-items:center;gap:6px; white-space:nowrap">
           <span data-lang="zh">水平旋轉 (yaw)</span><span data-lang="en">Yaw</span>
           <input type="range" id="s0Yaw" min="0" max="360" value="34" step="1" style="width:120px">
-          <span id="s0YawVal" style="font-family:monospace">34°</span>
+          <span id="s0YawVal" style="font-family:monospace; min-width:42px; text-align:right; display:inline-block">34°</span>
         </label>
-        <label style="display:flex;align-items:center;gap:6px">
+        <label style="display:flex;align-items:center;gap:6px; white-space:nowrap">
           <span data-lang="zh">傾斜 (pitch)</span><span data-lang="en">Pitch</span>
           <input type="range" id="s0Pitch" min="-90" max="90" value="23" step="1" style="width:120px">
-          <span id="s0PitchVal" style="font-family:monospace">23°</span>
+          <span id="s0PitchVal" style="font-family:monospace; min-width:42px; text-align:right; display:inline-block">23°</span>
         </label>
       </div>
       <div class="controls" style="margin-top:4px; flex-wrap:wrap">
@@ -785,10 +785,10 @@
         <button id="s0ViewDef" class="ghost"><span data-lang="zh">預設視角</span><span data-lang="en">Default view</span></button>
       </div>
       <p style="font-size:13px; color:var(--muted); margin-top:8px" id="s0VizNote" data-lang="zh">
-        🔘 按下左邊的「畫成 3D」按鈕，3D 散佈圖才會出現。畫出來後就能用上面的旋鈕轉著看。
+        🔘 按下左邊的「畫成 3D」按鈕，3D 散佈圖才會出現。畫出來後可以<b>直接用滑鼠拖曳旋轉</b>，或用上面的滑桿微調、按下方視角按鈕切換預設視角。
       </p>
       <p style="font-size:13px; color:var(--muted); margin-top:8px" data-lang="en">
-        🔘 Press the "plot in 3D" button on the left to reveal the 3D scatter. Then use the sliders above to rotate it.
+        🔘 Press the "plot in 3D" button on the left to reveal the 3D scatter. Once shown, <b>drag with the mouse to rotate</b>, fine-tune with the sliders above, or click a preset view button below.
       </p>
     </div>
   </div>
@@ -1423,6 +1423,34 @@ $$ \tilde{\mathbf{X}} = \mathbf{X} - \mathbf{1}\bar{\mathbf{x}}^\top,
   <b>All subsequent derivations assume centered data.</b>
 </div>
 
+<div class="card">
+  <h3 data-lang="zh">互動：按一下「中心化」看紅線怎麼歸位到綠線</h3>
+  <h3 data-lang="en">Interactive: click "Center" to see the red line snap onto the green</h3>
+  <p data-lang="zh">畫面上兩條 PC1：
+    <b style="color:#27795a">綠實線</b>＝真正的 PC1（永遠對齊資料雲長軸；它「跟著資料中心走」，<b>方向不變只是位置移動</b>）；
+    <b style="color:#c0392b">紅虛線</b>＝沒中心化算出來的 PC1（永遠穿過原點；它「位置不動」，但<b>方向被「資料離原點多遠」污染而轉歪</b>）。
+    按下按鈕讓資料雲滑到原點，紅線就會自動轉到跟綠線重合——這就是中心化在做的事。</p>
+  <p data-lang="en">Two PC1 lines:
+    <b style="color:#27795a">Green solid</b> = the true PC1 (always aligned with the cloud's long axis; it follows the data center — <b>only its position moves, direction is invariant</b>);
+    <b style="color:#c0392b">Red dashed</b> = PC1 without centering (always through origin; <b>position fixed but direction gets pulled off</b> by the offset).
+    Click the button to slide the cloud to origin — the red line then rotates to coincide with the green. That's what centering does.</p>
+  <div style="display:flex; justify-content:center; margin:10px 0">
+    <svg id="s4Svg" class="canvas" width="100%" viewBox="0 0 460 360" style="max-width:520px"></svg>
+  </div>
+  <div class="controls" style="margin-top:6px; justify-content:center">
+    <button id="s4Toggle"><span data-lang="zh">把資料中心化 →</span><span data-lang="en">Center the data →</span></button>
+  </div>
+  <div class="callout" style="margin-top:12px">
+    <b data-lang="zh">紅線跟資料真正長軸的夾角</b><b data-lang="en">Angle between red PC1 and the data's true axis</b>：<span id="s4Angle" style="font-family:monospace; color:#c0392b; font-weight:700">—</span><br>
+    <span data-lang="zh">偏移愈大、紅線歪得愈嚴重——這個夾角就是「沒中心化」造成的錯誤。
+      把資料平移到原點之後，夾角＝0、紅線立刻轉到正確方向。
+      這也是為什麼所有 PCA 推導第一步都要先把資料的均值減掉。</span>
+    <span data-lang="en">Larger offset → the red line is pulled further off — that gap is the error caused by skipping centering.
+      After translating data to origin, the angle = 0 and the red line snaps to the correct direction.
+      This is why every PCA derivation starts by subtracting the mean.</span>
+  </div>
+</div>
+
 <details>
   <summary><span data-lang="zh">是否需要進一步「標準化」（除以標準差）？</span><span data-lang="en">Do we also need to "standardize" (divide by std)?</span></summary>
   <p data-lang="zh">看情境：</p>
@@ -1974,6 +2002,28 @@ $$ \text{error} = \|\tilde{\mathbf{X}} - \hat{\tilde{\mathbf{X}}}\|_F^2 = (n-1)\
   <br>(Biologically, this maps to T-cell / neuron / hepatocyte marker genes like CD3D / MAP2 / ALB.)
 </div>
 
+<div class="card">
+  <h3 data-lang="zh">互動：調整資料分離程度</h3>
+  <h3 data-lang="en">Interactive: adjust cluster separation</h3>
+  <p data-lang="zh">先用下面的滑桿設定資料條件（差異強度、雜訊），再進入下方任一模式觀察 PCA 表現。
+    拖滑桿時下方 3D 視覺化會即時更新——
+    PCA <b>誠實反映資料</b>：分群明顯時它顯示分群、雜訊大時它就分不出來。</p>
+  <p data-lang="en">Set the data conditions (separation, noise) with the sliders below, then explore in either mode.
+    Dragging the slider live-updates the 3D viz below —
+    PCA <b>honestly reflects the data</b>: visible clusters when they exist, indistinguishable when noise dominates.</p>
+  <div class="controls">
+    <label><span data-lang="zh">細胞型態間差異強度：</span><span data-lang="en">Cell-type separation:</span>
+      <input type="range" id="sep3D" min="20" max="100" value="62" step="1">
+      <span id="sep3DVal" style="font-family:monospace">62%</span>
+    </label>
+    <label><span data-lang="zh">每點的測量雜訊：</span><span data-lang="en">Measurement noise:</span>
+      <input type="range" id="noise3D" min="5" max="60" value="30" step="1">
+      <span id="noise3DVal" style="font-family:monospace">30%</span>
+    </label>
+    <button id="btn3DRegen" class="ghost"><span data-lang="zh">重新模擬</span><span data-lang="en">Re-simulate</span></button>
+  </div>
+</div>
+
 <div class="mode-tabs">
   <button id="modeFree" class="active">🧭 <span data-lang="zh">自由探索（拖曳、點擊看細節）</span><span data-lang="en">Free Exploration (drag, click for details)</span></button>
   <button id="modeStep">📚 <span data-lang="zh">演算法步驟導覽（7 步動畫）</span><span data-lang="en">Algorithm Walkthrough (7-step)</span></button>
@@ -2084,25 +2134,7 @@ $$ \text{error} = \|\tilde{\mathbf{X}} - \hat{\tilde{\mathbf{X}}}\|_F^2 = (n-1)\
   </p>
 </div>
 
-<div class="card">
-  <h3 data-lang="zh">互動：調整資料分離程度</h3>
-  <h3 data-lang="en">Interactive: adjust cluster separation</h3>
-  <p data-lang="zh">用下面的滑桿調整「三種細胞之間的差異強度」與「測量雜訊」。
-    PCA <b>誠實反映資料</b>——分群明顯時它顯示分群、雜訊大時它就分不出來。</p>
-  <p data-lang="en">Use the sliders to adjust "cell-type separation" and "measurement noise".
-    PCA <b>honestly reflects the data</b> — visible clusters when they exist, indistinguishable when noise dominates.</p>
-  <div class="controls">
-    <label><span data-lang="zh">細胞型態間差異強度：</span><span data-lang="en">Cell-type separation:</span>
-      <input type="range" id="sep3D" min="20" max="100" value="80" step="1">
-      <span id="sep3DVal" style="font-family:monospace">80%</span>
-    </label>
-    <label><span data-lang="zh">每點的測量雜訊：</span><span data-lang="en">Measurement noise:</span>
-      <input type="range" id="noise3D" min="5" max="60" value="20" step="1">
-      <span id="noise3DVal" style="font-family:monospace">20%</span>
-    </label>
-    <button id="btn3DRegen" class="ghost"><span data-lang="zh">重新模擬</span><span data-lang="en">Re-simulate</span></button>
-  </div>
-</div>
+<!-- 此 card 已搬到 mode tabs 上方，方便拖滑桿時直接看到下方 3D viz 變化 -->
 
 <!-- =====================================
      §11 高維基因表現
@@ -2688,13 +2720,13 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
       + '<br>紅色箭頭 = <b>PC1</b>（變異最大方向）、藍色 = <b>PC2</b>、綠色虛線 = <b>PC3</b>（變異 ≈ 0，垂直平面、很短）。'
       + '<br>👉 按「<b>正視 PC1-PC2 平面</b>」——相機從 PC3 方向看下去，整個平面攤平，三群分得清清楚楚（就是 PCA 投影後的 2D 結果）。'
       + '<br>👉 按「<b>側視（PC1）</b>」——從 PC1 方向看入，資料退化成沿 PC2 的<b>細線</b>，因為 PC3 方向幾乎沒厚度。'
-      + '<br>👉 按「<b>預設視角</b>」——回到斜切視角（yaw=34°, pitch=23°），同時看到平面、PC 軸、資料的立體關係。'
+      + '<br>👉 按「<b>預設視角</b>」——回到斜切視角（yaw=45°, pitch=20°），同時看到平面、PC 軸、資料的立體關係。'
       + '<br><b>結論</b>：3 個基因軸看似獨立，PCA 算完發現 <b>PC1+PC2 ≈ 全部變異</b>、<b>PC3 變異 ≈ 0 可丟</b>——3D 安全壓回 2D。',
       '🎯 <b>See it?</b> All three genes vary, yet the 60 points stick to the <b>beige dashed plane</b> — that\'s the <b>PC1-PC2 plane</b>.'
       + '<br>Red arrow = <b>PC1</b> (max-variance direction), blue = <b>PC2</b>, green dashed = <b>PC3</b> (variance ≈ 0, perpendicular to plane, very short).'
       + '<br>👉 Click "<b>Face the PC1-PC2 plane</b>" — camera looks down along PC3, plane lies flat, three clusters separate crisply (the 2-D PCA projection).'
       + '<br>👉 Click "<b>Side view (along PC1)</b>" — looking into PC1, data collapses into a <b>line along PC2</b>, because PC3 has almost zero thickness.'
-      + '<br>👉 Click "<b>Default view</b>" — back to the tilted view (yaw=34°, pitch=23°), seeing the plane, PC axes and 3-D relationship at once.'
+      + '<br>👉 Click "<b>Default view</b>" — back to the tilted view (yaw=45°, pitch=20°), seeing the plane, PC axes and 3-D relationship at once.'
       + '<br><b>Conclusion</b>: three gene axes look independent, but PCA finds <b>PC1+PC2 ≈ all variance</b> and <b>PC3 variance ≈ 0, drop it</b> — 3-D compresses to 2-D safely.'
     );
   };
@@ -2706,6 +2738,48 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
   // 滑桿
   yawR.addEventListener('input', () => { updateSliderLabels(); if (vizDone) draw3DScatter(); });
   pitchR.addEventListener('input', () => { updateSliderLabels(); if (vizDone) draw3DScatter(); });
+
+  // 滑鼠拖曳旋轉（像 §10 的 free mode）—— 滑鼠在 3D scatter 上拖會更新 yaw/pitch 滑桿
+  let s0Dragging = false, s0DragStart = null;
+  scatterSvg.style.cursor = 'grab';
+  scatterSvg.addEventListener('mousedown', e => {
+    if (!vizDone) return;
+    s0Dragging = true;
+    s0DragStart = { x: e.clientX, y: e.clientY, yaw: +yawR.value, pitch: +pitchR.value };
+    scatterSvg.style.cursor = 'grabbing';
+  });
+  window.addEventListener('mousemove', e => {
+    if (!s0Dragging) return;
+    const dx = e.clientX - s0DragStart.x;
+    const dy = e.clientY - s0DragStart.y;
+    yawR.value = Math.max(-180, Math.min(180, s0DragStart.yaw + dx * 0.5));
+    pitchR.value = Math.max(-90, Math.min(90, s0DragStart.pitch + dy * 0.5));
+    updateSliderLabels();
+    draw3DScatter();
+  });
+  window.addEventListener('mouseup', () => {
+    if (s0Dragging) { s0Dragging = false; scatterSvg.style.cursor = 'grab'; }
+  });
+  // 觸控
+  scatterSvg.addEventListener('touchstart', e => {
+    if (!vizDone || e.touches.length !== 1) return;
+    const t = e.touches[0];
+    s0Dragging = true;
+    s0DragStart = { x: t.clientX, y: t.clientY, yaw: +yawR.value, pitch: +pitchR.value };
+  });
+  scatterSvg.addEventListener('touchmove', e => {
+    if (!s0Dragging || e.touches.length !== 1) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    const dx = t.clientX - s0DragStart.x;
+    const dy = t.clientY - s0DragStart.y;
+    yawR.value = Math.max(-180, Math.min(180, s0DragStart.yaw + dx * 0.5));
+    pitchR.value = Math.max(-90, Math.min(90, s0DragStart.pitch + dy * 0.5));
+    updateSliderLabels();
+    draw3DScatter();
+  }, { passive: false });
+  scatterSvg.addEventListener('touchend', () => { s0Dragging = false; });
+
   // 快捷視角按鈕：用 PC basis 直接定向（鳥瞰/側視）或 Gene basis（預設）
   function setSelectedBtn(btnId) {
     ['s0ViewG12','s0ViewG3','s0ViewDef'].forEach(id => {
@@ -3735,6 +3809,187 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
 })();
 
 /* ===================================================
+   §4 Centering 互動 demo：按一下按鈕讓資料雲滑到原點
+   =================================================== */
+(function section4Center() {
+  function tr(zh, en) { return document.body.classList.contains('lang-en') ? en : zh; }
+  const svg = document.getElementById('s4Svg');
+  const toggleBtn = document.getElementById('s4Toggle');
+  const angleSpan = document.getElementById('s4Angle');
+  if (!svg || !toggleBtn) return;
+
+  // 固定亂數種子產生橢圓形資料雲（中心位於原點）
+  let seed = 7;
+  const rnd = () => { seed = (seed*9301+49297)%233280; return seed/233280; };
+  const N = 35;
+  const cloud = [];
+  for (let i=0;i<N;i++) {
+    const u = (rnd()-0.5)*2*3.5;
+    const v = (rnd()-0.5)*2*1.0;
+    const ang = Math.PI/6;
+    cloud.push([u*Math.cos(ang) - v*Math.sin(ang),
+                u*Math.sin(ang) + v*Math.cos(ang)]);
+  }
+
+  // 偏移方向（單位向量 (0.8, 0.6)）跟 max offset
+  const offDirX = 0.8, offDirY = 0.6, MAX_OFFSET = 5.0;
+  // 當前實際偏移（會被動畫從 MAX_OFFSET → 0 或反向）
+  let currentOffset = MAX_OFFSET;
+  let centered = false;       // 邏輯狀態
+  let animId = null;          // 動畫 frame id
+
+  function topEigenvec(sxx, sxy, syy) {
+    const tr2 = sxx + syy;
+    const det = sxx*syy - sxy*sxy;
+    const disc = Math.sqrt(Math.max(0, tr2*tr2/4 - det));
+    const l1 = tr2/2 + disc;
+    let vx, vy;
+    if (Math.abs(sxy) > 1e-9) { vx = sxy; vy = l1 - sxx; }
+    else if (sxx >= syy) { vx = 1; vy = 0; }
+    else { vx = 0; vy = 1; }
+    const norm = Math.sqrt(vx*vx + vy*vy);
+    return [vx/norm, vy/norm];
+  }
+
+  function pc1(pts, useCenter) {
+    let mx=0, my=0;
+    if (useCenter) {
+      for (const p of pts) { mx += p[0]; my += p[1]; }
+      mx /= pts.length; my /= pts.length;
+    }
+    let sxx=0, sxy=0, syy=0;
+    for (const p of pts) {
+      const dx = p[0]-mx, dy = p[1]-my;
+      sxx += dx*dx; sxy += dx*dy; syy += dy*dy;
+    }
+    const denom = pts.length - 1;
+    return topEigenvec(sxx/denom, sxy/denom, syy/denom);
+  }
+
+  function draw() {
+    const offX = currentOffset * offDirX;
+    const offY = currentOffset * offDirY;
+    const pts = cloud.map(p => [p[0] + offX, p[1] + offY]);
+
+    const W=460, H=360, cx=W/2, cy=H/2, scale=18;
+    function svgX(x) { return cx + x*scale; }
+    function svgY(y) { return cy - y*scale; }
+
+    // 只算 raw PC1（直接拿原始座標算 → 永遠穿過原點）
+    const [rvx, rvy] = pc1(pts, false);
+    // 真正方向（centered，translation-invariant）只用來算「歪掉多少度」
+    const [cvx, cvy] = pc1(pts, true);
+    const LEN = 240;
+
+    let s = '';
+    for (let g=-10; g<=10; g+=2) {
+      s += `<line x1="${svgX(g)}" y1="0" x2="${svgX(g)}" y2="${H}" stroke="#f0f0f0"/>`;
+      s += `<line x1="0" y1="${svgY(g)}" x2="${W}" y2="${svgY(g)}" stroke="#f0f0f0"/>`;
+    }
+    s += `<line x1="0" y1="${cy}" x2="${W}" y2="${cy}" stroke="#999"/>`;
+    s += `<line x1="${cx}" y1="0" x2="${cx}" y2="${H}" stroke="#999"/>`;
+    // 原點
+    s += `<circle cx="${cx}" cy="${cy}" r="5" fill="#444"/>`;
+    s += `<text x="${cx+8}" y="${cy-6}" font-size="11" fill="#444">${tr('原點 (0,0)','origin (0,0)')}</text>`;
+
+    // 算資料中心、畫紫色 + 標示
+    let mx=0, my=0;
+    for (const p of pts) { mx += p[0]; my += p[1]; }
+    mx /= pts.length; my /= pts.length;
+    const mxS = svgX(mx), myS = svgY(my);
+    s += `<line x1="${mxS-7}" y1="${myS}" x2="${mxS+7}" y2="${myS}" stroke="#8e44ad" stroke-width="2"/>`;
+    s += `<line x1="${mxS}" y1="${myS-7}" x2="${mxS}" y2="${myS+7}" stroke="#8e44ad" stroke-width="2"/>`;
+    s += `<text x="${mxS+10}" y="${myS+4}" font-size="11" fill="#8e44ad">${tr('資料中心 x̄','data center x̄')}</text>`;
+
+    // 把通過 (px,py)、方向 (dx,dy)（SVG 座標）的線裁剪到 SVG 邊框，回傳兩端點
+    function clipLineToSvg(px, py, dx, dy) {
+      const ts = [];
+      if (Math.abs(dx) > 1e-9) {
+        ts.push((0 - px) / dx);
+        ts.push((W - px) / dx);
+      }
+      if (Math.abs(dy) > 1e-9) {
+        ts.push((0 - py) / dy);
+        ts.push((H - py) / dy);
+      }
+      const inside = ts.filter(t => {
+        const x = px + t*dx, y = py + t*dy;
+        return x >= -0.5 && x <= W+0.5 && y >= -0.5 && y <= H+0.5;
+      });
+      if (inside.length < 2) return null;
+      inside.sort((a, b) => a - b);
+      const t1 = inside[0], t2 = inside[inside.length-1];
+      return [px + t1*dx, py + t1*dy, px + t2*dx, py + t2*dy];
+    }
+
+    // 綠實線：centered PC1（真正方向），穿過資料中心；edge-to-edge 讓斜率清楚
+    const gLine = clipLineToSvg(mxS, myS, cvx, -cvy);
+    if (gLine) {
+      s += `<line x1="${gLine[0]}" y1="${gLine[1]}" x2="${gLine[2]}" y2="${gLine[3]}" stroke="#27795a" stroke-width="3"/>`;
+    }
+    // 紅虛線：raw PC1（沒中心化），穿過原點；edge-to-edge
+    const rLine = clipLineToSvg(cx, cy, rvx, -rvy);
+    if (rLine) {
+      s += `<line x1="${rLine[0]}" y1="${rLine[1]}" x2="${rLine[2]}" y2="${rLine[3]}" stroke="#c0392b" stroke-width="3" stroke-dasharray="6 4"/>`;
+    }
+
+    // 資料點
+    for (const p of pts) {
+      s += `<circle cx="${svgX(p[0])}" cy="${svgY(p[1])}" r="4.5" fill="#2c5aa0" opacity="0.85"/>`;
+    }
+    // 圖例
+    s += `<text x="14" y="22" font-size="12" fill="#27795a" font-weight="700">─ ${tr('綠：真正 PC1（方向不變，跟著資料中心）','Green: true PC1 (invariant direction, follows data center)')}</text>`;
+    s += `<text x="14" y="40" font-size="12" fill="#c0392b" font-weight="700">─ ${tr('紅：沒中心化的 PC1（穿原點，方向被歪化）','Red: PC1 without centering (through origin, direction biased)')}</text>`;
+    svg.innerHTML = s;
+
+    // 紅線跟真實方向的夾角（給下方文字）
+    let cosA = Math.abs(rvx*cvx + rvy*cvy);
+    cosA = Math.min(1, Math.max(0, cosA));
+    const angleDeg = Math.acos(cosA) * 180 / Math.PI;
+    if (angleSpan) angleSpan.textContent = angleDeg.toFixed(1) + '°';
+  }
+
+  function updateBtnLabel() {
+    // 按鈕文字反映「下一個動作」
+    toggleBtn.innerHTML = centered
+      ? '<span data-lang="zh">把資料推回原本位置 ←</span><span data-lang="en">← Move back to original</span>'
+      : '<span data-lang="zh">把資料中心化 →</span><span data-lang="en">Center the data →</span>';
+  }
+
+  function animate(targetOffset) {
+    if (animId) cancelAnimationFrame(animId);
+    const startOffset = currentOffset;
+    const duration = 800;  // ms
+    const startTime = performance.now();
+    function step(now) {
+      const t = Math.min(1, (now - startTime) / duration);
+      // ease-in-out
+      const e = t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2)/2;
+      currentOffset = startOffset + (targetOffset - startOffset) * e;
+      draw();
+      if (t < 1) animId = requestAnimationFrame(step);
+      else { animId = null; }
+    }
+    animId = requestAnimationFrame(step);
+  }
+
+  toggleBtn.addEventListener('click', () => {
+    centered = !centered;
+    updateBtnLabel();
+    animate(centered ? 0 : MAX_OFFSET);
+  });
+
+  document.addEventListener('langchange', () => {
+    updateBtnLabel();
+    draw();
+  });
+
+  // 初始
+  updateBtnLabel();
+  draw();
+})();
+
+/* ===================================================
    §5 共變異數矩陣逐元素建構
    =================================================== */
 (function section5() {
@@ -4563,7 +4818,8 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
   });
 
   document.getElementById('btn3DReset').onclick = () => {
-    yaw = 0.6; pitch = 0.4;
+    // yaw=45° (≈0.785 rad), pitch=20° (≈0.35 rad)：更明顯展示資料貼在 PC1-PC2 平面上
+    yaw = 0.785; pitch = 0.35;
     if (spinId) { cancelAnimationFrame(spinId); spinId = null; }
     render();
   };
@@ -4730,7 +4986,8 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     }
   }
 
-  document.getElementById('stepNext').onclick = () => { if (stepIdx < steps.length-1) { stepIdx++; renderStep(); } };
+  // Fix: steps 已被搬進 renderStep（為了 i18n 反應），這裡改用 getSteps() 動態取
+  document.getElementById('stepNext').onclick = () => { if (stepIdx < getSteps().length-1) { stepIdx++; renderStep(); } };
   document.getElementById('stepPrev').onclick = () => { if (stepIdx > 0) { stepIdx--; renderStep(); } };
   document.getElementById('stepReset').onclick = () => { stepIdx = 0; renderStep(); };
 
@@ -4752,12 +5009,20 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
   };
 
   generate(); render(); renderSampleDetail();
+
+  // Fix: section10 之前漏掉 langchange listener，切語言時 3D 視圖跟 sample detail 不會 re-render
+  document.addEventListener('langchange', () => {
+    render();
+    renderSampleDetail();
+    if (currentMode === 'step') renderStep();
+  });
 })();
 
 /* ===================================================
    §11 高維基因表現
    =================================================== */
 (function section11() {
+  function tr(zh, en) { return document.body.classList.contains('lang-en') ? en : zh; }
   const heatmap = document.getElementById('heatmap');
   const scatter = document.getElementById('pcaScatter');
   const screeG = document.getElementById('geneScree');
@@ -4767,7 +5032,9 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
   let X = [], labels = [];
   const N_PER_GROUP = 20, N_GENES = 20, N_GROUPS = 3;
   const colors = ['#c0392b','#27795a','#2c5aa0'];
-  const cellNames = ['細胞型態 A','細胞型態 B','細胞型態 C'];
+  function getCellNames() {
+    return [tr('細胞型態 A','Cell type A'), tr('細胞型態 B','Cell type B'), tr('細胞型態 C','Cell type C')];
+  }
 
   function generate() {
     const sep = (+sepSlider.value)/100 * 3.5;
@@ -4798,6 +5065,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
 
   function render() {
     sepVal.textContent = (+sepSlider.value) + '%';
+    const cellNames = getCellNames();
     const Xt = transpose(X);
     const Xz = transpose(Xt.map(col => {
       const m = col.reduce((a,b)=>a+b,0)/col.length;
@@ -4832,7 +5100,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
       hh += '<rect x="'+(padL-10)+'" y="'+(padT+i*cellH)+'" width="6" height="'+cellH+'" fill="'+colors[labels[i]]+'"/>';
     }
     hh += '<text x="'+padL+'" y="'+(H-6)+'" font-size="11" fill="#666">Gene1 → Gene'+N_GENES+' →</text>';
-    hh += '<text x="6" y="'+(padT+10)+'" font-size="11" fill="#666">樣本 ↓</text>';
+    hh += '<text x="6" y="'+(padT+10)+'" font-size="11" fill="#666">'+tr('樣本 ↓','Samples ↓')+'</text>';
     heatmap.innerHTML = hh;
   }
 
@@ -4853,7 +5121,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     h += '<text x="'+(sw/2)+'" y="'+(sh-6)+'" text-anchor="middle" font-size="12" fill="#666">PC1 ('+(eigenvalues[0]/total*100).toFixed(1)+'%)</text>';
     h += '<text x="14" y="'+(sh/2)+'" font-size="12" fill="#666" transform="rotate(-90 14 '+(sh/2)+')" text-anchor="middle">PC2 ('+(eigenvalues[1]/total*100).toFixed(1)+'%)</text>';
     for (let i=0;i<scores.length;i++) {
-      h += '<circle cx="'+sx(xs1[i])+'" cy="'+sy(xs2[i])+'" r="6" fill="'+colors[labels[i]]+'" stroke="#fff" stroke-width="1.5"/>';
+h += '<circle cx="'+sx(xs1[i])+'" cy="'+sy(xs2[i])+'" r="6" fill="'+colors[labels[i]]+'" stroke="#fff" stroke-width="1.5"/>';
     }
     scatter.innerHTML = h;
   }
@@ -4888,8 +5156,9 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     screeG.innerHTML = g;
   }
 
-  document.getElementById('btnGeneNew').onclick = () => { generate(); render(); };
+    document.getElementById('btnGeneNew').onclick = () => { generate(); render(); };
   sepSlider.addEventListener('input', () => { generate(); render(); });
+  document.addEventListener('langchange', render);
   generate();
   render();
 })();
