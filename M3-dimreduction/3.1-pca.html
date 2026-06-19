@@ -1518,12 +1518,13 @@ $$ C_{ij} = \frac{1}{n-1} \sum_{k=1}^n \tilde{x}_{ki}\,\tilde{x}_{kj}
       </div>
       <h4 style="margin-top:16px" data-lang="zh">當前計算步驟</h4>
       <h4 style="margin-top:16px" data-lang="en">Current step</h4>
-      <div class="math-live" id="s5Math"></div>
-      <div class="controls">
+      <!-- 按鈕放在 math-live 上方，避免隨黑色區塊內容高度跳動 -->
+      <div class="controls" style="margin-bottom:10px">
         <button id="s5Prev" class="ghost">← <span data-lang="zh">上一格</span><span data-lang="en">Prev cell</span></button>
         <button id="s5Next"><span data-lang="zh">下一格</span><span data-lang="en">Next cell</span> →</button>
         <button id="s5Reset" class="ghost"><span data-lang="zh">重新開始</span><span data-lang="en">Reset</span></button>
       </div>
+      <div class="math-live" id="s5Math"></div>
     </div>
     <div>
       <h4 data-lang="zh">共變異數矩陣 C (3×3)</h4>
@@ -3816,7 +3817,11 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
       for (let j=0;j<p;j++) {
         const filled = (i*p+j+1) <= step;
         const isHi = hi && hi[0]===i && hi[1]===j;
-        const bg = isHi ? '#f0c419' : (filled ? '#eaf4ff' : '#fafafa');
+        const isDiag = i === j;
+        // 對角線（變異數）用淡紫色、非對角線（共變異數）用淡藍色；當前計算中對角線用橙色、非對角線用黃色
+        const bg = isHi
+          ? (isDiag ? '#fb923c' : '#f0c419')
+          : (filled ? (isDiag ? '#e9d5ff' : '#eaf4ff') : '#fafafa');
         mh += `<rect x="${j*cs}" y="${i*cs}" width="${cs}" height="${cs}" fill="${bg}" stroke="#999"/>`;
         if (filled) {
           mh += `<text x="${j*cs+cs/2}" y="${i*cs+cs/2-6}" text-anchor="middle" font-size="11" fill="#666">C[${i+1},${j+1}]</text>`;
