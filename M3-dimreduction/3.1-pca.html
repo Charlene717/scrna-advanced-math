@@ -2858,7 +2858,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
       formula: '\\(\\max(x_i) - \\min(x_i)\\)',
       compute: () => {
         const mn = Math.min(...formulaData), mx = Math.max(...formulaData);
-        return { value: mx - mn, steps: [`max = ${mx}`, `min = ${mn}`, `${tr('結果','Result')} = ${mx} − ${mn} = ${mx-mn}`] };
+        return { value: mx - mn, steps: [`max = ${mx}`, `min = ${mn}`, `${tr('範圍','Range')} = ${mx} − ${mn} = ${mx-mn}`] };
       },
       verdict: tr('只用到 2 個點','Uses only 2 points'),
       problem: tr('極端值決定一切，<b>中間的 6 個點完全沒參與計算</b>。如果加一個離群值就完全失準。',
@@ -2873,7 +2873,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
         const m = formulaData.reduce((a,b)=>a+b,0)/formulaData.length;
         const devs = formulaData.map(v=>v-m);
         const sum = devs.reduce((a,b)=>a+b,0);
-        return { value: sum, steps: [`${tr('均值','mean')} = ${m}`, `${tr('偏差','deviations')} = [${devs.map(d=>d.toFixed(1)).join(', ')}]`, `${tr('總和','sum')} = ${sum.toFixed(6)}`] };
+        return { value: sum, steps: [`${tr('均值','mean')} = ${m}`, `${tr('偏差','deviations')} = [${devs.map(d=>d.toFixed(1)).join(', ')}]`, `${tr('偏差總和','Sum of deviations')} = ${sum.toFixed(6)}`] };
       },
       verdict: tr('永遠等於 0','Always equals 0'),
       problem: tr('正負偏差<b>會互相抵消</b>。任何資料的偏差總和都是 0（這是「均值」的定義）。所以這個公式根本沒用。',
@@ -2882,13 +2882,13 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
     },
     {
       name: tr('方案 C','Option C'),
-      title: tr('絕對偏差總和 \\(\\sum |x_i - \\bar{x}|\\)','Mean absolute deviation \\(\\sum |x_i - \\bar{x}|\\)'),
+      title: tr('絕對偏差 \\(\\sum |x_i - \\bar{x}|\\)','Absolute deviations \\(\\sum |x_i - \\bar{x}|\\)'),
       formula: '\\(\\frac{1}{n}\\sum_i |x_i - \\bar{x}|\\)',
       compute: () => {
         const m = formulaData.reduce((a,b)=>a+b,0)/formulaData.length;
         const devs = formulaData.map(v=>Math.abs(v-m));
         const sum = devs.reduce((a,b)=>a+b,0);
-        return { value: sum/formulaData.length, steps: [`${tr('均值','mean')} = ${m}`, `${tr('|偏差|','|deviation|')} = [${devs.map(d=>d.toFixed(1)).join(', ')}]`, `${tr('總和','sum')} = ${sum.toFixed(2)}`, `÷ n = ${(sum/formulaData.length).toFixed(3)}`] };
+        return { value: sum/formulaData.length, steps: [`${tr('均值','mean')} = ${m}`, `${tr('|偏差|','|deviation|')} = [${devs.map(d=>d.toFixed(1)).join(', ')}]`, `${tr('總和','sum')} = ${sum.toFixed(2)}`, `${tr('平均絕對偏差','Mean abs deviation')} = ${sum.toFixed(2)} ÷ ${formulaData.length} = ${(sum/formulaData.length).toFixed(3)}`] };
       },
       verdict: tr('不抵消、但不平滑','No cancellation, but not smooth'),
       problem: tr('解決了抵消問題，但 |x| 在 x=0 處<b>不可微分</b>，後續推導 PCA 時要用最佳化方法（如 Lagrange）會非常麻煩。',
@@ -2904,7 +2904,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
         const m = formulaData.reduce((a,b)=>a+b,0)/formulaData.length;
         const devs = formulaData.map(v=>(v-m)*(v-m));
         const sum = devs.reduce((a,b)=>a+b,0);
-        return { value: sum/(formulaData.length-1), steps: [`${tr('均值','mean')} = ${m}`, `${tr('偏差²','deviation²')} = [${devs.map(d=>d.toFixed(2)).join(', ')}]`, `${tr('總和','sum')} = ${sum.toFixed(2)}`, `÷ (n-1) = ${(sum/(formulaData.length-1)).toFixed(3)}`] };
+        return { value: sum/(formulaData.length-1), steps: [`${tr('均值','mean')} = ${m}`, `${tr('偏差²','deviation²')} = [${devs.map(d=>d.toFixed(2)).join(', ')}]`, `${tr('總和','sum')} = ${sum.toFixed(2)}`, `${tr('變異數','Variance')} = ${sum.toFixed(2)} ÷ ${formulaData.length-1} = ${(sum/(formulaData.length-1)).toFixed(3)}`] };
       },
       verdict: tr('✓ 這就是變異數','✓ This is variance'),
       problem: tr('<b>1)</b> 平方一定非負，不會抵消。<b>2)</b> 平方函數處處可微，數學工具豐富。<b>3)</b> 對應到「歐式距離平方」的幾何意義，是 PCA、回歸、最小平方法的共同基礎。',
@@ -3223,7 +3223,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
           verdict: tr('永遠等於 0','Always equals 0'),
           problem: tr('正負偏差<b>會互相抵消</b>。任何資料的偏差總和都是 0（這是「均值」的定義）。所以這個公式根本沒用。',
                       'Positive and negative deviations <b>cancel each other</b>. The sum is always 0 (that\'s the definition of mean). Useless.') },
-        { name: tr('方案 C','Option C'), title: tr('絕對偏差總和 \\(\\sum |x_i - \\bar{x}|\\)','Mean absolute deviation \\(\\sum |x_i - \\bar{x}|\\)'),
+        { name: tr('方案 C','Option C'), title: tr('絕對偏差 \\(\\sum |x_i - \\bar{x}|\\)','Absolute deviations \\(\\sum |x_i - \\bar{x}|\\)'),
           verdict: tr('不抵消、但不平滑','No cancellation, but not smooth'),
           problem: tr('解決了抵消問題，但 |x| 在 x=0 處<b>不可微分</b>，後續推導 PCA 時要用最佳化方法（如 Lagrange）會非常麻煩。',
                       'Cancellation is gone, but |x| is <b>not differentiable</b> at x=0 — optimisation tools used in PCA (e.g. Lagrange) become a nightmare.') },
