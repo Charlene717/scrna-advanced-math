@@ -24,10 +24,9 @@
       <li><a href="#M1"><span data-lang="zh">基礎</span><span data-lang="en">Foundations</span></a></li>
       <li><a href="#M2"><span data-lang="zh">前處理</span><span data-lang="en">Preprocessing</span></a></li>
       <li><a href="#M3"><span data-lang="zh">降維</span><span data-lang="en">Dim. Reduction</span></a></li>
-      <li><a href="#M4" data-lang="zh">圖&聚類</a><span data-lang="en">Graph &amp; Cluster</span></li>
+      <li><a href="#M4"><span data-lang="zh">圖&amp;聚類</span><span data-lang="en">Graph &amp; Cluster</span></a></li>
       <li><a href="#M5"><span data-lang="zh">統計推論</span><span data-lang="en">Inference</span></a></li>
       <li><a href="#M6"><span data-lang="zh">進階</span><span data-lang="en">Advanced</span></a></li>
-      <li><a href="../scrna-interactive-tutorial/index.html" data-lang="zh">📖 實務教材</a><span data-lang="en">📖 Practical Tutorial</span></li>
     </ul>
     <div class="lang-switch">
       <button data-lang-btn="zh" data-lang="" class="active">中文</button>
@@ -78,11 +77,17 @@
 <section class="workflow-section">
   <h2 data-lang="zh">📋 完整工作流程 — 點任一方塊跳到對應主題</h2>
   <h2 data-lang="en">📋 Complete Workflow — click any box to jump to its topic</h2>
-  <p class="desc" data-lang="zh">下圖是典型 scRNA-seq 流程的每個運算步驟。<b style="color:#06a77d">綠色 = 已有深度教材</b>、<b style="color:#4f7df4">藍色 = 規劃中</b>。每個方塊都對應下方某個模塊。</p>
-  <p class="desc" data-lang="en">Every computational step in a typical scRNA-seq pipeline. <b style="color:#06a77d">Green = full tutorial available</b>, <b style="color:#4f7df4">Blue = planned</b>. Each box maps to a module below.</p>
+  <!-- TODO: 等綠/藍狀態標記機制重新設計後（例如所有頁面都標好 done/planned 狀態），把下方描述段加回來：
+       <p class="desc" data-lang="zh">下圖是典型 scRNA-seq 流程的每個運算步驟。
+         <b style="color:#06a77d">綠色 = 已有深度教材</b>、<b style="color:#4f7df4">藍色 = 規劃中</b>。
+         每個方塊都對應下方某個模塊。</p>
+       <p class="desc" data-lang="en">Every computational step in a typical scRNA-seq pipeline.
+         <b style="color:#06a77d">Green = full tutorial available</b>,
+         <b style="color:#4f7df4">Blue = planned</b>. Each box maps to a module below.</p>
+  -->
 
   <div class="workflow-svg-wrap">
-    <svg viewBox="-120 0 1020 800" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="-120 0 1020 750" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <marker id="arrowhead" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto">
           <path d="M0,0 L0,6 L8,3 z" fill="#8990a8"/>
@@ -102,13 +107,13 @@
       <text class="workflow-cat" x="450" y="166" fill="#92590e"><tspan data-lang="zh">M2 · 前處理</tspan><tspan data-lang="en">M2 · Preprocessing</tspan></text>
       <rect class="workflow-section-bg" x="0" y="275" width="900" height="160" fill="#f3e8ff"/>
       <text class="workflow-cat" x="450" y="299" fill="#5e35b1"><tspan data-lang="zh">M3 · 降維</tspan><tspan data-lang="en">M3 · Dimensionality Reduction</tspan></text>
-      <!-- y=440~490：Integration modifier 區（不畫背景條，與 M3/M4 自然分隔） -->
-      <rect class="workflow-section-bg" x="0" y="495" width="900" height="100" fill="#dbeafe"/>
-      <text class="workflow-cat" x="450" y="519" fill="#1e40af"><tspan data-lang="zh">M4 · 圖&amp;聚類</tspan><tspan data-lang="en">M4 · Graph &amp; Clustering</tspan></text>
-      <rect class="workflow-section-bg" x="0" y="605" width="900" height="100" fill="#e7f9f1"/>
-      <text class="workflow-cat" x="450" y="629" fill="#06a77d"><tspan data-lang="zh">M5 · 統計推論</tspan><tspan data-lang="en">M5 · Inference</tspan></text>
-      <rect class="workflow-section-bg" x="0" y="715" width="900" height="80" fill="#fce7f3"/>
-      <text class="workflow-cat" x="450" y="739" fill="#be185d"><tspan data-lang="zh">M6 · 進階下游</tspan><tspan data-lang="en">M6 · Advanced Downstream</tspan></text>
+      <!-- M3-M4 不再保留空地（Integration 已搬到左側 rail），M4 直接跟 M3 隔 10px -->
+      <rect class="workflow-section-bg" x="0" y="445" width="900" height="100" fill="#dbeafe"/>
+      <text class="workflow-cat" x="450" y="459" fill="#1e40af"><tspan data-lang="zh">M4 · 圖&amp;聚類</tspan><tspan data-lang="en">M4 · Graph &amp; Clustering</tspan></text>
+      <rect class="workflow-section-bg" x="0" y="555" width="900" height="100" fill="#e7f9f1"/>
+      <text class="workflow-cat" x="450" y="569" fill="#06a77d"><tspan data-lang="zh">M5 · 統計推論</tspan><tspan data-lang="en">M5 · Inference</tspan></text>
+      <rect class="workflow-section-bg" x="0" y="665" width="900" height="80" fill="#fce7f3"/>
+      <text class="workflow-cat" x="450" y="680" fill="#be185d"><tspan data-lang="zh">M6 · 進階下游</tspan><tspan data-lang="en">M6 · Advanced Downstream</tspan></text>
 
       <!-- M1: Foundations（前置概念；boxes 加寬到 200 容納 "Count matrix · Sparse storage"） -->
       <a href="M1-foundations/1.1-sparse-matrix.html">
@@ -156,11 +161,13 @@
            PCA = main embedding（左、強調）
            UMAP = main visualization（中、實線從 PCA 來；scRNA 慣用的 de facto 視覺化標準）
            t-SNE / Diff Map = 替代視覺化（右側小框、虛線分支，繞過 UMAP 上下） -->
+      <!-- TODO: 等綠/藍狀態標記機制重新設計後，把 "done" class 跟 "✓" 標記加回來：
+           rect class 改成 "workflow-node done"、step text 改成 "STEP 5 ✓"、subtitle fill 改回 "#06a77d" -->
       <a href="M3-dimreduction/3.1-pca.html">
-        <rect class="workflow-node done" x="47.5" y="345" width="185" height="60" rx="8"/>
-        <text class="workflow-step" x="140" y="365">STEP 5 ✓</text>
+        <rect class="workflow-node" x="47.5" y="345" width="185" height="60" rx="8"/>
+        <text class="workflow-step" x="140" y="365">STEP 5</text>
         <text class="workflow-label" x="140" y="384">PCA</text>
-        <text x="140" y="398" font-size="9" font-style="italic" fill="#06a77d" text-anchor="middle"><tspan data-lang="zh">主降維方法</tspan><tspan data-lang="en">main embedding</tspan></text>
+        <text x="140" y="398" font-size="9" font-style="italic" fill="#666" text-anchor="middle"><tspan data-lang="zh">主降維方法</tspan><tspan data-lang="en">main embedding</tspan></text>
       </a>
       <a href="M3-dimreduction/3.3-umap.html">
         <rect class="workflow-node" x="467.5" y="345" width="185" height="60" rx="8"/>
@@ -184,7 +191,7 @@
       <path class="workflow-arrow-side" d="M232.5,355 C 350,330 540,320 675,310" marker-end="url(#arrowhead-dashed)"/>
       <path class="workflow-arrow-side" d="M232.5,395 C 350,415 540,420 675,410" marker-end="url(#arrowhead-dashed)"/>
       <!-- PCA → KNN：主流程（實線，貫穿至 M4） -->
-      <path class="workflow-arrow" d="M140,405 L140,520"/>
+      <path class="workflow-arrow" d="M140,405 L140,470"/>
 
       <!-- Integration · Modifier Rail（左側並排，跨多階段）
            Integration 在不同方法下會在不同階段介入：
@@ -196,7 +203,7 @@
         <!-- 整塊 rail 都包進 <a> 內，整個粉色 box + 所有文字都可點 -->
         <a href="M6-advanced/6.1-integration.html">
           <!-- Rail box -->
-          <rect x="-110" y="185" width="95" height="375" rx="8" fill="#fce7f3" stroke="#be185d" stroke-width="1.4" stroke-dasharray="5 4" style="cursor:pointer"/>
+          <rect x="-110" y="185" width="95" height="325" rx="8" fill="#fce7f3" stroke="#be185d" stroke-width="1.4" stroke-dasharray="5 4" style="cursor:pointer"/>
 
           <!-- Header（rail 頂部） -->
           <text x="-62.5" y="205" font-size="9" font-weight="700" letter-spacing="0.5px" fill="#be185d" text-anchor="middle" style="cursor:pointer">M6.1 · OPTIONAL</text>
@@ -217,60 +224,60 @@
         <path d="M-15,330 L140,330 L140,345" stroke="#be185d" stroke-width="1.2" stroke-dasharray="4 4" fill="none" marker-end="url(#arrowhead-rail)"/>
         <text x="60" y="325" font-size="9" font-weight="700" fill="#be185d" text-anchor="middle">Post-PCA · Harmony / fastMNN</text>
 
-        <!-- → KNN (graph-level)：connector exit 從 rail 右緣 y=505 -->
-        <path d="M-15,505 L140,505 L140,520" stroke="#be185d" stroke-width="1.2" stroke-dasharray="4 4" fill="none" marker-end="url(#arrowhead-rail)"/>
-        <text x="60" y="500" font-size="9" font-weight="700" fill="#be185d" text-anchor="middle">Graph-level · BBKNN</text>
+        <!-- → KNN (graph-level)：對應 KNN box 上移到 y=470 後的新位置 -->
+        <path d="M-15,455 L140,455 L140,470" stroke="#be185d" stroke-width="1.2" stroke-dasharray="4 4" fill="none" marker-end="url(#arrowhead-rail)"/>
+        <text x="60" y="450" font-size="9" font-weight="700" fill="#be185d" text-anchor="middle">Graph-level · BBKNN</text>
       </g>
 
       <!-- M4: Graph & Clustering -->
       <a href="M4-graph-clustering/4.1-knn-graph.html">
-        <rect class="workflow-node" x="47.5" y="520" width="185" height="50" rx="8"/>
-        <text class="workflow-step" x="140" y="538">STEP 6a</text>
-        <text class="workflow-label" x="140" y="554">KNN graph · HNSW</text>
+        <rect class="workflow-node" x="47.5" y="470" width="185" height="50" rx="8"/>
+        <text class="workflow-step" x="140" y="488">STEP 6a</text>
+        <text class="workflow-label" x="140" y="504">KNN graph · HNSW</text>
       </a>
       <a href="M4-graph-clustering/4.2-louvain-leiden.html">
-        <rect class="workflow-node" x="257.5" y="520" width="185" height="50" rx="8"/>
-        <text class="workflow-step" x="350" y="538">STEP 6b</text>
-        <text class="workflow-label" x="350" y="554">Leiden · Modularity</text>
+        <rect class="workflow-node" x="257.5" y="470" width="185" height="50" rx="8"/>
+        <text class="workflow-step" x="350" y="488">STEP 6b</text>
+        <text class="workflow-label" x="350" y="504">Leiden · Modularity</text>
       </a>
-      <path class="workflow-arrow" d="M232.5,545 L257.5,545"/>
+      <path class="workflow-arrow" d="M232.5,495 L257.5,495"/>
       <!-- Leiden → Annotation：主流程實線進入 M5（Annotation 在 col 350 正下方） -->
-      <path class="workflow-arrow" d="M350,570 L350,630"/>
+      <path class="workflow-arrow" d="M350,520 L350,580"/>
 
       <!-- M5: Inference（重排：Annotation 主流程實線 → DE → FDR 全橫向串接） -->
       <a href="M5-statistics/5.3-classifier.html">
-        <rect class="workflow-node" x="257.5" y="630" width="185" height="50" rx="8"/>
-        <text class="workflow-step" x="350" y="648">STEP 8</text>
-        <text class="workflow-label" x="350" y="664"><tspan data-lang="zh">Annotation · 分類器</tspan><tspan data-lang="en">Annotation · Classifier</tspan></text>
+        <rect class="workflow-node" x="257.5" y="580" width="185" height="50" rx="8"/>
+        <text class="workflow-step" x="350" y="598">STEP 8</text>
+        <text class="workflow-label" x="350" y="614"><tspan data-lang="zh">Annotation · 分類器</tspan><tspan data-lang="en">Annotation · Classifier</tspan></text>
       </a>
       <a href="M5-statistics/5.1-de-tests.html">
-        <rect class="workflow-node" x="467.5" y="630" width="185" height="50" rx="8"/>
-        <text class="workflow-step" x="560" y="648">STEP 9</text>
-        <text class="workflow-label" x="560" y="664">DE · Wilcoxon / MAST</text>
+        <rect class="workflow-node" x="467.5" y="580" width="185" height="50" rx="8"/>
+        <text class="workflow-step" x="560" y="598">STEP 9</text>
+        <text class="workflow-label" x="560" y="614">DE · Wilcoxon / MAST</text>
       </a>
       <a href="M5-statistics/5.2-multiple-testing.html">
-        <rect class="workflow-node" x="677.5" y="630" width="185" height="50" rx="8"/>
-        <text class="workflow-step" x="770" y="648">STEP 9b</text>
-        <text class="workflow-label" x="770" y="664"><tspan data-lang="zh">FDR · BH 校正</tspan><tspan data-lang="en">FDR · BH correction</tspan></text>
+        <rect class="workflow-node" x="677.5" y="580" width="185" height="50" rx="8"/>
+        <text class="workflow-step" x="770" y="598">STEP 9b</text>
+        <text class="workflow-label" x="770" y="614"><tspan data-lang="zh">FDR · BH 校正</tspan><tspan data-lang="en">FDR · BH correction</tspan></text>
       </a>
       <!-- Annotation → DE → FDR 主流程實線 -->
-      <path class="workflow-arrow" d="M442.5,655 L467.5,655"/>
-      <path class="workflow-arrow" d="M652.5,655 L677.5,655"/>
+      <path class="workflow-arrow" d="M442.5,605 L467.5,605"/>
+      <path class="workflow-arrow" d="M652.5,605 L677.5,605"/>
 
       <!-- M6: Advanced Downstream（Integration 已上移到 M3-M4 之間；M6 只剩真正下游分析） -->
       <a href="M6-advanced/6.2-pseudotime.html">
-        <rect class="workflow-node" x="257.5" y="745" width="185" height="42" rx="8"/>
-        <text class="workflow-step" x="350" y="762">M6.2 · DOWNSTREAM</text>
-        <text class="workflow-label" x="350" y="778">Pseudotime · DPT</text>
+        <rect class="workflow-node" x="257.5" y="695" width="185" height="42" rx="8"/>
+        <text class="workflow-step" x="350" y="712">M6.2 · DOWNSTREAM</text>
+        <text class="workflow-label" x="350" y="728">Pseudotime · DPT</text>
       </a>
       <a href="M6-advanced/6.3-cellchat.html">
-        <rect class="workflow-node" x="467.5" y="745" width="185" height="42" rx="8"/>
-        <text class="workflow-step" x="560" y="762">M6.3 · DOWNSTREAM</text>
-        <text class="workflow-label" x="560" y="778"><tspan data-lang="zh">CellChat 通訊</tspan><tspan data-lang="en">CellChat signaling</tspan></text>
+        <rect class="workflow-node" x="467.5" y="695" width="185" height="42" rx="8"/>
+        <text class="workflow-step" x="560" y="712">M6.3 · DOWNSTREAM</text>
+        <text class="workflow-label" x="560" y="728"><tspan data-lang="zh">CellChat 通訊</tspan><tspan data-lang="en">CellChat signaling</tspan></text>
       </a>
       <!-- Annotation → Pseudotime / CellChat：實線（cell type labels 是 M6 下游分析的真正輸入） -->
-      <path class="workflow-arrow" d="M350,680 L350,745" marker-end="url(#arrowhead)"/>
-      <path class="workflow-arrow" d="M350,680 C 400,705 500,725 560,745" marker-end="url(#arrowhead)"/>
+      <path class="workflow-arrow" d="M350,630 L350,695" marker-end="url(#arrowhead)"/>
+      <path class="workflow-arrow" d="M350,630 C 400,655 500,675 560,695" marker-end="url(#arrowhead)"/>
     </svg>
   </div>
 </section>

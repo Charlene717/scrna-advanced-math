@@ -540,7 +540,7 @@
           <li><a href="../M6-advanced/6.3-cellchat.html">6.3 CellChat</a></li>
         </ul>
       </li>
-      <li><a href="../index.html">🏠 回首頁 / Home</a></li>
+      <li><a href="../index.html"><span data-lang="zh">🏠 回首頁</span><span data-lang="en">🏠 Home</span></a></li>
     </ul>
     <div class="lang-switch">
       <button data-lang-btn="zh" class="active">中文</button>
@@ -878,9 +878,9 @@
 <h3 data-lang="zh">0-3 互動探索：變異數公式四選一</h3>
 <h3 data-lang="en">0-3 Interactive exploration: pick 1 of 4 variance formulas</h3>
 
-<p data-lang="zh">下面顯示同一份資料（5 個點），點任一卡片試試看那個公式算出來是什麼。
+<p data-lang="zh">下面換一份範例資料（8 個點），點任一卡片試試看那個公式算出來是什麼。
   我們會幫你<b>列出每一步計算</b>，並指出該公式有什麼<b>缺點或優點</b>。</p>
-<p data-lang="en">Same data (5 points) below. Click any card to see what that formula computes.
+<p data-lang="en">A different example dataset (8 points) below. Click any card to see what that formula computes.
   We'll <b>list every calculation step</b> and point out its <b>strengths or flaws</b>.</p>
 
 <div class="card">
@@ -2733,7 +2733,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
 
   // ----- 0-2 1D 分散感受 -----
   const spreadSvg = document.getElementById('s0Spread');
-  let spreadPts = [2, 4, 4, 5, 7];
+  let spreadPts = [2, 4, 5, 6, 8];
   function drawSpread() {
     const W=400, H=160;
     const xmin = -1, xmax = 11;
@@ -4877,7 +4877,7 @@ function jacobiEig(Asrc, maxIter=200, tol=1e-10) {
   }
 
   document.getElementById('btnGeneNew').onclick = () => { generate(); render(); };
-  sepSlider.addEventListener('input', render);
+  sepSlider.addEventListener('input', () => { generate(); render(); });
   generate();
   render();
 })();
